@@ -24,9 +24,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private readonly UIDocument _uiDocument ;
     private readonly LocationTypeStorable _settingStorable ;
 
-    private Dictionary<string, string>? _wireSymbolOptions ;
+    private static Dictionary<string, string>? _wireSymbolOptions ;
 
-    public Dictionary<string, string> WireSymbolOptions => _wireSymbolOptions ??= new Dictionary<string, string>
+    public static Dictionary<string, string> WireSymbolOptions => _wireSymbolOptions ??= new Dictionary<string, string>
     {
       { "漏水帯（布）", "LeakageZoneCloth" }, 
       { "漏水帯（発色）", "LeakageZoneColoring" }, 
@@ -119,7 +119,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if(!familySymbol.IsActive)
           familySymbol.Activate();
 
-        var lineStyle = GetLineStyle( _uiDocument.Document, "LeakageZone" ) ;
+        var lineStyle = GetLineStyle( _uiDocument.Document, ChangeWireTypeCommand.SubcategoryName ) ;
         var conduitAndDetailCurveStorable = _uiDocument.Document.GetConduitAndDetailCurveStorable() ;
         curves.ForEach( x =>
         {
@@ -181,8 +181,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _settingStorable.Save();
       trans.Commit() ;
       
-      ChangeWireTypeCommand.RefreshView( _uiDocument.Document, _uiDocument.ActiveView ) ;
-
       transactionGroup.Assimilate() ;
     }
     

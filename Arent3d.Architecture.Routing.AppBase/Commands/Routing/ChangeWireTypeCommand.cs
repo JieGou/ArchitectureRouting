@@ -15,6 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public static class ChangeWireTypeCommand
   {
+    public static string SubcategoryName => "LeakageZone" ;
+    
     public static readonly Dictionary<string, string> WireSymbolOptions = new()
     {
       { "漏水帯（布）", "LeakageZoneCloth" }, 
@@ -41,13 +43,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
       var color = new Color( 255, 215, 0 ) ;
-      var lineStyle = isLeakRoute ? GetLineStyle( document, color ) : GetLineStyle( document, "LeakageZone" ) ; ;
+      // var lineStyle = isLeakRoute ? GetLineStyle( document, color ) : GetLineStyle( document, SubcategoryName ) ; ;
+      var lineStyle = GetLineStyle( document, color ) ;
       OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( color ) ;
       ForEachExtension.ForEach( curves, x =>
       {
         var detailCurve = document.Create.NewDetailCurve( view, x.Key ) ;
         detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        if ( isLeakRoute ) view.SetElementOverrides( detailCurve.Id, ogs ) ;
         conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, wireType, isLeakRoute ) ) ;
       } ) ;
       ForEachExtension.ForEach( lines, x =>
@@ -63,7 +67,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       using var trans = new Transaction( document ) ;
       trans.Start( "Hidden Element" ) ;
-      view.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+      if ( elements.Any() ) {
+        try {
+          view.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+        }
+        catch {
+          //
+        }
+      }
 
       var dropCategory = Category.GetCategory( document, BuiltInCategory.OST_ConduitDrop ) ;
       if ( null != dropCategory ) {
@@ -85,30 +96,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static Category GetLineStyle( Document doc, Color color )
     {
       var categories = doc.Settings.Categories ;
-      var subCategoryName = "JBoxWireLineStyle" ;
-      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
       Category subCategory ;
-      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
-        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
+      if ( ! category.SubCategories.Contains( SubcategoryName ) ) {
+        subCategory = categories.NewSubcategory( category, SubcategoryName ) ;
         subCategory.LineColor = color ;
       }
       else
-        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
-
-      return subCategory ;
-    }
-    
-    private static Category GetLineStyle( Document document, string subCategoryName)
-    {
-      var categories = document.Settings.Categories ;
-      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
-      Category subCategory ;
-      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
-        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
-      }
-      else {
-        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
-      }
+        subCategory = category.SubCategories.get_Item( SubcategoryName ) ;
 
       return subCategory ;
     }
@@ -116,7 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public static (Dictionary<Line, string> lineConduits, Dictionary<Curve, string> curveHorizontal) GetLocationConduits( Document document, View view, List<Element> elements )
     {
       var conduits = elements.OfType<Conduit>().ToList() ;
-      var curveConduits = GetCurveFromElements( document, view, conduits ) ;
+      var curveConduits = GeometryHelper.GetCurveFromElements( view, conduits ) ;
 
       var conduitFittings = elements.OfType<FamilyInstance>().ToList() ;
       var fittingHorizontals = conduitFittings.Where( x => Math.Abs( x.GetTransform().OfVector( XYZ.BasisZ ).Z - 1 ) < GeometryUtil.Tolerance ).ToList() ;
@@ -148,7 +143,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var comparer = new XyzComparer() ;
       fittingHorizontals = fittingHorizontals.Where( x => x.MEPModel.ConnectorManager.Connectors.Size == 2 ) ;
       fittingHorizontals = DistinctByExtension.DistinctBy( fittingHorizontals, x => GetCenterPoint( x ), comparer ) ;
-      return GetCurveFromElements( document, view, fittingHorizontals ) ;
+      return GeometryHelper.GetCurveFromElements( view, fittingHorizontals ) ;
     }
 
     private static Dictionary<Line, string> GetLineVerticalFittings( IEnumerable<FamilyInstance> fittingVerticals )
@@ -217,65 +212,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return lineOnPlanes ;
     }
 
-    private static Dictionary<Curve, string> GetCurveFromElements( Document document, View view, IEnumerable<Element> elements )
-    {
-      var curves = new Dictionary<Curve, string>() ;
-      try {
-        using var transaction = new Transaction( document ) ;
-        transaction.Start( "Get Geometry" ) ;
-        
-        var detailLevel = view.DetailLevel ;
-        if ( detailLevel != ViewDetailLevel.Coarse )
-          view.DetailLevel = ViewDetailLevel.Coarse ;
-        
-        var options = new Options { View = view } ;
-
-        foreach ( var element in elements ) {
-          if ( element.get_Geometry( options ) is { } geometryElement )
-            RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
-        }
-      
-        if ( detailLevel != ViewDetailLevel.Coarse )
-          view.DetailLevel = detailLevel ;
-        transaction.Commit() ;
-
-        return curves ;
-      }
-      catch {
-        return curves ;
-      }
-    }
-
-    private static void RecursiveCurves( GeometryElement geometryElement, string elementId, ref Dictionary<Curve, string> curves )
-    {
-      foreach ( var geometry in geometryElement ) {
-        switch ( geometry ) {
-          case GeometryInstance geometryInstance :
-          {
-            if ( geometryInstance.GetInstanceGeometry() is { } subGeometryElement )
-              RecursiveCurves( subGeometryElement, elementId, ref curves ) ;
-            break ;
-          }
-          case Curve curve :
-            curves.Add( curve.Clone(), elementId ) ;
-            break ;
-        }
-      }
-    }
-
     public static void RefreshView( Document document, View view )
     {
-      if ( view.DetailLevel != ViewDetailLevel.Fine )
-        return ;
-
       using var transaction = new Transaction( document ) ;
-
-      transaction.Start( "Detail Level Coarse" ) ;
-      view.DetailLevel = ViewDetailLevel.Coarse ;
+      transaction.Start( "Enable Reveal Hidden" ) ;
+      document.ActiveView.EnableRevealHiddenMode() ;
       transaction.Commit() ;
 
-      transaction.Start( "Detail Level Fine" ) ;
-      view.DetailLevel = ViewDetailLevel.Fine ;
+      transaction.Start( "Disable Reveal Hidden" ) ;
+      document.ActiveView.DisableTemporaryViewMode( TemporaryViewMode.RevealHiddenElements ) ;
       transaction.Commit() ;
     }
 
