@@ -162,7 +162,7 @@ namespace Arent3d.Architecture.Routing
 
     private static Connector GetConnector( ConnectorManager connectorManager, XYZ position )
     {
-      foreach ( Connector conn in connectorManager.Connectors ) {
+      foreach ( Connector conn in connectorManager.Connectors ) { 
         if ( conn.ConnectorType == ConnectorType.Logical ) continue ;
         if ( conn.Origin.IsAlmostEqualTo( position ) ) return conn ;
       }

@@ -1,0 +1,40 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.PressureGuidingTubeSettingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        x:Name="PressureGuidingTubeDialog"
+        Title="導圧管類作成" Height="250" Width="350"
+        d:DataContext="{d:DesignInstance {x:Type local:DesignPressureGuidingTubeSettingViewModel}, IsDesignTimeCreatable=True}">
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Label Content="立ち下り" VerticalAlignment="Center" />
+        <TextBox Grid.Column="1" Height="25" Text="{Binding PressureGuidingTube.Height}"
+                 HorizontalContentAlignment="Right" VerticalContentAlignment="Center" />
+
+        <Label Grid.Row="1" Content="種類" VerticalAlignment="Center" />
+        <ComboBox Grid.Row="1" Grid.Column="1" Name="CbTubeType" Height="25" SelectedItem="{Binding SelectedTubeType}"
+                  VerticalContentAlignment="Center" />
+
+        <Label Grid.Row="2" Content="作成モード" VerticalAlignment="Center" />
+        <ComboBox Grid.Row="2" Grid.Column="1" Name="CbCreationMode" Height="25"
+                  SelectedItem="{Binding SelectedCreationMode}" VerticalContentAlignment="Center"/>
+
+        <Button Grid.Column="1" Grid.Row="3" Content="作成" Height="25" Width="60"
+                CommandParameter="{Binding ElementName=PressureGuidingTubeDialog}"
+                Command="{Binding CreateCommand}" IsDefault="True" />
+    </Grid>
+</Window>

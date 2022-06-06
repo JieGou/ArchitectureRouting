@@ -8,7 +8,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "75f2c2a1-3fe3-45cf-8ea7-bcf083750bfb" )]
+  [Guid( "1b37c989-0483-4bef-a709-76ef807b1239" )]
   [StorableVisibility( AppInfo.VendorId )]
   public class DefaultSettingStorable : StorableBase
   {
@@ -16,18 +16,22 @@ namespace Arent3d.Architecture.Routing.Storable
     private const string EcoValueField = "EcoValue" ;
     private const string GradeValueField = "GradeValue" ;
     private const string ImportDwgMappingModelsField = "ImportDwgMappingModels" ;
+    private const string CsvFileModelsField = "CsvFileModels" ;
 
     public EcoSettingModel EcoSettingData { get ; private set ; }
     
     public GradeSettingModel GradeSettingData { get ; private set ; }
     
     public List<ImportDwgMappingModel> ImportDwgMappingData { get ; set ; }
+    
+    public List<CsvFileModel> CsvFileData { get ; set ; }
 
     public DefaultSettingStorable( DataStorage owner ) : base( owner, false )
     {
       EcoSettingData = new EcoSettingModel() ;
       GradeSettingData = new GradeSettingModel() ;
       ImportDwgMappingData = new List<ImportDwgMappingModel>() ;
+      CsvFileData = new List<CsvFileModel>() ;
     }
 
     public DefaultSettingStorable( Document document ) : base( document, false )
@@ -35,6 +39,7 @@ namespace Arent3d.Architecture.Routing.Storable
       EcoSettingData = new EcoSettingModel() ;
       GradeSettingData = new GradeSettingModel() ;
       ImportDwgMappingData = new List<ImportDwgMappingModel>() ;
+      CsvFileData = new List<CsvFileModel>() ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
@@ -43,6 +48,7 @@ namespace Arent3d.Architecture.Routing.Storable
       EcoSettingData = dataSaved ;
       GradeSettingData = reader.GetSingle<GradeSettingModel>( GradeValueField ) ;
       ImportDwgMappingData = reader.GetArray<ImportDwgMappingModel>( ImportDwgMappingModelsField ).ToList() ;
+      CsvFileData = reader.GetArray<CsvFileModel>( CsvFileModelsField ).ToList() ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
@@ -50,6 +56,7 @@ namespace Arent3d.Architecture.Routing.Storable
       writer.SetSingle( EcoValueField, EcoSettingData ) ;
       writer.SetSingle( GradeValueField, GradeSettingData ) ;
       writer.SetArray( ImportDwgMappingModelsField, ImportDwgMappingData ) ;
+      writer.SetArray( CsvFileModelsField, CsvFileData ) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
@@ -57,6 +64,7 @@ namespace Arent3d.Architecture.Routing.Storable
       generator.SetSingle<EcoSettingModel>( EcoValueField ) ;
       generator.SetSingle<GradeSettingModel>( GradeValueField ) ;
       generator.SetArray<ImportDwgMappingModel>( ImportDwgMappingModelsField ) ;
+      generator.SetArray<CsvFileModel>( CsvFileModelsField ) ;
     }
 
     public override string Name => StorableName ;
