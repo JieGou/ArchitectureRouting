@@ -12,10 +12,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   public partial class DetailTableDialog : Window
   {
     private DetailTableViewModel ViewModel => (DetailTableViewModel)DataContext ;
-    private const string DefaultChildPlumbingSymbol = "↑" ;
-    private const string NoPlumping = "配管なし" ;
-    private const string IncorrectDataErrorMessage = "Incorrect data." ;
-    private const string CaptionErrorMessage = "Error" ;
 
     public DetailTableDialog(DetailTableViewModel viewModel )
     {

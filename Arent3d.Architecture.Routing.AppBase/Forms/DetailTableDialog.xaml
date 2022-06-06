@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         mc:Ignorable="d"
         x:Name="DetailTableWindow"
         WindowStartupLocation="CenterScreen"
@@ -94,12 +93,6 @@
                     CommandParameter="{Binding ElementName=DtGrid}"/>
             </DataGrid.InputBindings>
             
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="SelectionChanged">
-                    <i:InvokeCommandAction Command="{Binding SelectionChangedCommand}" CommandParameter="{Binding ElementName=DtGrid}" />
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-            
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
                     <Style.Triggers>
@@ -119,11 +112,6 @@
                                         DisplayMemberPath="Type"
                                         SelectedValuePath="Name"
                                         CanUserSort="False">
-                    <i:Interaction.Triggers>
-                        <i:EventTrigger EventName="SelectionChanged">
-                            <i:InvokeCommandAction Command="{Binding FloorSelectionChangedCommand}"/>
-                        </i:EventTrigger>
-                    </i:Interaction.Triggers>
                     
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
@@ -630,12 +618,6 @@
                   ItemsSource="{Binding ReferenceDetailTableModels}" 
                   CanUserAddRows="False" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" >
-            
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="SelectionChanged">
-                    <i:InvokeCommandAction Command="{Binding SelectionChangedReferenceCommand}"  />
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
             
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
