@@ -79,8 +79,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private ObservableCollection<CeedDetailModel> _ceedDetailList = new() ;
     public CeedDetailModel? CeedDetailSelected { get ; set ; }
     public List<string> BuzaiCDList { get ; set ; }
-     
-    public ObservableCollection<string> BuzaiCDListDisplay { get ; set ; }
+
+    private ObservableCollection<string> _buzaiCDListDisplay = new() ;
+    public ObservableCollection<string> BuzaiCDListDisplay { 
+      get => _buzaiCDListDisplay;
+      set
+      {
+        _buzaiCDListDisplay = value ;
+        OnPropertyChanged( nameof(BuzaiCDListDisplay) );
+      }
+    }
     private string _buzaiCDSearchText = string.Empty ;
 
     public string BuzaiCDSearchText
@@ -88,12 +96,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       get => _buzaiCDSearchText ;
       set
       {
-        _buzaiCDSearchText = value ;
-        var newSource = BuzaiCDList.Where( x => x.Contains( value ) ).ToList() ;
-        BuzaiCDListDisplay = new ObservableCollection<string>( newSource.Take( DefaultDisplayItem ).ToList() ) ;  
-        CollectionViewSource.GetDefaultView( BuzaiCDListDisplay ).Refresh();
-        OnPropertyChanged( nameof(BuzaiCDListDisplay) );
+        _buzaiCDSearchText = value ;  
         OnPropertyChanged( nameof(BuzaiCDSearchText) );
+
+        if ( string.IsNullOrEmpty( value ) ) {
+          BuzaiCDListDisplay = new ObservableCollection<string>( BuzaiCDList.Take( DefaultDisplayItem ).ToList() ) ; 
+        } 
+        else {
+          var newSource = BuzaiCDList.Where( x => x.Length >= value.Length && x.Substring( 0, value.Length ) == value ).ToList() ;
+          BuzaiCDListDisplay = new ObservableCollection<string>( newSource.Take( DefaultDisplayItem ).ToList() ) ;  
+        }
+         
+        if ( BuzaiCDList.Contains( value ) ) {
+          AddCeedDetail(value); 
+        }
       }
     }
 
@@ -167,7 +183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( true == hiroiMasterDialog.ShowDialog() ) {
         var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, CeedDetailList.Count + 1 ) ;
         CeedDetailList.Add( ceedDetailModel ) ; 
-        CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
+        CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ; 
       }
     }
 
@@ -175,10 +191,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var selectedHiroiMaster = HiroiMasterModels.FirstOrDefault( x => x.Buzaicd == buzaiCd ) ;
       if(null == selectedHiroiMaster) return;
+
+      if ( CeedDetailList.FirstOrDefault( x => x.ProductCode == buzaiCd ) != null ) {
+        return;
+      }
        
       var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, selectedHiroiMaster.Hinmei, selectedHiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2, selectedHiroiMaster.Kikaku, CeedDetailList.Count + 1 ) ;
       CeedDetailList.Add( ceedDetailModel ) ; 
-      CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
+      CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ; 
     }
 
     private void DeleteCeedDetail()
