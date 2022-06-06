@@ -6,10 +6,8 @@ using System.Linq ;
 using System.Text ;
 using System.Windows ;
 using System.Windows.Controls ;
-using System.Windows.Controls.Primitives ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
-using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
@@ -28,7 +26,6 @@ using Label = System.Windows.Controls.Label ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 using MessageBox = System.Windows.MessageBox ;
 using Visibility = System.Windows.Visibility ;
-using DataGridCell = System.Windows.Controls.DataGridCell ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -42,37 +39,59 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<CeedModel> _usedCeedModels ;
     private List<CeedModel> _previousCeedModels ;
 
-    public DataGrid DtGrid  ;
-    
+    public DataGrid DtGrid ;
+
     public ObservableCollection<CeedModel> CeedModels { get ; }
     private CeedStorable? CeedStorable { get ; set ; }
 
-    public ObservableCollection<string> CeedModelNumber { get ; } = new() ;
+    public ObservableCollection<string> CeedSetCodes { get ; } = new() ;
 
-    public int SelectedCeedModelNumberIndex { get ; set ; } = -1 ;
+    private string _selectedCeedSetCode ;
 
-    public string? SelectedCeedModelNumber  =>
-      0 <= SelectedCeedModelNumberIndex ? CeedModelNumber[ SelectedCeedModelNumberIndex ] : null ;
+    public string SelectedCeedSetCode
+    {
+      get => _selectedCeedSetCode ;
+      set
+      {
+        _selectedCeedSetCode = value ;
+        OnPropertyChanged() ;
+      }
+    }
 
     public ObservableCollection<string> ModelNumber { get ; } = new() ;
-    public int SelectedModelNumberIndex { get ; set ; } = -1 ;
 
-    public string? SelectedModelNumber =>
-      0 <= SelectedModelNumberIndex ? ModelNumber[ SelectedModelNumberIndex ] : null ;
+    private string _selectedModelNumber ;
 
-    public ObservableCollection<string> DeviceSymbols { get ; private set ; } = new() ;
-    
-    public int SelectedDeviceSymbolIndex { get ; set ; } = -1 ;
+    public string SelectedModelNumber
+    {
+      get => _selectedModelNumber ;
+      set
+      {
+        _selectedModelNumber = value ;
+        OnPropertyChanged() ;
+      }
+    }
 
-    public string? SelectedDeviceSymbolValue  =>
-      0 <= SelectedDeviceSymbolIndex ? DeviceSymbols[ SelectedDeviceSymbolIndex ] : null ;
-    
+    public ObservableCollection<string> DeviceSymbols { get ; } = new() ;
+
+    private string _selectedDeviceSymbol ;
+
+    public string SelectedDeviceSymbolValue
+    {
+      get => _selectedDeviceSymbol ;
+      set
+      {
+        _selectedDeviceSymbol = value ;
+        OnPropertyChanged() ;
+      }
+    }
+
     public bool IsShowCeedModelNumber { get ; set ; }
-    
+
     public bool IsShowOnlyUsingCode { get ; set ; }
 
-    public bool IsShowDiff { get ; set ; } 
-    
+    public bool IsShowDiff { get ; set ; }
+
     public bool IsExistUsingCode { get ; set ; }
 
     public CeedModel? SelectedCeedModel { get ; set ; }
@@ -81,9 +100,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public string? SelectedCeedCode { get ; set ; }
     public string? SelectedModelNum { get ; set ; }
     public string? SelectedFloorPlanType { get ; set ; }
-    
+
     private ObservableCollection<CeedModel> _previewList ;
-    
+
     public ObservableCollection<CeedModel> PreviewList
     {
       get => _previewList ;
@@ -93,19 +112,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged() ;
       }
     }
-    
+
     private ObservableCollection<CategoryModel>? _categories ;
-    
+
     public ObservableCollection<CategoryModel> Categories
     {
       get
       {
         if ( null != _categories )
           return _categories ;
-    
-        var categoryModels = GetCategoryModels( ) ;
+
+        var categoryModels = GetCategoryModels() ;
         _categories = new ObservableCollection<CategoryModel>( categoryModels ) ;
-    
+
         CategorySelected = FindSelectedCategory( _categories ) ;
 
         return _categories ;
@@ -117,15 +136,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged() ;
       }
     }
-    
+
     private CategoryModel? _categorySelected ;
-    
+
     public CategoryModel? CategorySelected
     {
       get { return _categorySelected ??= FindSelectedCategory( Categories ) ; }
       set => _categorySelected = value ;
     }
-    
+
     public ICommand SelectedItemCommand
     {
       get
@@ -136,19 +155,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         } ) ;
       }
     }
-    
+
     private ObservableCollection<CategoryModel>? _categoriesPreview ;
-    
+
     public ObservableCollection<CategoryModel> CategoriesPreview
     {
       get
       {
         if ( null != _categoriesPreview )
           return _categoriesPreview ;
-    
-        var categoryModels = GetCategoryModels( ) ;
+
+        var categoryModels = GetCategoryModels() ;
         _categoriesPreview = new ObservableCollection<CategoryModel>( categoryModels ) ;
-    
+
         CategoryPreviewSelected = FindSelectedCategory( _categoriesPreview ) ;
 
         return _categoriesPreview ;
@@ -160,15 +179,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged() ;
       }
     }
-    
+
     private CategoryModel? _categoryPreviewSelected ;
-    
+
     public CategoryModel? CategoryPreviewSelected
     {
       get { return _categoryPreviewSelected ??= FindSelectedCategory( CategoriesPreview ) ; }
       set => _categoryPreviewSelected = value ;
     }
-    
+
     public ICommand SelectedCategoryPreviewCommand
     {
       get
@@ -212,6 +231,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         else IsShowDiff = oldCeedStorable.IsDiff ;
         _previewList = new ObservableCollection<CeedModel>() ;
       }
+
+      _selectedCeedSetCode = string.Empty ;
+      _selectedModelNumber = string.Empty ;
+      _selectedDeviceSymbol = string.Empty ;
     }
 
     private void LoadData( CeedStorable ceedStorable )
@@ -224,13 +247,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       AddModelNumber( CeedModels ) ;
-      if ( ceedStorable.CeedModelUsedData.Any() ) 
+      if ( ceedStorable.CeedModelUsedData.Any() )
         _usingCeedModel = ceedStorable.CeedModelUsedData ;
     }
 
     private void LoadData( List<CeedModel> ceedModels, CeedStorable? ceedStorable = null )
     {
-      if(ceedStorable !=null)
+      if ( ceedStorable != null )
         CeedStorable = ceedStorable ;
       CeedModels.Clear() ;
       foreach ( var dataModel in ceedModels ) {
@@ -242,45 +265,46 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void AddModelNumber( IReadOnlyCollection<CeedModel> ceedModels )
     {
-      CeedModelNumber.Clear();
-      foreach ( var ceedModel in ceedModels.Where( ceedModel =>
-                 ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ) ) {
-        if ( ! CeedModelNumber.Contains( ceedModel.CeedModelNumber ) )
-          CeedModelNumber.Add( ceedModel.CeedModelNumber ) ;
+      CeedSetCodes.Clear() ;
+      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeedSetCode ) ) ) {
+        if ( ! CeedSetCodes.Contains( ceedModel.CeedSetCode ) )
+          CeedSetCodes.Add( ceedModel.CeedSetCode ) ;
       }
-      
-      ModelNumber.Clear();
-      foreach ( var ceedModel in ceedModels.Where( ceedModel =>
-                 ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
+
+      ModelNumber.Clear() ;
+      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
         var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;
         foreach ( var modelNumber in modelNumbers ) {
           if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber ) ;
         }
       }
 
-      var deviceSymbolsList = ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ).Select( c => c.GeneralDisplayDeviceSymbol ).Distinct().ToList() ;
-      DeviceSymbols = new ObservableCollection<string>( deviceSymbolsList ) ;
+      DeviceSymbols.Clear() ;
+      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ) ) {
+        if ( ! DeviceSymbols.Contains( ceedModel.GeneralDisplayDeviceSymbol ) )
+          DeviceSymbols.Add( ceedModel.GeneralDisplayDeviceSymbol ) ;
+      }
     }
-    
+
     private List<CategoryModel> GetCategoryModels()
     {
       List<CategoryModel> categoryModels = new() ;
-      
+
       var categoryModel1 = new CategoryModel { Name = "Category 1", ParentName = string.Empty, IsExpanded = false, IsSelected = true } ;
       categoryModels.Add( categoryModel1 ) ;
-      
+
       var categoryModel2 = new CategoryModel { Name = "Category 2", ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
       categoryModels.Add( categoryModel2 ) ;
 
       return categoryModels ;
     }
-    
+
     private enum CategoryType
     {
       ModelNumberOrSetCodePreview,
       DeviceSymbolPreview
     }
-    
+
     private CategoryModel? FindSelectedCategory( IEnumerable<CategoryModel> categories )
     {
       foreach ( var category in categories ) {
@@ -300,38 +324,30 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return null ;
     }
 
-    public void Load(CheckBox checkBox)
+    public void Load( CheckBox checkBox )
     {
       MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
-      OpenFileDialog openFileDialog = new()
-      {
-        Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false
-      } ;
+      OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
       string filePath = string.Empty ;
       string fileEquipmentSymbolsPath = string.Empty ;
-      if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+      if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
         MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
-        OpenFileDialog openFileEquipmentSymbolsDialog = new()
-        {
-          Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false
-        } ;
-        if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+        OpenFileDialog openFileEquipmentSymbolsDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+        if ( openFileEquipmentSymbolsDialog.ShowDialog() == DialogResult.OK ) {
           fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
         }
       }
 
-      if ( string.IsNullOrEmpty( filePath ) ||
-           string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
+      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
       using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
       progress.Message = "Loading data..." ;
       var ceedStorable = _document.GetCeedStorable() ;
       {
-        var ceedModelData =
-          ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
+        var ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
         if ( ! ceedModelData.Any() ) return ;
         _previousCeedModels = new List<CeedModel>( CeedModels ) ;
-        CheckChangeColor( ceedModelData );
+        CheckChangeColor( ceedModelData ) ;
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
         ceedStorable.IsShowOnlyUsingCode = false ;
@@ -376,38 +392,36 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
       }
     }
-    
+
     public void Search()
     {
       var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
       CeedModels.Clear() ;
-      var dataModels = data
-        .Where( x => SelectedCeedModelNumber is null || x.CeedModelNumber.Contains( SelectedCeedModelNumber ) )
-        .Where( x => SelectedModelNumber is null || x.ModelNumber.Contains( SelectedModelNumber ) )
-        .Where( x => SelectedDeviceSymbolValue is null || x.GeneralDisplayDeviceSymbol.Contains( SelectedDeviceSymbolValue ) ) ;
-      foreach ( var dataModel in dataModels ) {
+      PreviewList.Clear() ;
+      data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.Contains( _selectedDeviceSymbol ) ).ToList() ;
+      data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.Contains( _selectedCeedSetCode ) ).ToList() ;
+      data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.Contains( _selectedModelNumber ) ).ToList() ;
+      foreach ( var dataModel in data ) {
         CeedModels.Add( dataModel ) ;
+        PreviewList.Add( dataModel ) ;
       }
     }
-    
+
     private void Reset()
     {
-      SelectedCeedModelNumberIndex = -1 ;
-      SelectedModelNumberIndex = -1 ;
-      SelectedDeviceSymbolIndex = -1 ;
-      Search();
+      SelectedCeedSetCode = string.Empty ;
+      SelectedModelNumber = string.Empty ;
+      SelectedDeviceSymbolValue = string.Empty ;
+      Search() ;
     }
 
-    public void LoadUsingCeedModel(CheckBox checkBox)
+    public void LoadUsingCeedModel( CheckBox checkBox )
     {
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null && ceedStorable.CeedModelData.Any() ) {
-        OpenFileDialog openFileDialog = new()
-        {
-          Filter = "Csv files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx", Multiselect = false
-        } ;
+        OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx", Multiselect = false } ;
         string filePath = string.Empty ;
-        if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+        if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
           filePath = openFileDialog.FileName ;
         }
 
@@ -416,18 +430,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! modelNumberToUse.Any() ) return ;
         List<CeedModel> usingCeedModel = new() ;
         foreach ( var modelNumber in modelNumberToUse ) {
-          var ceedModels = ceedStorable.CeedModelData
-            .Where( c => c.ModelNumber.Contains( modelNumber ) ).Distinct().ToList() ;
+          var ceedModels = ceedStorable.CeedModelData.Where( c => c.ModelNumber.Contains( modelNumber ) ).Distinct().ToList() ;
           usingCeedModel.AddRange( ceedModels ) ;
         }
 
         usingCeedModel = usingCeedModel.Distinct().ToList() ;
         _usingCeedModel = usingCeedModel ;
-        LoadData(_usingCeedModel, ceedStorable  ) ;
+        LoadData( _usingCeedModel, ceedStorable ) ;
         checkBox.Visibility = Visibility.Visible ;
         checkBox.IsChecked = true ;
 
-        if ( _usingCeedModel == null || ! _usingCeedModel.Any() ) return ;
+        if ( ! _usingCeedModel.Any() ) return ;
         try {
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
@@ -444,32 +457,32 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public void ShowCeedModelNumberColumn(Label label, ComboBox comboBox )
+    public void ShowCeedModelNumberColumn( Label label, ComboBox comboBox )
     {
       DtGrid.Columns[ 1 ].Visibility = Visibility.Visible ;
       label.Visibility = Visibility.Visible ;
       comboBox.Visibility = Visibility.Visible ;
     }
-    
-    public void UnShowCeedModelNumberColumn(Label label, ComboBox comboBox)
+
+    public void UnShowCeedModelNumberColumn( Label label, ComboBox comboBox )
     {
       DtGrid.Columns[ 1 ].Visibility = Visibility.Hidden ;
       label.Visibility = Visibility.Hidden ;
       comboBox.Visibility = Visibility.Hidden ;
     }
-    
+
     public void ShowOnlyUsingCode()
     {
-      if ( !_usingCeedModel.Any() ) return ;
+      if ( ! _usingCeedModel.Any() ) return ;
       LoadData( _usingCeedModel ) ;
     }
-    
+
     public void UnShowOnlyUsingCode()
     {
-      if ( !_ceedModels.Any() ) return ;
+      if ( ! _ceedModels.Any() ) return ;
       LoadData( _ceedModels ) ;
     }
-    
+
     private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName )
     {
       var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
@@ -481,15 +494,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           ceedStorable.CeedModelData = _ceedModels ;
         }
       }
-    
-      if ( _usingCeedModel != null ) {
+
+      if ( _usingCeedModel.Any() ) {
         var ceedModel = _usingCeedModel.FirstOrDefault( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == SelectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == SelectedCeedModel.ModelNumber ) ;
         if ( ceedModel != null ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
           ceedStorable.CeedModelUsedData = _usingCeedModel ;
         }
       }
-    
+
       try {
         using Transaction t = new( _document, "Save CeeD data" ) ;
         t.Start() ;
@@ -500,54 +513,53 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
       }
     }
-    
-    private void UpdateDataGridAfterReplaceFloorPlanSymbol(DataGrid dataGrid, string floorPlanType)
-     {
-       if ( dataGrid.ItemsSource is not ObservableCollection<CeedModel> newCeedModels ) {
-         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
-         return ;
-       }
-       
-       var ceedModel = newCeedModels.FirstOrDefault( c => c == SelectedCeedModel ) ;
-       if ( ceedModel == null ) return ;
-       ceedModel.FloorPlanType = floorPlanType ;
-       dataGrid.ItemsSource = new ObservableCollection<CeedModel> ( newCeedModels );
-     }
-     
-    public void ReplaceSymbol(DataGrid dataGrid, Button button )
+
+    private void UpdateDataGridAfterReplaceFloorPlanSymbol( DataGrid dataGrid, string floorPlanType )
+    {
+      if ( dataGrid.ItemsSource is not ObservableCollection<CeedModel> newCeedModels ) {
+        MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
+        return ;
+      }
+
+      var ceedModel = CeedModels.FirstOrDefault( c => c == SelectedCeedModel ) ;
+      if ( ceedModel == null ) return ;
+      ceedModel.FloorPlanType = floorPlanType ;
+    }
+
+    public void ReplaceSymbol( DataGrid dataGrid, Button button )
     {
       var selectConnectorFamilyDialog = new SelectConnectorFamily( _document ) ;
       selectConnectorFamilyDialog.ShowDialog() ;
       if ( ! ( selectConnectorFamilyDialog.DialogResult ?? false ) ) return ;
       var selectedConnectorFamily = selectConnectorFamilyDialog.ConnectorFamilyList.SingleOrDefault( f => f.IsSelected ) ;
       if ( selectedConnectorFamily == null ) {
-        System.Windows.MessageBox.Show( "No connector family selected.", "Error" ) ;
+        MessageBox.Show( "No connector family selected.", "Error" ) ;
         return ;
       }
-    
+
       var connectorFamilyFileName = selectedConnectorFamily.ToString() ;
       var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
       if ( SelectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
-    
-      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application  ) ;
+
+      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
       progress.Message = "Processing......." ;
-    
+
       using ( var progressData = progress.Reserve( 0.5 ) ) {
         UpdateCeedStorableAfterReplaceFloorPlanSymbol( connectorFamilyName ) ;
-        progressData?.ThrowIfCanceled() ;
+        progressData.ThrowIfCanceled() ;
       }
-    
+
       using ( var progressData = progress.Reserve( 0.9 ) ) {
-        UpdateDataGridAfterReplaceFloorPlanSymbol(dataGrid, connectorFamilyName ) ;
+        UpdateDataGridAfterReplaceFloorPlanSymbol( dataGrid, connectorFamilyName ) ;
         button.IsEnabled = false ;
-        progressData?.ThrowIfCanceled() ;
+        progressData.ThrowIfCanceled() ;
       }
-    
+
       progress.Finish() ;
-      System.Windows.MessageBox.Show( "正常にモデルを置き換えました。", "Message" ) ;
+      MessageBox.Show( "正常にモデルを置き換えました。", "Message" ) ;
     }
 
-    public void ReplaceMultipleSymbols(DataGrid dtGrid )
+    public void ReplaceMultipleSymbols( DataGrid dtGrid )
     {
       const string successfullyMess = "モデルを正常に置き換えました。" ;
       const string failedMess = "モデルの置き換えが失敗しました。" ;
@@ -556,9 +568,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       FolderBrowserDialog folderBrowserDialog = new() ;
       if ( folderBrowserDialog.ShowDialog() != DialogResult.OK ) return ;
       string folderPath = folderBrowserDialog.SelectedPath ;
-      string infoPath =
-        Directory.GetFiles( folderPath )
-          .FirstOrDefault( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ?? string.Empty ;
+      string infoPath = Directory.GetFiles( folderPath ).FirstOrDefault( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ?? string.Empty ;
       if ( string.IsNullOrEmpty( infoPath ) ) {
         MessageBox.Show( "指定したフォルダーにはモデル指定情報のエクセルファイルが存在していません。", "Error" ) ;
         return ;
@@ -581,8 +591,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
           progress.Message = "Processing......." ;
           using ( var progressData = progress.Reserve( 0.3 ) ) {
-            connectorFamilyReplacements =
-              ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
+            connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
             connectorFamilyFiles = LoadConnectorFamily( _document, connectorFamilyPaths ) ;
             progressData.ThrowIfCanceled() ;
           }
@@ -590,16 +599,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if ( connectorFamilyFiles.Any() && connectorFamilyReplacements.Any() ) {
             bool result ;
             using ( var progressData = progress.Reserve( 0.6 ) ) {
-              result = IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( _document,
-                _ceedModels,  _usingCeedModel, connectorFamilyReplacements,
-                connectorFamilyFiles ) ;
+              result = IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( _document, _ceedModels, _usingCeedModel, connectorFamilyReplacements, connectorFamilyFiles ) ;
               progressData.ThrowIfCanceled() ;
             }
 
             if ( result ) {
               using var progressData = progress.Reserve( 0.9 ) ;
-              result = IsUpdateUpdateDataGridAfterReplaceMultipleSymbolsSuccessfully(
-                connectorFamilyReplacements, connectorFamilyFiles, dtGrid ) ;
+              result = IsUpdateUpdateDataGridAfterReplaceMultipleSymbolsSuccessfully( connectorFamilyReplacements, connectorFamilyFiles, dtGrid ) ;
               progressData.ThrowIfCanceled() ;
             }
 
@@ -619,7 +625,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         MessageBox.Show( NotExistConnectorFamilyInFolderModelWarningMessage, "Message" ) ;
       }
     }
-    
+
     private Dictionary<string, string> GetExistedConnectorFamilies( Document document, IEnumerable<string> connectorFamilyPaths )
     {
       Dictionary<string, string> existsConnectorFamilies = new() ;
@@ -633,7 +639,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return existsConnectorFamilies ;
     }
-    
+
     private List<string> LoadConnectorFamily( Document document, List<string> connectorFamilyPaths )
     {
       List<string> connectorFamilyFiles = new() ;
@@ -647,7 +653,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      using Transaction loadTransaction = new(document, "Load connector's family") ;
+      using Transaction loadTransaction = new( document, "Load connector's family" ) ;
       loadTransaction.Start() ;
       foreach ( var connectorFamilyPath in connectorFamilyPaths ) {
         var isLoadFamilySuccessfully = true ;
@@ -660,7 +666,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       loadTransaction.Commit() ;
       return connectorFamilyFiles ;
     }
-    
+
     private Family? LoadFamily( Document document, string filePath, ref bool isLoadFamilySuccessfully )
     {
       try {
@@ -726,7 +732,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
 
       try {
-        using Transaction t = new(document, "Save CeeD data") ;
+        using Transaction t = new( document, "Save CeeD data" ) ;
         t.Start() ;
         ceedStorable.Save() ;
         t.Commit() ;
@@ -763,7 +769,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      dtGrid.ItemsSource =  newCeedModels  ;
+      dtGrid.ItemsSource = newCeedModels ;
       return true ;
     }
 
@@ -790,31 +796,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         return OnFamilyFound( familyInUse, out overwriteParameterValues ) ;
       }
     }
-    
-    public void CheckChangeColor(List<CeedModel> ceedModels)
+
+    private void CheckChangeColor( List<CeedModel> ceedModels )
     {
       for ( int i = 0 ; i < ceedModels.Count() ; i++ ) {
         CeedModel item = ceedModels[ i ] ;
-        var existCeedModels =  _previousCeedModels ;
-        var itemExistCeedModel = existCeedModels.Find( x =>
-          x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber &&
-          x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol &&
-          x.ModelNumber == item.ModelNumber ) ;
+        var existCeedModels = _previousCeedModels ;
+        var itemExistCeedModel = existCeedModels.Find( x => x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber && x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol && x.ModelNumber == item.ModelNumber ) ;
         if ( itemExistCeedModel != null ) {
-          item.IsEditFloorPlan = IsChange(
-            string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol )
-              ? itemExistCeedModel.Base64FloorPlanImages
-              : itemExistCeedModel.FloorPlanSymbol,
-            string.IsNullOrEmpty( item.FloorPlanSymbol )
-              ? item.Base64FloorPlanImages
-              : item.FloorPlanSymbol ) ;
-          item.IsEditInstrumentation = IsChange(
-            string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol )
-              ? itemExistCeedModel.Base64InstrumentationImageString
-              : itemExistCeedModel.InstrumentationSymbol,
-            string.IsNullOrEmpty( item.InstrumentationSymbol )
-              ? item.Base64InstrumentationImageString
-              : item.InstrumentationSymbol ) ;
+          item.IsEditFloorPlan = IsChange( string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol ) ? itemExistCeedModel.Base64FloorPlanImages : itemExistCeedModel.FloorPlanSymbol, string.IsNullOrEmpty( item.FloorPlanSymbol ) ? item.Base64FloorPlanImages : item.FloorPlanSymbol ) ;
+          item.IsEditInstrumentation = IsChange( string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol ) ? itemExistCeedModel.Base64InstrumentationImageString : itemExistCeedModel.InstrumentationSymbol, string.IsNullOrEmpty( item.InstrumentationSymbol ) ? item.Base64InstrumentationImageString : item.InstrumentationSymbol ) ;
           item.IsEditCondition = IsChange( itemExistCeedModel.Condition, item.Condition ) ;
         }
         else {
@@ -824,7 +815,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private bool IsChange(string oldItem, string newItem)
+    private bool IsChange( string oldItem, string newItem )
     {
       return oldItem != newItem ;
     }

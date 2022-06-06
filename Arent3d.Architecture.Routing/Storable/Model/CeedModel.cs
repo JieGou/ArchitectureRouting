@@ -116,10 +116,11 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Base64InstrumentationImageString = string.Join( "||", tempImage ) ;
     }
     
-    public CeedModel( string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType, 
+    public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType, 
       bool? isAdded, bool? isEditFloorPlan, bool? isEditInstrumentation, bool? isEditCondition)
     {
       const string dummySymbol = "Dummy" ;
+      LegendDisplay = legendDisplay ;
       CeedModelNumber = ceedModelNumber ;
       CeedSetCode = ceedSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
@@ -127,7 +128,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       FloorPlanSymbol = floorPlanSymbol ;
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
-      Condition = condition ;
+      Condition = GetCondition( ceedModelNumber ) ;
       FloorPlanType = floorPlanType ;
       Base64InstrumentationImageString = base64InstrumentationImageString ;
       Base64FloorPlanImages = base64FloorPlanImages ;
@@ -272,19 +273,19 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         condition = "コロガシ" ;
       }
       else if ( ceedModelNumber.EndsWith( "F" ) ) {
-        condition = "コロガシ" ;
+        condition = "フリアク" ;
       }
       else if ( ceedModelNumber.EndsWith( "E" ) ) {
-        condition = "コロガシ" ;
+        condition = "露出" ;
       }
       else if ( ceedModelNumber.EndsWith( "G" ) ) {
-        condition = "コロガシ" ;
+        condition = "屋外" ;
       }
       else if ( ceedModelNumber.EndsWith( "M" ) ) {
-        condition = "コロガシ" ;
+        condition = "モール" ;
       }
       else if ( ceedModelNumber.EndsWith( "U" ) ) {
-        condition = "コロガシ" ;
+        condition = "地中埋設" ;
       }
       else {
         condition = string.Empty ;
