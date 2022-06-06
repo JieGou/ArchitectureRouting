@@ -4,9 +4,12 @@ using System.Globalization ;
 using System.IO ;
 using System.Linq ;
 using System.Windows ;
+using System.Windows.Controls ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -16,6 +19,10 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using MessageBox = System.Windows.MessageBox ;
+using Expression = System.Linq.Expressions.Expression;
+using System.Linq.Expressions;
+using System.Windows.Media ;
+using MoreLinq ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -93,6 +100,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
+    public ParameterExpression ParameterExpression { get ; } = Expression.Parameter(typeof(PickUpModel), "p");
+    public Dictionary<string, List<ConstantExpression>> FilterRules { get ; } = new() ;
 
     #endregion
 
@@ -143,7 +152,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #endregion
 
-    #region Bussiness Function
+    #region Business Function
 
     private List<PickUpModel> GetPickUpData()
     {
@@ -619,7 +628,115 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       window.DialogResult = true ;
       window.Close() ;
     }
+    
+    public ICommand FilterCommand
+    {
+      get
+      {
+        return new RelayCommand<DataGridTextColumn>( dgc => null != dgc, dgc =>
+        {
+          if(dgc.Binding is not System.Windows.Data.Binding binding)
+            return;
+
+          var optionModels = OriginPickUpModels.Select( x => $"{x.GetType().GetProperty( binding.Path.Path )!.GetValue( x )}" )
+            .Where(x => !string.IsNullOrEmpty(x)).Distinct().Select( x => new OptionModel { Name = x, IsChecked = true} ).OrderBy(x => x.Name).ToList() ;
+
+          if ( FilterRules.ContainsKey( binding.Path.Path ) ) {
+            var fieldRule = FilterRules[ binding.Path.Path ] ;
+            foreach ( var optionModel in optionModels ) {
+              if ( fieldRule.All( x => $"{x.Value}" != optionModel.Name ) )
+                optionModel.IsChecked = false ;
+            }
+          }
+
+          var contentHeader = FindVisualChildren<TextBlock>( dgc.HeaderTemplate.LoadContent() ).First() ;
+          var viewModel = new FilterFieldViewModel( contentHeader.Text, optionModels ) ;
+          var view = new FilterFieldView { DataContext = viewModel } ;
+          view.ShowDialog() ;
+
+          if ( !viewModel.IsOk ) 
+            return;
+          
+          var constantExpressions = new List<ConstantExpression>() ;
+          foreach ( var fieldValue in viewModel.FieldValues ) {
+            if(!fieldValue.IsChecked)
+              continue;
+            
+            constantExpressions.Add(Expression.Constant(fieldValue.Name, typeof(string)));
+          }
+
+          if ( constantExpressions.Any() ) {
+            if ( FilterRules.ContainsKey( binding.Path.Path ) ) 
+              FilterRules[ binding.Path.Path ] = constantExpressions ;
+            else
+              FilterRules.Add(binding.Path.Path, constantExpressions);
+          }
+          else {
+            if ( FilterRules.ContainsKey( binding.Path.Path ) )
+              FilterRules.Remove( binding.Path.Path ) ;
+          }
+
+          var dlg = CompileExpression( ParameterExpression, FilterRules ) ;
+          if(null == dlg)
+            return;
+
+          FilterPickUpModels = new List<PickUpModel>(OriginPickUpModels.Where( dlg )) ;
+        } ) ;
+      }
+    }
 
     #endregion
+
+    private Func<PickUpModel, bool>? CompileExpression(ParameterExpression parameterExpression, Dictionary<string, List<ConstantExpression>> filterRules)
+    {
+      if ( filterRules.Count == 0 )
+        return null ;
+
+      var filterRule = filterRules.ElementAt( 0 ) ;
+      var propertyName = Expression.Property(parameterExpression, filterRule.Key);
+      var leftBinaryExpression = OrElse( propertyName, filterRule.Value ) ;
+
+      for ( var i = 1 ; i < filterRules.Count ; i++ ) {
+        var proName = Expression.Property(parameterExpression, filterRules.ElementAt(i).Key);
+        var rightBinaryExpression = OrElse( proName, filterRules.ElementAt(i).Value ) ;
+        leftBinaryExpression = Expression.AndAlso(leftBinaryExpression, rightBinaryExpression);
+      }
+      
+      var expressionTree = Expression.Lambda<Func<PickUpModel, bool>>(leftBinaryExpression, parameterExpression );
+      return expressionTree.Compile() ;
+    }
+
+    private BinaryExpression OrElse(MemberExpression memberExpression, List<ConstantExpression> constantExpressions)
+    {
+      var leftExpression = Expression.Equal( memberExpression, Expression.Constant( constantExpressions[ 0 ].Value, typeof( string ) ) ) ;
+      if ( constantExpressions.Count == 1 )
+        return leftExpression ;
+ 
+      for ( var i = 1 ; i < constantExpressions.Count ; i++ ) {
+        leftExpression = Expression.OrElse( leftExpression, Expression.Equal( memberExpression, Expression.Constant( constantExpressions[ i ].Value, typeof( string ) ) ) ) ;
+      }
+
+      return leftExpression ;
+    }
+    
+    public static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+    {
+      var childrenCount = VisualTreeHelper.GetChildrenCount(parent);
+      for (var i = 0; i < childrenCount; i++)
+      {
+        var child = VisualTreeHelper.GetChild(parent, i);
+
+        if (child is T childType)
+        {
+          yield return childType;
+        }
+
+        foreach (var other in FindVisualChildren<T>(child))
+        {
+          yield return other;
+        }
+      }
+    }
+    
   }
 }

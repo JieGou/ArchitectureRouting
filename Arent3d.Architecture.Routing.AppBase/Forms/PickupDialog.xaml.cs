@@ -5,7 +5,7 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class PickupDialog
+  public partial class PickupDialog : Window
   {
     public PickupDialog( PickUpViewModel pickUpViewModel )
     { 

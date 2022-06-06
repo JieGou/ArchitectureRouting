@@ -1,8 +1,27 @@
 ﻿namespace Arent3d.Architecture.Routing.AppBase.ViewModel.Models
 {
-  public class OptionModel
+  public class OptionModel : NotifyPropertyChanged
   {
-    public string Name { get ; set ; } = string.Empty ;
-    public bool IsChecked { get ; set ;}
+    private string? _name ;
+    public string Name
+    {
+      get => _name ??= string.Empty ;
+      set
+      {
+        _name = value ;
+        OnPropertyChanged();
+      }
+    }
+
+    private bool _isChecked ;
+    public bool IsChecked
+    {
+      get => _isChecked ;
+      set
+      {
+        _isChecked = value ;
+        OnPropertyChanged();
+      }
+    }
   }
 }
