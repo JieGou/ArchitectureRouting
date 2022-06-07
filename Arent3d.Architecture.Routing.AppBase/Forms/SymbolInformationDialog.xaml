@@ -51,6 +51,16 @@
                 <DataGridTextColumn Header="軌跡" Width="100" Binding="{Binding Trajectory, ValidatesOnExceptions=True}"
                                     CanUserSort="False" />
             </DataGrid.Columns>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="BorderBrush" Value="Blue" />
+                            <Setter Property="BorderThickness" Value="2" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
         </DataGrid>
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10">
             <Button Content="削除" Margin="0 10 " Command="{Binding DeleteCeedDetailCommand}" />
