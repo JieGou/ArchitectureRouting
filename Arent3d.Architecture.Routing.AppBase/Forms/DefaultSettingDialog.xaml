@@ -60,10 +60,27 @@
                             Width="90" />
                     <Button Content="階追加"
                             Command="{Binding AddImportDwgMappingModelCommand}"
+                            Margin="0, 0,0,10"
+                            Width="90" />
+                    <Button Content="上へ"
+                            Command="{Binding MoveUpCommand}"
+                            CommandParameter="{Binding ElementName=DtGrid}"
+                            Margin="0, 0,0,10"
+                            Width="90" />
+                    <Button Content="下へ"
+                            Command="{Binding MoveDownCommand}"
+                            CommandParameter="{Binding ElementName=DtGrid}"
+                            Margin="0, 0,0,10"
+                            Width="90" />
+                    <Button Content="行追加"
+                            Command="{Binding AddModelBelowCurrentSelectedRowCommand}"
+                            CommandParameter="{Binding ElementName=DtGrid}"
+                            Margin="0, 0,0,10"
                             Width="90" />
                 </StackPanel>
 
                 <DataGrid Grid.Column="1"
+                          Name="DtGrid"
                           Height="260"
                           Background="White"
                           ItemsSource="{Binding ImportDwgMappingModels}"

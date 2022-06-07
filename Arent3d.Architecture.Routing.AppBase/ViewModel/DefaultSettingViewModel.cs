@@ -17,8 +17,11 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI ;
 using System ;
+using System.Data ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Autodesk.Revit.DB ;
+using MoreLinq.Extensions ;
+using DataGrid = System.Windows.Controls.DataGrid ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
@@ -109,6 +112,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     public ICommand LoadDefaultDbCommand => new RelayCommand( LoadDefaultDb ) ;
     
+    public ICommand MoveUpCommand => new RelayCommand<DataGrid>( MoveUp ) ;
+    
+    public ICommand MoveDownCommand => new RelayCommand<DataGrid>( MoveDown ) ;
+    
+    public ICommand AddModelBelowCurrentSelectedRowCommand => new RelayCommand<DataGrid>( AddModelBelowCurrentSelectedRow ) ;
+
     public DefaultSettingViewModel( UIDocument uiDocument, DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
     {
       SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
@@ -132,6 +141,40 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _allHiroiMasterModels = new List<HiroiMasterModel>() ;
       _ceedModelData = new List<CeedModel>() ;
       GetCsvFiles( defaultSettingStorable ) ;
+    }
+    
+    private void AddModelBelowCurrentSelectedRow( DataGrid dtGrid )
+    {
+      const int floorHeightDistance = 3000 ;
+      int index = dtGrid.SelectedIndex ;
+      if ( ! ImportDwgMappingModels.Any() ) return ;
+      if(index < 0) return ;
+      var importDwgMappingModels = ImportDwgMappingModels.ToList() ;
+      var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
+      
+      ImportDwgMappingModels.Insert( index + 1, new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
+    }
+
+    
+    private void MoveUp( DataGrid dtGrid )
+    {
+      var index = dtGrid.SelectedIndex ;
+      if(index == 0) return ;
+      Swap( ImportDwgMappingModels, index, index - 1 ) ;
+      dtGrid.SelectedIndex = index - 1 ;
+    }
+    
+    private void MoveDown( DataGrid dtGrid )
+    {
+      var index = dtGrid.SelectedIndex ;
+      if(index == ImportDwgMappingModels.Count() - 1) return ;
+      Swap( ImportDwgMappingModels, index, index + 1 ) ;
+      dtGrid.SelectedIndex = index + 1 ;
+    }
+    
+    private void Swap(ObservableCollection<ImportDwgMappingModel> list, int indexA, int indexB)
+    {
+      ( list[indexA], list[indexB] ) = ( list[indexB], list[indexA] ) ;
     }
     
     private void GetCsvFiles( DefaultSettingStorable defaultSettingStorable)
