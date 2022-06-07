@@ -56,7 +56,7 @@
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="BorderBrush" Value="Blue" />
-                            <Setter Property="BorderThickness" Value="2" />
+                            <Setter Property="BorderThickness" Value="1" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>

@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public HiroiMasterModel? HiroiMasterSelected { get ; set ; }
     private ObservableCollection<HiroiMasterModel> _hiroiMasterList = new() ;
     private ObservableCollection<HiroiMasterModel> _hiroiMasterListDisplay = new() ;
-    
+     
     private List<HiroiSetMasterModel>? _hiroiSetMasterNormalModels ;
     private List<HiroiSetMasterModel>? _hiroiSetMasterEcoModels ;
     private bool _isEcoModel ;
@@ -121,7 +121,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _document = document ;
       HiroiMasterList = new ObservableCollection<HiroiMasterModel>( hiroiMasterList ) ;
       HiroiMasterListDisplay = HiroiMasterList ;
-
+ 
       _hiroiSetMasterEcoModels = hiroiSetMasterEcoModels ;
       _hiroiSetMasterNormalModels = hiroiSetMasterNormalModels ; 
       _isEcoModel = isEcoModel ;

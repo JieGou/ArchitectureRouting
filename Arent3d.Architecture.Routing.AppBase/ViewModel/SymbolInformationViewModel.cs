@@ -41,6 +41,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private List<ElectricalCategoryModel> _electricalCategoriesEco ;
     private List<ElectricalCategoryModel> _electricalCategoriesNormal ;
+    private Dictionary<string, string> _dictElectricalCategoriesEcoKey ;
+    private Dictionary<string, string> _dictElectricalCategoriesNormalKey ;
 
     #region SymbolSetting
 
@@ -123,12 +125,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private List<ElectricalCategoryModel> LoadElectricalCategories(string sheetName)
+    private List<ElectricalCategoryModel> LoadElectricalCategories(string sheetName, ref Dictionary<string, string> dictData)
     {
       //Load ElectricalCategory from excel file resource
       string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, ResourceFolderName )  ;
       var filePath = Path.Combine( resourcesPath, ElectricalCategoryFileName ) ;
-      return ExcelToModelConverter.GetElectricalCategories( filePath, sheetName) ;  
+      return ExcelToModelConverter.GetElectricalCategories( filePath, ref dictData, sheetName ) ;  
     }
     
 
@@ -144,7 +146,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         MessageBox.Show( "Can't load categories", "Message" ) ;
         return ;
       }
-      ElectricalCategoryViewModel electricalCategoryViewModel = new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, QuantityDefault, UnitDefault, TrajectoryDefault, SymbolInformation.Id) ;
+      ElectricalCategoryViewModel electricalCategoryViewModel = new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, _dictElectricalCategoriesEcoKey, _dictElectricalCategoriesNormalKey, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, QuantityDefault, UnitDefault, TrajectoryDefault, SymbolInformation.Id) ;
       ElectricalCategoryDialog dialog = new ( electricalCategoryViewModel ) ;
       if ( true != dialog.ShowDialog() ) return ;
       if ( null == electricalCategoryViewModel.CeedDetailSelected ) return ;
@@ -178,7 +180,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void AddCeedDetail()
     {
-      var hiroiMasterViewModel = new HiroiMasterViewModel( _document, HiroiMasterModels, _hiroiSetMasterEcoModels, _hiroiSetMasterNormalModels, true ) ;
+      var hiroiMasterViewModel = new HiroiMasterViewModel( _document, HiroiMasterModels, _hiroiSetMasterEcoModels, _hiroiSetMasterNormalModels,  true ) ;
       var hiroiMasterDialog = new HiroiMasterDialog( hiroiMasterViewModel ) ;
       if ( true == hiroiMasterDialog.ShowDialog() ) {
         var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, CeedDetailList.Count + 1 ) ;
@@ -229,8 +231,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       BuzaiCDList = HiroiMasterModels.Select( x => x.Buzaicd ).ToList()  ; 
       BuzaiCDListDisplay = new ObservableCollection<string>(BuzaiCDList.Take( DefaultDisplayItem ).ToList()) ;
       ConstructionClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( CreateDetailTableCommandBase.ConstructionClassificationType ) ).ToList() ) ;
-      _electricalCategoriesEco = LoadElectricalCategories("Eco") ;
-      _electricalCategoriesNormal = LoadElectricalCategories("Normal") ;
+      _dictElectricalCategoriesEcoKey = new Dictionary<string, string>() ; 
+      _dictElectricalCategoriesNormalKey = new Dictionary<string, string>() ; 
+      _electricalCategoriesEco = LoadElectricalCategories("Eco", ref _dictElectricalCategoriesEcoKey) ;
+      _electricalCategoriesNormal = LoadElectricalCategories("Normal", ref _dictElectricalCategoriesNormalKey) ;
     }
   }
 }
