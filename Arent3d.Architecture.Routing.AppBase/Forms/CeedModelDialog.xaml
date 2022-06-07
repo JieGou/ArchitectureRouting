@@ -1,176 +1,290 @@
-﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeedModelDialog"
+<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeedModelDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:model="clr-namespace:Arent3d.Architecture.Routing.AppBase.Model"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="CeeD Models" Height="800" Width="900" MinHeight="200" MinWidth="900">
-  <Grid>
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
-      </Grid.RowDefinitions>
-    
-      <Button Grid.Row="0" x:Name="BtnLoadData"
-              Content="マスター読み込み"
-              Click="Button_LoadData"
-              Margin="10,10,10,10"
-              HorizontalAlignment="Left"
-              Width="100" 
-              Height="27"/>
-      
-      <Button Grid.Row="0" x:Name="BtnSymbolRegistration"
-              Content="使用シンボル登録"
-              Click="Button_SymbolRegistration"
-              Margin="120,10,10,10"
-              HorizontalAlignment="Left"
-              Width="100" 
-              Height="27"/>
-    
-      <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right">
-        <Label Content="CeeD型番" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" Visibility="Hidden"/>
-        <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" KeyDown="CmbModelNumbers_KeyDown" Visibility="Hidden"/>
-        <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-        <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" KeyDown="CmbModelNumbers_KeyDown"/>        
-        <Button Content="Search"
-                Click="Button_Search"
-                Margin="20,5,5,5"
-                HorizontalAlignment="Right"
-                Width="80" />
-      </StackPanel>
+        Title="CeeD Models" Height="800" Width="1200" MinHeight="200" MinWidth="900"
+        d:DataContext="{d:DesignInstance {x:Type local:DesignCeedViewModel}, IsDesignTimeCreatable=True}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="False" Content="使用するものだけ表示" Width="130" HorizontalAlignment="Left" Margin="230, 10, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden" />
-      
-      <StackPanel Grid.Row="1" HorizontalAlignment="Right" Orientation="Horizontal">
-        <CheckBox Name="CbShowCeedCondition" IsChecked="False" Content="Show Condition" Margin="10 10 10 0" Checked="CbShowCeedCondition_OnChecked" Unchecked="CbShowCeedCondition_OnUnchecked"/>
-        <CheckBox Name="CbShowCeedModelNumber" IsChecked="False" Content="CeeD型番の表示" Width="120" HorizontalAlignment="Right" Margin="0, 10, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
-      </StackPanel>
-      
-      <Button Grid.Row="1" x:Name="BtnReplaceSymbol"
-              Content="モデル置き換え"
-              Click="Button_ReplaceSymbol"
-              Margin="10,5,10,10"
-              HorizontalAlignment="Left"
-              Width="100" 
-              Height="27"/>
-      
-      <Button Grid.Row="1"
-              Content="モデル一括置換"
-              Click="Button_ReplaceMultipleSymbols"
-              Margin="120,5,10,10"
-              HorizontalAlignment="Left"
-              Width="100" 
-              Height="27"/>
-      
-    <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
-        <DataGrid.Resources>
-          <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
-            <Setter Property="Padding" Value="-2"/>
-            <Style.Triggers>
-              <Trigger Property="Validation.HasError" Value="True">
-                <Setter Property="ToolTip" 
-                  Value="{Binding RelativeSource={RelativeSource Self},
-                    Path=(Validation.Errors)[0].ErrorContent}"/>
-              </Trigger>
-            </Style.Triggers>
-          </Style>
-        </DataGrid.Resources>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <DataGrid.Columns>
+        <Button Grid.Column="0" Grid.Row="0" x:Name="BtnLoadData"
+                Content="マスター読み込み"
+                Click="Button_LoadData"
+                Margin="10,10,10,10"
+                HorizontalAlignment="Left"
+                Width="100"
+                Height="27" />
 
-          <DataGridTextColumn Header="CeeDセットコード" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
+        <Button Grid.Column="0" Grid.Row="0" x:Name="BtnSymbolRegistration"
+                Content="使用シンボル登録"
+                Click="Button_SymbolRegistration"
+                Margin="120,10,10,10"
+                HorizontalAlignment="Left"
+                Width="100"
+                Height="27" />
 
-          <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" Visibility="Hidden"/>
-          
-          <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
+        <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Left">
+            <Label Content="セットコード" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5" Visibility="Hidden" />
+            <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" Visibility="Hidden"
+                      KeyDown="CmbModelNumbers_KeyDown"
+                      ItemsSource="{Binding CeedSetCodes}"
+                      SelectedValue="{Binding SelectedCeedSetCode, Mode=TwoWay}"
+                      Text="{Binding SelectedCeedSetCode, Mode=TwoWay}" />
+            <Label Content="表示機器記号" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
+            <ComboBox Name="CmbDeviceSymbols" IsEditable="True" Width="200" Height="27"
+                      KeyDown="CmbModelNumbers_KeyDown"
+                      ItemsSource="{Binding DeviceSymbols}"
+                      SelectedValue="{Binding SelectedDeviceSymbolValue, Mode=TwoWay}"
+                      Text="{Binding SelectedDeviceSymbolValue, Mode=TwoWay}" />
+            <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
+            <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27"
+                      KeyDown="CmbModelNumbers_KeyDown"
+                      ItemsSource="{Binding ModelNumber}"
+                      SelectedValue="{Binding SelectedModelNumber, Mode=TwoWay}"
+                      Text="{Binding SelectedModelNumber, Mode=TwoWay}" />
+            <Button Content="Search"
+                    Click="Button_Search"
+                    Margin="20,5,5,5"
+                    HorizontalAlignment="Right"
+                    Width="80" />
+        </StackPanel>
 
-          <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="140" />
+        <CheckBox Grid.Column="1" Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="{Binding IsShowOnlyUsingCode, Mode=TwoWay}" Content="使用するものだけ表示" Width="130" HorizontalAlignment="Left" Margin="10, 10, 0, 0" Visibility="Hidden" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" />
+        <CheckBox Grid.Column="1" Grid.Row="1" Name="CbShowCeedModelNumber" IsChecked="{Binding IsShowCeedModelNumber}" Content="CeeD型番の表示" Width="120" HorizontalAlignment="Right" Margin="0, 10, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
+        <CheckBox Grid.Column="1" Grid.Row="1" Name="CbShowDiff" IsChecked="{Binding IsShowDiff}" Content="差分表示" Width="80" HorizontalAlignment="Right" Margin="0, 10, 130, 0" />
 
-          <DataGridTemplateColumn Header="平面図" Width="SizeToHeader" MinWidth="100">
-            <DataGridTemplateColumn.CellTemplate>
-              <DataTemplate>
-                <Grid>
-                  <Image Source="{Binding FloorPlanImages}" Stretch="None" />
-                  <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock.RenderTransform>
-                      <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
-                    </TextBlock.RenderTransform>
-                  </TextBlock>
-                </Grid>
-              </DataTemplate>
-            </DataGridTemplateColumn.CellTemplate>
-          </DataGridTemplateColumn>
+        <Button Grid.Column="0" Grid.Row="1" x:Name="BtnReplaceSymbol"
+                Content="モデル置き換え"
+                Click="Button_ReplaceSymbol"
+                Margin="10,5,10,10"
+                HorizontalAlignment="Left"
+                Width="100"
+                Height="27"
+                IsEnabled="False" />
 
-          <DataGridTemplateColumn Header="計装図" Width="SizeToHeader" MinWidth="100">
-            <DataGridTemplateColumn.CellTemplate>
-              <DataTemplate>
-                <Grid>
-                  <ListView Name="lvDataBinding" ItemsSource="{Binding InstrumentationImages}"
-                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                            BorderThickness="0">
-                    <ListView.ItemContainerStyle>
-                      <Style TargetType="{x:Type ListViewItem}">
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="Template">
-                          <Setter.Value>
-                            <ControlTemplate TargetType="{x:Type ListViewItem}">
-                              <ContentPresenter />
-                            </ControlTemplate>
-                          </Setter.Value>
-                        </Setter>
-                      </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemsPanel>
-                      <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal" />
-                      </ItemsPanelTemplate>
-                    </ListView.ItemsPanel>
+        <Button Grid.Column="0" Grid.Row="1"
+                Content="モデル一括置換"
+                Click="Button_ReplaceMultipleSymbols"
+                Margin="120,5,10,10"
+                HorizontalAlignment="Left"
+                Width="100"
+                Height="27" />
 
+        <DockPanel Grid.Column="0" Grid.Row="2" LastChildFill="True" Margin="10, 0" Height="300" VerticalAlignment="Top">
+            <Label DockPanel.Dock="Top" Content="形番orセットコードの選択でプレビュー可能" FontWeight="Bold" Padding="0 0 0 5" />
+            <TreeView x:Name="CategoryTreeView" VerticalAlignment="Stretch" VerticalContentAlignment="Top" Padding="0 5 5 5"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      BorderBrush="LightGray" BorderThickness="1" ItemsSource="{Binding Path=Categories}">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseLeftButtonUp">
+                        <i:InvokeCommandAction
+                            Command="{Binding SelectedItemCommand}"
+                            CommandParameter="{Binding ElementName = CategoryTreeView}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="FontWeight" Value="Bold" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter Property="FontWeight" Value="Normal" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <TreeView.Resources>
+                    <SolidColorBrush Color="Transparent" x:Key="{x:Static SystemColors.HighlightBrushKey}" />
+                    <SolidColorBrush Color="Black" x:Key="{x:Static SystemColors.HighlightTextBrushKey}" />
+                    <HierarchicalDataTemplate DataType="{x:Type model:CategoryModel}" ItemsSource="{Binding Categories}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
+                                   Source="../resources/icon_folder_16x16.png" />
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
+            </TreeView>
+        </DockPanel>
+
+        <DockPanel Grid.Column="0" Grid.Row="2" LastChildFill="True" Margin="10, 0" Height="300" VerticalAlignment="Bottom">
+            <Label DockPanel.Dock="Top" Content="機器記号のみでプレビュー可能" FontWeight="Bold" Padding="0 0 0 5" />
+            <TreeView x:Name="CategoryPreviewTreeView" VerticalAlignment="Stretch" VerticalContentAlignment="Top" Padding="0 5 5 5"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      BorderBrush="LightGray" BorderThickness="1" ItemsSource="{Binding Path=CategoriesPreview}">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseLeftButtonUp">
+                        <i:InvokeCommandAction
+                            Command="{Binding SelectedCategoryPreviewCommand}"
+                            CommandParameter="{Binding ElementName = CategoryPreviewTreeView}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="FontWeight" Value="Bold" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter Property="FontWeight" Value="Normal" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <TreeView.Resources>
+                    <SolidColorBrush Color="Transparent" x:Key="{x:Static SystemColors.HighlightBrushKey}" />
+                    <SolidColorBrush Color="Black" x:Key="{x:Static SystemColors.HighlightTextBrushKey}" />
+                    <HierarchicalDataTemplate DataType="{x:Type model:CategoryModel}" ItemsSource="{Binding CategoriesPreview}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
+                                   Source="../resources/icon_folder_16x16.png" />
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
+            </TreeView>
+        </DockPanel>
+
+        <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal" Margin="10, 0">
+            <DataGrid x:Name="DtGrid" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False" Width="650">
+                <DataGrid.Resources>
+                    <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
+                        <Setter Property="Padding" Value="-2" />
+                        <Style.Triggers>
+                            <Trigger Property="Validation.HasError" Value="True">
+                                <Setter Property="ToolTip"
+                                        Value="{Binding RelativeSource={RelativeSource Self},
+                    Path=(Validation.Errors)[0].ErrorContent}" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.Resources>
+
+                <DataGrid.CellStyle>
+                    <Style TargetType="{x:Type DataGridCell}">
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding ElementName=CbShowDiff, Path=IsChecked}" Value="true" />
+                                    <Condition Binding="{Binding Path=IsAdded}" Value="true" />
+                                </MultiDataTrigger.Conditions>
+                                <MultiDataTrigger.Setters>
+                                    <Setter Property="Background" Value="Orange" />
+                                    <Setter Property="BorderBrush" Value="Orange" />
+                                </MultiDataTrigger.Setters>
+                            </MultiDataTrigger>
+
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="RoyalBlue" />
+                                <Setter Property="BorderBrush" Value="RoyalBlue" />
+                            </Trigger>
+
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
+
+                <DataGrid.Columns>
+
+                    <DataGridTextColumn Header="セットコード" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
+
+                    <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="130" Visibility="Hidden" />
+
+                    <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" />
+
+                    <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" />
+
+                    <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" Width="*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style>
+                                <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding ElementName=CbShowDiff, Path=IsChecked}" Value="true" />
+                                            <Condition Binding="{Binding Path=IsAdded}" Value="true" />
+                                        </MultiDataTrigger.Conditions>
+                                        <MultiDataTrigger.Setters>
+                                            <Setter Property="Background" Value="Orange" />
+                                            <Setter Property="BorderBrush" Value="Orange" />
+                                        </MultiDataTrigger.Setters>
+                                    </MultiDataTrigger>
+
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding ElementName=CbShowDiff, Path=IsChecked}" Value="true" />
+                                            <Condition Binding="{Binding Path=IsEditCondition}" Value="true" />
+                                        </MultiDataTrigger.Conditions>
+                                        <MultiDataTrigger.Setters>
+                                            <Setter Property="Background" Value="Red" />
+                                            <Setter Property="BorderBrush" Value="Red" />
+                                        </MultiDataTrigger.Setters>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
+
+                </DataGrid.Columns>
+            </DataGrid>
+            <GroupBox Header="プレビュー" DockPanel.Dock="Left" Margin="20, 0" Width="260">
+                <ListView ItemsSource="{Binding PreviewList}">
                     <ListView.ItemTemplate>
-                      <DataTemplate>
-                        <Image Source="{Binding }" Stretch="None" Margin="20 0 15 0 " />
-                      </DataTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{Binding FloorPlanImages}" Stretch="None" />
+                                <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.RenderTransform>
+                                        <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
+                                <TextBlock Text="{Binding GeneralDisplayDeviceSymbol }" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
                     </ListView.ItemTemplate>
-                  </ListView>
-                  <TextBlock Text="{Binding InstrumentationSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock.RenderTransform>
-                      <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
-                    </TextBlock.RenderTransform>
-                  </TextBlock>
-                </Grid>
-              </DataTemplate>
-            </DataGridTemplateColumn.CellTemplate>
-          </DataGridTemplateColumn>
-          
-          <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" Width="160" Visibility="Hidden">
-            <DataGridTextColumn.ElementStyle>
-              <Style>                            
-                <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
-              </Style>
-            </DataGridTextColumn.ElementStyle>
-          </DataGridTextColumn>
-          
-        </DataGrid.Columns>
-      </DataGrid>
-      
-      <Button Grid.Row="3" Grid.Column="0"
-              Content="Reset"
-              Click="Button_Reset"
-              Margin="10,5,90,5"
-              HorizontalAlignment="Right"
-              Width="80" 
-              Height="27"/>
-      <Button Grid.Row="3" Grid.Column="0"
-              Content="OK"
-              Click="Button_OK"
-              Margin="10,5,5,5"
-              HorizontalAlignment="Right"
-              Width="80" 
-              Height="27"/>
+                </ListView>
+            </GroupBox>
+        </StackPanel>
+
+        <Button Grid.Row="3" Grid.Column="1"
+                Content="Reset"
+                Command="{Binding ResetCommand}"
+                Margin="10,5,90,5"
+                HorizontalAlignment="Right"
+                Width="80"
+                Height="27" />
+        <Button Grid.Row="3" Grid.Column="1"
+                Content="OK"
+                Click="Button_OK"
+                Margin="10,5,5,5"
+                HorizontalAlignment="Right"
+                Width="80"
+                Height="27" />
     </Grid>
-</ui:RevitDialog>
+</Window>

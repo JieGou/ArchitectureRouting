@@ -8,7 +8,8 @@ namespace Arent3d.Architecture.Routing
   {
     Power,
     Sensor,
-    Pass
+    Pass,
+    PullBox
   }
   
   public static class ConnectorFamilyParameterExtensions

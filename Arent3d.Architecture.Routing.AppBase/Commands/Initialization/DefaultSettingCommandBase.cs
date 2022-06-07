@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
+using System.Collections.Specialized ;
 using System.Linq ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -54,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         else 
           UpdateImportDwgMappingModels(defaultSettingStorable, listFloorsDefault, new List<string>()) ;
 
-        var viewModel = new DefaultSettingViewModel( defaultSettingStorable, scale, activeViewName ) ;
+        var viewModel = new DefaultSettingViewModel(uiDocument, defaultSettingStorable, scale, activeViewName ) ;
         var dialog = new DefaultSettingDialog( viewModel ) ;
         dialog.ShowDialog() ;
         {
@@ -153,6 +154,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void LoadDwgAndSetScale( ExternalCommandData commandData, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<FileComboboxItemType> fileItems )
     {
       try {
+        ListDictionary levelList = new ListDictionary();
+        List<string> nameLevelList = new List<string>() ;
         if ( ! importDwgMappingModels.Any() ) return ;
         var completeImportDwgMappingModels = importDwgMappingModels.Where( x => ! string.IsNullOrEmpty( x.FloorName ) && ! string.IsNullOrEmpty( x.FileName ) ).ToList() ;
         if ( ! completeImportDwgMappingModels.Any() ) return ;
@@ -191,6 +194,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             importDwgLevel = Level.Create( doc, importDwgMappingModel.FloorHeight ) ;
             importDwgLevel.Name = levelName ;
           }
+          
+          // Add name level
+          nameLevelList.Add( importDwgLevel.Name ) ;
 
           var isNewView = false ;
           var viewPlan = allCurrentViewPlans.FirstOrDefault( x => x.Name.Equals( importDwgMappingModel.FloorName ) ) as ViewPlan ;
@@ -207,7 +213,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           importDwgLevel.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
           if ( isNewView ) doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out ElementId importElementId ) ;
-          if ( i == 0 ) firstViewPlan = viewPlan ;
+          
         }
 
         importTrans.Commit() ;
@@ -215,6 +221,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         #endregion
 
         #region Create 3D view
+        var create3D = new Transaction( doc ) ;
+        create3D.SetName( "Import" );
+        create3D.Start() ;
+        var levelListOrderByElavation = doc.GetAllElements<Level>()
+          .OfCategory( BuiltInCategory.OST_Levels ).Select( ToLevelInfo )
+          .Where( x=> nameLevelList.Contains(x.LevelName) )
+          .OrderBy( l => l.Elevation ) ;
+        
+        var levelListToCreate3d = levelListOrderByElavation.Select( level => ( Id: level.LevelId, Name: level.LevelName ) ).EnumerateAll() ;
+        
+        doc.Create3DView( levelListToCreate3d ) ;
+        
+        create3D.Commit() ;
+        #endregion
+
+        #region Create 3D ALL view
 
         if ( firstViewPlan != null ) commandData.Application.ActiveUIDocument.ActiveView = firstViewPlan ;
         var create3DTrans = new Transaction( doc ) ;
@@ -252,6 +274,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
       }
+    }
+    
+    private class LevelInfo 
+    {
+      public string LevelName { get ; init ; } = string.Empty ;
+      public ElementId LevelId { get ; init ; } = ElementId.InvalidElementId ;
+      public double Elevation { get ; init ; }
+    }
+
+    private static LevelInfo ToLevelInfo( Level level )
+    {
+      return new LevelInfo { Elevation = level.Elevation, LevelId = level.Id, LevelName = level.Name } ;
     }
 
     private void RemoveViews( Document document, List<string> deletedFloorName, UIDocument uiDocument )

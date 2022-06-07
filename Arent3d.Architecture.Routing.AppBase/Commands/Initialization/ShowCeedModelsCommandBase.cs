@@ -31,46 +31,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       
-      var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
-
+      var viewModel = new CeedViewModel( commandData ) ;
+      var dlgCeedModel = new CeedModelDialog( viewModel ) ;
+      
       dlgCeedModel.ShowDialog() ;
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( dlgCeedModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
+      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
       Element? element = null ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
 
-        var point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
-        var condition = "UNDEFINED" ;
-        
-        var symbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        var filter = new FamilyInstanceFilter( doc, symbol.Id ) ;
-        var rooms = new FilteredElementCollector( doc ).WherePasses( filter ).OfType<FamilyInstance>().Where(x =>
-        {
-          var bb = x.get_BoundingBox( null ) ;
-          var ol = new Outline( bb.Min, bb.Max ) ;
-          return ol.Contains( point, GeometryHelper.Tolerance ) ;
-        }).ToList() ;
-
-        if ( rooms.Count == 0 ) {
-          TaskDialog.Show( "Arent", "Picked point outside the room!" ) ;
-        }
-        else {
-          if ( rooms.Count > 1 ) {
-            TaskDialog.Show( "Arent", "Picked point inside multiple rooms!" ) ;
-          }
-
-          if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
-            condition = value ;
-          }
-        }
-        
+        var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        element = GenerateConnector( uiDoc, point.X, point.Y, heightOfConnector, level, dlgCeedModel.SelectedFloorPlanType ) ;
-        var ceedCode = string.Join( ":", dlgCeedModel.SelectedCeedCode, dlgCeedModel.SelectedDeviceSymbol, dlgCeedModel.SelectedModelNumber ) ;
+        element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
+        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
         if ( element is FamilyInstance familyInstance ) {
           element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
@@ -80,8 +57,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
         TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        var txtPosition = new XYZ( point.X - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, point.Y + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
+        var txtPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, viewModel.SelectedDeviceSymbol, opts ) ;
 
         var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
         if ( deviceSymbolTextNoteType == null ) {
@@ -96,23 +73,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
+        if ( ! string.IsNullOrEmpty( viewModel.SelectedCondition ) ) {
+          var txtConditionPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
+          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, viewModel.SelectedCondition, opts ) ;
 
-        var txtConditionPosition = new XYZ( point.X - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-        var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, condition, opts ) ;
+          var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
+          if ( textNoteType == null ) {
+            Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
+            textNoteType = ( ele as TextNoteType )! ;
+            TextElementType textType = conditionTextNote.Symbol ;
+            const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
+            Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
+            textSize.Set( .005 ) ;
+            textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+            textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
+          }
 
-        var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
-        if ( textNoteType == null ) {
-          Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
-          textNoteType = ( ele as TextNoteType )! ;
-          const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
-          Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
-          textSize.Set( .005 ) ;
-          textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-          textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
+          conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
+          groupIds.Add( conditionTextNote.Id ) ;
         }
-
-        conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
-        groupIds.Add( conditionTextNote.Id ) ;
 
         return Result.Succeeded ;
       } ) ;
