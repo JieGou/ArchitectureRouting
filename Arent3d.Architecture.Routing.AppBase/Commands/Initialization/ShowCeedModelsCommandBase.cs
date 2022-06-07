@@ -29,6 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
       const string grade3 = "グレード3" ;
+      
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       
@@ -58,6 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         if ( rooms.Count == 0 ) {
           TaskDialog.Show( "Arent", "Picked point outside the room!" ) ;
+          return Result.Cancelled ;
         }
         else {
           if ( rooms.Count > 1 ) {
