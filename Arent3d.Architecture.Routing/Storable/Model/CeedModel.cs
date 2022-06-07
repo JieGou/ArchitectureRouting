@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
   [SuppressMessage( "ReSharper", "ConvertToUsingDeclaration" )]
   public class CeedModel
   {
+    public string LegendDisplay { get ; set ; }
     public string CeedModelNumber { get ; set ; }
     public string CeedSetCode { get ; set ; }
     public string GeneralDisplayDeviceSymbol { get ; set ; }
@@ -32,9 +33,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public bool IsEditInstrumentation { get ; set ; }
     public bool IsEditCondition{ get ; set ; }
 
-    public CeedModel( string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType )
+    public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType )
     {
       const string dummySymbol = "Dummy" ;
+      LegendDisplay = legendDisplay ;
       CeedModelNumber = ceedModelNumber ;
       CeedSetCode = ceedSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
@@ -42,7 +44,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       FloorPlanSymbol = floorPlanSymbol ;
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
-      Condition = condition ;
+      Condition = GetCondition( ceedModelNumber ) ;
       FloorPlanType = floorPlanType ;
       Base64InstrumentationImageString = base64InstrumentationImageString ;
       Base64FloorPlanImages = base64FloorPlanImages ;
@@ -61,16 +63,17 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationImages = listBimapImage ;
     }
 
-    public CeedModel( string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string floorPlanType )
+    public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string base64InstrumentationImageString, string floorPlanType )
     {
       CeedModelNumber = ceedModelNumber ;
+      LegendDisplay = legendDisplay ;
       CeedSetCode = ceedSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
       ModelNumber = modelNumber ;
       FloorPlanSymbol = floorPlanSymbol ;
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
-      Condition = condition ;
+      Condition = GetCondition( ceedModelNumber ) ;
       FloorPlanType = floorPlanType ;
       FloorPlanImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
       InstrumentationImages = GetImages( instrumentationImages ) ;
@@ -86,8 +89,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Base64InstrumentationImageString = string.Join( "||", tempImage ) ;
     }
     
-    public CeedModel( string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string floorPlanType )
+    public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string floorPlanType )
     {
+      LegendDisplay = legendDisplay ;
       CeedModelNumber = ceedModelNumber ;
       CeedSetCode = ceedSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
@@ -95,7 +99,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       FloorPlanSymbol = floorPlanSymbol ;
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
-      Condition = condition ;
+      Condition = GetCondition( ceedModelNumber ) ;
       FloorPlanType = floorPlanType ;
       FloorPlanImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
       InstrumentationImages = GetImages( instrumentationImages ) ;
@@ -112,10 +116,11 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Base64InstrumentationImageString = string.Join( "||", tempImage ) ;
     }
     
-    public CeedModel( string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType, 
+    public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType, 
       bool? isAdded, bool? isEditFloorPlan, bool? isEditInstrumentation, bool? isEditCondition)
     {
       const string dummySymbol = "Dummy" ;
+      LegendDisplay = legendDisplay ;
       CeedModelNumber = ceedModelNumber ;
       CeedSetCode = ceedSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
@@ -123,7 +128,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       FloorPlanSymbol = floorPlanSymbol ;
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
-      Condition = condition ;
+      Condition = GetCondition( ceedModelNumber ) ;
       FloorPlanType = floorPlanType ;
       Base64InstrumentationImageString = base64InstrumentationImageString ;
       Base64FloorPlanImages = base64FloorPlanImages ;
@@ -256,6 +261,37 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       sbText.Replace( "\r\n", String.Empty ) ;
       sbText.Replace( " ", String.Empty ) ;
       return sbText.ToString() ;
+    }
+
+    private static string GetCondition( string ceedModelNumber )
+    {
+      string condition ;
+      if ( ceedModelNumber.EndsWith( "P" ) ) {
+        condition = "隠蔽 、床隠蔽" ;
+      }
+      else if ( ceedModelNumber.EndsWith( "K" ) ) {
+        condition = "コロガシ" ;
+      }
+      else if ( ceedModelNumber.EndsWith( "F" ) ) {
+        condition = "フリアク" ;
+      }
+      else if ( ceedModelNumber.EndsWith( "E" ) ) {
+        condition = "露出" ;
+      }
+      else if ( ceedModelNumber.EndsWith( "G" ) ) {
+        condition = "屋外" ;
+      }
+      else if ( ceedModelNumber.EndsWith( "M" ) ) {
+        condition = "モール" ;
+      }
+      else if ( ceedModelNumber.EndsWith( "U" ) ) {
+        condition = "地中埋設" ;
+      }
+      else {
+        condition = string.Empty ;
+      }
+
+      return condition ;
     }
   }
 }
