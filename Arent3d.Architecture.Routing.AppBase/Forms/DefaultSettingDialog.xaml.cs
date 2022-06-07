@@ -26,10 +26,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( sender is not Button { DataContext: ImportDwgMappingModel item } ) return ;
       ViewModel.LoadDwgFile( item ) ;
     }
-
-    private void BtnLoadDefaultDb_OnClick( object sender, RoutedEventArgs e )
-    {
-      ViewModel.LoadDefaultDb() ;
-    }
   }
 }

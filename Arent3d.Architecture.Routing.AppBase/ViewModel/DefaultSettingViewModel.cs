@@ -259,13 +259,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         { "10F", 44700 }
       } ;
       foreach ( var importDwgMappingModel in ImportDwgMappingModels ) {
-        var (key, value) = defaultHeights.FirstOrDefault( x => importDwgMappingModel.FloorName.Contains( x.Key ) ) ;
-        if ( key != null ) {
-          importDwgMappingModel.FloorHeight = value ;
-        }
-        else {
-          if(importDwgMappingModel.IsEnabled)
-            importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
+        if ( _oldImportDwgMappingModels.FirstOrDefault(x=>x.Id == importDwgMappingModel.Id) == null) {
+          var (key, value) = defaultHeights.FirstOrDefault( x => importDwgMappingModel.FloorName.Contains( x.Key ) ) ;
+          if ( key != null ) {
+            importDwgMappingModel.FloorHeight = value ;
+          }
+          else {
+            if(importDwgMappingModel.IsEnabled)
+              importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
+          }
         }
       }
 
