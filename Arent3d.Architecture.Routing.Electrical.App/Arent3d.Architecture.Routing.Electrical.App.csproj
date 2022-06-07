@@ -74,6 +74,9 @@
         <None Update="resources\Arent-export-layers-jp.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="resources\RegisterSymbolFolderPath.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
