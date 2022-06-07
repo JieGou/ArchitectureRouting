@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var uiDoc = commandData.Application.ActiveUIDocument ;
 
         var point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
-        var condition = "UNDEFINED" ;
+        var condition = "屋外" ;
         
         var symbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
         var filter = new FamilyInstanceFilter( doc, symbol.Id ) ;
@@ -57,23 +57,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }).ToList() ;
 
         if ( rooms.Count == 0 ) {
-          if ( CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() ) {
-            var vm = new ArentRoomViewModel { Conditions = conditions } ;
-            var view = new ArentRoomView { DataContext = vm } ;
-            view.ShowDialog() ;
-            if ( ! vm.IsCreate )
-              return Result.Cancelled ;
-
-            condition = vm.SelectedCondition ;
-          }
-          else {
-            TaskDialog.Show( "Arent", "Not found the conditions!" ) ;
-            return Result.Cancelled ;
-          }
+          TaskDialog.Show( "Arent", "Picked point outside the room!" ) ;
         }
         else {
           if ( rooms.Count > 1 ) {
-            TaskDialog.Show( "Arent", "Picked point inside multiple rooms!" ) ;
+            if ( CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() ) {
+              var vm = new ArentRoomViewModel { Conditions = conditions } ;
+              var view = new ArentRoomView { DataContext = vm } ;
+              view.ShowDialog() ;
+              if ( ! vm.IsCreate )
+                return Result.Cancelled ;
+
+              condition = vm.SelectedCondition ;
+            }
+            else {
+              TaskDialog.Show( "Arent", "Not found the conditions!" ) ;
+              return Result.Cancelled ;
+            }
           }
 
           if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {

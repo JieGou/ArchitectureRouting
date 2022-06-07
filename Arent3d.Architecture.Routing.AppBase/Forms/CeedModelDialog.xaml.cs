@@ -80,16 +80,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       ViewModel.ShowOnlyUsingCode() ;
     }
-    
-    private void CbShowCeedCondition_OnChecked( object sender, RoutedEventArgs e )
-    {
-      ViewModel.ShowCondition() ;
-    }
-    
-    private void CbShowCeedCondition_OnUnchecked( object sender, RoutedEventArgs e )
-    {
-      ViewModel.UnShowCondition() ;
-    }
 
     private void ShowOnlyUsingCode_UnChecked( object sender, RoutedEventArgs e )
     {

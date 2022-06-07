@@ -97,6 +97,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       set
       {
         _isShowCondition = value ;
+        if ( _isShowCondition.HasValue ) {
+          if ( _isShowCondition.Value ) {
+            CeedModels = new ObservableCollection<CeedModel>( _ceedModels ) ;
+            OnPropertyChanged(nameof(CeedModels));
+          }
+          else {
+            CeedModels = new ObservableCollection<CeedModel>(GroupCeedModel(_ceedModels))  ;
+            OnPropertyChanged(nameof(CeedModels));
+          }
+        }
         OnPropertyChanged();
       }
     }
@@ -234,9 +244,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
         _usedCeedModels = oldCeedStorable.CeedModelData ;
         _previousCeedModels = new List<CeedModel>( _usedCeedModels ) ;
-        CeedModels = new( _ceedModels ) ;
         IsShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
         IsShowCondition = oldCeedStorable.IsShowCondition ;
+        if ( IsShowCondition ) {
+          CeedModels = new ObservableCollection<CeedModel>( GroupCeedModel( _ceedModels ) ) ;
+        }
+        else {
+          CeedModels = new ObservableCollection<CeedModel>( _ceedModels ) ;
+        }
         IsShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
         AddModelNumber( CeedModels ) ;
         if ( _usingCeedModel.Any() )
@@ -478,21 +493,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       label.Visibility = Visibility.Visible ;
       comboBox.Visibility = Visibility.Visible ;
     }
-    
-    public void ShowCondition( )
+
+    private IEnumerable<CeedModel> GroupCeedModel(IEnumerable<CeedModel> ceedModels )
     {
-      DtGrid.Columns[ 0 ].Visibility = Visibility.Visible ;
-      DtGrid.Columns[ 4 ].Visibility = Visibility.Visible ;
-      CeedModels = new ObservableCollection<CeedModel>( _ceedModels ) ;
-      OnPropertyChanged(nameof(CeedModels));
-    }
-    
-    public void UnShowCondition(  )
-    {
-      DtGrid.Columns[ 0 ].Visibility = Visibility.Hidden ;
-      DtGrid.Columns[ 4 ].Visibility = Visibility.Hidden ;
-      CeedModels = new ObservableCollection<CeedModel>(_ceedModels.GroupBy( x => x.GeneralDisplayDeviceSymbol ).Select( x => x.ToList().DistinctBy( y => y.ModelNumber ) ).SelectMany( x => x ))  ;
-      OnPropertyChanged(nameof(CeedModels));
+      return ceedModels.GroupBy( x => x.GeneralDisplayDeviceSymbol ).Select( x => x.ToList().DistinctBy( y => y.ModelNumber ) ).SelectMany( x => x ) ;
     }
 
     public void UnShowCeedModelNumberColumn( Label label, ComboBox comboBox )
