@@ -107,9 +107,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           BuzaiCDListDisplay = new ObservableCollection<string>( newSource.Take( DefaultDisplayItem ).ToList() ) ;  
         }
          
-        if ( BuzaiCDList.Contains( value ) ) {
-          AddCeedDetail(value); 
-        }
+        // if ( BuzaiCDList.Contains( value ) ) {
+        //   AddCeedDetail(value); 
+        // }
       }
     }
 

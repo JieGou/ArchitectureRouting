@@ -37,13 +37,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void OnComboboxBuzaiCDEnter( object sender, KeyEventArgs e )
     {
-      var comboBox = (System.Windows.Controls.ComboBox) sender ;   
-      var viewModel = ( (SymbolInformationViewModel) DataContext ) ;
-      if ( e.Key == Key.Enter ) {
+      var comboBox = (System.Windows.Controls.ComboBox) sender ; 
+      var viewModel = ( (SymbolInformationViewModel) DataContext ) ; 
+      
+      if ( e.Key == Key.Enter ) { 
+        viewModel.AddCeedDetail( comboBox.Text );
         comboBox.Text = string.Empty ; 
       } else {
         comboBox.IsDropDownOpen = true ;
+        if ( comboBox.Text.Length != 1 ) return ;
+        var textBox = (System.Windows.Controls.TextBox)comboBox.Template.FindName( "PART_EditableTextBox", comboBox ) ;
+        textBox.Select( textBox.Text.Length, 0 );
       }
+    }
+
+    private void OnComboSelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      var comboBox = (System.Windows.Controls.ComboBox) sender ; 
+      var viewModel = ( (SymbolInformationViewModel) DataContext ) ;
+      if ( comboBox.SelectedItem != null ) {
+        viewModel.AddCeedDetail( comboBox.SelectedItem.ToString() ); 
+        comboBox.SelectedItem = null ;
+        comboBox.SelectedIndex = -1 ;
+      }
+        
     }
   }
 
