@@ -75,10 +75,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               return Result.Cancelled ;
             }
           }
-
-          if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
-            condition = value ;
-          }
         }
         
         var level = uiDoc.ActiveView.GenLevel ;
