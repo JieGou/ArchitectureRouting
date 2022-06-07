@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -56,7 +57,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }).ToList() ;
 
         if ( rooms.Count == 0 ) {
-          TaskDialog.Show( "Arent", "Picked point outside the room!" ) ;
+          if ( CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() ) {
+            var vm = new ArentRoomViewModel { Conditions = conditions } ;
+            var view = new ArentRoomView { DataContext = vm } ;
+            view.ShowDialog() ;
+            if ( ! vm.IsCreate )
+              return Result.Cancelled ;
+
+            condition = vm.SelectedCondition ;
+          }
+          else {
+            TaskDialog.Show( "Arent", "Not found the conditions!" ) ;
+            return Result.Cancelled ;
+          }
         }
         else {
           if ( rooms.Count > 1 ) {

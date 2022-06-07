@@ -139,7 +139,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return null != shareParameter ;
     }
 
-    private bool TryGetConditions( Document document, out List<string> conditions )
+    public static bool TryGetConditions( Document document, out List<string> conditions )
     {
       conditions = new List<string>() ;
       var store = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
