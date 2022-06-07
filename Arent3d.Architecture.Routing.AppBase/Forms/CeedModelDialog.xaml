@@ -8,7 +8,7 @@
         xmlns:model="clr-namespace:Arent3d.Architecture.Routing.AppBase.Model"
         xmlns:cvt="clr-namespace:Arent3d.Architecture.Routing.AppBase.Converters"
         mc:Ignorable="d"
-        WindowStartupLocation="CenterScreen" x:Name="CeedModelWindow"
+        WindowStartupLocation="CenterScreen"
         Title="CeeD Models" Height="800" Width="1200" MinHeight="200" MinWidth="900"
         d:DataContext="{d:DesignInstance {x:Type local:DesignCeedViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
@@ -214,7 +214,7 @@
                 <DataGrid.Columns>
 
                     <DataGridTextColumn Header="セットコード" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100"
-                                        Visibility="{Binding .Data, Converter={StaticResource  BooleanVisibilityConverter}, Source={StaticResource Proxy}}"/>
+                                        Visibility="{Binding Path=Data, Converter={StaticResource  BooleanVisibilityConverter}, Source={StaticResource Proxy}}"/>
 
                     <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="130" Visibility="Hidden" />
 
@@ -223,7 +223,7 @@
                     <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" />
 
                     <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" Width="*"
-                                        Visibility="{Binding .Data, Converter={StaticResource  BooleanVisibilityConverter}, Source={StaticResource Proxy}}">
+                                        Visibility="{Binding Path=Data, Converter={StaticResource  BooleanVisibilityConverter}, Source={StaticResource Proxy}}">
                         <DataGridTextColumn.ElementStyle>
                             <Style>
                                 <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
