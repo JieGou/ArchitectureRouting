@@ -10,7 +10,7 @@ using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class CeedModelDialog
+  public partial class CeedModelDialog : Window
   {
     private CeedViewModel ViewModel => (CeedViewModel)DataContext ;
     public CeedModelDialog( CeedViewModel viewModel )
@@ -79,6 +79,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void ShowOnlyUsingCode_Checked( object sender, RoutedEventArgs e )
     {
       ViewModel.ShowOnlyUsingCode() ;
+    }
+    
+    private void CbShowCeedCondition_OnChecked( object sender, RoutedEventArgs e )
+    {
+      ViewModel.ShowCondition() ;
+    }
+    
+    private void CbShowCeedCondition_OnUnchecked( object sender, RoutedEventArgs e )
+    {
+      ViewModel.UnShowCondition() ;
     }
 
     private void ShowOnlyUsingCode_UnChecked( object sender, RoutedEventArgs e )
