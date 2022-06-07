@@ -80,13 +80,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         }
 
         if ( workSheet == null ) return ceedModelData ;
-        const int startRow = 7 ;
+        const int startRow = 10 ;
+        const int ceedNameColumnIndex = 4 ;
         var endRow = workSheet.LastRowNum ;
-        Dictionary<int, int> blocks = new Dictionary<int, int>() ;
+        Dictionary<int, int> blocks = new() ;
 
         // Get list block row in column C
         for ( var i = startRow ; i <= endRow ; i++ ) {
-          var record = workSheet.GetRow( i ).GetCell( 3 ) ;
+          var record = workSheet.GetRow( i ).GetCell( ceedNameColumnIndex ) ;
           if ( record == null || record.CellStyle.IsHidden ) continue ;
           var cellValue = GetCellValue( record ) ;
           if ( string.IsNullOrEmpty( cellValue ) ) continue ;
@@ -96,7 +97,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             i++ ;
             if ( i > endRow ) break ;
             cellValue = nextCellValue ;
-            record = workSheet.GetRow( i ).GetCell( 3 ) ;
+            record = workSheet.GetRow( i ).GetCell( ceedNameColumnIndex ) ;
             if ( record == null ) break ;
             nextCellValue = GetCellValue( record ) ;
           } while ( ! ( string.IsNullOrEmpty( cellValue ) && ! string.IsNullOrEmpty( nextCellValue ) ) ) ;
@@ -106,7 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           i-- ;
         }
 
-        var listFloorPlanImages = GetSymbolImages( path, blocks, "F8", "F" ) ;
+        var listFloorPlanImages = GetSymbolImages( path, blocks, "G10", "G" ) ;
 
         #region Load Instrumentation Image (Comment out)
 
@@ -115,16 +116,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         #endregion
 
         for ( var i = startRow ; i <= endRow ; i++ ) {
-          List<string> ceedModelNumbers = new List<string>() ;
-          List<string> ceedSetCodes = new List<string>() ;
-          List<string> modelNumbers = new List<string>() ;
-          List<string> conditions = new List<string>() ;
+          List<string> ceedModelNumbers = new() ;
+          List<string> ceedSetCodes = new() ;
+          List<string> modelNumbers = new() ;
           string generalDisplayDeviceSymbols = string.Empty ;
           string floorPlanSymbol = string.Empty ;
           string instrumentationSymbol = string.Empty ;
           string ceedName = string.Empty ;
+          string legendDisplay = string.Empty ;
 
-          var record = workSheet.GetRow( i ).GetCell( 3 ) ;
+          var record = workSheet.GetRow( i ).GetCell( ceedNameColumnIndex ) ;
           if ( record == null || record.CellStyle.IsHidden ) continue ;
           var name = GetCellValue( record ) ;
           if ( string.IsNullOrEmpty( name ) ) continue ;
@@ -141,38 +142,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
           var lastIndexGroup = i ;
           for ( var j = firstIndexGroup ; j < lastIndexGroup ; j++ ) {
-            var ceedSetCodeCell = workSheet.GetRow( j ).GetCell( 0 ) ;
-            var ceedSetCode = GetCellValue( ceedSetCodeCell ) ;
-            if ( ! string.IsNullOrEmpty( ceedSetCode ) ) ceedSetCodes.Add( ceedSetCode ) ;
-
+            var legendDisplayCell = workSheet.GetRow( j ).GetCell( 0 ) ;
+            var legendDisplayValue = GetCellValue( legendDisplayCell ) ;
+            if ( ! string.IsNullOrEmpty( legendDisplayValue ) ) legendDisplay = legendDisplayValue ;
+            
             var ceedModelNumberCell = workSheet.GetRow( j ).GetCell( 1 ) ;
             var ceedModelNumber = GetCellValue( ceedModelNumberCell ) ;
             if ( ! string.IsNullOrEmpty( ceedModelNumber ) ) ceedModelNumbers.Add( ceedModelNumber ) ;
+            
+            var ceedSetCodeCell = workSheet.GetRow( j ).GetCell( 2 ) ;
+            var ceedSetCode = GetCellValue( ceedSetCodeCell ) ;
+            if ( ! string.IsNullOrEmpty( ceedSetCode ) ) ceedSetCodes.Add( ceedSetCode ) ;
 
-            var generalDisplayDeviceSymbolCell = workSheet.GetRow( j ).GetCell( 2 ) ;
+            var generalDisplayDeviceSymbolCell = workSheet.GetRow( j ).GetCell( 3 ) ;
             var generalDisplayDeviceSymbol = GetCellValue( generalDisplayDeviceSymbolCell ) ;
             if ( ! string.IsNullOrEmpty( generalDisplayDeviceSymbol ) && ! generalDisplayDeviceSymbol.Contains( "．" ) )
               generalDisplayDeviceSymbols = generalDisplayDeviceSymbol ;
 
-            var ceedNameCell = workSheet.GetRow( j ).GetCell( 3 ) ;
+            var ceedNameCell = workSheet.GetRow( j ).GetCell( ceedNameColumnIndex ) ;
             var modelName = GetCellValue( ceedNameCell ) ;
             if ( ! string.IsNullOrEmpty( modelName ) ) ceedName = modelName ;
 
-            var modelNumberCell = workSheet.GetRow( j ).GetCell( 4 ) ;
+            var modelNumberCell = workSheet.GetRow( j ).GetCell( 5 ) ;
             var modelNumber = GetCellValue( modelNumberCell ) ;
             if ( ! string.IsNullOrEmpty( modelNumber ) ) modelNumbers.Add( modelNumber ) ;
 
-            var symbolCell = workSheet.GetRow( j ).GetCell( 5 ) ;
+            var symbolCell = workSheet.GetRow( j ).GetCell( 6 ) ;
             var symbol = GetCellValue( symbolCell ) ;
             if ( ! string.IsNullOrEmpty( symbol ) && ! symbol.Contains( "又は" ) ) floorPlanSymbol = symbol ;
-
-            var instrumentationSymbolCell = workSheet.GetRow( j ).GetCell( 6 ) ;
-            var instrumentSymbol = GetCellValue( instrumentationSymbolCell ) ;
-            if ( ! string.IsNullOrEmpty( instrumentSymbol ) && ! instrumentSymbol.Contains( "又は" ) ) instrumentationSymbol = instrumentSymbol ;
-
-            var conditionCell = workSheet.GetRow( j ).GetCell( 8 ) ;
-            var condition = GetCellValue( conditionCell ) ;
-            if ( ! string.IsNullOrEmpty( condition ) && condition.EndsWith( "の場合" ) ) conditions.Add( condition.Replace( "の場合", "" ).Replace( "・", "" ) ) ;
           }
 
           var symbolBytes = listFloorPlanImages.Where( b => b.Position == firstIndexGroup + 1 ).ToList().OrderBy( b => b.MarginLeft ) ;
@@ -189,31 +186,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           if ( ! ceedModelNumbers.Any() ) {
             switch ( floorPlanImages.Count ) {
               case 1 when string.IsNullOrEmpty( floorPlanSymbol ) :
-                CreateCeedModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, string.Empty, floorPlanImages, instrumentationImages, true ) ;
+                CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, true ) ;
                 break ;
               case > 1 :
                 floorPlanSymbol = DefaultSymbol ;
-                CreateCeedModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, string.Empty, floorPlanImages, instrumentationImages, false, true ) ;
+                CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, false, true ) ;
                 break ;
               default :
-                CreateCeedModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, string.Empty, floorPlanImages, instrumentationImages ) ;
+                CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages ) ;
                 break ;
             }
           }
           else {
             for ( var k = 0 ; k < ceedModelNumbers.Count ; k++ ) {
               var ceedSetCode = ceedSetCodes.Any() ? ceedSetCodes[ k ] : string.Empty ;
-              var condition = conditions.Count > k ? conditions[ k ] : string.Empty ;
               switch ( floorPlanImages.Count ) {
                 case 1 when string.IsNullOrEmpty( floorPlanSymbol ) :
-                  CreateCeedModel( ceedModelData, equipmentSymbols, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanImages, instrumentationImages, true ) ;
+                  CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, true ) ;
                   break ;
                 case > 1 :
                   floorPlanSymbol = DefaultSymbol ;
-                  CreateCeedModel( ceedModelData, equipmentSymbols, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanImages, instrumentationImages, false, true ) ;
+                  CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, false, true ) ;
                   break ;
                 default :
-                  CreateCeedModel( ceedModelData, equipmentSymbols, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanImages, instrumentationImages ) ;
+                  CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages ) ;
                   break ;
               }
             }
@@ -233,7 +229,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       return ceedModelData ;
     }
 
-    private static void CreateCeedModel( List<CeedModel> ceedModelData, List<EquipmentSymbol> equipmentSymbols, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbols, List<string> modelNumbers, string floorPlanSymbol, string instrumentationSymbol, string ceedName, string condition, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages = false, bool isDummySymbol = false )
+    private static void CreateCeedModel( List<CeedModel> ceedModelData, List<EquipmentSymbol> equipmentSymbols, string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbols, List<string> modelNumbers, string floorPlanSymbol, string instrumentationSymbol, string ceedName, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages = false, bool isDummySymbol = false )
     {
       var symbols = generalDisplayDeviceSymbols.Split( '\n' ) ;
       var symbolsNotHaveModelNumber = new List<string>() ;
@@ -245,7 +241,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
           if ( modelNumberList.Any() ) {
             foreach ( var modelNumber in modelNumberList ) {
-              AddCeedModel( ceedModelData, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+              AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
 
             otherSymbolModelNumber.AddRange( modelNumberList ) ;
@@ -267,37 +263,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
           if ( symbolModelNumber.Any() )
             foreach ( var modelNumber in symbolModelNumber ) {
-              AddCeedModel( ceedModelData, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+              AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
           else {
             if ( equipmentSymbols.Any() ) {
               var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
               if ( modelNumberList.Any() ) {
                 foreach ( var modelNumber in modelNumberList ) {
-                  AddCeedModel( ceedModelData, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+                  AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
                 }
               }
               else {
-                AddCeedModel( ceedModelData, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+                AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
               }
             }
             else {
-              AddCeedModel( ceedModelData, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+              AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
           }
         }
       }
     }
 
-    private static void AddCeedModel( ICollection<CeedModel> ceedModelData, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string ceedName, string condition, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages, bool isDummySymbol )
+    private static void AddCeedModel( ICollection<CeedModel> ceedModelData, string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string ceedName, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages, bool isDummySymbol )
     {
       var floorPlanType = SetFloorPlanType( ceedModelNumber, generalDisplayDeviceSymbol, floorPlanSymbol ) ;
       if ( isFloorPlanImages )
-        ceedModelData.Add( new CeedModel( ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceedName, condition, string.Empty, floorPlanType ) ) ;
+        ceedModelData.Add( new CeedModel( legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceedName, string.Empty, floorPlanType ) ) ;
       else if ( isDummySymbol )
-        ceedModelData.Add( new CeedModel( ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceedName, condition, floorPlanType ) ) ;
+        ceedModelData.Add( new CeedModel( legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanType ) ) ;
       else
-        ceedModelData.Add( new CeedModel( ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, condition, string.Empty, string.Empty, floorPlanType ) ) ;
+        ceedModelData.Add( new CeedModel( legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, string.Empty, string.Empty, floorPlanType ) ) ;
     }
 
     private static string SetFloorPlanType( string ceedModelNumber, string generalDisplayDeviceSymbol, string floorPlanSymbol )
@@ -646,14 +642,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
     private static List<SymbolImage> GetSymbolImages( string filePath, Dictionary<int, int> rowBlocks, string startCell, string selectColumn )
     {
-      const string sheetName = "セットコード一覧表" ;
       var symbolImages = new List<SymbolImage>() ;
       var excelApp = new Application { Visible = false, ScreenUpdating = false, DisplayStatusBar = false, EnableEvents = false } ;
 
       var excelWorkbook = excelApp.Workbooks.Open( filePath, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing, false, XlPlatform.xlWindows, Type.Missing, true, false, Type.Missing, Type.Missing, Type.Missing, Type.Missing ) ;
       try {
         if ( excelWorkbook != null ) {
-          var sheet = (Worksheet) excelWorkbook.Sheets[ sheetName ] ;
+          var sheet = excelWorkbook.Sheets.Count > 1 ? (Worksheet) excelWorkbook.Sheets[ 1 ] : (Worksheet) excelWorkbook.ActiveSheet ;
           sheet.DisplayPageBreaks = false ;
           var xlSheets = excelWorkbook.Sheets as Sheets ;
           var newSheet = (Worksheet) xlSheets.Add( xlSheets[ 1 ], Type.Missing, Type.Missing, Type.Missing ) ;
@@ -687,6 +682,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
                   symbolImages.Add( new SymbolImage( block.Key, image, marginLeft ) ) ;
                   isException = false ;
                 }
+              }
+              else {
+                break ;
               }
             }
             catch {
