@@ -32,13 +32,33 @@
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
 
-        <DataGrid ItemsSource="{Binding FilterPickUpModels}" CanUserAddRows="False"
+        <DataGrid ItemsSource="{Binding FilterPickUpModels}" CanUserAddRows="False" x:Name="DataGrid"
                   AutoGenerateColumns="False" LoadingRow="DataGrid_LoadingRow" RowHeaderWidth="30">
             <DataGrid.Resources>
                 <Style TargetType="DataGridColumnHeader">
                     <Setter Property="HorizontalContentAlignment" Value="Center" />
                 </Style>
             </DataGrid.Resources> 
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="LightSkyBlue" />
+                            <Setter Property="Foreground" Value="Black" />
+                            <Setter Property="BorderThickness" Value="0" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.CellStyle>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="BorderThickness" Value="0" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn x:Name="FloorColumn" Binding="{Binding Path=Floor, ValidatesOnExceptions=True}"
                                     CanUserSort="True" IsReadOnly="True" MinWidth="100">
@@ -72,31 +92,15 @@
                     </DataGridTextColumn.HeaderTemplate>
                 </DataGridTextColumn>
                 
-                <DataGridTextColumn x:Name="ColumnProductName" Binding="{Binding ProductName, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="150">
+                <DataGridTextColumn x:Name="ColumnCeedSetCode" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="200" >
                     <DataGridTextColumn.HeaderTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="品名"/>
+                                <TextBlock Text="セットコード"/>
                                 <Button Style="{StaticResource FilterButton}"
                                         Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                                        CommandParameter="{Binding ElementName=ColumnProductName}">
-                                    <Image Source="../resources/Filter_32x32.png"/>
-                                </Button>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTextColumn.HeaderTemplate>
-                </DataGridTextColumn>
-                
-                <DataGridTextColumn x:Name="ColumnConstruction" Binding="{Binding Construction, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
-                    <DataGridTextColumn.HeaderTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="施工区分"/>
-                                <Button Style="{StaticResource FilterButton}"
-                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                                        CommandParameter="{Binding ElementName=ColumnConstruction}">
+                                        CommandParameter="{Binding ElementName=ColumnCeedSetCode}">
                                     <Image Source="../resources/Filter_32x32.png"/>
                                 </Button>
                             </StackPanel>
@@ -120,6 +124,70 @@
                     </DataGridTextColumn.HeaderTemplate>
                 </DataGridTextColumn>
                 
+                <DataGridTextColumn x:Name="ColumnCondition" Binding="{Binding Condition, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="条件"/>
+                                <Button Style="{StaticResource FilterButton}"
+                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                        CommandParameter="{Binding ElementName=ColumnCondition}">
+                                    <Image Source="../resources/Filter_32x32.png"/>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn x:Name="ColumnDeviceSymbol" Binding="{Binding DeviceSymbol, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="機器記号"/>
+                                <Button Style="{StaticResource FilterButton}"
+                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                        CommandParameter="{Binding ElementName=ColumnDeviceSymbol}">
+                                    <Image Source="../resources/Filter_32x32.png"/>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn x:Name="ColumnConstruction" Binding="{Binding Construction, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="施工区分"/>
+                                <Button Style="{StaticResource FilterButton}"
+                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                        CommandParameter="{Binding ElementName=ColumnConstruction}">
+                                    <Image Source="../resources/Filter_32x32.png"/>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn x:Name="ColumnProductName" Binding="{Binding ProductName, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="150">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="品名" Name="TextBlock"/>
+                                <Button Style="{StaticResource FilterButton}"
+                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                        CommandParameter="{Binding ElementName=ColumnProductName}">
+                                    <Image Source="../resources/Filter_32x32.png"/>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
                 <DataGridTextColumn x:Name="ColumnSpecification" Binding="{Binding Specification, ValidatesOnExceptions=True}"
                                     CanUserSort="False" IsReadOnly="True" MinWidth="200">
                     <DataGridTextColumn.HeaderTemplate>
@@ -129,38 +197,6 @@
                                 <Button Style="{StaticResource FilterButton}"
                                         Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
                                         CommandParameter="{Binding ElementName=ColumnSpecification}">
-                                    <Image Source="../resources/Filter_32x32.png"/>
-                                </Button>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTextColumn.HeaderTemplate>
-                </DataGridTextColumn>
-                
-                <DataGridTextColumn x:Name="ColumnSpecification2" Binding="{Binding Specification2, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" >
-                    <DataGridTextColumn.HeaderTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="仕様2"/>
-                                <Button Style="{StaticResource FilterButton}"
-                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                                        CommandParameter="{Binding ElementName=ColumnSpecification2}">
-                                    <Image Source="../resources/Filter_32x32.png"/>
-                                </Button>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTextColumn.HeaderTemplate>
-                </DataGridTextColumn>
-                
-                <DataGridTextColumn x:Name="ColumnSize" Binding="{Binding Size, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" >
-                    <DataGridTextColumn.HeaderTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="サイズ"/>
-                                <Button Style="{StaticResource FilterButton}"
-                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                                        CommandParameter="{Binding ElementName=ColumnSize}">
                                     <Image Source="../resources/Filter_32x32.png"/>
                                 </Button>
                             </StackPanel>
@@ -200,22 +236,6 @@
                     </DataGridTextColumn.HeaderTemplate>
                 </DataGridTextColumn>
                 
-                <DataGridTextColumn x:Name="ColumnSupplement" Binding="{Binding Supplement, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="150">
-                    <DataGridTextColumn.HeaderTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="補足説明"/>
-                                <Button Style="{StaticResource FilterButton}"
-                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
-                                        CommandParameter="{Binding ElementName=ColumnSupplement}">
-                                    <Image Source="../resources/Filter_32x32.png"/>
-                                </Button>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTextColumn.HeaderTemplate>
-                </DataGridTextColumn>
-                
                 <DataGridTextColumn x:Name="ColumnLayer" Binding="{Binding Layer, ValidatesOnExceptions=True}"
                                     CanUserSort="False" IsReadOnly="True" MinWidth="100">
                     <DataGridTextColumn.HeaderTemplate>
@@ -231,11 +251,33 @@
                         </DataTemplate>
                     </DataGridTextColumn.HeaderTemplate>
                 </DataGridTextColumn>
+                
+                <DataGridTextColumn x:Name="ColumnSupplement" Binding="{Binding Supplement, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="150">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="補足説明"/>
+                                <Button Style="{StaticResource FilterButton}"
+                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                        CommandParameter="{Binding ElementName=ColumnSupplement}">
+                                    <Image Source="../resources/Filter_32x32.png"/>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
 
         <Grid Grid.Row="1">
             <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center" Orientation="Horizontal" Margin="25, 0">
+                <Button Content="全選択"
+                        Command="{Binding SelectAllCommand}"
+                        CommandParameter="{Binding ElementName=DataGrid}"/>
+                <Button Content="全選択"
+                        Command="{Binding DeleteDbCommand}"
+                        CommandParameter="{Binding ElementName=DataGrid}"/>
                 <Button Content="更新"
                         Command="{Binding UpdateCommand}"
                         CommandParameter="{Binding ElementName=ThisWindow}"/>
