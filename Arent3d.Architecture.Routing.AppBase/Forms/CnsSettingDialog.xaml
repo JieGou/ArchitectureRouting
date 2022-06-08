@@ -30,7 +30,7 @@
                                 <Binding Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay"/>
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridCheckBoxColumn Header="デフォルト設定 " Width="100" Binding="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></DataGridCheckBoxColumn>
+                        <DataGridCheckBoxColumn Header="デフォルト設定 " Width="100" Binding="{Binding IsDefaultItemChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></DataGridCheckBoxColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

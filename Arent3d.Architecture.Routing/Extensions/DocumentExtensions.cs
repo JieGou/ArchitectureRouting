@@ -256,7 +256,7 @@ namespace Arent3d.Architecture.Routing.Extensions
     {
       try {
         var cnsSettingStorable = GetCnsSettingStorable( document ) ;
-        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault(x=>x.IsChecked) ;
+        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault(x=>x.IsDefaultItemChecked) ;
         return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : String.Empty ;
       }
       catch ( Exception ) {

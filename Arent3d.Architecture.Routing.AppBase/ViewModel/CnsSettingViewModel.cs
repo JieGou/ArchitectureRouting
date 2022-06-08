@@ -66,12 +66,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void CnsSettingModelsOnItemPropertyChanged( object sender, ItemPropertyChangedEventArgs e )
     {
       var itemChanged = CnsSettingModels[ e.CollectionIndex ] ;
-      if ( itemChanged is not { IsChecked: true } ) return ;
+      if ( itemChanged is not { IsDefaultItemChecked: true } ) return ;
 
       ApplyToSymbolsText = itemChanged.CategoryName ;
       var restCnsSettingModels = CnsSettingModels.Where( x => x.CategoryName != itemChanged.CategoryName ) ;
       foreach ( var item in restCnsSettingModels ) {
-        item.IsChecked = false ;
+        item.IsDefaultItemChecked = false ;
       }
     }
 
@@ -190,7 +190,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private void SetConstructionItemForRange( CnsSettingStorable cnsStorables, int seletectedIndex )
     {
-      var item = CnsSettingModels.FirstOrDefault( x => x.IsChecked ) ;
+      var item = CnsSettingModels.FirstOrDefault( x => x.IsDefaultItemChecked ) ;
       ApplyToSymbolsText = item != null ? item.CategoryName : string.Empty ;
       cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Range ;
       cnsStorables.CnsSettingData = CnsSettingModels ;

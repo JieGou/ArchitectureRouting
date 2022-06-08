@@ -6,14 +6,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class CnsSettingModel : INotifyPropertyChanged, ICloneable
   {
-    private bool _isChecked ;
+    private bool _isDefaultItemChecked ;
 
-    public bool IsChecked
+    public bool IsDefaultItemChecked
     {
-      get => _isChecked ;
+      get => _isDefaultItemChecked ;
       set
       {
-        _isChecked = value ;
+        _isDefaultItemChecked = value ;
         OnPropertyChanged() ;
       }
     }
@@ -44,12 +44,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public string CategoryName { get ; set ; }
 
-    public CnsSettingModel( int sequence, string categoryName, bool isChecked = false )
+    public CnsSettingModel( int sequence, string categoryName, bool isDefaultItemChecked = false )
     {
-      _sequence = sequence ;
+      Sequence = sequence ;
       CategoryName = categoryName ;
-      _position = sequence ;
-      _isChecked = isChecked ;
+      Position = sequence ;
+      IsDefaultItemChecked = isDefaultItemChecked ;
     }
 
     public bool Equals( CnsSettingModel other )

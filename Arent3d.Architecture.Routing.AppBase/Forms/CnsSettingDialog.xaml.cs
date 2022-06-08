@@ -65,8 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           return ;
         }
       }
-      _editingRowIndex = -1 ;
-      //grdCategories.IsReadOnly = true ;
+      _editingRowIndex = -1 ; 
     }
 
     private void AddNewRow_Click( object sender, RoutedEventArgs e )
