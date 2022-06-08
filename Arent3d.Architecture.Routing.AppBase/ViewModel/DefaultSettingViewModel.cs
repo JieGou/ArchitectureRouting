@@ -108,8 +108,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<string> DeletedFloorName { get ; set ; }
 
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
-    public ICommand AddImportDwgMappingModelCommand => new RelayCommand( AddImportDwgMappingModel ) ;
-    
+
     public ICommand LoadDefaultDbCommand => new RelayCommand( LoadDefaultDb ) ;
     
     public ICommand MoveUpCommand => new RelayCommand<DataGrid>( MoveUp ) ;
@@ -196,15 +195,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _oldFileItems.Add( fileItem ) ;
         FileItems.Add( fileItem ) ;
       }
-    }
-
-    private void AddImportDwgMappingModel()
-    {
-      const int floorHeightDistance = 3000 ;
-      if ( ! ImportDwgMappingModels.Any() ) return ;
-      var importDwgMappingModels = ImportDwgMappingModels.ToList() ;
-      var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
-      ImportDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
     }
 
     public ICommand ApplyCommand

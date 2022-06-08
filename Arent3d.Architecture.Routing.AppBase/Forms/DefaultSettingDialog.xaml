@@ -58,10 +58,6 @@
                             Command="{Binding LoadDwgFilesCommand}"
                             Margin="0, 0,0,10"
                             Width="90" />
-                    <Button Content="階追加"
-                            Command="{Binding AddImportDwgMappingModelCommand}"
-                            Margin="0, 0,0,10"
-                            Width="90" />
                     <Button Content="上へ"
                             Command="{Binding MoveUpCommand}"
                             CommandParameter="{Binding ElementName=DtGrid}"
