@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
         Title="Electrical Category" Height="600" Width="400">
      
@@ -16,11 +15,7 @@
                                 <DataGridTextColumn IsReadOnly="True" Width="120" Binding="{Binding Col1}"/>
                                 <DataGridTextColumn IsReadOnly="True" Width="120" Binding="{Binding Col2}"/>
                                 <DataGridTextColumn IsReadOnly="True" Width="120" Binding="{Binding Col3}"/>
-                            </DataGrid.Columns> 
-                            <!-- <MouseBinding  -->
-                            <!--     MouseAction="LeftDoubleClick"  -->
-                            <!--     Command="{Binding LoadData}"  -->
-                            <!--     CommandParameter="{Binding ElementName=DataGridEco}" /> -->
+                            </DataGrid.Columns>  
                         </DataGrid>
                     </Grid>
                 </TabItem>

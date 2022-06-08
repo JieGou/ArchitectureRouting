@@ -43,26 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
   
     private string _searchText = String.Empty ; 
-
-    // public string SearchText
-    // {
-    //   get => _searchText ;
-    //   set
-    //   {
-    //     _searchText = value ;
-    //     OnPropertyChanged( "SearchText" ) ; 
-    //     var list = HiroiMasterList.ToList() ;
-    //     foreach ( var textSearch in SearchText.Split( new char[] { ' ', ';', ',' } ) ) {
-    //       if ( string.IsNullOrEmpty( textSearch ) )
-    //         continue ;
-    //
-    //       list = list.FindAll( x => CheckContainSearchText( x, textSearch ) ) ;
-    //     }
-    //
-    //     HiroiMasterListDisplay = new ObservableCollection<HiroiMasterModel>( list ) ; 
-    //   }
-    // }
-    
+ 
     public string SearchText
     {
       get => _searchText ;
