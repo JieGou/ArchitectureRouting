@@ -41,60 +41,59 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical ) ;
         //Get all route name related to selected conduit
         var wiringList = GetAllConduitRelated( document, pickInfo.Element, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData) ;
-        SelectWiringViewModel wiringViewModel = new SelectWiringViewModel( wiringList ) ;
+        SelectWiringViewModel wiringViewModel = new SelectWiringViewModel(document, wiringList ) ;
         SelectWiringDialog selectWiringDialog = new SelectWiringDialog( wiringViewModel ) ;
-        if ( selectWiringDialog.ShowDialog() == false ) return Result.Cancelled ;
+        return selectWiringDialog.ShowDialog() == false ? Result.Cancelled : Result.Succeeded ;
 
 
-        var pickedObjectIds = new List<string>() { pickInfo.Element.UniqueId } ;
-        var (detailTableModels, isMixConstructionItems, isExistDetailTableModelRow) = CreateDetailTableCommandBase.CreateDetailTable( document, csvStorable, detailSymbolStorable, new List<Element>() { pickInfo.Element }, pickedObjectIds, false ) ;
-        var detailTableModel = detailTableModels.FirstOrDefault( x => x.RouteName == pickInfo.Route.RouteName ) ;
-        if ( null == detailTableModel ) {
-          MessageBox.Show( "Item info can't be found!", "Info" ) ;
-          return Result.Cancelled ;
-        }
-        //detailTableModels = new ObservableCollection<DetailTableModel>() { detailTableModel } ;
-
-        var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
-        var conduitTypes = new ObservableCollection<string>( conduitTypeNames ) { NoPlumping } ;
-
-        var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
-        if ( ! constructionItemNames.Any() )
-          constructionItemNames.Add( DefaultConstructionItems ) ;
-        var constructionItems = new ObservableCollection<string>( constructionItemNames ) ;
-
-        var levelNames = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).Select( l => l.Name ).ToList() ;
-        var levels = new ObservableCollection<string>( levelNames ) ;
-
-        var wireTypeNames = wiresAndCablesModelData.Select( w => w.WireType ).Distinct().ToList() ;
-        var wireTypes = new ObservableCollection<string>( wireTypeNames ) ;
-
-        var earthTypes = new ObservableCollection<string>() { "IV", "EM-IE" } ;
-
-        var numbers = new ObservableCollection<string>()
-        {
-          "1",
-          "2",
-          "3",
-          "4",
-          "5",
-          "6",
-          "7",
-          "8",
-          "9",
-          "10"
-        } ;
-
-        var constructionClassificationTypeNames = hiroiSetCdMasterNormalModelData.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
-        var constructionClassificationTypes = new ObservableCollection<string>( constructionClassificationTypeNames ) ;
-
-        var signalTypes = new ObservableCollection<string>( ( from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) select signalType.GetFieldName() ).ToList() ) ;
-
-
-        var viewModel = new AddWiringInformationViewModel( document, detailTableModel!, conduitsModelData, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, isMixConstructionItems ) ;
-        var dialog = new AddWiringInformationDialog( viewModel ) ;
-        dialog.ShowDialog() ;
-        return Result.Succeeded ;
+        // var pickedObjectIds = new List<string>() { pickInfo.Element.UniqueId } ;
+        // var (detailTableModels, isMixConstructionItems, isExistDetailTableModelRow) = CreateDetailTableCommandBase.CreateDetailTable( document, csvStorable, detailSymbolStorable, new List<Element>() { pickInfo.Element }, pickedObjectIds, false ) ;
+        // var detailTableModel = detailTableModels.FirstOrDefault( x => x.RouteName == pickInfo.Route.RouteName ) ;
+        // if ( null == detailTableModel ) {
+        //   MessageBox.Show( "Item info can't be found!", "Info" ) ;
+        //   return Result.Cancelled ;
+        // }
+        // //detailTableModels = new ObservableCollection<DetailTableModel>() { detailTableModel } ;
+        //
+        // var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
+        // var conduitTypes = new ObservableCollection<string>( conduitTypeNames ) { NoPlumping } ;
+        //
+        // var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
+        // if ( ! constructionItemNames.Any() )
+        //   constructionItemNames.Add( DefaultConstructionItems ) ;
+        // var constructionItems = new ObservableCollection<string>( constructionItemNames ) ;
+        //
+        // var levelNames = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).Select( l => l.Name ).ToList() ;
+        // var levels = new ObservableCollection<string>( levelNames ) ;
+        //
+        // var wireTypeNames = wiresAndCablesModelData.Select( w => w.WireType ).Distinct().ToList() ;
+        // var wireTypes = new ObservableCollection<string>( wireTypeNames ) ;
+        //
+        // var earthTypes = new ObservableCollection<string>() { "IV", "EM-IE" } ;
+        //
+        // var numbers = new ObservableCollection<string>()
+        // {
+        //   "1",
+        //   "2",
+        //   "3",
+        //   "4",
+        //   "5",
+        //   "6",
+        //   "7",
+        //   "8",
+        //   "9",
+        //   "10"
+        // } ;
+        //
+        // var constructionClassificationTypeNames = hiroiSetCdMasterNormalModelData.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
+        // var constructionClassificationTypes = new ObservableCollection<string>( constructionClassificationTypeNames ) ;
+        //
+        // var signalTypes = new ObservableCollection<string>( ( from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) select signalType.GetFieldName() ).ToList() ) ;
+        //
+        //
+        // var viewModel = new AddWiringInformationViewModel( document, detailTableModel!, conduitsModelData, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, isMixConstructionItems ) ;
+        // var dialog = new AddWiringInformationDialog( viewModel ) ;
+        // dialog.ShowDialog() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
@@ -109,10 +108,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       const string defaultPlumbingType = "配管なし" ;
       var ceedStorable = doc.GetCeedStorable() ;
+      var wiringStorable = doc.GetWiringStorable() ;
       var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
       var conduits = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRepresentativeRouteName() == representativeRouteName ).ToList() ;
       List<WiringModel> selectWiringModels = new() ;
       foreach ( var conduit in conduits ) {
+        var existedConduitInWiringStorable = wiringStorable.WiringData.FirstOrDefault( x => x.Id == conduit.Id.ToString() ) ;
+        if ( null != existedConduitInWiringStorable ) {
+          selectWiringModels.Add( existedConduitInWiringStorable );
+          continue;
+        }
+        
         var routeName = conduit.GetRouteName() ;
         if ( string.IsNullOrEmpty( routeName ) ) continue ;
 
@@ -123,7 +129,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) continue ;
 
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
-
+ 
         var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
         if ( ceedSetCode.Count < 3 ) continue ;
 

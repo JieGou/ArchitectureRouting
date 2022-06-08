@@ -275,5 +275,15 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
     }
     
+    public static WiringStorable GetWiringStorable( this Document document )
+    {
+      try {
+        return WiringStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WiringStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WiringStorable( document ) ;
+      }
+    }
+    
   }
 }

@@ -28,7 +28,7 @@
                     Command="{Binding ChangeWiringInfoCommand}"
                     CommandParameter="{Binding ElementName=SelectWiring}" />
             <Button Width="100" Content="Save" Margin="10"
-                    Command="{Binding SelectWiringCommand}"
+                    Command="{Binding SaveWiringCommand}"
                     CommandParameter="{Binding ElementName=SelectWiring}" />
             <Button Width="100" Content="Cancel" Margin="10"
                     Command="{Binding CancelCommand}"

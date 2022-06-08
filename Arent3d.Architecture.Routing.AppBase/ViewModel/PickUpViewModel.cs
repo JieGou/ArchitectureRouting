@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<PickUpModel> _pickUpModels ;
     private PickUpStorable _pickUpStorable ;
     private SymbolInformationStorable _symbolInformationStorable ;
-    private WiringInformationChangedStorable _wiringInformationChangedStorable ;
+    private WiringInformationChangedStorable _wiringInformationChangedStorable ; 
     private CeedDetailStorable _ceedDetailStorable ;
     private readonly List<CeedModel> _ceedModels ;
     private readonly List<RegistrationOfBoardDataModel> _registrationOfBoardDataModels ;
