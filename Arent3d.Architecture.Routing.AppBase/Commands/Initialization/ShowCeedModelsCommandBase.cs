@@ -2,6 +2,8 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -15,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ShowCeedModelsCommandBase : IExternalCommand
   {
-    private const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
+    public const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
     private const string ConditionTextNoteTypeName = "1.5mm_ConditionText" ;
     private const string DefaultConstructionItem = "未設定" ;
 
@@ -25,16 +27,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
+      const string grade3 = "グレード3" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
-      var data = doc.GetSetupPrintStorable() ;
-      var defaultSymbolMagnification = data.Scale * data.Ratio;
+      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       
-      var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
-
+      var viewModel = new CeedViewModel( commandData ) ;
+      var dlgCeedModel = new CeedModelDialog( viewModel ) ;
+      
       dlgCeedModel.ShowDialog() ;
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( dlgCeedModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
+      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
       Element? element = null ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
@@ -43,8 +46,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeedModel.SelectedFloorPlanType ) ;
-        var ceedCode = string.Join( ":", dlgCeedModel.SelectedCeedCode, dlgCeedModel.SelectedDeviceSymbol, dlgCeedModel.SelectedModelNumber ) ;
+        element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
+        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
         if ( element is FamilyInstance familyInstance ) {
           element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
@@ -55,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var txtPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, viewModel.SelectedDeviceSymbol, opts ) ;
 
         var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
         if ( deviceSymbolTextNoteType == null ) {
@@ -70,9 +73,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
-        if ( ! string.IsNullOrEmpty( dlgCeedModel.SelectedCondition ) ) {
+        if ( ! string.IsNullOrEmpty( viewModel.SelectedCondition ) ) {
           var txtConditionPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, dlgCeedModel.SelectedCondition, opts ) ;
+          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, viewModel.SelectedCondition, opts ) ;
 
           var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
           if ( textNoteType == null ) {
@@ -101,6 +104,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( isHasParameterSwitch2DSymbol ) element.SetProperty( switch2DSymbol, true ) ;
         var isHasParameterSymbolMagnification = element.HasParameter( symbolMagnification ) ;
         if ( isHasParameterSymbolMagnification ) element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
+        var isHasParameterGrade = element.HasParameter( grade3 ) ;
+        if ( isHasParameterGrade ) element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.GradeMode == 3 );
       }
       doc.Create.NewGroup( groupIds ) ;
       t.Commit() ;
@@ -152,7 +157,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void SetIsEcoMode(UIDocument uiDocument, FamilyInstance instance)
     { 
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
-      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
+      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
     }
   }
 }

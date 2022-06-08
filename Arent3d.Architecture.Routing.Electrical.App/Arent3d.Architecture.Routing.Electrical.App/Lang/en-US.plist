@@ -232,6 +232,15 @@
         <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
         <string>Symbol Information</string>
 
+        <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
+        <string>Create Pullbox</string>
+      
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
+        <string>Electrical Symbol&#xA;Aggregation</string>
+
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregationAll</key>
+        <string>Electrical Symbol&#xA;Aggregation All</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -460,11 +469,39 @@
         <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
         <string>Since it is impossible to avoid the interference of the envelope in the selection range, adjust the position of the envelope or the position of the connector.</string>
 
+        <!-- File Names -->
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
+        <string>Arent-export-layers.txt</string>
+        
+        <key>Electrical.App.Commands.Initialization.RegisterSymbolFolderPath</key>
+        <string>RegisterSymbolFolderPath.txt</string>
+      
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>Grade </string>
         
         <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
-        <string>Registration Of&#xA;Board Data</string> 
+        <string>Registration Of&#xA;Board Data</string>
+
+        <key>Electrical.App.Commands.Routing.LeakRoutingCommand</key>
+        <string>Leak Routing</string>
+        
+        <key>Electrical.App.Panels.Routing.MenuOrganization</key>
+        <string>Menu Organization</string>     
+      
+        <key>Electrical.App.Panels.Routing.MenuOrganization.Setting</key>
+        <string>Setting</string>
+      
+        <key>Electrical.App.Panels.Routing.MenuOrganization.Confirmation</key>
+        <string>Confirmation</string>
+      
+        <key>Electrical.App.Panels.Routing.MenuOrganization.MakingThePlan</key>
+        <string>Making The Plan</string>
+      
+        <key>Electrical.App.Panels.Routing.MenuOrganization.CreateTable</key>
+        <string>Create Table</string>
+  
+        <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
+        <string>Pull Box</string>
     </dict>
 </plist>

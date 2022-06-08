@@ -3,6 +3,7 @@ using System.Drawing ;
 using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -17,6 +18,7 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Application = Autodesk.Revit.ApplicationServices.Application ;
 using Color = Autodesk.Revit.DB.Color ;
+using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -61,9 +63,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private ( TextNote, string) CreateDetailSymbol( Document doc, DetailSymbolSettingDialog detailSymbolSettingDialog, XYZ firstPoint, string angle, bool isParentSymbol )
     {
-      var data = doc.GetSetupPrintStorable() ;
-      var scale = data.Scale * data.Ratio;
-      var baseLengthOfLine = 1d.MillimetersToRevitUnits()*scale ;
+      var scale = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
+      var baseLengthOfLine = 1d.MillimetersToRevitUnits() * scale ;
       
       var isLeft = true ;
       var size = detailSymbolSettingDialog.HeightCharacter ;
@@ -81,28 +82,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       startLine.LineStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
       lineIds.Add( startLine.UniqueId ) ;
 
+      var bg = detailSymbolSettingDialog.BackGround ;
       List<XYZ> points = new List<XYZ>() ;
       switch ( angle ) {
         case "0" :
           points.Add( new XYZ( firstPoint.X - baseLengthOfLine * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
-          firstPoint = new XYZ( firstPoint.X + baseLengthOfLine, firstPoint.Y, firstPoint.Z ) ;
+          firstPoint = new XYZ( firstPoint.X + (bg == 0 ? baseLengthOfLine : 0), firstPoint.Y, firstPoint.Z ) ;
           isLeft = true ;
           break ;
         case "90" :
           points.Add( new XYZ( firstPoint.X, firstPoint.Y + baseLengthOfLine * 10, firstPoint.Z ) ) ;
           points.Add( new XYZ( firstPoint.X - baseLengthOfLine * ( 3 + size ), firstPoint.Y + baseLengthOfLine * 10, firstPoint.Z ) ) ;
-          firstPoint = new XYZ( firstPoint.X, firstPoint.Y - baseLengthOfLine, firstPoint.Z ) ;
+          firstPoint = new XYZ( firstPoint.X, firstPoint.Y - (bg == 0 ? baseLengthOfLine : 0), firstPoint.Z ) ;
           isLeft = true ;
           break ;
         case "180" :
           points.Add( new XYZ( firstPoint.X + baseLengthOfLine * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
-          firstPoint = new XYZ( firstPoint.X - baseLengthOfLine, firstPoint.Y, firstPoint.Z ) ;
+          firstPoint = new XYZ( firstPoint.X - (bg == 0 ? baseLengthOfLine : 0), firstPoint.Y, firstPoint.Z ) ;
           isLeft = false ;
           break ;
         case "-90" :
           points.Add( new XYZ( firstPoint.X, firstPoint.Y - baseLengthOfLine * ( 8 + size ), firstPoint.Z ) ) ;
           points.Add( new XYZ( firstPoint.X + baseLengthOfLine * ( 5 + size ), firstPoint.Y - baseLengthOfLine * ( 8 + size ), firstPoint.Z ) ) ;
-          firstPoint = new XYZ( firstPoint.X, firstPoint.Y + baseLengthOfLine, firstPoint.Z ) ;
+          firstPoint = new XYZ( firstPoint.X, firstPoint.Y + (bg == 0 ? baseLengthOfLine : 0), firstPoint.Z ) ;
           isLeft = false ;
           break ;
       }
@@ -461,7 +463,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var bold = 0 ;
       var italic = 0 ;
       var underline = 0 ;
-      string strStyleName = "TNT-" + symbolFont + "-" + color + "-" + size + "-" + background + "-" + widthScale + "%" ;
+      string strStyleName = "DetailSymbol-TNT-" + symbolFont + "-" + color + "-" + size + "-" + background + "-" + widthScale + "%" ;
       if ( symbolStyle == FontStyle.Bold.GetFieldName() ) {
         strStyleName += "-Bold" ;
         bold = 1 ;
@@ -490,6 +492,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_UNDERLINE ).Set( underline ) ;
         textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 1d.MillimetersToRevitUnits() ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( (double) widthScale / 100 ) ;
+        textNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
       }
 
       // Change the text notes type to the new type

@@ -239,6 +239,22 @@ namespace Arent3d.Architecture.Routing
       return topItem ?? elm.GetConnectors().First() ;
     }
 
+    public enum ConnectorPosition
+    {
+      Left,
+      Right,
+      Front,
+      Back,
+      Top,
+      Bottom
+    }
+    
+    public static Connector GetBottomConnectorOfConnectorFamily( this FamilyInstance elm, ConnectorPosition connectorPosition )
+    {
+      var connector = elm.GetConnectors().FirstOrDefault( x => x.Description.Contains( connectorPosition.GetFieldName() ) ) ?? elm.GetConnectors().First() ;
+      return connector ;
+    }
+
     #endregion
 
     #region Connectors (Routing)

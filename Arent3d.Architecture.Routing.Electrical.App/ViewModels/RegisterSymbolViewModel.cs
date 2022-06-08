@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
 using System.Reflection ;
+using System.Text ;
 using System.Windows ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
@@ -17,6 +18,7 @@ using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
@@ -126,11 +128,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
           try {
             using var folderBrowserDialog = new FolderBrowserDialog { ShowNewFolderButton = true } ;
+            var path = GetSettingPath( _uiDocument.Document ) ;
             folderBrowserDialog.Reset() ;
             folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer ;
             folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
+            folderBrowserDialog.SelectedPath = String.IsNullOrEmpty(_registerSymbolStorable.BrowseFolderPath) ? readFileTxtIncludePath(path) : _registerSymbolStorable.BrowseFolderPath ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
               _registerSymbolStorable.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
+              writeFileTxtIncludePath(path, folderBrowserDialog.SelectedPath ) ;
               var folderModel = GetFolderModel( _registerSymbolStorable.BrowseFolderPath ) ;
               var folderModelList = new List<FolderModel>() ;
               if ( null != folderModel ) folderModelList.Add( folderModel ) ;
@@ -508,6 +513,32 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       var option = new Options { ComputeReferences = true };
       return freeFormElement.get_Geometry(option).OfType<Solid>().Select(x => x.Faces.OfType<PlanarFace>()).SelectMany(x => x).MaxBy(x => x.Origin.Z)!;
     }
+
+    private void writeFileTxtIncludePath(string path, string content)
+    {
+      File.WriteAllText( path, content, Encoding.UTF8 ) ;
+    }
+
+    private string readFileTxtIncludePath(string path)
+    {
+      string pathOpenedFolder ;
+      using ( var reader = File.OpenText( path ) ) {
+        pathOpenedFolder = reader.ReadLine()??string.Empty ;
+        reader.Close() ;
+      }
+
+      return pathOpenedFolder ;
+    }
+    
+    private string GetSettingPath(Document document)
+    {
+      string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "resources" )  ;
+      var layerSettingsFileName = "Electrical.App.Commands.Initialization.RegisterSymbolFolderPath".GetDocumentStringByKeyOrDefault( document, "RegisterSymbolFolderPath.txt" ) ;
+      var filePath = Path.Combine( resourcesPath, layerSettingsFileName ) ;
+
+      return filePath ;
+    }
+
 
     #endregion
   }

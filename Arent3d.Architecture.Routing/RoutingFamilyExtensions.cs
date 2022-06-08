@@ -1,4 +1,4 @@
-﻿﻿using System ;
+﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -99,6 +99,18 @@ namespace Arent3d.Architecture.Routing
     
     [Family( "Symbol Star", BuiltInCategory.OST_GenericModel )]
     SymbolStar,
+
+    [Family( "Jbox To Connector", BuiltInCategory.OST_ElectricalFixtures )]
+    ToJboxConnector,
+    
+    [Family( "M_電線管エルボ - 鉄鋼 - Arent", BuiltInCategory.OST_ConduitFitting )]
+    ArentConduitFittingType,
+    
+    [Family( "Pressure End Point", BuiltInCategory.OST_ElectricalFixtures )]
+    PressureConnector,
+    
+    [Family( "Pull Box", BuiltInCategory.OST_ElectricalFixtures )]
+    PullBox
   }
 
   public enum MechanicalRoutingFamilyType

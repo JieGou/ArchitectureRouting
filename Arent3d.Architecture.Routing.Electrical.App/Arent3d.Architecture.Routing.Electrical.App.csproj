@@ -68,6 +68,15 @@
         <None Update="Arent3d.Architecture.Routing.Electrical.App\Lang\ja-JP.plist">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="resources\Arent-export-layers.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="resources\Arent-export-layers-jp.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="resources\RegisterSymbolFolderPath.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
