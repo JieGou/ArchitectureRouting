@@ -277,6 +277,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       var conduit = ( element as Conduit )! ;
 
+      var scaleRatio = uiDocument.Document.ActiveView.Scale/100;
+
       var location = ( element.Location as LocationCurve )! ;
       var line = ( location.Curve as Line )! ;
       
@@ -296,7 +298,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // set cable rack length
       if ( cableRackWidth > 0 )
-        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), cableRackWidth.MillimetersToRevitUnits() ) ;
+        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), (cableRackWidth*scaleRatio).MillimetersToRevitUnits() ) ;
 
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;

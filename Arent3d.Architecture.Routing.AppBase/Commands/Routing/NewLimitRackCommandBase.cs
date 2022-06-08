@@ -524,6 +524,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors, List<FamilyInstance> racks )
     {
       var document = uiDocument.Document ;
+      var scaleRatio = document.ActiveView.Scale / 100;
       using var transaction = new SubTransaction( document ) ;
       try {
         transaction.Start() ;
