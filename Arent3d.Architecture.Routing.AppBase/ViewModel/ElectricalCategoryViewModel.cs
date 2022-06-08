@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       searchValue = isEcoModel ? DictElectricalCategoriesEcoKey.ContainsKey(searchValue) ? DictElectricalCategoriesEcoKey[searchValue] : searchValue : DictElectricalCategoriesNormalKey.ContainsKey( searchValue ) ? DictElectricalCategoriesNormalKey[ searchValue ] : searchValue ; 
       var hiroiMasterViewModel = new HiroiMasterViewModel( _document, HiroiMasterModels, HiroiSetMasterEcoModels, HiroiSetMasterNormalModels, isEcoModel ) { SearchText = searchValue } ;
       var hiroiMasterDialog = new HiroiMasterDialog( hiroiMasterViewModel ) ; 
-      CeedDetailSelected = true == hiroiMasterDialog.ShowDialog() ? new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", _quantityDefault, _unitDefault, _symbolInformationId, _trajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, 1, hiroiMasterViewModel.HiroiMasterSelected?.Type ) : null ;
+      CeedDetailSelected = true == hiroiMasterDialog.ShowDialog() ? new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", _quantityDefault, _unitDefault, _symbolInformationId, _trajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, 1, hiroiMasterViewModel.HiroiMasterSelected?.Type , string.Empty) : null ;
       return CeedDetailSelected ;
     }
   }

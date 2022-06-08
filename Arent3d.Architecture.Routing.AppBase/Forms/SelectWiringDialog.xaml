@@ -5,20 +5,25 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d" x:Name="SelectWiring"
-        Title="Wiring Information Dialog" Height="500" Width="800"
+        Title="Wiring Information Dialog" Height="500" Width="1000"
         d:DataContext="{d:DesignInstance {x:Type local:DesignSelectWiringViewModel}, IsDesignTimeCreatable=True}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
-        <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" ItemsSource="{Binding WiringList}" SelectedItem="{Binding SelectedWiring}">
+        <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" ItemsSource="{Binding ConduitList}" SelectedItem="{Binding SelectedWiring}">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Width="100" IsReadOnly="True" Binding="{Binding IdOfToConnector}" />
-                <DataGridTextColumn Header="Route Name" Width="150" IsReadOnly="True" Binding="{Binding RouteName}" />
-                <DataGridTextColumn Header="Wire Type" Width="150" IsReadOnly="True" Binding="{Binding WireType}" />
-                <DataGridTextColumn Header="Wire Size" Width="150" IsReadOnly="True" Binding="{Binding WireSize}" />
-                <DataGridTextColumn Header="Wire strip" Width="150" IsReadOnly="True" Binding="{Binding WireStrip}" />
+                <DataGridTextColumn Header="Floor" Width="80" IsReadOnly="True" Binding="{Binding Floor}" />
+                <DataGridTextColumn Header="Route Name" Width="100" IsReadOnly="True" Binding="{Binding RouteName}" />
+                <DataGridTextColumn Header="Wire Type" Width="100" IsReadOnly="True" Binding="{Binding WireType}" />
+                <DataGridTextColumn Header="Wire Size" Width="100" IsReadOnly="True" Binding="{Binding WireSize}" />
+                <DataGridTextColumn Header="Wire strip" Width="100" IsReadOnly="True" Binding="{Binding WireStrip}" />
+                <DataGridTextColumn Header="Classification" Width="100" IsReadOnly="True" Binding="{Binding ConstructionClassification}" />
+                <DataGridTextColumn Header="Sign Type" Width="100" IsReadOnly="True" Binding="{Binding SignalType}" />
+                <DataGridTextColumn Header="Construction item" Width="100" IsReadOnly="True" Binding="{Binding ConstructionItems}" />
+                <DataGridTextColumn Header="Plumbing Item" Width="100" IsReadOnly="True" Binding="{Binding PlumbingItems}" />
+                <DataGridTextColumn Header="Remark" Width="100" IsReadOnly="True" Binding="{Binding Remark}" />
                  
             </DataGrid.Columns>
         </DataGrid>

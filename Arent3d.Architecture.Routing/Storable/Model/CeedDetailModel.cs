@@ -17,8 +17,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string Specification { get ; set ; } 
     public int Order { get ; set ; }
     public string Type { get ; set ; }
+    public  string ParentPartModel { get ; set ; }
 
-    public CeedDetailModel( string? productCode, string? productName, string? standard, string?  classification, double? quantity, string?  unit, string? parentId, string? trajectory , string? size1 , string? size2, string? specification, int? order, string? type )
+    public CeedDetailModel( string? productCode, string? productName, string? standard, string?  classification, double? quantity, string?  unit, string? parentId, string? trajectory , string? size1 , string? size2, string? specification, int? order, string? type, string? parentPartModel )
     {
       ProductCode = productCode ?? string.Empty;
       ProductName = productName ?? string.Empty;
@@ -33,6 +34,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Specification = specification ?? string.Empty ;
       Order = order ?? 1 ;
       Type = type ?? string.Empty ;
+      ParentPartModel = parentPartModel ?? string.Empty ;
     }
   }
 }

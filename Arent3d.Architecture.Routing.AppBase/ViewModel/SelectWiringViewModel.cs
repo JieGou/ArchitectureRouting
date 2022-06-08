@@ -70,11 +70,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( true != dialog.ShowDialog() ) return ;
       if ( null == electricalCategoryViewModel.CeedDetailSelected ) return ;
 
+      var exitedItem = ConduitList.FirstOrDefault( x => x.RouteName == SelectedWiring?.RouteName ) ;
+      if(exitedItem == null) return;
+      
+      exitedItem.WireType = electricalCategoryViewModel.CeedDetailSelected.Type ;
+      exitedItem.WireSize = electricalCategoryViewModel.CeedDetailSelected.Size1 ;
+      exitedItem.WireStrip = electricalCategoryViewModel.CeedDetailSelected.Size2 ;
+      CollectionViewSource.GetDefaultView( ConduitList ).Refresh() ;
+      
       foreach ( var wiring in WiringList ) {
         if ( wiring.RouteName == SelectedWiring?.RouteName ) {
           wiring.WireType = electricalCategoryViewModel.CeedDetailSelected.Type ;
           wiring.WireSize = electricalCategoryViewModel.CeedDetailSelected.Size1 ;
           wiring.WireStrip = electricalCategoryViewModel.CeedDetailSelected.Size2 ;
+          wiring.ParentPartMode = electricalCategoryViewModel.CeedDetailSelected.ParentPartModel ;
           var exitedInWiringChangedList = WiringChangedList.FirstOrDefault( x => x.Id == wiring.Id ) ;
           if ( null != exitedInWiringChangedList )
             WiringChangedList.Remove( exitedInWiringChangedList ) ;
@@ -82,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      CollectionViewSource.GetDefaultView( WiringList ).Refresh() ;
+      
     }
 
     private void SaveWiring( Window window )

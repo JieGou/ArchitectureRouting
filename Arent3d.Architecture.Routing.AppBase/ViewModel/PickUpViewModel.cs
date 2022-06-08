@@ -29,6 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private PickUpStorable _pickUpStorable ;
     private SymbolInformationStorable _symbolInformationStorable ;
     private WiringInformationChangedStorable _wiringInformationChangedStorable ; 
+    private WiringStorable _wiringStorable ; 
     private CeedDetailStorable _ceedDetailStorable ;
     private readonly List<CeedModel> _ceedModels ;
     private readonly List<RegistrationOfBoardDataModel> _registrationOfBoardDataModels ;
@@ -80,6 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _pickUpNumber = 1 ;
 
       _wiringInformationChangedStorable = _document.GetWiringInformationChangedStorable() ;
+      _wiringStorable = _document.GetWiringStorable() ;
 
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null ) _ceedModels = ceedStorable.CeedModelData ;
@@ -203,6 +205,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 if ( null != wiringInformationChanged )
                   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, wiringInformationChanged.MaterialCode ) ) ;
               }
+              // if ( _wiringStorable.WiringData.Any() && productType == ProductType.Conduit ) {
+              //   var wiringChanged = _wiringStorable.WiringData.FirstOrDefault( x => x.IdOfToConnector == element.UniqueId ) ;
+              //   if ( null != wiringChanged )
+              //     hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, wiringChanged.MaterialCode ) ) ;
+              // }
 
               if ( hiroiSetMasterModel != null ) {
                 var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;

@@ -32,6 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
         var conduitsModelData = csvStorable.ConduitsModelData ;
         var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
+        var hiroiSetCdMasterEcoModelData = csvStorable.HiroiSetCdMasterEcoModelData ;
         var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
         var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
         var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
@@ -40,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical ) ;
         //Get all route name related to selected conduit
-        var wiringList = GetAllConduitRelated( document, pickInfo.Element, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData) ;
+        var wiringList = GetAllConduitRelated( document, pickInfo.Element, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData, hiroiSetCdMasterEcoModelData, hiroiSetCdMasterNormalModelData) ;
         SelectWiringViewModel wiringViewModel = new SelectWiringViewModel(document, wiringList ) ;
         SelectWiringDialog selectWiringDialog = new SelectWiringDialog( wiringViewModel ) ;
         return selectWiringDialog.ShowDialog() == false ? Result.Cancelled : Result.Succeeded ;
@@ -104,7 +105,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private List<WiringModel> GetAllConduitRelated( Document doc, Element pickConduit, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData )
+    private List<WiringModel> GetAllConduitRelated( Document doc, Element pickConduit, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData )
     {
       const string defaultPlumbingType = "配管なし" ;
       var ceedStorable = doc.GetCeedStorable() ;
@@ -118,13 +119,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           selectWiringModels.Add( existedConduitInWiringStorable );
           continue;
         }
-        
         var routeName = conduit.GetRouteName() ;
         if ( string.IsNullOrEmpty( routeName ) ) continue ;
 
         var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, false ) ;
         if ( null == toConnector ) continue ;
 
+        var floor = doc.GetAllElements<Level>().FirstOrDefault( l => l.Id == toConnector.LevelId )?.Name ?? string.Empty ;
+        
+        string constructionItem = conduit!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
+        
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
         if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) continue ;
 
@@ -139,7 +143,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode )
           ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 )
           : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) ;
-        
+        var hiroiCdModel = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetCdMasterEcoModelData.FirstOrDefault( x => x.SetCode == ceedSetCode[ 1 ] ) : hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedSetCode[ 1 ] ) ;
+        var constructionClassification = hiroiCdModel?.ConstructionClassification ;
         foreach ( var item in hiroiSetModels ) {
           List<string> listMaterialCode = new() ;
           if ( ! string.IsNullOrEmpty( item.MaterialCode1 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
@@ -159,8 +164,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var wireType = master.Type ;
             var wireSize = master.Size1 ;
             var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
- 
-            selectWiringModels.Add( new WiringModel( conduit.Id.ToString(), toConnector.Id.ToString(), routeName!, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, "" ) ) ;
+            var signalType = wiresAndCablesModel.Classification ;
+            
+            selectWiringModels.Add( new WiringModel( conduit.Id.ToString(), toConnector.UniqueId, routeName!, floor, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, "", string.Empty, constructionClassification, signalType, constructionItem, constructionItem, toConnectorCeedModel.GeneralDisplayDeviceSymbol,item.ParentPartModelNumber ) ) ;
           }
         }
 

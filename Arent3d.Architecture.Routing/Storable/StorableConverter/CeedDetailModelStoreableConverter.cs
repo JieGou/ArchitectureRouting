@@ -43,7 +43,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var type = deserializer.GetString( SerializeField.Type ) ; 
       var order = deserializer.GetInt( SerializeField.Order ) ; 
 
-      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, type) ;
+      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, type, string.Empty) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedDetailModel customTypeValue )

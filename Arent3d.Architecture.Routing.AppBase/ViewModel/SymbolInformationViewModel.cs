@@ -183,7 +183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var hiroiMasterViewModel = new HiroiMasterViewModel( _document, HiroiMasterModels, _hiroiSetMasterEcoModels, _hiroiSetMasterNormalModels,  true ) ;
       var hiroiMasterDialog = new HiroiMasterDialog( hiroiMasterViewModel ) ;
       if ( true == hiroiMasterDialog.ShowDialog() ) {
-        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, CeedDetailList.Count + 1, hiroiMasterViewModel.HiroiMasterSelected?.Type ) ;
+        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, CeedDetailList.Count + 1, hiroiMasterViewModel.HiroiMasterSelected?.Type, string.Empty ) ;
         CeedDetailList.Add( ceedDetailModel ) ; 
         CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ; 
       }
@@ -198,7 +198,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         return;
       }
        
-      var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, selectedHiroiMaster.Hinmei, selectedHiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2, selectedHiroiMaster.Kikaku, CeedDetailList.Count + 1, selectedHiroiMaster.Type ) ;
+      var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, selectedHiroiMaster.Hinmei, selectedHiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2, selectedHiroiMaster.Kikaku, CeedDetailList.Count + 1, selectedHiroiMaster.Type, string.Empty ) ;
       CeedDetailList.Add( ceedDetailModel ) ; 
       CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ; 
     }
