@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public static void CreateElectricalSymbolModels( Document doc, CeedStorable ceedStorable, List<ElectricalSymbolModel> electricalSymbolModels, IEnumerable<Element> conduits )
     {
-      const string showCeedModelSymbol = "〇";
+      string[] showCeedModelSymbols = {"〇","○"} ;
       var csvStorable = doc.GetCsvStorable() ;
       var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
       var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
@@ -94,23 +94,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         
         var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
         if ( detailTableModelsByRouteName.Any() ) {
-          if (fromConnectorCeedModel!=null && fromConnectorCeedModel.FloorPlanSymbol ==  showCeedModelSymbol)
+          if (fromConnectorCeedModel!=null && showCeedModelSymbols.Any(legend=>legend == fromConnectorCeedModel.LegendDisplay))
           {
             ceedModelDetailTableList.Add(new (fromConnectorCeedModel,detailTableModelsByRouteName,fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId));
           }
 
-          if (toConnectorCeedModel != null && toConnectorCeedModel.FloorPlanSymbol == showCeedModelSymbol)
+          if (toConnectorCeedModel != null && showCeedModelSymbols.Any(legend=>legend == toConnectorCeedModel.LegendDisplay))
           {
             ceedModelDetailTableList.Add(new (toConnectorCeedModel,detailTableModelsByRouteName,fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId));
           }
         }
         else {
-          if (fromConnectorCeedModel != null && fromConnectorCeedModel.FloorPlanSymbol == showCeedModelSymbol )
+          if (fromConnectorCeedModel != null && showCeedModelSymbols.Any(legend=>legend == fromConnectorCeedModel.LegendDisplay) )
           {
             ceedModelList.Add(new (fromConnectorCeedModel,fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId));
           }
 
-          if (toConnectorCeedModel != null && toConnectorCeedModel.FloorPlanSymbol == showCeedModelSymbol)
+          if (toConnectorCeedModel != null && showCeedModelSymbols.Any(legend=>legend == toConnectorCeedModel.LegendDisplay))
           {
             ceedModelList.Add(new (toConnectorCeedModel,fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId));
           }
