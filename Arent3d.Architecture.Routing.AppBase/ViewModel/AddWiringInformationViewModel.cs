@@ -139,6 +139,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           
             //Update DetailTableStore
             DetailTableStorable detailTableStorable = _document.GetDetailTableStorable() ; 
+            if(detailTableStorable.DetailTableModelData.FirstOrDefault(x=>x.RouteName == DetailTableModel.RouteName) == null)
+              detailTableStorable.DetailTableModelData.Add( DetailTableModel );
             detailTableStorable.Save();
           } 
           t.Commit() ;

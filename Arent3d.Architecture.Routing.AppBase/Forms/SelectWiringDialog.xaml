@@ -1,0 +1,42 @@
+<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.SelectWiringDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        mc:Ignorable="d" x:Name="SelectWiring"
+        Title="Wiring Information Dialog" Height="400" Width="700" 
+        d:DataContext="{d:DesignInstance {x:Type local:DesignSelectWiringViewModel}, IsDesignTimeCreatable=True}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" ItemsSource="{Binding SelectWiringList}" SelectedItem="{Binding SelectedWiring}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Width="100" IsReadOnly="True" Binding="{Binding Id}"/>
+                <DataGridTextColumn Header="Route Name" Width="150" IsReadOnly="True" Binding="{Binding RouteName}"/>
+                <DataGridTextColumn Header="Wire Type" Width="100" IsReadOnly="True" Binding="{Binding WireType}"/>
+                <DataGridTextColumn Header="Wire Size" Width="100" IsReadOnly="True" Binding="{Binding WireSize}"/>
+                <DataGridTextColumn Header="Wire strip" Width="100" IsReadOnly="True" Binding="{Binding WireStrip}"/>
+                <DataGridTextColumn Header="Plumbing" Width="100" IsReadOnly="True" Binding="{Binding PipingType }"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Width="100" Content="Change Info" Margin="10"
+                        Command="{Binding ChangeWiringInfoCommand}"
+                        CommandParameter="{Binding ElementName=SelectWiring}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Width="100" Content="OK" Margin="10"
+                        Command="{Binding SelectWiringCommand}"
+                        CommandParameter="{Binding ElementName=SelectWiring}" />
+                <Button Width="100" Content="Cancel" Margin="10"
+                        Command="{Binding CancelCommand}"
+                        CommandParameter="{Binding ElementName=SelectWiring}" />
+            </StackPanel>    
+        </StackPanel>
+        
+    </Grid>
+</Window>

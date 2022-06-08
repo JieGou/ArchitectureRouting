@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         x:Name="ThisWindow"
         WindowStartupLocation="CenterScreen"
-        Title="Update property" Height="600" Width="450"
+        Title="Update property" Height="500" Width="450"
         d:DataContext="{d:DesignInstance {x:Type local:DesignAddWiringInformationViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <CollectionViewSource x:Key="ConduitTypes" Source="{Binding ConduitTypes}" />
@@ -85,20 +85,20 @@
         <Label Grid.Row="5" Grid.Column="0" Content="電線本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
         <ComboBox Grid.Row="5" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource Numbers}}" SelectedItem="{Binding DetailTableModel.WireBook}" />
         <!-- EarthType  -->
-        <Label Grid.Row="6" Grid.Column="0" Content="アース種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <ComboBox Grid.Row="6" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource EarthTypes}}" SelectedItem="{Binding DetailTableModel.EarthType}" >
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="SelectionChanged">
-                    <i:InvokeCommandAction Command="{Binding EarthTypeChangedCommand}"/>
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-        </ComboBox>
-        <!-- EarthSize  -->
-        <Label Grid.Row="7" Grid.Column="0" Content="アースサイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <ComboBox Grid.Row="7" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource EarthSizes}}" SelectedItem="{Binding DetailTableModel.EarthSize}" />
-        <!-- NumberOfGrounds   -->
-        <Label Grid.Row="8" Grid.Column="0" Content="アース本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <ComboBox Grid.Row="8" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource NumberOfGrounds}}" SelectedItem="{Binding DetailTableModel.NumberOfGrounds}" />
+        <!-- <Label Grid.Row="6" Grid.Column="0" Content="アース種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" /> -->
+        <!-- <ComboBox Grid.Row="6" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource EarthTypes}}" SelectedItem="{Binding DetailTableModel.EarthType}" > -->
+        <!--     <i:Interaction.Triggers> -->
+        <!--         <i:EventTrigger EventName="SelectionChanged"> -->
+        <!--             <i:InvokeCommandAction Command="{Binding EarthTypeChangedCommand}"/> -->
+        <!--         </i:EventTrigger> -->
+        <!--     </i:Interaction.Triggers> -->
+        <!-- </ComboBox> -->
+        <!-- ~1~ EarthSize  @1@ -->
+        <!-- <Label Grid.Row="7" Grid.Column="0" Content="アースサイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" /> -->
+        <!-- <ComboBox Grid.Row="7" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource EarthSizes}}" SelectedItem="{Binding DetailTableModel.EarthSize}" /> -->
+        <!-- ~1~ NumberOfGrounds   @1@ -->
+        <!-- <Label Grid.Row="8" Grid.Column="0" Content="アース本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" /> -->
+        <!-- <ComboBox Grid.Row="8" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource NumberOfGrounds}}" SelectedItem="{Binding DetailTableModel.NumberOfGrounds}" /> -->
         <!-- PlumbingType   -->
         <!-- <Label Grid.Row="9" Grid.Column="0" Content="配管種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" /> -->
         <!-- <ComboBox Grid.Row="9" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConduitTypes}}" SelectedItem="{Binding DetailTableModel.PlumbingType}" > -->
@@ -115,22 +115,22 @@
         <!-- <Label Grid.Row="11" Grid.Column="0" Content="配管本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" /> -->
         <!-- <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding DetailTableModel.NumberOfPlumbing}" Width="230" Height="27"  VerticalContentAlignment="Center" /> -->
         <!-- ConstructionClassification   -->
-        <Label Grid.Row="9" Grid.Column="0" Content="施工区分" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <ComboBox Grid.Row="9" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConstructionClassificationTypes}}" SelectedItem="{Binding DetailTableModel.ConstructionClassification}" />
+        <Label Grid.Row="6" Grid.Column="0" Content="施工区分" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="6" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConstructionClassificationTypes}}" SelectedItem="{Binding DetailTableModel.ConstructionClassification}" />
         <!-- SignalType   -->
-        <Label Grid.Row="10" Grid.Column="0" Content="信号種別" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <ComboBox Grid.Row="10" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource SignalTypes}}" SelectedItem="{Binding DetailTableModel.SignalType}" />
+        <Label Grid.Row="7" Grid.Column="0" Content="信号種別" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="7" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource SignalTypes}}" SelectedItem="{Binding DetailTableModel.SignalType}" />
         <!-- ConstructionItems   -->
-        <Label Grid.Row="11" Grid.Column="0" Content="工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <ComboBox Grid.Row="11" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConstructionList}}" SelectedItem="{Binding DetailTableModel.ConstructionItems}" />
+        <Label Grid.Row="8" Grid.Column="0" Content="工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="8" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConstructionList}}" SelectedItem="{Binding DetailTableModel.ConstructionItems}" />
         <!-- PlumbingItems   -->
-        <Label Grid.Row="12" Grid.Column="0" Content="配管工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <ComboBox Grid.Row="12" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource PlumbingItemTypes}}" SelectedItem="{Binding DetailTableModel.PlumbingItems}" />
+        <Label Grid.Row="9" Grid.Column="0" Content="配管工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="9" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource PlumbingItemTypes}}" SelectedItem="{Binding DetailTableModel.PlumbingItems}" />
         <!-- Remark   -->
-        <Label Grid.Row="13" Grid.Column="0" Content="備考" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding DetailTableModel.Remark}" Width="230" Height="27" VerticalContentAlignment="Center" />
+        <Label Grid.Row="10" Grid.Column="0" Content="備考" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding DetailTableModel.Remark}" Width="230" Height="27" VerticalContentAlignment="Center" />
 
-        <StackPanel Grid.Row="14" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="11" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Save" Width="70" Height="25" Command="{Binding SaveCommand}" CommandParameter="{Binding ElementName=ThisWindow}" />
             <Button Content="Cancel" Width="70" Height="25" Margin="10 0 10 0" Command="{Binding CancelCommand}" CommandParameter="{Binding ElementName=ThisWindow}" />
         </StackPanel>
