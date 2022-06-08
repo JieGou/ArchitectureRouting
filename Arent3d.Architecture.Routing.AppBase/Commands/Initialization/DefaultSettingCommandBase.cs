@@ -72,7 +72,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( deletedFloorName.Any() ) {
             RemoveViews( document, deletedFloorName, uiDocument ) ;
           }
-          
+
+          UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
           LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
           return Result.Succeeded ;
         }
@@ -229,9 +230,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           .Where( x=> nameLevelList.Contains(x.LevelName) )
           .OrderBy( l => l.Elevation ) ;
         
-        var levelListToCreate3d = levelListOrderByElavation.Select( level => ( Id: level.LevelId, Name: level.LevelName ) ).EnumerateAll() ;
+        var levelListToCreate3d = levelListOrderByElavation.Select( level => ( Id: level.LevelId, Name: level.LevelName ) ).ToList();
+
+        List<View3D> all3DViews = new FilteredElementCollector(doc).OfClass(typeof(View3D)).Cast<View3D>().ToList();
+
+        var levels = levelListToCreate3d.Where( x => all3DViews.FirstOrDefault( y => y.Name == "3D" + x.Name ) == null ).EnumerateAll() ;
         
-        doc.Create3DView( levelListToCreate3d ) ;
+        if(levels.Any())
+          doc.Create3DView( levels ) ;
         
         create3D.Commit() ;
         #endregion
@@ -342,22 +348,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const double floorHeight = 0 ;
       const string floorName = ArentDummyViewName ;
       const int scale = 100 ;
-      var importOptions = new DWGImportOptions
-      {
-        ColorMode = ImportColorMode.Preserved,
-        CustomScale = 0.0,
-        Unit = ImportUnit.Default,
-        OrientToView = true,
-        Placement = ImportPlacement.Origin,
-        ThisViewOnly = false,
-        VisibleLayersOnly = false
-      } ;
+      
       var viewFamily = new FilteredElementCollector( doc ).OfClass( typeof( ViewFamilyType ) ).Cast<ViewFamilyType>().First( x => x.ViewFamily == ViewFamily.FloorPlan ) ;
-     // var levelName = "Level " + floorName ;
-      
+
       var level = Level.Create( doc, floorHeight) ;
-     // level.Name = levelName ;
-      
+
       var viewPlan = ViewPlan.Create( doc, viewFamily.Id, level.Id ) ;
       viewPlan.Name = floorName ;
 
@@ -371,6 +366,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var pCurrView = uiDocument.ActiveView ;
       uiDocument.RequestViewChange( pCurrView ) ;
       uiDocument.ActiveView = viewPlan ;
+    }
+
+    private void UpdateScaleAndHeightPlanView(  Document document, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels )
+    {
+      List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( document )
+          .OfClass( typeof( ViewPlan ) )
+          .Cast<ViewPlan>()
+          .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+      
+      var allCurrentLevels = new FilteredElementCollector( document ).OfClass( typeof( Level ) ).ToList() ;
+      var updateScaleTrans = new Transaction( document ) ;
+      updateScaleTrans.SetName( "Update Scale" ) ;
+      updateScaleTrans.Start() ;
+      foreach ( var importDwgMappingModel in importDwgMappingModels ) {
+        var viewPlan = views.FirstOrDefault( x => x.Name == importDwgMappingModel.FloorName ) ;
+        if ( viewPlan != null && viewPlan.Scale != importDwgMappingModel.Scale) {
+          viewPlan.Scale = importDwgMappingModel.Scale ;
+          if ( null != viewPlan.ViewTemplateId && document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale ) {
+            viewTemplate.Scale = importDwgMappingModel.Scale ;
+          }
+        }
+        
+        var levelName = importDwgMappingModel.FloorName ;
+        var importDwgLevel = allCurrentLevels.FirstOrDefault( x => x.Name.Equals( levelName ) ) ;
+        importDwgLevel?.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
+      }
+      updateScaleTrans.Commit() ;
     }
   }
 }
