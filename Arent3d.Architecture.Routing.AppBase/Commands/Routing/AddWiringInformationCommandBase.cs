@@ -105,13 +105,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private List<SelectWiringModel> GetAllConduitRelated( Document doc, Element pickConduit, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData )
+    private List<WiringModel> GetAllConduitRelated( Document doc, Element pickConduit, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData )
     {
       const string defaultPlumbingType = "配管なし" ;
       var ceedStorable = doc.GetCeedStorable() ;
       var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
       var conduits = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRepresentativeRouteName() == representativeRouteName ).ToList() ;
-      List<SelectWiringModel> selectWiringModels = new() ;
+      List<WiringModel> selectWiringModels = new() ;
       foreach ( var conduit in conduits ) {
         var routeName = conduit.GetRouteName() ;
         if ( string.IsNullOrEmpty( routeName ) ) continue ;
@@ -154,16 +154,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var wireSize = master.Size1 ;
             var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
  
-            selectWiringModels.Add( new SelectWiringModel( conduit.Id.ToString(), routeName!, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, "" ) ) ;
+            selectWiringModels.Add( new WiringModel( conduit.Id.ToString(), toConnector.Id.ToString(), routeName!, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, "" ) ) ;
           }
         }
 
         
       }
 
-      return selectWiringModels ;
-
-      //return ( from conduit in conduits select new SelectWiringModel( conduit.Id.ToString(), conduit.GetRouteName() ?? string.Empty ) ).ToList() ;
+      return selectWiringModels ; 
     }
   }
 }

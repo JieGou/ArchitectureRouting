@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   
   public abstract class DesignSelectWiringViewModel : SelectWiringViewModel
   {
-    protected DesignSelectWiringViewModel( List<SelectWiringModel> selectWiringList ) : base( selectWiringList )
+    protected DesignSelectWiringViewModel( List<WiringModel> selectWiringList ) : base( selectWiringList )
     {
     }
   }
