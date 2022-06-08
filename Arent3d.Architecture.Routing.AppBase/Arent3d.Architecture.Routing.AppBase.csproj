@@ -20,6 +20,9 @@
     <Compile Update="Forms\Behaviour.cs">
       <SubType>Form</SubType>
     </Compile>
+    <None Update="resources\ElectricalCategory.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

@@ -32,7 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   
   public abstract class DesignHiroiMasterViewModel : HiroiMasterViewModel
   {
-    protected DesignHiroiMasterViewModel( Document? document, List<HiroiMasterModel> hiroiMasterList ) : base( document, hiroiMasterList )
+    protected DesignHiroiMasterViewModel( Document? document, List<HiroiMasterModel> hiroiMasterList, List<HiroiSetMasterModel>? hiroiSetMasterEcoModels, List<HiroiSetMasterModel>? hiroiSetMasterNormalModels, bool isEcoModel ) : base( document, hiroiMasterList, hiroiSetMasterEcoModels, hiroiSetMasterNormalModels, isEcoModel )
     {
     }
   }
