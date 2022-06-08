@@ -199,7 +199,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
+    public ICommand SearchCommand => new RelayCommand( Search ) ;
     public ICommand ResetCommand => new RelayCommand( Reset ) ;
+    
+    public ICommand OkCommand
+    {
+      get
+      {
+        return new RelayCommand<Window>( wd => null != wd, wd =>
+        {
+          Save() ;
+          wd.DialogResult = true ;
+          wd.Close() ;
+        } ) ;
+      }
+    }
 
     public CeedViewModel( ExternalCommandData commandData )
     {
@@ -242,8 +256,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CeedStorable = ceedStorable ;
       _ceedModels = ceedStorable.CeedModelData ;
       CeedModels.Clear() ;
+      PreviewList.Clear() ;
       foreach ( var dataModel in _ceedModels ) {
         CeedModels.Add( dataModel ) ;
+        PreviewList.Add( dataModel ) ;
       }
 
       AddModelNumber( CeedModels ) ;
@@ -256,8 +272,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ceedStorable != null )
         CeedStorable = ceedStorable ;
       CeedModels.Clear() ;
+      PreviewList.Clear() ;
       foreach ( var dataModel in ceedModels ) {
         CeedModels.Add( dataModel ) ;
+        PreviewList.Add( dataModel ) ;
       }
 
       AddModelNumber( CeedModels ) ;
@@ -284,6 +302,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! DeviceSymbols.Contains( ceedModel.GeneralDisplayDeviceSymbol ) )
           DeviceSymbols.Add( ceedModel.GeneralDisplayDeviceSymbol ) ;
       }
+      
+      ResetComboboxValue() ;
     }
 
     private List<CategoryModel> GetCategoryModels()
@@ -409,10 +429,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Reset()
     {
+      ResetComboboxValue() ;
+      Search() ;
+    }
+
+    private void ResetComboboxValue()
+    {
       SelectedCeedSetCode = string.Empty ;
       SelectedModelNumber = string.Empty ;
       SelectedDeviceSymbolValue = string.Empty ;
-      Search() ;
     }
 
     public void LoadUsingCeedModel( CheckBox checkBox )

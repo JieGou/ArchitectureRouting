@@ -106,6 +106,40 @@
         <None Remove="resources\split_schedule_32x32.png" />
         <None Remove="resources\folder_16x16.png" />
         <Resource Include="resources\icon_folder_16x16.png" />
+        <Resource Include="resources\Images\ConnectorOneSide1.png" />
+        <Resource Include="resources\Images\ConnectorOneSide10.png" />
+        <Resource Include="resources\Images\ConnectorOneSide11.png" />
+        <Resource Include="resources\Images\ConnectorOneSide12.png" />
+        <Resource Include="resources\Images\ConnectorOneSide13.png" />
+        <Resource Include="resources\Images\ConnectorOneSide14.png" />
+        <Resource Include="resources\Images\ConnectorOneSide15.png" />
+        <Resource Include="resources\Images\ConnectorOneSide16.png" />
+        <Resource Include="resources\Images\ConnectorOneSide17.png" />
+        <Resource Include="resources\Images\ConnectorOneSide19.png" />
+        <Resource Include="resources\Images\ConnectorOneSide2.png" />
+        <Resource Include="resources\Images\ConnectorOneSide20.png" />
+        <Resource Include="resources\Images\ConnectorOneSide21.png" />
+        <Resource Include="resources\Images\ConnectorOneSide22.png" />
+        <Resource Include="resources\Images\ConnectorOneSide23.png" />
+        <Resource Include="resources\Images\ConnectorOneSide24.png" />
+        <Resource Include="resources\Images\ConnectorOneSide25.png" />
+        <Resource Include="resources\Images\ConnectorOneSide26.png" />
+        <Resource Include="resources\Images\ConnectorOneSide27.png" />
+        <Resource Include="resources\Images\ConnectorOneSide28.png" />
+        <Resource Include="resources\Images\ConnectorOneSide29.png" />
+        <Resource Include="resources\Images\ConnectorOneSide30.png" />
+        <Resource Include="resources\Images\ConnectorOneSide31.png" />
+        <Resource Include="resources\Images\ConnectorOneSide32.png" />
+        <Resource Include="resources\Images\ConnectorOneSide33.png" />
+        <Resource Include="resources\Images\ConnectorOneSide34.png" />
+        <Resource Include="resources\Images\ConnectorOneSide35.png" />
+        <Resource Include="resources\Images\ConnectorOneSide36.png" />
+        <Resource Include="resources\Images\ConnectorOneSide37.png" />
+        <Resource Include="resources\Images\ConnectorOneSide5.png" />
+        <Resource Include="resources\Images\ConnectorOneSide6.png" />
+        <Resource Include="resources\Images\ConnectorOneSide7.png" />
+        <Resource Include="resources\Images\ConnectorOneSide8.png" />
+        <Resource Include="resources\Images\ConnectorOneSide9.png" />
     </ItemGroup>
 
     <ItemGroup>
