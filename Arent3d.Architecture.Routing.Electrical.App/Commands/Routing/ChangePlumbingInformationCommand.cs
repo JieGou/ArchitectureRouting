@@ -1,14 +1,11 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Windows.Documents ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Selection ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -39,32 +36,34 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var doc = uiDoc.Document ;
         var selection = uiDoc.Selection ;
         
-
         return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
         {
-          var element = selection.PickObject( ObjectType.Element, StraightConduitSelectionFilter.Instance, "Select conduit." ) ;
-          var conduit = doc.GetElement( element.ElementId ) ;
-          if ( conduit == null ) return Result.Cancelled ;
+          var allElementSelected = selection.GetElementIds() ;
+          var connectorsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => allElementSelected.Contains( e.Id ) ).ToList() ;
+          var conduitAndConnectorDic = GetConduitOfConnector( doc, connectorsSelected ) ;
+          if ( ! conduitAndConnectorDic.Any() ) return Result.Cancelled ;
 
           var changePlumbingInformationStorable = doc.GetChangePlumbingInformationStorable() ;
-          var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
-          var viewModel = CreateChangePlumbingInformationViewModel( doc, conduit, oldChangePlumbingInformationModel ) ;
+          var viewModel = CreateChangePlumbingInformationViewModel( doc, conduitAndConnectorDic, changePlumbingInformationStorable ) ;
           var view = new ChangePlumbingInformationDialog { DataContext = viewModel } ;
           view.ShowDialog() ;
           if ( ! ( view.DialogResult ?? false ) ) return Result.Cancelled ;
 
-          if ( oldChangePlumbingInformationModel == null ) {
-            var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, viewModel.PlumbingType, viewModel.PlumbingSize, viewModel.NumberOfPlumbing, viewModel.ConstructionClassification, viewModel.ConstructionItem ) ;
-            changePlumbingInformationStorable.ChangePlumbingInformationModelData.Add( changePlumbingInformationModel ) ;
+          foreach ( var item in viewModel.ChangePlumbingInformationModels ) {
+            var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == item.ConduitId ) ;
+            if ( oldChangePlumbingInformationModel == null ) {
+              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.ConstructionClassification, item.ConstructionItems, item.WireCrossSectionalArea ) ;
+              changePlumbingInformationStorable.ChangePlumbingInformationModelData.Add( changePlumbingInformationModel ) ;
+            }
+            else {
+              oldChangePlumbingInformationModel.PlumbingType = item.PlumbingType ;
+              oldChangePlumbingInformationModel.PlumbingSize = item.PlumbingSize ;
+              oldChangePlumbingInformationModel.NumberOfPlumbing = item.NumberOfPlumbing ;
+              oldChangePlumbingInformationModel.ConstructionClassification = item.ConstructionClassification ;
+              oldChangePlumbingInformationModel.ConstructionItems = item.ConstructionItems ;
+            }
           }
-          else {
-            oldChangePlumbingInformationModel.PlumbingType = viewModel.PlumbingType ;
-            oldChangePlumbingInformationModel.PlumbingSize = viewModel.PlumbingSize ;
-            oldChangePlumbingInformationModel.NumberOfPlumbing = viewModel.NumberOfPlumbing ;
-            oldChangePlumbingInformationModel.ConstructionClassification = viewModel.ConstructionClassification ;
-            oldChangePlumbingInformationModel.ConstructionItems = viewModel.ConstructionItem ;
-          }
-          
+
           changePlumbingInformationStorable.Save() ;
           
           return Result.Succeeded ;
@@ -76,73 +75,99 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
 
-    private ChangePlumbingInformationViewModel CreateChangePlumbingInformationViewModel( Document doc, Element conduit, ChangePlumbingInformationModel? oldChangePlumbingInformation )
+    private Dictionary<Element, Element> GetConduitOfConnector( Document document, List<Element> connectors )
+    {
+      var conduitAndConnectorDic = new Dictionary<Element, Element>() ;
+      foreach ( var connector in connectors ) {
+        
+      }
+      
+      return conduitAndConnectorDic ;
+    } 
+    
+    private ChangePlumbingInformationViewModel CreateChangePlumbingInformationViewModel( Document doc, Dictionary<Element, Element> conduitAndConnectorDic, ChangePlumbingInformationStorable changePlumbingInformationStorable )
     {
       const double percentage = 0.32 ;
       var detailSymbolStorable = doc.GetDetailSymbolStorable() ;
-      var detailTableStorable = doc.GetDetailTableStorable() ;
       var csvStorable = doc.GetCsvStorable() ;
       var conduitsModelData = csvStorable.ConduitsModelData ;
-      var cnsStorable = doc.GetCnsSettingStorable() ;
 
-      var detailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.ConduitId == conduit.UniqueId ) ;
-      var detailTableModel = detailTableStorable.DetailTableModelData.FirstOrDefault( d => d.RouteName == conduit.GetRouteName() ) ;
-      
-      var plumbingType = oldChangePlumbingInformation != null ? oldChangePlumbingInformation.PlumbingType : ( detailSymbolModel?.PlumbingType ?? DefaultParentPlumbingType ) ;
       var plumbingTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
       var plumbingTypes = ( from conduitTypeName in plumbingTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
       plumbingTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
-
-      var plumbingSizes = new List<DetailTableModel.ComboboxItemType>() ;
-      string plumbingSize ;
-      var numberOfPlumbing = oldChangePlumbingInformation?.NumberOfPlumbing ?? 1 ;
-      if ( plumbingType != NoPlumping ) {
-        var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
-        var plumbingSizesOfPlumbingType = conduitsModels.Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
-        plumbingSizes = ( from plumbingSizeName in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSizeName, plumbingSizeName ) ).ToList() ;
-        plumbingSize = oldChangePlumbingInformation != null ? oldChangePlumbingInformation.PlumbingSize : plumbingSizesOfPlumbingType.First() ;
-        if ( detailTableModel != null && oldChangePlumbingInformation == null ) {
-          var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= detailTableModel.WireCrossSectionalArea / percentage ) ?? conduitsModels.Last() ;
-          plumbingSize = plumbing == null ? plumbingSizesOfPlumbingType.Last() : plumbing.Size.Replace( "mm", "" ) ;
-          if ( plumbing == conduitsModels.Last() ) numberOfPlumbing = (int) Math.Ceiling( ( detailTableModel.WireCrossSectionalArea / percentage ) / double.Parse( plumbing.InnerCrossSectionalArea ) ) ;
-        }
-      }
-      else {
-        plumbingSizes.Add( new DetailTableModel.ComboboxItemType( NoPlumbingSize, NoPlumbingSize ) ) ;
-        plumbingSize = NoPlumbingSize ;
-      }
       
-      var numbersOfPlumbing = new List<DetailTableModel.ComboboxItemType>() ;
-      for ( var i = 1 ; i <= 10 ; i++ ) {
-        numbersOfPlumbing.Add( new DetailTableModel.ComboboxItemType( i.ToString(), i.ToString() ) ) ;
-      }
-
-      conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
-      var hiroiCdModel = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? csvStorable.HiroiSetCdMasterEcoModelData : csvStorable.HiroiSetCdMasterNormalModelData ;
+      var hiroiCdModel = csvStorable.HiroiSetCdMasterNormalModelData ;
       var constructionClassificationNames = hiroiCdModel.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
       var constructionClassifications = ( from constructionClassificationName in constructionClassificationNames select new DetailTableModel.ComboboxItemType( constructionClassificationName, constructionClassificationName ) ).ToList() ;
-      var constructionClassification = oldChangePlumbingInformation != null ? oldChangePlumbingInformation.ConstructionClassification : constructionClassificationNames.First() ;
-      if ( oldChangePlumbingInformation == null ) {
-        List<Element> allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
-        var toConnector = ElectricalCommandUtil.GetConnectorOfRoute( doc, allConnectors, conduit.GetRouteName() ! ) ;
-        if ( toConnector != null ) {
-          var ceedCode = ElectricalCommandUtil.GetCeedSetCodeOfElement( toConnector ) ;
-          if ( ! string.IsNullOrEmpty( ceedCode ) ) {
-            constructionClassification = hiroiCdModel.FirstOrDefault( h => h.SetCode == ceedCode )?.ConstructionClassification ?? constructionClassificationNames.First() ;
+      
+      var changePlumbingInformationModels = new List<ChangePlumbingInformationModel>() ;
+      var conduitIds = new List<DetailTableModel.ComboboxItemType>() ;
+      foreach ( var ( conduit, connector) in conduitAndConnectorDic ) {
+        var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
+        var detailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.ConduitId == conduit.UniqueId ) ;
+        var plumbingType = oldChangePlumbingInformationModel != null 
+          ? oldChangePlumbingInformationModel.PlumbingType 
+          : ( detailSymbolModel?.PlumbingType ?? DefaultParentPlumbingType ) ;
+
+        conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+        var constructionClassification = oldChangePlumbingInformationModel != null 
+          ? oldChangePlumbingInformationModel.ConstructionClassification 
+          : constructionClassificationNames.First() ;
+        var wireCrossSectionalArea = oldChangePlumbingInformationModel?.WireCrossSectionalArea ?? 0 ;
+        var ( ceedCode, deviceSymbol) = ElectricalCommandUtil.GetCeedCodeAndDeviceSymbolOfElement( connector ) ;
+        if ( oldChangePlumbingInformationModel == null && ! string.IsNullOrEmpty( ceedCode ) ) {
+          var hiroiSetCdMasterModel = hiroiCdModel.FirstOrDefault( h => h.SetCode == ceedCode ) ;
+          if ( hiroiSetCdMasterModel != null ) {
+            constructionClassification = hiroiSetCdMasterModel.ConstructionClassification ;
+            var ceedModelNumber = hiroiSetCdMasterModel.LengthParentPartModelNumber ;
+            var hiroiSetMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) 
+              ? csvStorable.HiroiSetMasterEcoModelData 
+              : csvStorable.HiroiSetMasterNormalModelData ;
+            var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
+            if ( hiroiSetMasterModel != null ) {
+              var materialCode = hiroiSetMasterModel.MaterialCode1 ;
+              var masterModel = csvStorable.HiroiMasterModelData.FirstOrDefault( x => int.Parse( x.Buzaicd ).ToString() == int.Parse( materialCode ).ToString() ) ;
+              if ( masterModel != null ) {
+                var wireType = masterModel.Type ;
+                var wireSize = masterModel.Size1 ;
+                var wiresAndCablesModel = csvStorable.WiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModel.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModel.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+                if ( wiresAndCablesModel != null )
+                  wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+              }
+            }
           }
         }
+        
+        string plumbingSize ;
+        var numberOfPlumbing = oldChangePlumbingInformationModel?.NumberOfPlumbing ?? "1" ;
+        if ( plumbingType != NoPlumping ) {
+          var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+          var plumbingSizesOfPlumbingType = conduitsModels.Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+          plumbingSize = oldChangePlumbingInformationModel != null ? oldChangePlumbingInformationModel.PlumbingSize : plumbingSizesOfPlumbingType.First() ;
+          if ( oldChangePlumbingInformationModel == null ) {
+            var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= wireCrossSectionalArea / percentage ) ?? conduitsModels.Last() ;
+            plumbingSize = plumbing == null ? plumbingSizesOfPlumbingType.Last() : plumbing.Size.Replace( "mm", "" ) ;
+            if ( plumbing == conduitsModels.Last() ) numberOfPlumbing = ( (int) Math.Ceiling( ( wireCrossSectionalArea / percentage ) / double.Parse( plumbing.InnerCrossSectionalArea ) ) ).ToString() ;
+          }
+        }
+        else {
+          plumbingSize = NoPlumbingSize ;
+          numberOfPlumbing = string.Empty ;
+        }
+
+        var constructionItem = oldChangePlumbingInformationModel != null ? oldChangePlumbingInformationModel.ConstructionItems : DefaultConstructionItems ;
+        if ( oldChangePlumbingInformationModel == null ) {
+          conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? conduitConstructionItem ) ;
+          if ( ! string.IsNullOrEmpty( conduitConstructionItem ) ) constructionItem = conduitConstructionItem ;
+        }
+
+        var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, wireCrossSectionalArea ) ;
+        changePlumbingInformationModels.Add( changePlumbingInformationModel ) ;
+        
+        conduitIds.Add( new DetailTableModel.ComboboxItemType( string.Join( ":", ceedCode, deviceSymbol ), conduit.UniqueId ) );
       }
 
-      var constructionItem = oldChangePlumbingInformation != null ? oldChangePlumbingInformation.ConstructionItems : DefaultConstructionItems ;
-      if ( oldChangePlumbingInformation == null ) {
-        conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? conduitConstructionItem ) ;
-        if ( ! string.IsNullOrEmpty( conduitConstructionItem ) ) constructionItem = conduitConstructionItem ;
-      }
-
-      var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
-      var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new DetailTableModel.ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
-      
-      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem!, plumbingTypes, plumbingSizes, numbersOfPlumbing, constructionClassifications, constructionItems ) ;
+      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, changePlumbingInformationModels, plumbingTypes, constructionClassifications, conduitIds ) ;
       return viewModel ;
     }
   }

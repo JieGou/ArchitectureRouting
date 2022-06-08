@@ -5,18 +5,20 @@
     public string ConduitId { get ; set ; }
     public string PlumbingType { get ; set ; }
     public string PlumbingSize { get ; set ; }
-    public int NumberOfPlumbing { get ; set ; }
+    public string NumberOfPlumbing { get ; set ; }
     public string ConstructionClassification { get ; set ; }
     public string ConstructionItems { get ; set ; }
+    public double WireCrossSectionalArea { get ; set ; }
 
-    public ChangePlumbingInformationModel( string? conduitId, string? plumbingType, string? plumbingSize, int? numberOfPlumbing, string? constructionClassification, string? constructionItems )
+    public ChangePlumbingInformationModel( string? conduitId, string? plumbingType, string? plumbingSize, string? numberOfPlumbing, string? constructionClassification, string? constructionItems, double? wireCrossSectionalArea )
     {
       ConduitId = conduitId ?? string.Empty ;
       PlumbingType = plumbingType ?? string.Empty ;
       PlumbingSize = plumbingSize ?? string.Empty ;
-      NumberOfPlumbing = numberOfPlumbing ?? 1 ;
+      NumberOfPlumbing = numberOfPlumbing ?? string.Empty ;
       ConstructionClassification = constructionClassification ?? string.Empty ;
       ConstructionItems = constructionItems ?? string.Empty ;
+      WireCrossSectionalArea = wireCrossSectionalArea ?? 0 ;
     }
   }
 }

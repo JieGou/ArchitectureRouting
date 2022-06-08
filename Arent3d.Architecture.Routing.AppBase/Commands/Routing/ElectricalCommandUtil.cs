@@ -145,5 +145,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
       return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':' ).First() : string.Empty ;
     }
+    
+    public static ( string, string ) GetCeedCodeAndDeviceSymbolOfElement( Element element )
+    {
+      element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
+      if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) return ( string.Empty, string.Empty ) ;
+      var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
+      var ceedCode = ceedSetCode.FirstOrDefault() ;
+      var deviceSymbol = ceedSetCode.ElementAt( 1 ) ;
+      return ( ceedCode ?? string.Empty, deviceSymbol ?? string.Empty ) ;
+    }
+
   }
 }
