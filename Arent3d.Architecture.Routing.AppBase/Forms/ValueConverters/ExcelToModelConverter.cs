@@ -6,6 +6,7 @@ using System.Linq ;
 using System.Runtime.InteropServices ;
 using System.Text ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Utility ;
 using Microsoft.Office.Interop.Excel ;
@@ -21,6 +22,56 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
   public static class ExcelToModelConverter
   {
     private const string DefaultSymbol = "Dummy" ;
+
+    public static List<ElectricalCategoryModel> GetElectricalCategories( string path,  ref Dictionary<string, string> dictData, string sheetName = "Eco" )
+    {
+      List<ElectricalCategoryModel> electricalCategoryList = new() ;
+      using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
+      try {
+        XSSFWorkbook wb = new ( fs ) ;
+        //ISheet workSheet  = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
+        ISheet workSheet  = wb.GetSheet( sheetName ) ; 
+        ISheet workSheetKey  = wb.GetSheet( sheetName + "Key" ) ; 
+        const int startRow = 0 ;
+        var endRow = workSheet.LastRowNum ; 
+ 
+        for ( var i = startRow ; i <= endRow ; i++ ) {
+          var row = workSheet.GetRow( i ) ;
+          var cells = row?.Cells ;
+          var col1 = null != cells ? GetCellValue( cells[ 0 ] ) : string.Empty ;
+          var col2 = null != cells ? cells.Count > 1 ? GetCellValue( cells[ 1 ] ) : string.Empty : string.Empty ;
+          var col3 = null != cells ? cells.Count > 2 ? GetCellValue( cells[ 2 ] ) : string.Empty : string.Empty ; 
+          electricalCategoryList.Add( new ElectricalCategoryModel( col1, col2, col3 ));
+          
+          var rowKey = workSheetKey.GetRow( i ) ;
+          var cellKeys = rowKey?.Cells ;
+          if ( ! string.IsNullOrEmpty( col1 ) ) {
+            var col1Key = null != cellKeys ? GetCellValue( cellKeys[ 0 ] ) : string.Empty ;
+            dictData.Add( col1, col1Key );
+          }
+          
+          if ( ! string.IsNullOrEmpty( col2 ) ) {
+            var col2Key = null != cellKeys ? GetCellValue( cellKeys[ 1 ] ) : string.Empty ;
+            dictData.Add( col2, col2Key );
+          }
+          
+          if ( ! string.IsNullOrEmpty( col3 ) ) {
+            var col3Key = null != cellKeys ? GetCellValue( cellKeys[ 2 ] ) : string.Empty ;
+            dictData.Add( col3, col3Key );
+          }
+            
+        }
+
+        return electricalCategoryList ;
+      }
+      catch ( Exception ) {
+        return new List<ElectricalCategoryModel>() ;
+      }
+      finally {
+        fs.Close() ;
+        fs.Dispose() ;
+      }
+    }
     
     public static List<CeedModel> GetAllCeedModelNumber( string path, string path2 )
     {
