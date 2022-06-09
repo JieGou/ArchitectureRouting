@@ -112,20 +112,34 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         OnPropertyChanged() ;
       }
     }
+    
+    private bool _isInDoor ;
+
+    public bool IsInDoor
+    {
+      get => _isInDoor ;
+      set
+      {
+        _isInDoor = value ;
+        OnPropertyChanged() ;
+      }
+    }
 
     public List<ChangePlumbingInformationModel> ChangePlumbingInformationModels { get ; set ; }
     public List<DetailTableModel.ComboboxItemType> PlumbingTypes { get ; }
     public List<DetailTableModel.ComboboxItemType> ConstructionClassifications { get ; }
     public List<DetailTableModel.ComboboxItemType> ConcealmentOrExposure { get ; }
+    public List<DetailTableModel.ComboboxItemType> InOrOutDoor { get ; }
     public List<DetailTableModel.ComboboxItemType> ConduitIds { get ; }
 
     public ICommand SelectionChangedConnectorCommand => new RelayCommand( SelectionChangedConnector ) ;
     public ICommand SelectionChangedPlumbingTypeCommand => new RelayCommand( SetPlumbingSizes ) ;
     public ICommand SelectionChangedConstructionClassificationCommand => new RelayCommand( SelectionChangedConstructionClassification ) ;
     public ICommand SelectionChangedConcealmentOrExposureCommand => new RelayCommand( SelectionChangedConcealmentOrExposure ) ;
+    public ICommand SelectionChangedInOrOutDoorCommand => new RelayCommand( SelectionChangedInOrOutDoor ) ;
     public RelayCommand<Window> ApplyCommand => new(Apply) ;
     
-    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> concealmentOrExposure, List<DetailTableModel.ComboboxItemType> conduitIds )
+    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> concealmentOrExposure, List<DetailTableModel.ComboboxItemType> inOrOutDoor, List<DetailTableModel.ComboboxItemType> conduitIds )
     {
       _conduitsModelData = conduitsModelData ;
       var changePlumbingInformationModel = changePlumbingInformationModels.First() ;
@@ -140,6 +154,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       PlumbingTypes = plumbingTypes ;
       ConstructionClassifications = constructionClassifications ;
       ConcealmentOrExposure = concealmentOrExposure ;
+      InOrOutDoor = inOrOutDoor ;
       ConduitIds = conduitIds ;
       ChangePlumbingInformationModels = changePlumbingInformationModels ;
     }
@@ -176,6 +191,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       ConstructionClassification = changePlumbingInformationModel.ConstructionClassification ;
       ConstructionItem = changePlumbingInformationModel.ConstructionItems ;
       IsExposure = changePlumbingInformationModel.IsExposure ;
+      IsInDoor = changePlumbingInformationModel.IsInDoor ;
     }
     
     private void SelectionChangedConcealmentOrExposure()
@@ -193,6 +209,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       changePlumbingInformationModel.ConstructionClassification = ConstructionClassification ;
       IsEnabled = GetIsEnabled() ;
       IsExposure = IsEnabled && changePlumbingInformationModel.IsExposure || ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ;
+    }
+    
+    private void SelectionChangedInOrOutDoor()
+    {
+      var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
+      if ( changePlumbingInformationModel != null ) {
+        changePlumbingInformationModel.IsInDoor = IsInDoor ;
+      }
     }
 
     private bool GetIsEnabled()

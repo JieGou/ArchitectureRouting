@@ -11,6 +11,7 @@
     public string PipingType { get ; }
     public string PipingSize { get ; }
     public bool IsExposure { get ; }
+    public bool IsInDoor { get ; }
 
     public ElectricalSymbolModel( 
       string uniqueId,
@@ -21,7 +22,8 @@
       string wireStrip,
       string pipingType,
       string pipingSize,
-      bool isExposure)
+      bool isExposure,
+      bool isInDoor)
     {
       UniqueId = uniqueId ;
       FloorPlanSymbol = floorPlanSymbol ;
@@ -32,6 +34,7 @@
       PipingType = pipingType ;
       PipingSize = pipingSize ;
       IsExposure = isExposure ;
+      IsInDoor = isInDoor ;
     }
   }
 }

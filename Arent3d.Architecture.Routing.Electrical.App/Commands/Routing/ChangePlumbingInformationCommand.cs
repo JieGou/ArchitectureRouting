@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           foreach ( var item in viewModel.ChangePlumbingInformationModels ) {
             var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == item.ConduitId ) ;
             if ( oldChangePlumbingInformationModel == null ) {
-              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.ConstructionClassification, item.ConstructionItems, item.WireCrossSectionalArea, item.IsExposure ) ;
+              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.ConstructionClassification, item.ConstructionItems, item.WireCrossSectionalArea, item.IsExposure, item.IsInDoor ) ;
               changePlumbingInformationStorable.ChangePlumbingInformationModelData.Add( changePlumbingInformationModel ) ;
             }
             else {
@@ -63,6 +63,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
               oldChangePlumbingInformationModel.ConstructionClassification = item.ConstructionClassification ;
               oldChangePlumbingInformationModel.ConstructionItems = item.ConstructionItems ;
               oldChangePlumbingInformationModel.IsExposure = item.IsExposure ;
+              oldChangePlumbingInformationModel.IsInDoor = item.IsInDoor ;
             }
           }
 
@@ -111,6 +112,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       露出
     }
     
+    private enum InOrOutDoor
+    {
+      屋内,
+      屋外 
+    }
+    
     private ChangePlumbingInformationViewModel CreateChangePlumbingInformationViewModel( Document doc, Dictionary<Element, Element> conduitAndConnectorDic, ChangePlumbingInformationStorable changePlumbingInformationStorable )
     {
       const double percentage = 0.32 ;
@@ -127,6 +134,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var constructionClassifications = ( from constructionClassificationName in constructionClassificationNames select new DetailTableModel.ComboboxItemType( constructionClassificationName, constructionClassificationName ) ).ToList() ;
       
       var concealmentOrExposure = new List<DetailTableModel.ComboboxItemType>() { new( ConcealmentOrExposure.隠蔽.GetFieldName(), "False" ), new( ConcealmentOrExposure.露出.GetFieldName(), "True" ) } ;
+      var inOrOutDoor = new List<DetailTableModel.ComboboxItemType>() { new( InOrOutDoor.屋内.GetFieldName(), "True" ), new( InOrOutDoor.屋外.GetFieldName(), "False" ) } ;
       
       var changePlumbingInformationModels = new List<ChangePlumbingInformationModel>() ;
       var conduitIds = new List<DetailTableModel.ComboboxItemType>() ;
@@ -190,8 +198,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         var isExposure = oldChangePlumbingInformationModel?.IsExposure ?? false ;
+        var isInDoor = oldChangePlumbingInformationModel?.IsExposure ?? true ;
 
-        var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure ) ;
+        var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure, isInDoor ) ;
         changePlumbingInformationModels.Add( changePlumbingInformationModel ) ;
         
         var connectorLocation = ( connector.Location as LocationPoint ) ! ;
@@ -200,7 +209,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         conduitIds.Add( new DetailTableModel.ComboboxItemType( connectorName, conduit.UniqueId ) );
       }
 
-      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, changePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, conduitIds ) ;
+      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, changePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, inOrOutDoor, conduitIds ) ;
       return viewModel ;
     }
   }

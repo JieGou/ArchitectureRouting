@@ -8,7 +8,7 @@
         x:Name="WdChangePlumbingInformation"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Title="ChangePlumbingInformationDialog" Height="330" Width="390">
+        Title="ChangePlumbingInformationDialog" Height="350" Width="390">
     <Grid>
         <StackPanel Margin="10" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" >
             <StackPanel Orientation="Horizontal" Margin="10, 5">
@@ -47,6 +47,20 @@
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="SelectionChanged">
                             <i:InvokeCommandAction Command="{Binding SelectionChangedConcealmentOrExposureCommand}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10, 5">
+                <Label Content="設置場所" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
+                <ComboBox Width="250" 
+                          SelectedValue="{Binding IsInDoor, Mode=TwoWay}" 
+                          DisplayMemberPath="Type"
+                          SelectedValuePath="Name"
+                          ItemsSource="{Binding InOrOutDoor}" >
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="SelectionChanged">
+                            <i:InvokeCommandAction Command="{Binding SelectionChangedInOrOutDoorCommand}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </ComboBox>
