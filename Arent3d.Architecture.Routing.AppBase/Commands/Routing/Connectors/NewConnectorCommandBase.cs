@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -47,6 +48,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
     {
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+
+      if ( false == instance.TryGetProperty( "W", out string? connectorWidthString,true ) && string.IsNullOrEmpty( connectorWidthString ) ) return;
+      if  ( false == instance.TryGetProperty( "D",out string? connectorLengthString,true ) && string.IsNullOrEmpty( connectorLengthString )) return;
+
+      if ( false == int.TryParse( connectorLengthString, out var connectorWidth ) ) return ;
+      if ( false == int.TryParse( connectorWidthString,out var connectorLength )) return;
+
+      var scaleRatio = GetConnectorScaleRatio( uiDocument.Document ) ;
+
+      instance.TrySetProperty( "W", (connectorWidth * scaleRatio).MillimetersToRevitUnits() ) ;
+      instance.TrySetProperty( "D", (connectorLength * scaleRatio ).MillimetersToRevitUnits()) ;
+
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? _ ) ) return ;
       instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
        
@@ -56,6 +69,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
  
       if ( ConnectorType == null ) return ;
       instance.SetConnectorFamilyType( ConnectorType ?? ConnectorFamilyType.Sensor ) ;
+    }
+
+    private double GetConnectorScaleRatio( Document doc )
+    {
+      var documentScale = doc.ActiveView.Scale ;
+
+      return documentScale switch
+      {
+        <=20 => 200.0 /100.0,
+        <=30 => 167.7 / 100.0,
+        <=60 => 133.3 / 100.0,
+        <=150 => 100.0 / 100.0,
+        <=500 => 76.7 / 100.0,
+        <=9999 => 50.0 / 100.0,
+        _ => throw new ArgumentOutOfRangeException()
+      } ;
+
     }
   }
 }

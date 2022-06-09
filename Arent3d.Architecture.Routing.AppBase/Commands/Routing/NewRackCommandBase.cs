@@ -277,7 +277,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       var conduit = ( element as Conduit )! ;
 
-      var scaleRatio = uiDocument.Document.ActiveView.Scale/100;
+      var scaleRatio = uiDocument.Document.ActiveView.Scale/100.0;
 
       var location = ( element.Location as LocationCurve )! ;
       var line = ( location.Curve as Line )! ;
