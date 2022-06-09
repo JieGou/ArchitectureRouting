@@ -14,8 +14,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using MoreLinq ;
-using NotifyPropertyChanged = Arent3d.Architecture.Routing.AppBase.ViewModel.NotifyPropertyChanged ;
+using MoreLinq ; 
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {
