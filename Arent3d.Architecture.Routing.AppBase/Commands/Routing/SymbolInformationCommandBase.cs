@@ -14,7 +14,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class SymbolInformationCommandBase : IExternalCommand
-  { 
+  {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
@@ -28,99 +28,109 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         FamilyInstance? symbolInformationInstance = null ;
         var xyz = XYZ.Zero ;
 
-        return document.Transaction( "Electrical.App.Commands.Routing.SymbolInformationCommand", _ =>
-        {
-          
-          var selectedItemIsSymbolInformation = false ;
-          TextNote? textNote = null ;
-          Group? oldParentGroup = null ;
-          if ( uiDocument.Selection.GetElementIds().Count > 0 ) {
-            var groupId = uiDocument.Selection.GetElementIds().First() ;
-            if ( document.GetElement( groupId ) is Group parentGroup ) {
-              oldParentGroup = parentGroup ;
-              var elementId = GetElementIdOfSymbolInformationFromGroup( document, symbolInformationList, parentGroup, ref textNote ) ;
-              if ( elementId != null ) {
-                var symbolInformation = symbolInformationList.FirstOrDefault( x => x.Id == elementId.ToString() ) ;
-                //pickedObject is SymbolInformationModel
-                if ( null != symbolInformation ) {
-                  model = symbolInformation ;
-                  var symbolInformationSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ) ?? throw new InvalidOperationException() ;
-                  symbolInformationInstance = document.GetAllFamilyInstances( symbolInformationSymbols ).FirstOrDefault( x => x.Id.ToString() == symbolInformation.Id ) ;
-                  xyz = symbolInformationInstance!.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
-                  selectedItemIsSymbolInformation = true ;
-                }
-                //pickedObject ISN'T SymbolInformationModel
-                else {
-                  var element = document.GetElement( elementId ) ;
-                  if ( null != element.Location ) {
-                    xyz = element.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
-                  }
 
-                  symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
-                  model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
-                  symbolInformationList.Add( model ) ;
-                  selectedItemIsSymbolInformation = true ;
+        var selectedItemIsSymbolInformation = false ;
+        TextNote? textNote = null ;
+        Group? oldParentGroup = null ;
+        if ( uiDocument.Selection.GetElementIds().Count > 0 ) {
+          var groupId = uiDocument.Selection.GetElementIds().First() ;
+          if ( document.GetElement( groupId ) is Group parentGroup ) {
+            oldParentGroup = parentGroup ;
+            var elementId = GetElementIdOfSymbolInformationFromGroup( document, symbolInformationList, parentGroup, ref textNote ) ;
+            if ( elementId != null ) {
+              var symbolInformation = symbolInformationList.FirstOrDefault( x => x.Id == elementId.ToString() ) ;
+              //pickedObject is SymbolInformationModel
+              if ( null != symbolInformation ) {
+                model = symbolInformation ;
+                var symbolInformationSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ) ?? throw new InvalidOperationException() ;
+                symbolInformationInstance = document.GetAllFamilyInstances( symbolInformationSymbols ).FirstOrDefault( x => x.Id.ToString() == symbolInformation.Id ) ;
+                xyz = symbolInformationInstance!.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
+                selectedItemIsSymbolInformation = true ;
+              }
+              //pickedObject ISN'T SymbolInformationModel
+              else {
+                var element = document.GetElement( elementId ) ;
+                if ( null != element.Location ) {
+                  xyz = element.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
                 }
+
+                symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
+                model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
+                symbolInformationList.Add( model ) ;
+                selectedItemIsSymbolInformation = true ;
               }
             }
           }
+        }
 
-          if ( selectedItemIsSymbolInformation == false ) {
-            try {
-              xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
-              symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
-              model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString(), Floor = level.Name} ;
-              symbolInformationList.Add( model ) ;
-            }
-            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-              return Result.Cancelled ;
-            }
+        if ( selectedItemIsSymbolInformation == false ) {
+          try {
+            using Transaction t = new( uiDocument.Document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+            t.Start() ;
+            xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
+            symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
+            model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString(), Floor = level.Name } ;
+            symbolInformationList.Add( model ) ;
+            t.Commit() ;
+          }
+          catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+            return Result.Cancelled ;
+          }
+        }
+
+        var viewModel = new SymbolInformationViewModel( document, model, commandData ) ;
+        var dialog = new SymbolInformationDialog( viewModel ) ;
+        var ceedDetailStorable = document.GetCeedDetailStorable() ;
+ 
+        if ( dialog.ShowDialog() == true && model != null ) {
+          
+          using Transaction t = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+          t.Start() ;
+          //*****Save symbol setting***********
+          var symbolHeightParameter = symbolInformationInstance?.LookupParameter( "Symbol Height" ) ;
+          symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() ) ;
+          symbolInformationStorable.Save() ;
+
+          //****Save ceedDetails******
+          //Delete old data
+          ceedDetailStorable.AllCeedDetailModelData.RemoveAll( x => x.ParentId == model.Id ) ;
+          //Add new data
+          ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
+          ceedDetailStorable.Save() ;
+
+          //Create group symbol information 
+          if ( oldParentGroup != null ) {
+            oldParentGroup.UngroupMembers() ;
+            if ( textNote != null )
+              document.Delete( textNote.Id ) ;
           }
 
-          var viewModel = new SymbolInformationViewModel( document, model ) ;
-          var dialog = new SymbolInformationDialog( viewModel ) ;
-          var ceedDetailStorable = document.GetCeedDetailStorable() ;
 
-          if ( dialog.ShowDialog() == true && model != null ) {
-            //*****Save symbol setting***********
-            var symbolHeightParameter = symbolInformationInstance?.LookupParameter( "Symbol Height" ) ;
-            symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() ) ;
-            symbolInformationStorable.Save() ;
+          CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), oldParentGroup ) ;
+          OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
+          ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
+          ogs.SetProjectionLineWeight( 5 ) ;
+          document.ActiveView.SetElementOverrides( symbolInformationInstance!.Id, ogs ) ;
+          
+          t.Commit() ;
+        }
+        else if ( selectedItemIsSymbolInformation == false ) {
+          using Transaction t = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+          t.Start() ;
+          document.Delete( symbolInformationInstance?.Id ) ;
+          t.Commit() ;
+        }
 
-            //****Save ceedDetails******
-            //Delete old data
-            ceedDetailStorable.AllCeedDetailModelData.RemoveAll( x => x.ParentId == model.Id ) ;
-            //Add new data
-            ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
-            ceedDetailStorable.Save() ;
+        
 
-            //Create group symbol information 
-            if ( oldParentGroup != null ) {
-              oldParentGroup.UngroupMembers() ;
-              if ( textNote != null )
-                document.Delete( textNote.Id ) ;
-            }
-
-
-            CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), oldParentGroup ) ;
-            OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
-            ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
-            ogs.SetProjectionLineWeight( 5 ) ;
-            document.ActiveView.SetElementOverrides( symbolInformationInstance!.Id, ogs ) ;
-          }
-          else if ( selectedItemIsSymbolInformation == false ) {
-            document.Delete( symbolInformationInstance?.Id ) ;
-          }
-
-          return Result.Succeeded ;
-        } ) ;
+        return Result.Succeeded ;
       }
       catch ( Exception e ) {
         CommandUtils.DebugAlertException( e ) ;
         return Result.Cancelled ;
       }
     }
- 
+
     private ElementId? GetElementIdOfSymbolInformationFromGroup( Document document, List<SymbolInformationModel> symbolInformations, Group group, ref TextNote? textNote )
     {
       var memberIds = group.GetMemberIds() ;
@@ -141,13 +151,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return null ;
     }
- 
+
     private static FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz )
-    {
+    { 
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       return symbol.Instantiate( xyz, level, StructuralType.NonStructural ) ;
     }
- 
+
     private void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz, Group? oldParentGroup )
     {
       ICollection<ElementId> groupIds = new List<ElementId>() ;

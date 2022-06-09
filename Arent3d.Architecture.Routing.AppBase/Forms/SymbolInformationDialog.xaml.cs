@@ -8,6 +8,7 @@ using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -66,7 +67,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
   public abstract class DesignSymbolInformationViewModel : SymbolInformationViewModel
   {
-    protected DesignSymbolInformationViewModel( Document? document, SymbolInformationModel? symbolInformationModel ) : base( document, symbolInformationModel )
+    protected DesignSymbolInformationViewModel( Document? document, SymbolInformationModel? symbolInformationModel, ExternalCommandData commandData ) : base( document, symbolInformationModel, commandData )
     {
     }
   }

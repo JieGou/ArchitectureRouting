@@ -17,6 +17,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -29,13 +30,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string ResourceFolderName = "resources";
     private const int DefaultDisplayItem = 100 ;
     
-    private readonly Document? _document ; 
+    private readonly Document? _document ;
+
+    private ExternalCommandData _commandData ; 
 
     public ICommand AddCeedDetailCommand => new RelayCommand( AddCeedDetail ) ;
     public ICommand DeleteCeedDetailCommand => new RelayCommand( DeleteCeedDetail ) ;
     public ICommand MoveUpCommand => new RelayCommand( MoveUp ) ;
     public ICommand MoveDownCommand => new RelayCommand( MoveDown ) ;
     public ICommand ShowElectricalCategoryCommand => new RelayCommand( ShowElectricalCategory ) ;
+    public ICommand ShowCeedCodeDialogCommand => new RelayCommand( ShowCeedCodeDialog ) ;
  
     public SymbolInformationModel SymbolInformation { get ; }
 
@@ -107,11 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         else {
           var newSource = BuzaiCDList.Where( x => x.Length >= value.Length && x.Substring( 0, value.Length ) == value ).ToList() ;
           BuzaiCDListDisplay = new ObservableCollection<string>( newSource.Take( DefaultDisplayItem ).ToList() ) ;  
-        }
-         
-        // if ( BuzaiCDList.Contains( value ) ) {
-        //   AddCeedDetail(value); 
-        // }
+        } 
       }
     }
 
@@ -140,6 +140,57 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
  
     #region Command
 
+    private void ShowCeedCodeDialog()
+    {
+      try {
+        var ceedViewModel = new CeedViewModel( _commandData ) ;
+        var dlgCeedModel = new CeedModelDialog( ceedViewModel ) ;
+
+        if ( dlgCeedModel.ShowDialog() == false ) return ;
+
+        var ceedModelNumber = ceedViewModel?.SelectedCeedModel?.CeedModelNumber ;
+        var hiroisetSelected = HiroiSetMasterNormalModels.FirstOrDefault( x => x.ParentPartModelNumber == ceedModelNumber ) ;
+
+        if ( null == hiroisetSelected ) return ;
+        AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected ) ;
+      }
+      catch {
+        
+      }
+    }
+
+    private void AddCeedDetailBaseOnHiroiSetMaster(HiroiSetMasterModel hiroiSetMasterModel)
+    {
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode1 ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode2 ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode3 ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode4 ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode5 ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode6 ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode7 ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode8 ) ; 
+      CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
+    }
+
+    private void AddCeedDetailBaseOnMaterialCode( string materialCode )
+    { 
+      if ( string.IsNullOrEmpty( materialCode ) ) return ;
+      var hiroiMaster = _hiroiMasterModels.FirstOrDefault( x => CompareBuzaiCDAndMaterialCode( x.Buzaicd, materialCode ) ) ;
+      if(null != hiroiMaster)
+        CeedDetailList.Add( new CeedDetailModel( hiroiMaster.Buzaicd, hiroiMaster.Hinmei, hiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, "", TrajectoryDefault, hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1) ) ;
+    }
+
+    private bool CompareBuzaiCDAndMaterialCode( string buzaiCd, string materialCode )
+    {
+      if ( materialCode.Length == 3 )
+        materialCode = "000" + materialCode ;
+      if ( materialCode.Length == 4 )
+        materialCode = "00" + materialCode ;
+      if ( materialCode.Length == 5 )
+        materialCode = "0" + materialCode ;
+      return string.Equals( buzaiCd, materialCode ) ;
+    }
+    
     private void ShowElectricalCategory()
     {
       if ( ! _electricalCategoriesEco.Any() ) {
@@ -216,8 +267,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #endregion
  
-    public SymbolInformationViewModel( Document? document, SymbolInformationModel? symbolInformationModel )
+    public SymbolInformationViewModel( Document? document, SymbolInformationModel? symbolInformationModel, ExternalCommandData commandData  )
     {
+      _commandData = commandData ; 
       _document = document ;
       SymbolInformation = symbolInformationModel ?? new SymbolInformationModel() ;
 
