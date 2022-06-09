@@ -32,7 +32,14 @@
         </StackPanel>
         <!--Data Grid Result-->
         <DataGrid Grid.Row="1" Grid.Column="0" Margin="10 10" ItemsSource="{Binding CeedDetailList}"
-                  SelectedItem="{Binding CeedDetailSelected}" CanUserAddRows="False" AutoGenerateColumns="False">
+                  SelectedItem="{Binding CeedDetailSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserAddRows="False" AutoGenerateColumns="False">
+            <DataGrid.Resources>
+                <Style TargetType="DataGridRow">
+                    <Style.Resources>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"  Color="LightSkyBlue"/> 
+                    </Style.Resources>
+                </Style>
+            </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="品名コード" Width="100" CanUserSort="False" IsReadOnly="True"
                                     Binding="{Binding ProductCode, ValidatesOnExceptions=True}" />
@@ -47,19 +54,9 @@
                                     CanUserSort="False" IsReadOnly="False" />
                 <DataGridTextColumn Header="数量" Width="100" Binding="{Binding Quantity, ValidatesOnExceptions=True}"
                                     CanUserSort="False" />
-                <DataGridTextColumn Header="軌跡" Width="100" Binding="{Binding Trajectory, ValidatesOnExceptions=True}"
+                <DataGridTextColumn Header="軌跡" Width="*" Binding="{Binding Trajectory, ValidatesOnExceptions=True}"
                                     CanUserSort="False" />
-            </DataGrid.Columns>
-            <DataGrid.RowStyle>
-                <Style TargetType="DataGridRow">
-                    <Style.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="BorderBrush" Value="Blue" />
-                            <Setter Property="BorderThickness" Value="1" />
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </DataGrid.RowStyle>
+            </DataGrid.Columns> 
         </DataGrid>
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10">
             <Button Content="削除" Margin="0 10 " Command="{Binding DeleteCeedDetailCommand}" />
@@ -114,7 +111,7 @@
                     <!--Preview-->
                     <StackPanel Grid.Column="1">
                         <Label Content="プレビュー" VerticalAlignment="Top" />
-                        <Image Height="120" Width="120" />
+                        <Image Source="{Binding ImagePreview, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
             </GroupBox>

@@ -1,10 +1,14 @@
-﻿using System.Collections.ObjectModel ;
+﻿using System ;
+using System.Collections.ObjectModel ;
+using System.IO ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Data ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
+using System.Windows.Media ;
+using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
@@ -22,8 +26,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CbSymbolKind.ItemsSource = viewModel.SymbolKinds ;
       CbSymbolCoordinate.ItemsSource = viewModel.SymbolCoordinates ;
       CbSymbolColor.ItemsSource = viewModel.SymbolColors ; 
-    }
-
+    } 
+    
     private void ButtonOK_Click( object sender, RoutedEventArgs e )
     {
       DialogResult = true ;
