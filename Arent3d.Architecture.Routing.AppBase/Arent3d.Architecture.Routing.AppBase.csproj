@@ -17,6 +17,9 @@
     <EmbeddedResource Remove="Forms\UserControls\**" />
     <None Remove="Forms\UserControls\**" />
     <Page Remove="Forms\UserControls\**" />
+    <None Update="resources\ElectricalCategory.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -92,6 +95,7 @@
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="NPOI" Version="2.5.5" />
     <PackageReference Include="NumericUpDown" Version="3.0.2" />
+    <PackageReference Include="System.Windows.Interactivity.WPF" Version="2.0.20525" />
   </ItemGroup>
 
   <ItemGroup>
@@ -99,6 +103,7 @@
     <Resource Include="resources\InsertPassPoint.png" />
     <Resource Include="resources\MEP.ico" />
     <Resource Include="resources\PickFrom-To.png" />
+    <Resource Include="resources\icon_folder_16x16.png" />
   </ItemGroup>
 
 </Project>
