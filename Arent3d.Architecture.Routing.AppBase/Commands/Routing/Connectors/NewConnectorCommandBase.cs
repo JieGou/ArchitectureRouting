@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
       if ( false == int.TryParse( connectorLengthString, out var connectorWidth ) ) return ;
       if ( false == int.TryParse( connectorWidthString,out var connectorLength )) return;
 
-      var scaleRatio = GetConnectorScaleRatio( uiDocument.Document ) ;
+      var scaleRatio = GetConnectorScaleRatio( uiDocument.Document )/100.0 ;
 
       instance.TrySetProperty( "W", (connectorWidth * scaleRatio).MillimetersToRevitUnits() ) ;
       instance.TrySetProperty( "D", (connectorLength * scaleRatio ).MillimetersToRevitUnits()) ;
@@ -77,12 +77,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
 
       return documentScale switch
       {
-        <=20 => 200.0 /100.0,
-        <=30 => 167.7 / 100.0,
-        <=60 => 133.3 / 100.0,
-        <=150 => 100.0 / 100.0,
-        <=500 => 76.7 / 100.0,
-        <=9999 => 50.0 / 100.0,
+        <=20 => documentScale * 200.0 /100.0,
+        <=30 => documentScale * 167.7 / 100.0,
+        <=60 => documentScale * 133.3 / 100.0,
+        <=150 => documentScale * 100.0 / 100.0,
+        <=500 => documentScale * 76.7 / 100.0,
+        <=9999 => documentScale * 50.0 / 100.0,
         _ => throw new ArgumentOutOfRangeException()
       } ;
 
