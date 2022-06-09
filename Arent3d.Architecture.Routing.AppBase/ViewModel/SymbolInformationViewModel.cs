@@ -176,8 +176,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     { 
       if ( string.IsNullOrEmpty( materialCode ) ) return ;
       var hiroiMaster = _hiroiMasterModels.FirstOrDefault( x => CompareBuzaiCDAndMaterialCode( x.Buzaicd, materialCode ) ) ;
-      if(null != hiroiMaster)
-        CeedDetailList.Add( new CeedDetailModel( hiroiMaster.Buzaicd, hiroiMaster.Hinmei, hiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, "", TrajectoryDefault, hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1) ) ;
+      if(null == hiroiMaster) return;
+      var ceedDetail = CeedDetailList.FirstOrDefault( x => x.ProductCode == hiroiMaster.Buzaicd ) ;
+      if ( ceedDetail == null )
+        ceedDetail = new CeedDetailModel( hiroiMaster.Buzaicd, hiroiMaster.Hinmei, hiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, "", TrajectoryDefault, hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1 ) ;
+      else {
+        CeedDetailList.Remove( ceedDetail ) ;
+        ceedDetail.Quantity += QuantityDefault ;
+      }
+      
+      CeedDetailList.Add(ceedDetail ) ; 
     }
 
     private bool CompareBuzaiCDAndMaterialCode( string buzaiCd, string materialCode )
