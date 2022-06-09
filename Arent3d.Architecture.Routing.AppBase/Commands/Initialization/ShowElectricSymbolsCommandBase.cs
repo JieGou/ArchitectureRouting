@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public class ShowElectricSymbolsCommandBase : IExternalCommand
   {
     private const int HeaderRowCount = 3 ;
+    private const string DefaultPlumbingType = "配管なし" ;
     public const string CreateScheduleSuccessfullyMessage = "集計表 \"'{0}'\" を作成しました" ;
 
     private readonly struct ConnectorInfo
@@ -88,15 +89,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
         var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
         if ( detailTableModelsByRouteName.Any() ) {
-          InsertDataFromDetailTableModelIntoElectricalSymbolModel( electricalSymbolModels, detailTableModelsByRouteName, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
+          InsertDataFromDetailTableModelIntoElectricalSymbolModel( doc, electricalSymbolModels, detailTableModelsByRouteName, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId, routeName! ) ;
         }
         else {
-          InsertDataFromRegularDatabaseIntoElectricalSymbolModel( wiresAndCablesModelData, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
+          InsertDataFromRegularDatabaseIntoElectricalSymbolModel( doc, wiresAndCablesModelData, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId, routeName! ) ;
         }
       }
     }
 
-    private static void InsertDataFromDetailTableModelIntoElectricalSymbolModel( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
+    private static void InsertDataFromDetailTableModelIntoElectricalSymbolModel( Document document, List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId, string routeName )
     {
       const string defaultChildPlumbingSymbol = "↑" ;
       const string noPlumping = "配管なし" ;
@@ -115,20 +116,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( plumbingType.Contains( noPlumping ) ) plumbingType = noPlumping ;
         }
 
+        var (_, _, isExposure) = GetPlumbingInfoFromChangePlumbingInformationStorable( document, toConnectorUniqueId, routeName ) ;
+        if ( element.ConstructionClassification != CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() 
+             && element.ConstructionClassification != CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() 
+             && element.ConstructionClassification != CreateDetailTableCommandBase.ConstructionClassificationType.フリーアクセス.GetFieldName() 
+             && element.ConstructionClassification != CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ) {
+          isExposure = false ;
+        }
+        
         if ( fromConnectorCeedModel != null ) {
-          var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+          var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure ) ;
           electricalSymbolModels.Add( startElectricalSymbolModel ) ;
         }
 
         if ( toConnectorCeedModel == null ) continue ;
-        var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+        var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure ) ;
         electricalSymbolModels.Add( endElectricalSymbolModel ) ;
       }
     }
 
-    private static void InsertDataFromRegularDatabaseIntoElectricalSymbolModel( List<WiresAndCablesModel> wiresAndCablesModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<Element> allConnectors, List<ElectricalSymbolModel> electricalSymbolModels, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
+    private static void InsertDataFromRegularDatabaseIntoElectricalSymbolModel( Document document, List<WiresAndCablesModel> wiresAndCablesModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<Element> allConnectors, List<ElectricalSymbolModel> electricalSymbolModels, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId, string routeName )
     {
-      const string defaultPlumbingType = "配管なし" ;
       if ( toConnectorCeedModel == null ) return ;
       var isEcoMode = string.Empty ;
       var endConnector = allConnectors.First( c => c.UniqueId == toConnectorUniqueId ) ;
@@ -153,16 +161,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var wireType = master.Type ;
           var wireSize = master.Size1 ;
           var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
-          
+
+          var (plumbingType, plumbingSize, isExposure) = GetPlumbingInfoFromChangePlumbingInformationStorable( document, toConnectorUniqueId, routeName ) ;
+
           if ( fromConnectorCeedModel != null ) {
-            var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, string.Empty ) ;
+            var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure ) ;
             electricalSymbolModels.Add( startElectricalSymbolModel ) ;
           }
 
-          var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, string.Empty ) ;
+          var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure ) ;
           electricalSymbolModels.Add( endElectricalSymbolModel ) ;
         }
       }
+    }
+
+    private static (string, string, bool ) GetPlumbingInfoFromChangePlumbingInformationStorable( Document document, string connectorUniqueId, string routeName )
+    {
+      var changePlumbingInformationStorable = document.GetChangePlumbingInformationStorable() ;
+      var plumbingType = DefaultPlumbingType ;
+      var plumbingSize = string.Empty ;
+      var isExposure = false ;
+      var allConduitWithDirectionByZ = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => (( c.Location as LocationCurve )?.Curve as Line)?.Origin ?? new XYZ() ) ;
+      var connector = document.GetElement( connectorUniqueId ) ;
+      var connectorLocation = ( connector.Location as LocationPoint ) ! ;
+      var (x , y, z ) = connectorLocation.Point ;
+      var conduit = allConduitWithDirectionByZ.Where( c => c.Key.GetRouteName() == routeName && Math.Abs( c.Value!.X - x ) < 0.01 && Math.Abs( c.Value.Y - y ) < 0.01 ).Select( c => c.Key ).FirstOrDefault() ;
+      if ( conduit != null ) {
+        var conduitChangePlumbingInformation = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
+        if ( conduitChangePlumbingInformation != null ) {
+          plumbingType = conduitChangePlumbingInformation.PlumbingType ;
+          plumbingSize = conduitChangePlumbingInformation.PlumbingSize ;
+          isExposure = conduitChangePlumbingInformation.IsExposure ;
+        }
+      }
+
+      return ( plumbingType, plumbingSize, isExposure ) ;
     }
 
     private static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo, string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
@@ -272,7 +305,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       List<string> generalDisplayDeviceSymbols = new() ;
       List<string> wiringTypes = new() ;
       List<string> plumingTypes = new() ;
-      SummarizeElectricalSymbolByUniqueId( electricalSymbolModelsGroupByUniqueId, floorPlanSymbols, generalDisplayDeviceSymbols, wiringTypes, plumingTypes ) ;
+      List<bool> isExposures = new() ;
+      SummarizeElectricalSymbolByUniqueId( electricalSymbolModelsGroupByUniqueId, floorPlanSymbols, generalDisplayDeviceSymbols, wiringTypes, plumingTypes, isExposures ) ;
 
       for ( var i = 0 ; i < defaultColumnCount ; i++ ) {
         if ( i != 2 ) tsdHeader.InsertColumn( i ) ;
@@ -337,11 +371,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         tsdHeader.SetCellText( startRowData + j, 2, wiringTypes.ElementAt( j ) ) ;
-        tsdHeader.SetCellText( startRowData + j, 3, plumingTypes.ElementAt( j ) ) ;
+        tsdHeader.SetCellText( startRowData + j,  isExposures.ElementAt( j ) ? 4 : 3, plumingTypes.ElementAt( j ) ) ;
       }
     }
 
-    private static void SummarizeElectricalSymbolByUniqueId( Dictionary<string, List<ElectricalSymbolModel>> electricalSymbolModelsGroupByUniqueId, List<string> floorPlanSymbols, List<string> generalDisplayDeviceSymbols, List<string> wiringTypes, List<string> plumingTypes )
+    private static void SummarizeElectricalSymbolByUniqueId( Dictionary<string, List<ElectricalSymbolModel>> electricalSymbolModelsGroupByUniqueId, List<string> floorPlanSymbols, List<string> generalDisplayDeviceSymbols, List<string> wiringTypes, List<string> plumingTypes, List<bool> isExposures )
     {
       foreach ( var (_, electricalSymbolModels) in electricalSymbolModelsGroupByUniqueId ) {
         List<string> wiringAndPlumbingTypes = new() ;
@@ -356,6 +390,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           generalDisplayDeviceSymbols.Add( wiringAndPlumbingTypes.Count == 1 ? detailTableModel!.GeneralDisplayDeviceSymbol : string.Empty ) ;
           wiringTypes.Add( wiringType ) ;
           plumingTypes.Add( plumbingType ) ;
+          isExposures.Add( item.IsExposure ) ;
         }
       }
     }

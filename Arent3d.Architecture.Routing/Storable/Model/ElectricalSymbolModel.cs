@@ -1,7 +1,4 @@
-﻿using System.ComponentModel ;
-using System.Drawing ;
-
-namespace Arent3d.Architecture.Routing.Storable.Model
+﻿namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class ElectricalSymbolModel
   {
@@ -13,6 +10,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string WireStrip { get ; }
     public string PipingType { get ; }
     public string PipingSize { get ; }
+    public bool IsExposure { get ; }
 
     public ElectricalSymbolModel( 
       string uniqueId,
@@ -22,7 +20,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string wireSize, 
       string wireStrip,
       string pipingType,
-      string pipingSize)
+      string pipingSize,
+      bool isExposure)
     {
       UniqueId = uniqueId ;
       FloorPlanSymbol = floorPlanSymbol ;
@@ -32,6 +31,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       WireStrip = wireStrip ;
       PipingType = pipingType ;
       PipingSize = pipingSize ;
+      IsExposure = isExposure ;
     }
   }
 }

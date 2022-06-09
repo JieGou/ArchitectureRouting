@@ -191,7 +191,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
         var isExposure = oldChangePlumbingInformationModel?.IsExposure ?? false ;
 
-          var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure ) ;
+        var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure ) ;
         changePlumbingInformationModels.Add( changePlumbingInformationModel ) ;
         
         var connectorLocation = ( connector.Location as LocationPoint ) ! ;

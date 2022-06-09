@@ -169,14 +169,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private void SelectionChangedConnector()
     {
       var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
-      if ( changePlumbingInformationModel != null ) {
-        PlumbingType = changePlumbingInformationModel.PlumbingType ;
-        PlumbingSize = changePlumbingInformationModel.PlumbingSize ;
-        NumberOfPlumbing = changePlumbingInformationModel.NumberOfPlumbing ;
-        ConstructionClassification = changePlumbingInformationModel.ConstructionClassification ;
-        ConstructionItem = changePlumbingInformationModel.ConstructionItems ;
-        IsExposure = changePlumbingInformationModel.IsExposure ;
-      }
+      if ( changePlumbingInformationModel == null ) return ;
+      PlumbingType = changePlumbingInformationModel.PlumbingType ;
+      PlumbingSize = changePlumbingInformationModel.PlumbingSize ;
+      NumberOfPlumbing = changePlumbingInformationModel.NumberOfPlumbing ;
+      ConstructionClassification = changePlumbingInformationModel.ConstructionClassification ;
+      ConstructionItem = changePlumbingInformationModel.ConstructionItems ;
+      IsExposure = changePlumbingInformationModel.IsExposure ;
     }
     
     private void SelectionChangedConcealmentOrExposure()
@@ -190,16 +189,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private void SelectionChangedConstructionClassification()
     {
       var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
-      if ( changePlumbingInformationModel != null ) {
-        changePlumbingInformationModel.ConstructionClassification = ConstructionClassification ;
-        IsEnabled = GetIsEnabled() ;
-        IsExposure = IsEnabled && changePlumbingInformationModel.IsExposure ;
-      }
+      if ( changePlumbingInformationModel == null ) return ;
+      changePlumbingInformationModel.ConstructionClassification = ConstructionClassification ;
+      IsEnabled = GetIsEnabled() ;
+      IsExposure = IsEnabled && changePlumbingInformationModel.IsExposure || ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ;
     }
 
     private bool GetIsEnabled()
     {
-      return _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() || _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() ;
+      return _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() 
+             || _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() 
+             || _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.フリーアクセス.GetFieldName() ;
     }
     
     private void Apply( Window window )
