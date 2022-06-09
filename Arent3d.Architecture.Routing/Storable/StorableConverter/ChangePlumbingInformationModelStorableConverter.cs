@@ -16,7 +16,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       NumberOfPlumbing,
       ConstructionClassification,
       ConstructionItems, 
-      WireCrossSectionalArea
+      WireCrossSectionalArea,
+      IsExposure
     }
     
     protected override ChangePlumbingInformationModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -30,8 +31,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var constructionClassification = deserializer.GetString( SerializeField.ConstructionClassification ) ;
       var constructionItems = deserializer.GetString( SerializeField.ConstructionItems ) ;
       var wireCrossSectionalArea = deserializer.GetDouble( SerializeField.WireCrossSectionalArea ) ;
+      var isExposure = deserializer.GetBool( SerializeField.IsExposure ) ;
 
-      return new ChangePlumbingInformationModel( conduitId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItems, wireCrossSectionalArea ) ;
+      return new ChangePlumbingInformationModel( conduitId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItems, wireCrossSectionalArea, isExposure ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, ChangePlumbingInformationModel customTypeValue )
@@ -45,6 +47,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.ConstructionClassification, customTypeValue.ConstructionClassification ) ;
       serializerObject.AddNonNull( SerializeField.ConstructionItems, customTypeValue.ConstructionItems ) ;
       serializerObject.Add( SerializeField.WireCrossSectionalArea, customTypeValue.WireCrossSectionalArea ) ;
+      serializerObject.Add( SerializeField.IsExposure, customTypeValue.IsExposure ) ;
 
       return serializerObject ;
     }

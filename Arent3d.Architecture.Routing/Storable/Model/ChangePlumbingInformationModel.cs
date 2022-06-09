@@ -9,8 +9,10 @@
     public string ConstructionClassification { get ; set ; }
     public string ConstructionItems { get ; set ; }
     public double WireCrossSectionalArea { get ; set ; }
+    public bool IsExposure { get ; set ; }
+    
 
-    public ChangePlumbingInformationModel( string? conduitId, string? plumbingType, string? plumbingSize, string? numberOfPlumbing, string? constructionClassification, string? constructionItems, double? wireCrossSectionalArea )
+    public ChangePlumbingInformationModel( string? conduitId, string? plumbingType, string? plumbingSize, string? numberOfPlumbing, string? constructionClassification, string? constructionItems, double? wireCrossSectionalArea, bool? isExposure )
     {
       ConduitId = conduitId ?? string.Empty ;
       PlumbingType = plumbingType ?? string.Empty ;
@@ -19,6 +21,7 @@
       ConstructionClassification = constructionClassification ?? string.Empty ;
       ConstructionItems = constructionItems ?? string.Empty ;
       WireCrossSectionalArea = wireCrossSectionalArea ?? 0 ;
+      IsExposure = isExposure ?? false ;
     }
   }
 }

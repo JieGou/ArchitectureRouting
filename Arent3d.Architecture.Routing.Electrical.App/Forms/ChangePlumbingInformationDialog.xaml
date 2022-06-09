@@ -8,12 +8,12 @@
         x:Name="WdChangePlumbingInformation"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Title="ChangePlumbingInformationDialog" Height="300" Width="350">
+        Title="ChangePlumbingInformationDialog" Height="330" Width="390">
     <Grid>
         <StackPanel Margin="10" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" >
             <StackPanel Orientation="Horizontal" Margin="10, 5">
-                <Label Content="Connector" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
-                <ComboBox Width="200" 
+                <Label Content="コネクター" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
+                <ComboBox Width="250" 
                           SelectedValue="{Binding ConduitId, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
                           SelectedValuePath="Name"
@@ -27,7 +27,7 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
                 <Label Content="施工区分" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
-                <ComboBox Width="200" 
+                <ComboBox Width="185" 
                           SelectedValue="{Binding ConstructionClassification, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
                           SelectedValuePath="Name"
@@ -38,10 +38,22 @@
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </ComboBox>
+                <ComboBox Width="60" Margin="5, 0"
+                          SelectedValue="{Binding IsExposure, Mode=TwoWay}" 
+                          DisplayMemberPath="Type"
+                          SelectedValuePath="Name"
+                          IsEnabled ="{Binding IsEnabled}"
+                          ItemsSource="{Binding ConcealmentOrExposure}" >
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="SelectionChanged">
+                            <i:InvokeCommandAction Command="{Binding SelectionChangedConcealmentOrExposureCommand}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </ComboBox>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
                 <Label Content="配管種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
-                <ComboBox Width="200" 
+                <ComboBox Width="250" 
                           SelectedValue="{Binding PlumbingType, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
                           SelectedValuePath="Name"
@@ -55,15 +67,15 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
                 <Label Content="配管サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
-                <TextBox Width="200" IsReadOnly="True" Text="{Binding PlumbingSize, Mode=TwoWay}"/>
+                <TextBox Width="250" IsReadOnly="True" Text="{Binding PlumbingSize, Mode=TwoWay}"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
                 <Label Content="配管本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
-                <TextBox Width="200" IsReadOnly="True" Text="{Binding NumberOfPlumbing, Mode=TwoWay}"/>
+                <TextBox Width="250" IsReadOnly="True" Text="{Binding NumberOfPlumbing, Mode=TwoWay}"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
                 <Label Content="工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
-                <TextBox Width="200" IsReadOnly="True" Text="{Binding ConstructionItem, Mode=TwoWay}"/>
+                <TextBox Width="250" IsReadOnly="True" Text="{Binding ConstructionItem, Mode=TwoWay}"/>
             </StackPanel>
             <StackPanel Margin="10" HorizontalAlignment="Right">
                 <Button Content="Apply" Width="70" 

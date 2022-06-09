@@ -3,9 +3,11 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {
@@ -86,18 +88,44 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         OnPropertyChanged() ;
       }
     }
+    
+    private bool _isExposure ;
+
+    public bool IsExposure
+    {
+      get => _isExposure ;
+      set
+      {
+        _isExposure = value ;
+        OnPropertyChanged() ;
+      }
+    }
+    
+    private bool _isEnabled;
+
+    public bool IsEnabled
+    {
+      get => _isEnabled ;
+      set
+      {
+        _isEnabled = value ;
+        OnPropertyChanged() ;
+      }
+    }
 
     public List<ChangePlumbingInformationModel> ChangePlumbingInformationModels { get ; set ; }
     public List<DetailTableModel.ComboboxItemType> PlumbingTypes { get ; }
     public List<DetailTableModel.ComboboxItemType> ConstructionClassifications { get ; }
+    public List<DetailTableModel.ComboboxItemType> ConcealmentOrExposure { get ; }
     public List<DetailTableModel.ComboboxItemType> ConduitIds { get ; }
 
     public ICommand SelectionChangedConnectorCommand => new RelayCommand( SelectionChangedConnector ) ;
     public ICommand SelectionChangedPlumbingTypeCommand => new RelayCommand( SetPlumbingSizes ) ;
     public ICommand SelectionChangedConstructionClassificationCommand => new RelayCommand( SelectionChangedConstructionClassification ) ;
+    public ICommand SelectionChangedConcealmentOrExposureCommand => new RelayCommand( SelectionChangedConcealmentOrExposure ) ;
     public RelayCommand<Window> ApplyCommand => new(Apply) ;
     
-    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> conduitIds )
+    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> concealmentOrExposure, List<DetailTableModel.ComboboxItemType> conduitIds )
     {
       _conduitsModelData = conduitsModelData ;
       var changePlumbingInformationModel = changePlumbingInformationModels.First() ;
@@ -107,8 +135,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _numberOfPlumbing = changePlumbingInformationModel.NumberOfPlumbing ;
       _constructionClassification = changePlumbingInformationModel.ConstructionClassification ;
       _constructionItem = changePlumbingInformationModel.ConstructionItems ;
+      _isExposure = changePlumbingInformationModel.IsExposure ;
+      _isEnabled = GetIsEnabled() ;
       PlumbingTypes = plumbingTypes ;
       ConstructionClassifications = constructionClassifications ;
+      ConcealmentOrExposure = concealmentOrExposure ;
       ConduitIds = conduitIds ;
       ChangePlumbingInformationModels = changePlumbingInformationModels ;
     }
@@ -120,15 +151,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if ( changePlumbingInformationModel != null ) {
         var wireCrossSectionalArea = changePlumbingInformationModel.WireCrossSectionalArea ;
         if ( _plumbingType != NoPlumping ) {
-          var plumbing = _conduitsModelData.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= wireCrossSectionalArea / percentage ) ?? _conduitsModelData.Last() ;
+          var conduitsModels = _conduitsModelData.Where( c => c.PipingType == _plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+          var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= wireCrossSectionalArea / percentage ) ?? conduitsModels.Last() ;
           PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
-          if ( plumbing == _conduitsModelData.Last() ) NumberOfPlumbing = ( (int) Math.Ceiling( ( wireCrossSectionalArea / percentage ) / double.Parse( plumbing.InnerCrossSectionalArea ) ) ).ToString() ;
+          NumberOfPlumbing = plumbing == conduitsModels.Last() ? ( (int) Math.Ceiling( ( wireCrossSectionalArea / percentage ) / double.Parse( plumbing.InnerCrossSectionalArea ) ) ).ToString() : "1" ;
         }
         else {
           PlumbingSize = NoPlumbingSize ;
           NumberOfPlumbing = string.Empty ;
         }
-        changePlumbingInformationModel.PlumbingType = PlumbingSize ;
+        changePlumbingInformationModel.PlumbingType = PlumbingType ;
         changePlumbingInformationModel.PlumbingSize = PlumbingSize ;
         changePlumbingInformationModel.NumberOfPlumbing = NumberOfPlumbing ;
       }
@@ -143,6 +175,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         NumberOfPlumbing = changePlumbingInformationModel.NumberOfPlumbing ;
         ConstructionClassification = changePlumbingInformationModel.ConstructionClassification ;
         ConstructionItem = changePlumbingInformationModel.ConstructionItems ;
+        IsExposure = changePlumbingInformationModel.IsExposure ;
+      }
+    }
+    
+    private void SelectionChangedConcealmentOrExposure()
+    {
+      var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
+      if ( changePlumbingInformationModel != null ) {
+        changePlumbingInformationModel.IsExposure = IsExposure ;
       }
     }
     
@@ -151,7 +192,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
       if ( changePlumbingInformationModel != null ) {
         changePlumbingInformationModel.ConstructionClassification = ConstructionClassification ;
+        IsEnabled = GetIsEnabled() ;
+        IsExposure = IsEnabled && changePlumbingInformationModel.IsExposure ;
       }
+    }
+
+    private bool GetIsEnabled()
+    {
+      return _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() || _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() ;
     }
     
     private void Apply( Window window )
