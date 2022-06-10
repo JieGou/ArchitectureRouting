@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels ;
@@ -28,14 +29,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private const string DefaultParentPlumbingType = "E" ;
     private const string NoPlumping = "配管なし" ;
     private const string NoPlumbingSize = "（なし）" ;
-    
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
         var uiDoc = commandData.Application.ActiveUIDocument ;
         var doc = uiDoc.Document ;
         var selection = uiDoc.Selection ;
-        
+
         return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
         {
           var allElementSelected = selection.GetElementIds() ;
@@ -68,7 +69,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           }
 
           changePlumbingInformationStorable.Save() ;
-          
+
           return Result.Succeeded ;
         } ) ;
       }
@@ -82,26 +83,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       var conduitAndConnectorDic = new Dictionary<Element, Element>() ;
       if ( connectors.Any() ) {
-        var allConduitWithDirectionByZ = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => (( c.Location as LocationCurve )?.Curve as Line)?.Origin ?? new XYZ() ) ;
+        var allConduitWithDirectionByZ = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => ( ( c.Location as LocationCurve )?.Curve as Line )?.Origin ?? new XYZ() ) ;
         foreach ( var connector in connectors ) {
           var connectorLocation = ( connector.Location as LocationPoint ) ! ;
-          var (x , y, _) = connectorLocation.Point ;
+          var (x, y, _) = connectorLocation.Point ;
           var conduitsOfConnector = allConduitWithDirectionByZ.Where( c => Math.Abs( c.Value!.X - x ) < 0.01 && Math.Abs( c.Value.Y - y ) < 0.01 ).Select( c => c.Key ) ;
           foreach ( var conduit in conduitsOfConnector ) {
-            if ( ! conduitAndConnectorDic.ContainsKey( conduit ) ) {
+            if ( conduitAndConnectorDic.SingleOrDefault( c => c.Key.UniqueId == conduit.UniqueId ).Key == null ) {
               conduitAndConnectorDic.Add( conduit, connector ) ;
             }
           }
         }
       }
-      
+
       if ( conduits.Any() ) {
         var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ) ;
-        var allConduitWithDirectionByZ = conduits.Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => (( c.Location as LocationCurve )?.Curve as Line)?.Origin ?? new XYZ() ) ;
+        var allConduitWithDirectionByZ = conduits.Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => ( ( c.Location as LocationCurve )?.Curve as Line )?.Origin ?? new XYZ() ) ;
         foreach ( var (conduit, (x, y, _)) in allConduitWithDirectionByZ ) {
           var connectorOfConduit = allConnectors.Where( c => c.Location is LocationPoint connectorLocation && Math.Abs( connectorLocation.Point.X - x ) < 0.01 && Math.Abs( connectorLocation.Point.Y - y ) < 0.01 ) ;
           foreach ( var connector in connectorOfConduit ) {
-            if ( ! conduitAndConnectorDic.ContainsKey( conduit ) ) {
+            if ( conduitAndConnectorDic.SingleOrDefault( c => c.Key.UniqueId == conduit.UniqueId ).Key == null ) {
               conduitAndConnectorDic.Add( conduit, connector ) ;
             }
           }
@@ -116,13 +117,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       隠蔽,
       露出
     }
-    
+
     private enum InOrOutDoor
     {
       屋内,
-      屋外 
+      屋外
     }
-    
+
     private ChangePlumbingInformationViewModel CreateChangePlumbingInformationViewModel( Document doc, Dictionary<Element, Element> conduitAndConnectorDic, ChangePlumbingInformationStorable changePlumbingInformationStorable )
     {
       const double percentage = 0.32 ;
@@ -133,17 +134,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var plumbingTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
       var plumbingTypes = ( from conduitTypeName in plumbingTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
       plumbingTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
-      
+
       var hiroiCdModel = csvStorable.HiroiSetCdMasterNormalModelData ;
       var constructionClassificationNames = hiroiCdModel.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
       var constructionClassifications = ( from constructionClassificationName in constructionClassificationNames select new DetailTableModel.ComboboxItemType( constructionClassificationName, constructionClassificationName ) ).ToList() ;
-      
+
       var concealmentOrExposure = new List<DetailTableModel.ComboboxItemType>() { new( ConcealmentOrExposure.隠蔽.GetFieldName(), "False" ), new( ConcealmentOrExposure.露出.GetFieldName(), "True" ) } ;
       var inOrOutDoor = new List<DetailTableModel.ComboboxItemType>() { new( InOrOutDoor.屋内.GetFieldName(), "True" ), new( InOrOutDoor.屋外.GetFieldName(), "False" ) } ;
-      
+
       var changePlumbingInformationModels = new List<ChangePlumbingInformationModel>() ;
       var conduitIds = new List<DetailTableModel.ComboboxItemType>() ;
-      foreach ( var ( conduit, connector) in conduitAndConnectorDic ) {
+      foreach ( var (conduit, connector) in conduitAndConnectorDic ) {
         var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
         var detailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.ConduitId == conduit.UniqueId ) ;
         var plumbingType = oldChangePlumbingInformationModel != null 
@@ -155,7 +156,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           ? oldChangePlumbingInformationModel.ConstructionClassification 
           : constructionClassificationNames.First() ;
         var wireCrossSectionalArea = oldChangePlumbingInformationModel?.WireCrossSectionalArea ?? 0 ;
-        var ( ceedCode, deviceSymbol) = ElectricalCommandUtil.GetCeedCodeAndDeviceSymbolOfElement( connector ) ;
+        var (ceedCode, deviceSymbol) = ElectricalCommandUtil.GetCeedCodeAndDeviceSymbolOfElement( connector ) ;
         if ( oldChangePlumbingInformationModel == null && ! string.IsNullOrEmpty( ceedCode ) ) {
           var hiroiSetCdMasterModel = hiroiCdModel.FirstOrDefault( h => h.SetCode == ceedCode ) ;
           if ( hiroiSetCdMasterModel != null ) {
@@ -178,7 +179,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
             }
           }
         }
-        
+
         string plumbingSize ;
         var numberOfPlumbing = oldChangePlumbingInformationModel?.NumberOfPlumbing ?? "1" ;
         if ( plumbingType != NoPlumping ) {
@@ -202,16 +203,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           constructionItem = string.IsNullOrEmpty( conduitConstructionItem ) ? DefaultConstructionItems : conduitConstructionItem ;
         }
 
-        var isExposure = oldChangePlumbingInformationModel?.IsExposure ?? false ;
+        var isExposure = ( oldChangePlumbingInformationModel?.IsExposure ?? false ) || constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ;
         var isInDoor = oldChangePlumbingInformationModel?.IsExposure ?? true ;
 
         var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure, isInDoor ) ;
         changePlumbingInformationModels.Add( changePlumbingInformationModel ) ;
-        
+
         var connectorLocation = ( connector.Location as LocationPoint ) ! ;
-        var (x , y, z ) = connectorLocation.Point ;
+        var (x, y, z) = connectorLocation.Point ;
         var connectorName = deviceSymbol + " ( X:" + Math.Round( x, 3 ) + ", Y:" + Math.Round( y, 3 ) + ", Z:" + Math.Round( z, 3 ) + " )" ;
-        conduitIds.Add( new DetailTableModel.ComboboxItemType( connectorName, conduit.UniqueId ) );
+        conduitIds.Add( new DetailTableModel.ComboboxItemType( connectorName, conduit.UniqueId ) ) ;
       }
 
       var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, changePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, inOrOutDoor, conduitIds ) ;
