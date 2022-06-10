@@ -122,7 +122,7 @@
                         <Label Content="プレビュー" VerticalAlignment="Top" />
                          <Canvas Width="120" Height="120"> 
                             <Canvas x:Name="CanvasStar"  Canvas.Left="30" Canvas.Top="30">
-                                <Path x:Name="PathStar" Fill="{Binding SymbolInformation.Color, Converter={StaticResource  StringColorConverter}}"  />
+                                <Path x:Name="PathStar" StrokeThickness="2" Stroke="{Binding SymbolInformation.Color, Converter={StaticResource  StringColorConverter}}"  />
                             </Canvas>
                              <Canvas x:Name="CanvasText" Canvas.Left="50" Canvas.Top="20">
                                  <Label x:Name="LabelDescription" MaxWidth="50" Content="{Binding SymbolInformation.Description}" FontSize="10" FontWeight="Bold" Foreground="{Binding SymbolInformation.Color, Converter={StaticResource  StringColorConverter}}"/>

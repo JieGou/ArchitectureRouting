@@ -7,8 +7,7 @@ using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.UI ;
-using NPOI.SS.Formula.Functions ;
+using Autodesk.Revit.UI ; 
 using ComboBox = System.Windows.Controls.ComboBox ;
 using TextBox = System.Windows.Controls.TextBox ;
 using Visibility = System.Windows.Visibility ;
@@ -17,7 +16,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class SymbolInformationDialog
   {
-    private const int FontSizeDefault = 12 ; 
+    private const int FontSizeDefault = 12 ;
+
     public SymbolInformationDialog( SymbolInformationViewModel viewModel )
     {
       InitializeComponent() ;
@@ -25,8 +25,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CbSymbolKind.ItemsSource = viewModel.SymbolKinds ;
       CbSymbolCoordinate.ItemsSource = viewModel.SymbolCoordinates ;
       CbSymbolColor.ItemsSource = viewModel.SymbolColors ;
- 
-      PathStar.Data = Geometry.Parse( CreateStarData( viewModel.SymbolInformation.Height ) ) ;
+
+      PathStar.Data = Geometry.Parse( CreateStarDataNotFill( viewModel.SymbolInformation.Height ) ) ;
       LabelDescription.FontSize = FontSizeDefault + viewModel.SymbolInformation.CharacterHeight ;
     }
 
@@ -75,7 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var textBox = (TextBox) sender ;
       double.TryParse( textBox.Text, out var height ) ;
 
-      PathStar.Data = Geometry.Parse( CreateStarData( height ) ) ;
+      PathStar.Data = Geometry.Parse( CreateStarDataNotFill( height ) ) ;
     }
 
     private void OnSymbolHeightInput( object sender, TextCompositionEventArgs e )
@@ -131,6 +131,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var checkbox = (CheckBox) sender ;
       LabelDescription.Visibility = checkbox.IsChecked == true ? Visibility.Visible : Visibility.Hidden ;
+    }
+
+    private string CreateStarDataNotFill( double symbolHeight )
+    {
+      double length = symbolHeight switch
+      {
+        2 => 16,
+        3 => 18,
+        4 => 20,
+        5 => 22,
+        _ => 14
+      } ;
+
+      SinCos( 18, out double sin18, out double cos18 ) ;
+      SinCos( 36, out double sin36, out double cos36 ) ;
+
+      var doi18 = sin18 * length ;
+      var ke18 = cos18 * length ;
+      var doi36 = sin36 * length ;
+      var ke36 = cos36 * length ;
+
+      var lengthSide = (length + doi18 ) *2 ;
+
+      string data = "M 0,0 " ;
+      data += "l " + lengthSide + ",0 " ; //P1 
+      data += "l -" + lengthSide * cos36 + "," + lengthSide * sin36 + " " ; //P2 
+      data += "l " + lengthSide * sin18 + ",-" + lengthSide * cos18 + " " ; //P3  
+      data += "l " + lengthSide * sin18 + "," + lengthSide * cos18 ; //P4
+      //data += "l -" + ke36 + "," + doi36 + " " ; //P5
+
+      data += "Z" ;
+      return data ;
     }
 
     private string CreateStarData( double symbolHeight )
