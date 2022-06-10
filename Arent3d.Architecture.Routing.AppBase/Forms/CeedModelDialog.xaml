@@ -3,12 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         xmlns:model="clr-namespace:Arent3d.Architecture.Routing.AppBase.Model"
         xmlns:cvt="clr-namespace:Arent3d.Architecture.Routing.AppBase.Converters"
         mc:Ignorable="d"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="CenterScreen" x:Name="WdCeedCodeView"
         Title="CeeD Models" Height="800" Width="1200" MinHeight="200" MinWidth="900"
         d:DataContext="{d:DesignInstance {x:Type local:DesignCeedViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
@@ -27,7 +28,7 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Button Grid.Column="0" Grid.Row="0" x:Name="BtnLoadData"
+        <Button Grid.Column="0" Grid.Row="0"
                 Content="マスター読み込み"
                 Click="Button_LoadData"
                 Margin="10,10,10,10"
@@ -35,7 +36,7 @@
                 Width="100"
                 Height="27" />
 
-        <Button Grid.Column="0" Grid.Row="0" x:Name="BtnSymbolRegistration"
+        <Button Grid.Column="0" Grid.Row="0"
                 Content="使用シンボル登録"
                 Click="Button_SymbolRegistration"
                 Margin="120,10,10,10"
@@ -46,24 +47,27 @@
         <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Left">
             <Label Content="セットコード" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5" Visibility="Hidden" />
             <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" Visibility="Hidden"
-                      KeyDown="CmbModelNumbers_KeyDown"
+                      PreviewKeyUp="CmbKeyUp"
                       ItemsSource="{Binding CeedSetCodes}"
                       SelectedValue="{Binding SelectedCeedSetCode, Mode=TwoWay}"
-                      Text="{Binding SelectedCeedSetCode, Mode=TwoWay}" />
+                      Text="{Binding SelectedCeedSetCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                      IsTextSearchEnabled="False" />
             <Label Content="表示機器記号" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-            <ComboBox Name="CmbDeviceSymbols" IsEditable="True" Width="200" Height="27"
-                      KeyDown="CmbModelNumbers_KeyDown"
+            <ComboBox IsEditable="True" Width="200" Height="27"
+                      PreviewKeyUp="CmbKeyUp"
                       ItemsSource="{Binding DeviceSymbols}"
                       SelectedValue="{Binding SelectedDeviceSymbolValue, Mode=TwoWay}"
-                      Text="{Binding SelectedDeviceSymbolValue, Mode=TwoWay}" />
+                      Text="{Binding SelectedDeviceSymbolValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                      IsTextSearchEnabled="False" />
             <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-            <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27"
-                      KeyDown="CmbModelNumbers_KeyDown"
+            <ComboBox IsEditable="True" Width="200" Height="27"
+                      PreviewKeyUp="CmbKeyUp"
                       ItemsSource="{Binding ModelNumber}"
                       SelectedValue="{Binding SelectedModelNumber, Mode=TwoWay}"
-                      Text="{Binding SelectedModelNumber, Mode=TwoWay}" />
+                      Text="{Binding SelectedModelNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      IsTextSearchEnabled="False" />
             <Button Content="Search"
-                    Click="Button_Search"
+                    Command="{Binding SearchCommand}"
                     Margin="20,5,5,5"
                     HorizontalAlignment="Right"
                     Width="80" />
@@ -176,7 +180,7 @@
         <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal" Margin="10, 0">
             <DataGrid x:Name="DtGrid" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False" Width="650">
                 <DataGrid.Resources>
-                    <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
+                    <Style TargetType="{x:Type TextBox}">
                         <Setter Property="Padding" Value="-2" />
                         <Style.Triggers>
                             <Trigger Property="Validation.HasError" Value="True">
@@ -261,23 +265,23 @@
 
                 </DataGrid.Columns>
             </DataGrid>
-            <GroupBox Header="プレビュー" DockPanel.Dock="Left" Margin="20, 0" Width="260">
-                <ListView ItemsSource="{Binding PreviewList}">
+            <StackPanel DockPanel.Dock="Left" Margin="20, 0" Width="260" >
+                <Label Content="プレビュー" FontWeight="Bold" />
+                <ListView ItemsSource="{Binding PreviewList}" Height="608"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto" 
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True" >
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="{Binding FloorPlanImages}" Stretch="None" />
-                                <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock.RenderTransform>
-                                        <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
-                                    </TextBlock.RenderTransform>
-                                </TextBlock>
+                                <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding GeneralDisplayDeviceSymbol }" Margin="5,0,0,0" />
                             </StackPanel>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
-            </GroupBox>
+            </StackPanel>
         </StackPanel>
 
         <Button Grid.Row="3" Grid.Column="1"
@@ -289,7 +293,8 @@
                 Height="27" />
         <Button Grid.Row="3" Grid.Column="1"
                 Content="OK"
-                Click="Button_OK"
+                Command="{Binding Path=OkCommand}" 
+                CommandParameter="{Binding ElementName=WdCeedCodeView}"
                 Margin="10,5,5,5"
                 HorizontalAlignment="Right"
                 Width="80"
