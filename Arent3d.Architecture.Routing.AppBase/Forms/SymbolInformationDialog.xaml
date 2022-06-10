@@ -120,7 +120,7 @@
                     <!--Preview-->
                     <StackPanel Grid.Column="1">
                         <Label Content="プレビュー" VerticalAlignment="Top" />
-                         <Canvas x:Name="CanvasPreview" Width="120" Height="120"> 
+                         <Canvas Width="120" Height="120"> 
                             <Canvas x:Name="CanvasStar"  Canvas.Left="30" Canvas.Top="30">
                                 <Path x:Name="PathStar" Fill="{Binding SymbolInformation.Color, Converter={StaticResource  StringColorConverter}}"  />
                             </Canvas>

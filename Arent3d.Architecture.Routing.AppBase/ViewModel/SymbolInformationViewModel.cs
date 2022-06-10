@@ -136,38 +136,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged() ;
       }
     }
-
-    private BitmapSource _imagePreview ;
-
-    public BitmapSource ImagePreview
-    {
-      get => _imagePreview ;
-      set
-      {
-        _imagePreview = value ;
-        OnPropertyChanged( nameof(ImagePreview) );
-      }
-    }
  
-    
-    private BitmapSource StringToImage(string base64)
-    {
-      try {
-        byte[] photoarray = Convert.FromBase64String(base64);
-        using MemoryStream memory = new(photoarray, 0, photoarray.Length) { Position = 0 } ;
-        BitmapImage bitmapImage = new ();
-        bitmapImage.BeginInit();
-        bitmapImage.StreamSource = memory;
-        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-        bitmapImage.EndInit();
-        return bitmapImage;
-      }
-      catch {
-        return new BitmapImage() ;
-      }
-      
-    }
-
     private List<ElectricalCategoryModel> LoadElectricalCategories(string sheetName, ref Dictionary<string, string> dictData)
     {
       //Load ElectricalCategory from excel file resource
@@ -332,11 +301,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _dictElectricalCategoriesEcoKey = new Dictionary<string, string>() ; 
       _dictElectricalCategoriesNormalKey = new Dictionary<string, string>() ; 
       _electricalCategoriesEco = LoadElectricalCategories("Eco", ref _dictElectricalCategoriesEcoKey) ;
-      _electricalCategoriesNormal = LoadElectricalCategories("Normal", ref _dictElectricalCategoriesNormalKey) ;
-
-      var base64 =
-        @"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+DQo8c3ZnIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyINCiAgIHhtbG5zOmNjPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyMiDQogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiDQogICB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIg0KICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIg0KICAgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHZpZXdCb3g9IjAgMCAyMDAgMzAwIj4NCiAgIDxwb2x5Z29uIHBvaW50cz0iMTAwLDEwIDQwLDE5OCAxOTAsNzggMTAsNzggMTYwLDE5OCIgc3R5bGU9ImZpbGw6Z3JlZW47c3Ryb2tlOmdyZWVuOyIvPg0KPC9zdmc+DQo=" ;
-      _imagePreview = StringToImage( base64 ) ;
+      _electricalCategoriesNormal = LoadElectricalCategories("Normal", ref _dictElectricalCategoriesNormalKey) ; 
     }
     
     

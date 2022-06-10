@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -15,6 +16,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class SymbolInformationCommandBase : IExternalCommand
   {
+    private const string SymbolInformationTextNoteTypeName10 = "1.0mm_SymbolInformationText" ;
+    private const string SymbolInformationTextNoteTypeName12 = "1.2mm_SymbolInformationText" ;
+    private const string SymbolInformationTextNoteTypeName15 = "1.5mm_SymbolInformationText" ;
+    private const string SymbolInformationTextNoteTypeName18 = "1.8mm_SymbolInformationText" ;
+    private const string SymbolInformationTextNoteTypeName20 = "2.0mm_SymbolInformationText" ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
@@ -86,6 +92,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           
           using Transaction t = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
           t.Start() ;
+          //Create group symbol information 
+          if ( oldParentGroup != null ) {
+            oldParentGroup.UngroupMembers() ;
+            // if ( textNote != null )
+            //   document.Delete( textNote.Id ) ;
+          }
+          
           //*****Save symbol setting***********
           var symbolHeightParameter = symbolInformationInstance?.LookupParameter( "Symbol Height" ) ;
           symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() ) ;
@@ -97,15 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           //Add new data
           ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
           ceedDetailStorable.Save() ;
-
-          //Create group symbol information 
-          if ( oldParentGroup != null ) {
-            oldParentGroup.UngroupMembers() ;
-            if ( textNote != null )
-              document.Delete( textNote.Id ) ;
-          }
-
-
+ 
           CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), oldParentGroup ) ;
           OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
           ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
@@ -169,7 +174,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         XYZ txtPosition ;
         switch ( anchor ) {
           case SymbolCoordinateEnum.上 :
-            txtPosition = new XYZ( xyz.X - 1, xyz.Y + 1, xyz.Z ) ;
+            txtPosition = new XYZ( xyz.X - 1, xyz.Y + 2, xyz.Z ) ;
             break ;
           case SymbolCoordinateEnum.左 :
             txtPosition = new XYZ( xyz.X - model.Height, xyz.Y + 0.1, xyz.Z ) ;
@@ -178,7 +183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             txtPosition = new XYZ( xyz.X + model.Height / 3, xyz.Y + 0.1, xyz.Z ) ;
             break ;
           default :
-            txtPosition = new XYZ( xyz.X - 1, xyz.Y - 1, xyz.Z ) ;
+            txtPosition = new XYZ( xyz.X - 1, xyz.Y - 2, xyz.Z ) ;
             break ;
         }
 
@@ -193,6 +198,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
 
         var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, noteWidth, model.Description, opts ) ;
+        var textNodeTypeName = model.CharacterHeight switch
+        {
+          1 => SymbolInformationTextNoteTypeName10,
+          2 => SymbolInformationTextNoteTypeName12,
+          3 => SymbolInformationTextNoteTypeName15,
+          4 => SymbolInformationTextNoteTypeName18,
+          _ => SymbolInformationTextNoteTypeName20
+        } ;
+        var textNoteType = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( textNodeTypeName, tt.Name ) ) ;
+        if ( textNoteType == null ) {
+          var textNodeSize = model.CharacterHeight switch
+          {
+            1 => 1.0,
+            2 => 1.2,
+            3 => 1.5,
+            4 => 1.8,
+            _ => 2.0
+          } ;
+          var elementType = textNote.TextNoteType.Duplicate( textNodeTypeName ) ;
+          textNoteType = elementType as TextNoteType ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( textNodeSize.MillimetersToRevitUnits() ) ;
+        }
+
+        if ( textNoteType != null ) textNote.ChangeTypeId( textNoteType.Id ) ;
+        
         textNote.SetOverriddenColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
         groupIds.Add( textNote.Id ) ;
       }
