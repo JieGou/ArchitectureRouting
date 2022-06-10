@@ -298,13 +298,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       Dictionary<string, string> dictMaterialCode = new() ;
 
       var conduits = _document.GetAllElements<Conduit>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
+      var pullBoxs = allConnectors.Where( c => c.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
       foreach ( var conduit in conduits ) {
         conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
         isEcoModes.Add( isEcoMode ) ;
         var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
         conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
-        AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, dictMaterialCode ) ;
+
+        AddPickUpConduit( allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, dictMaterialCode ) ;
       }
 
       var conduitFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
@@ -314,10 +316,40 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var quantity = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( _document, "電線管長さ" ) ).AsDouble() ;
         conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
-        AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem!, dictMaterialCode ) ;
+        AddPickUpConduit( allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem!, dictMaterialCode ) ;
       }
 
       SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, dictMaterialCode ) ;
+    }
+
+    private double? GetLengthPullBox( IReadOnlyCollection<Element> pullBoxs, Element conduit )
+    {
+      var location = conduit.Location as LocationCurve ;
+      var line = location?.Curve as Line ;
+      var origin = line?.Origin ;
+      var conduitDirection = line?.Direction ;
+      foreach ( var pullBox in pullBoxs ) {
+        var a = pullBox.LookupParameter( "a" )?.AsDouble() ;
+        var b = pullBox.LookupParameter( "b" )?.AsDouble() ;
+        var minDistance = ( 15.0 ).MillimetersToRevitUnits() ;
+        if ( conduitDirection?.X is 1 or -1 && a != null ) {
+          minDistance = (double) a  ;
+        }
+
+        if ( conduitDirection?.Y is 1 or -1 && b != null ) {
+          minDistance = (double) b  ;
+        }
+        var pullBoxLocation = pullBox.Location as LocationPoint ;
+        var pullBoxOrigin = pullBoxLocation?.Point ;
+        if ( pullBoxOrigin != null ) {
+          var distance = origin?.DistanceTo( pullBoxOrigin ) ;
+          if ( distance <= minDistance ) {
+            return minDistance ;
+          }
+        }
+      }
+      
+      return null ;
     }
 
     private void GetToConnectorsOfCables( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
@@ -343,14 +375,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null ) ;
     }
 
-    private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems,
+    private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, IReadOnlyCollection<Element> pullBoxs, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems,
       string constructionItem, Dictionary<string, string> dictMaterialCode )
     {
       var routeName = conduit.GetRouteName() ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
       var checkPickUp = AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers, dictMaterialCode ) ;
+      
+     
       if ( ! checkPickUp ) return ;
-      quantities.Add( Math.Round( quantity, 2 ) ) ;
       switch ( conduitType ) {
         case ConduitType.Conduit :
           var location = ( conduit.Location as LocationCurve )! ;
@@ -364,6 +397,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem ) ;
+      if ( pullBoxs.Any() ) {
+        var lengthPullBox = GetLengthPullBox( pullBoxs, conduit ) ;
+        if ( lengthPullBox != null ) {
+          quantity += (double) lengthPullBox ;
+        }
+      }
+
+      quantities.Add( quantity ) ;
     }
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode )
@@ -447,7 +488,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
         var pickUpModelsByProductCode = pickUpModelByNumber.PickUpModels.GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
         foreach ( var pickUpModelByProductCode in pickUpModelsByProductCode ) {
-          var sumQuantity = pickUpModelByProductCode.PickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
+          var sumQuantity = Math.Round( pickUpModelByProductCode.PickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) , 2 ) ;
           var pickUpModel = pickUpModelByProductCode.PickUpModels.FirstOrDefault() ;
           if ( pickUpModel == null ) continue ;
           PickUpModel newPickUpModel = new( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification,
