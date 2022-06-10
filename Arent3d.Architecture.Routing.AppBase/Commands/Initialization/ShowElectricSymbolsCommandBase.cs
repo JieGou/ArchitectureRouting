@@ -73,7 +73,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
       var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
       var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
-      var detailTableModelData = doc.GetDetailTableStorable().DetailTableModelData ;
       var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
       var errorMess = string.Empty ;
 
@@ -87,53 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
         var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
         if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
-        var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
-        if ( detailTableModelsByRouteName.Any() ) {
-          InsertDataFromDetailTableModelIntoElectricalSymbolModel( doc, electricalSymbolModels, detailTableModelsByRouteName, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId, routeName! ) ;
-        }
-        else {
-          InsertDataFromRegularDatabaseIntoElectricalSymbolModel( doc, wiresAndCablesModelData, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId, routeName! ) ;
-        }
-      }
-    }
-
-    private static void InsertDataFromDetailTableModelIntoElectricalSymbolModel( Document document, List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId, string routeName )
-    {
-      const string defaultChildPlumbingSymbol = "↑" ;
-      const string noPlumping = "配管なし" ;
-      foreach ( var element in detailTableModelsByRouteName ) {
-        var wireType = element.WireType ;
-        var wireSize = element.WireSize ;
-        var wireStrip = element.WireStrip ;
-        string plumbingType ;
-        var plumbingSize = string.Empty ;
-        if ( element.IsParentRoute ) {
-          plumbingType = element.PlumbingType ;
-          plumbingSize = plumbingType == noPlumping ? string.Empty : element.PlumbingSize ;
-        }
-        else {
-          plumbingType = element.PlumbingIdentityInfo.Split( '-' ).First().Replace( defaultChildPlumbingSymbol, "" ) ;
-          if ( plumbingType.Contains( noPlumping ) ) plumbingType = noPlumping ;
-        }
-
-        var conduitChangePlumbingInformation = GetPlumbingInfoFromChangePlumbingInformationStorable( document, toConnectorUniqueId, routeName ) ;
-        var isExposure = conduitChangePlumbingInformation?.IsExposure ?? false ;
-        var isInDoor = conduitChangePlumbingInformation?.IsInDoor ?? true ;
-        if ( element.ConstructionClassification != CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() 
-             && element.ConstructionClassification != CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() 
-             && element.ConstructionClassification != CreateDetailTableCommandBase.ConstructionClassificationType.フリーアクセス.GetFieldName() 
-             && element.ConstructionClassification != CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ) {
-          isExposure = false ;
-        }
-        
-        if ( fromConnectorCeedModel != null ) {
-          var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure, isInDoor ) ;
-          electricalSymbolModels.Add( startElectricalSymbolModel ) ;
-        }
-
-        if ( toConnectorCeedModel == null ) continue ;
-        var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure, isInDoor ) ;
-        electricalSymbolModels.Add( endElectricalSymbolModel ) ;
+        InsertDataFromRegularDatabaseIntoElectricalSymbolModel( doc, wiresAndCablesModelData, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId, routeName! ) ;
       }
     }
 
@@ -164,35 +117,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var wireSize = master.Size1 ;
           var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
 
-          var conduitChangePlumbingInformation = GetPlumbingInfoFromChangePlumbingInformationStorable( document, toConnectorUniqueId, routeName ) ;
-          var plumbingType = conduitChangePlumbingInformation == null ? DefaultPlumbingType : conduitChangePlumbingInformation.PlumbingType ;
-          var plumbingSize = conduitChangePlumbingInformation == null ? string.Empty : conduitChangePlumbingInformation.PlumbingSize ;
-          var isExposure = conduitChangePlumbingInformation?.IsExposure ?? false ;
-          var isInDoor = conduitChangePlumbingInformation?.IsInDoor ?? true ;
-          
           if ( fromConnectorCeedModel != null ) {
-            var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure, isInDoor ) ;
+            var ( fromPlumbingType, fromPlumbingSize, fromIsExposure, fromIsInDoor ) = GetPlumbingInfoFromChangePlumbingInformationStorable( document, fromConnectorUniqueId, routeName ) ;
+            var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, fromPlumbingType, fromPlumbingSize, fromIsExposure, fromIsInDoor ) ;
             electricalSymbolModels.Add( startElectricalSymbolModel ) ;
           }
 
-          var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure, isInDoor ) ;
+          var ( toPlumbingType, toPlumbingSize, toIsExposure, toIsInDoor ) = GetPlumbingInfoFromChangePlumbingInformationStorable( document, toConnectorUniqueId, routeName ) ;
+          var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, toPlumbingType, toPlumbingSize, toIsExposure, toIsInDoor ) ;
           electricalSymbolModels.Add( endElectricalSymbolModel ) ;
         }
       }
     }
 
-    private static ChangePlumbingInformationModel? GetPlumbingInfoFromChangePlumbingInformationStorable( Document document, string connectorUniqueId, string routeName )
+    private static (string plumbingType, string plumbingSize, bool isExposure, bool isInDoor) GetPlumbingInfoFromChangePlumbingInformationStorable( Document document, string connectorUniqueId, string routeName )
     {
       var changePlumbingInformationStorable = document.GetChangePlumbingInformationStorable() ;
+      var plumbingType = DefaultPlumbingType ;
+      var plumbingSize = string.Empty ;
+      var isExposure = false ;
+      var isInDoor = true ;
       var allConduitWithDirectionByZ = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => (( c.Location as LocationCurve )?.Curve as Line)?.Origin ?? new XYZ() ) ;
       var connector = document.GetElement( connectorUniqueId ) ;
       var connectorLocation = ( connector.Location as LocationPoint ) ! ;
       var (x , y, z ) = connectorLocation.Point ;
       var conduit = allConduitWithDirectionByZ.Where( c => c.Key.GetRouteName() == routeName && Math.Abs( c.Value!.X - x ) < 0.01 && Math.Abs( c.Value.Y - y ) < 0.01 ).Select( c => c.Key ).FirstOrDefault() ;
-      if ( conduit == null ) return null ;
+      if ( conduit == null ) return ( plumbingType, plumbingSize, isExposure, isInDoor) ;
       {
         var conduitChangePlumbingInformation = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
-        return conduitChangePlumbingInformation ;
+        if ( conduitChangePlumbingInformation != null ) {
+          plumbingType = conduitChangePlumbingInformation.PlumbingType ;
+          plumbingSize = conduitChangePlumbingInformation.PlumbingSize ;
+          isExposure = conduitChangePlumbingInformation.IsExposure ;
+          isInDoor = conduitChangePlumbingInformation.IsInDoor ;
+        }
+
+        return ( plumbingType, plumbingSize, isExposure, isInDoor) ;
       }
     }
 
@@ -323,6 +283,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       for ( var i = 0 ; i < defaultColumnCount ; i++ ) {
         if ( i < 3 ) tsdHeader.MergeCells( new TableMergedCell( 1, i, 2, i ) ) ;
+        var columnWidth = 0.1 ;
         switch ( i ) {
           case 0 :
             tsdHeader.SetCellText( 1, i, ScheduleColumns.FloorPlanSymbol.GetDisplayStringKey().StringKey ) ;
@@ -332,16 +293,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             break ;
           case 2 :
             tsdHeader.SetCellText( 1, i, ScheduleColumns.WiringType.GetDisplayStringKey().StringKey ) ;
+            columnWidth = 0.2 ;
             break ;
           case 3 :
             tsdHeader.SetCellText( 2, i, ScheduleColumns.InPlumbingType.GetDisplayStringKey().StringKey ) ;
+            columnWidth = 0.15 ;
             break ;
           default :
             tsdHeader.SetCellText( 2, i, ScheduleColumns.OutPlumbingType.GetDisplayStringKey().StringKey ) ;
+            columnWidth = 0.15 ;
             break ;
         }
 
-        var columnWidth = i == 2 ? 0.2 : 0.1 ;
         tsdHeader.SetColumnWidth( i, columnWidth ) ;
       }
 
