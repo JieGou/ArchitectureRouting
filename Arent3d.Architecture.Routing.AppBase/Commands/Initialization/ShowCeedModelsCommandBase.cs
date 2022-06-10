@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var uiDoc = commandData.Application.ActiveUIDocument ;
 
         var point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
-        var condition = "屋外" ;
+        var condition = "屋外" ; // デフォルトの条件
         
         var symbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
         var filter = new FamilyInstanceFilter( doc, symbol.Id ) ;
@@ -57,30 +57,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           return ol.Contains( point, GeometryHelper.Tolerance ) ;
         }).ToList() ;
 
-        if ( rooms.Count == 0 ) {
-          TaskDialog.Show( "Arent", "Picked point outside the room!" ) ;
-          return Result.Cancelled ;
-        }
-        else {
-          if ( rooms.Count > 1 ) {
-            if ( CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() ) {
-              var vm = new ArentRoomViewModel { Conditions = conditions } ;
-              var view = new ArentRoomView { DataContext = vm } ;
-              view.ShowDialog() ;
-              if ( ! vm.IsCreate )
-                return Result.Cancelled ;
-
-              condition = vm.SelectedCondition ;
-            }
-            else {
-              TaskDialog.Show( "Arent", "Not found the conditions!" ) ;
+        switch ( rooms.Count ) {
+          case 0 :
+            TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
+            return Result.Cancelled ;
+          case > 1 when CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() :
+          {
+            var vm = new ArentRoomViewModel { Conditions = conditions } ;
+            var view = new ArentRoomView { DataContext = vm } ;
+            view.ShowDialog() ;
+            if ( ! vm.IsCreate )
               return Result.Cancelled ;
-            }
+
+            condition = vm.SelectedCondition ;
+            break ;
           }
-          else {
+          case > 1 :
+            TaskDialog.Show( "Arent", "指定された条件が見つかりませんでした。" ) ;
+            return Result.Cancelled ;
+          default :
+          {
             if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
               condition = value ;
             }
+
+            break ;
           }
         }
         
@@ -163,14 +164,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           SetIsEcoMode( uiDocument, instance );
           return instance ;
         }
-        else {
-          if ( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == floorPlanType ) is Family family ) {
-            foreach ( ElementId familySymbolId in family.GetFamilySymbolIds() ) {
-              var symbol = uiDocument.Document.GetElementById<FamilySymbol>( familySymbolId ) ?? throw new InvalidOperationException() ;
-              instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
-              SetIsEcoMode( uiDocument, instance );
-              return instance ;
-            }
+
+        if ( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == floorPlanType ) is Family family ) {
+          foreach ( var familySymbolId in family.GetFamilySymbolIds() ) {
+            var symbol = uiDocument.Document.GetElementById<FamilySymbol>( familySymbolId ) ?? throw new InvalidOperationException() ;
+            instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+            SetIsEcoMode( uiDocument, instance );
+            return instance ;
           }
         }
       }
@@ -181,7 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return instance ;
     }
 
-    private ConnectorOneSideFamilyType GetConnectorFamilyType( string floorPlanType )
+    private static ConnectorOneSideFamilyType GetConnectorFamilyType( string floorPlanType )
     {
       var connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide1 ;
       if ( string.IsNullOrEmpty( floorPlanType ) ) return connectorOneSideFamilyType ;
@@ -192,7 +192,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return connectorOneSideFamilyType ;
     }
 
-    private void SetIsEcoMode(UIDocument uiDocument, FamilyInstance instance)
+    private static void SetIsEcoMode(UIDocument uiDocument, FamilyInstance instance)
     { 
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
       instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
