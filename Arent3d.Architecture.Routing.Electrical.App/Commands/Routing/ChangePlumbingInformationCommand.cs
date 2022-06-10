@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
         {
           var allElementSelected = selection.GetElementIds() ;
-          var connectorsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => allElementSelected.Contains( e.Id ) ).ToList() ;
+          var connectorsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => allElementSelected.Contains( e.Id ) || allElementSelected.Contains( e.GroupId ) ).ToList() ;
           var conduitsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => allElementSelected.Contains( e.Id ) ).ToList() ;
           var conduitAndConnectorDic = GetConduitAndConnector( doc, connectorsSelected, conduitsSelected ) ;
           if ( ! conduitAndConnectorDic.Any() ) return Result.Cancelled ;
@@ -81,28 +81,33 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private Dictionary<Element, Element> GetConduitAndConnector( Document document, List<Element> connectors, List<Element> conduits )
     {
       var conduitAndConnectorDic = new Dictionary<Element, Element>() ;
-      var allConduitWithDirectionByZ = conduits.Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => (( c.Location as LocationCurve )?.Curve as Line)?.Origin ?? new XYZ() ) ;
-      foreach ( var connector in connectors ) {
-        var connectorLocation = ( connector.Location as LocationPoint ) ! ;
-        var (x , y, z ) = connectorLocation.Point ;
-        var conduitsOfConnector = allConduitWithDirectionByZ.Where( c => Math.Abs( c.Value!.X - x ) < 0.01 && Math.Abs( c.Value.Y - y ) < 0.01 ).Select( c => c.Key ) ;
-        foreach ( var conduit in conduitsOfConnector ) {
-          if ( ! conduitAndConnectorDic.ContainsKey( conduit ) ) {
-            conduitAndConnectorDic.Add( conduit, connector ) ;
-          }
-        }
-      }
-
-      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ) ;
-      foreach ( var (conduit, (x, y, _)) in allConduitWithDirectionByZ ) {
-        var connectorOfConduit = allConnectors.Where( c => c.Location is LocationPoint connectorLocation && Math.Abs( connectorLocation.Point.X - x ) < 0.01 && Math.Abs( connectorLocation.Point.Y - y ) < 0.01 ) ;
-        foreach ( var connector in connectorOfConduit ) {
-          if ( ! conduitAndConnectorDic.ContainsKey( conduit ) ) {
-            conduitAndConnectorDic.Add( conduit, connector ) ;
+      if ( connectors.Any() ) {
+        var allConduitWithDirectionByZ = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => (( c.Location as LocationCurve )?.Curve as Line)?.Origin ?? new XYZ() ) ;
+        foreach ( var connector in connectors ) {
+          var connectorLocation = ( connector.Location as LocationPoint ) ! ;
+          var (x , y, _) = connectorLocation.Point ;
+          var conduitsOfConnector = allConduitWithDirectionByZ.Where( c => Math.Abs( c.Value!.X - x ) < 0.01 && Math.Abs( c.Value.Y - y ) < 0.01 ).Select( c => c.Key ) ;
+          foreach ( var conduit in conduitsOfConnector ) {
+            if ( ! conduitAndConnectorDic.ContainsKey( conduit ) ) {
+              conduitAndConnectorDic.Add( conduit, connector ) ;
+            }
           }
         }
       }
       
+      if ( conduits.Any() ) {
+        var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ) ;
+        var allConduitWithDirectionByZ = conduits.Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => (( c.Location as LocationCurve )?.Curve as Line)?.Origin ?? new XYZ() ) ;
+        foreach ( var (conduit, (x, y, _)) in allConduitWithDirectionByZ ) {
+          var connectorOfConduit = allConnectors.Where( c => c.Location is LocationPoint connectorLocation && Math.Abs( connectorLocation.Point.X - x ) < 0.01 && Math.Abs( connectorLocation.Point.Y - y ) < 0.01 ) ;
+          foreach ( var connector in connectorOfConduit ) {
+            if ( ! conduitAndConnectorDic.ContainsKey( conduit ) ) {
+              conduitAndConnectorDic.Add( conduit, connector ) ;
+            }
+          }
+        }
+      }
+
       return conduitAndConnectorDic ;
     }
 
