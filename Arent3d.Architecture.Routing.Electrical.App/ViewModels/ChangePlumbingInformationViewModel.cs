@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         OnPropertyChanged() ;
       }
     }
-    
+
     private string _constructionClassification ;
 
     public string ConstructionClassification
@@ -134,7 +134,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public ICommand SelectionChangedConnectorCommand => new RelayCommand( SelectionChangedConnector ) ;
     public ICommand SelectionChangedPlumbingTypeCommand => new RelayCommand( SetPlumbingSizes ) ;
-    public ICommand SelectionChangedConstructionClassificationCommand => new RelayCommand( SelectionChangedConstructionClassification ) ;
     public ICommand SelectionChangedConcealmentOrExposureCommand => new RelayCommand( SelectionChangedConcealmentOrExposure ) ;
     public ICommand SelectionChangedInOrOutDoorCommand => new RelayCommand( SelectionChangedInOrOutDoor ) ;
     public RelayCommand<Window> ApplyCommand => new(Apply) ;
@@ -169,11 +168,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           var conduitsModels = _conduitsModelData.Where( c => c.PipingType == _plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
           var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= wireCrossSectionalArea / percentage ) ?? conduitsModels.Last() ;
           PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
+          changePlumbingInformationModel.PlumbingName = plumbing.Name ;
           NumberOfPlumbing = plumbing == conduitsModels.Last() ? ( (int) Math.Ceiling( ( wireCrossSectionalArea / percentage ) / double.Parse( plumbing.InnerCrossSectionalArea ) ) ).ToString() : "1" ;
         }
         else {
           PlumbingSize = NoPlumbingSize ;
           NumberOfPlumbing = string.Empty ;
+          changePlumbingInformationModel.PlumbingName = string.Empty ;
         }
         changePlumbingInformationModel.PlumbingType = PlumbingType ;
         changePlumbingInformationModel.PlumbingSize = PlumbingSize ;
@@ -201,16 +202,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         changePlumbingInformationModel.IsExposure = IsExposure ;
       }
     }
-    
-    private void SelectionChangedConstructionClassification()
-    {
-      var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
-      if ( changePlumbingInformationModel == null ) return ;
-      changePlumbingInformationModel.ConstructionClassification = ConstructionClassification ;
-      IsEnabled = GetIsEnabled() ;
-      IsExposure = IsEnabled && changePlumbingInformationModel.IsExposure || ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ;
-    }
-    
+
     private void SelectionChangedInOrOutDoor()
     {
       var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;

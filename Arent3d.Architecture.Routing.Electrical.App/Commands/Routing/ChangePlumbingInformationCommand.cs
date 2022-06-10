@@ -54,13 +54,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           foreach ( var item in viewModel.ChangePlumbingInformationModels ) {
             var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == item.ConduitId ) ;
             if ( oldChangePlumbingInformationModel == null ) {
-              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.ConstructionClassification, item.ConstructionItems, item.WireCrossSectionalArea, item.IsExposure, item.IsInDoor ) ;
+              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.ConnectorId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.PlumbingName, item.ConstructionClassification, item.ConstructionItems, item.WireCrossSectionalArea, item.IsExposure, item.IsInDoor ) ;
               changePlumbingInformationStorable.ChangePlumbingInformationModelData.Add( changePlumbingInformationModel ) ;
             }
             else {
               oldChangePlumbingInformationModel.PlumbingType = item.PlumbingType ;
               oldChangePlumbingInformationModel.PlumbingSize = item.PlumbingSize ;
               oldChangePlumbingInformationModel.NumberOfPlumbing = item.NumberOfPlumbing ;
+              oldChangePlumbingInformationModel.PlumbingName = item.PlumbingName ;
               oldChangePlumbingInformationModel.ConstructionClassification = item.ConstructionClassification ;
               oldChangePlumbingInformationModel.ConstructionItems = item.ConstructionItems ;
               oldChangePlumbingInformationModel.IsExposure = item.IsExposure ;
@@ -181,20 +182,24 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         string plumbingSize ;
+        string? plumbingName ;
         var numberOfPlumbing = oldChangePlumbingInformationModel?.NumberOfPlumbing ?? "1" ;
         if ( plumbingType != NoPlumping ) {
           var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
           var plumbingSizesOfPlumbingType = conduitsModels.Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
           plumbingSize = oldChangePlumbingInformationModel != null ? oldChangePlumbingInformationModel.PlumbingSize : plumbingSizesOfPlumbingType.First() ;
+          plumbingName = oldChangePlumbingInformationModel != null ? oldChangePlumbingInformationModel.PlumbingName : conduitsModels.First().Name ;
           if ( oldChangePlumbingInformationModel == null ) {
             var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= wireCrossSectionalArea / percentage ) ?? conduitsModels.Last() ;
-            plumbingSize = plumbing == null ? plumbingSizesOfPlumbingType.Last() : plumbing.Size.Replace( "mm", "" ) ;
+            plumbingSize = plumbing.Size.Replace( "mm", "" ) ;
+            plumbingName = plumbing.Classification ;
             if ( plumbing == conduitsModels.Last() ) numberOfPlumbing = ( (int) Math.Ceiling( ( wireCrossSectionalArea / percentage ) / double.Parse( plumbing.InnerCrossSectionalArea ) ) ).ToString() ;
           }
         }
         else {
           plumbingSize = NoPlumbingSize ;
           numberOfPlumbing = string.Empty ;
+          plumbingName = string.Empty ;
         }
 
         var constructionItem = oldChangePlumbingInformationModel != null ? oldChangePlumbingInformationModel.ConstructionItems : DefaultConstructionItems ;
@@ -206,7 +211,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var isExposure = ( oldChangePlumbingInformationModel?.IsExposure ?? false ) || constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ;
         var isInDoor = oldChangePlumbingInformationModel?.IsExposure ?? true ;
 
-        var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure, isInDoor ) ;
+        var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, connector.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, plumbingName, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure, isInDoor ) ;
         changePlumbingInformationModels.Add( changePlumbingInformationModel ) ;
 
         var connectorLocation = ( connector.Location as LocationPoint ) ! ;

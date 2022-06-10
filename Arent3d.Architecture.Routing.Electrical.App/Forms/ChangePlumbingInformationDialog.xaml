@@ -31,12 +31,8 @@
                           SelectedValue="{Binding ConstructionClassification, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
                           SelectedValuePath="Name"
-                          ItemsSource="{Binding ConstructionClassifications}" >
-                    <i:Interaction.Triggers>
-                        <i:EventTrigger EventName="SelectionChanged">
-                            <i:InvokeCommandAction Command="{Binding SelectionChangedConstructionClassificationCommand}"/>
-                        </i:EventTrigger>
-                    </i:Interaction.Triggers>
+                          ItemsSource="{Binding ConstructionClassifications}" 
+                          IsEnabled ="False" >
                 </ComboBox>
                 <ComboBox Width="60" Margin="5, 0"
                           SelectedValue="{Binding IsExposure, Mode=TwoWay}" 
