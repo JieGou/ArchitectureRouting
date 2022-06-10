@@ -14,13 +14,13 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class CnsSettingDialog : Window
+  public partial class CnsSettingDialog
   {
     private int _editingRowIndex = -1 ;
     private readonly CnsSettingViewModel _cnsSettingViewModel ;
     private readonly Document _document ;
-    private readonly ObservableCollection<CnsSettingModel> _currentCnsSettingData ;
-
+    private readonly ObservableCollection<CnsSettingModel> _currentCnsSettingData ; 
+    
     public CnsSettingDialog( CnsSettingViewModel viewModel, Document document)
     {
       InitializeComponent() ;
@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void GrdCategories_OnCellEditEnding( object sender, DataGridCellEditEndingEventArgs e )
     {
-      if ( DialogResult != false ) {
+      if ( DialogResult != false ) { 
         var isDuplicateName = grdCategories.ItemsSource.Cast<CnsSettingModel>().Where( x => ! string.IsNullOrEmpty( x.CategoryName ) ).GroupBy( x => x.CategoryName ).Any( g => g.Count() > 1 ) ;
         if ( isDuplicateName ) {
           MessageBox.Show( "工事項目名称がすでに存在しています。再度工事項目名称を入力してください。" ) ;
@@ -282,6 +282,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Close_Dialog() ;
       if ( _cnsSettingViewModel.ApplyRangSelectionCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.ApplyRangSelectionCommand.Execute( grdCategories.SelectedIndex ) ;
+    }
+
+    private void GrdCategories_OnCellBeforeEdit( object sender, DataGridPreparingCellForEditEventArgs e )
+    {
+      if ( e.EditingElement is not TextBox ) return ; 
+      if ( ((TextBox)e.EditingElement).Text == "未設定" )
+        grdCategories.CancelEdit( DataGridEditingUnit.Cell ) ;
+
     }
   }
 }

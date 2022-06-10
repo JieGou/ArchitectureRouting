@@ -3,8 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:CnsSettingRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.CnsSettingRules"
     x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
+    xmlns:CnsSettingRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.CnsSettingRules"
     mc:Ignorable="d"
     WindowStartupLocation="CenterScreen"
     Closing="CnsSettingDialog_Closing"
@@ -17,20 +17,33 @@
                           ItemsSource="{Binding CnsSettingModels}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
-                          Margin="2,0,2,40" CellEditEnding="GrdCategories_OnCellEditEnding">
-
+                          Margin="2,0,2,40" CellEditEnding="GrdCategories_OnCellEditEnding" PreparingCellForEdit="GrdCategories_OnCellBeforeEdit">
+                    <DataGrid.Resources>
+                        <Style x:Key="errorStyle" TargetType="{x:Type TextBox}">
+                            <Setter Property="Padding" Value="-2" />
+                            <Style.Triggers>
+                                <Trigger Property="Validation.HasError" Value="True">
+                                    <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.Resources>
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="" IsReadOnly="True" CanUserSort="False">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="Sequence" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="工事項目名称" Width="280" CanUserSort="False">
+                        <DataGridTextColumn Header="工事項目名称" Width="280" CanUserSort="False" EditingElementStyle="{StaticResource errorStyle}">
                             <DataGridTextColumn.Binding>
-                                <Binding Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay"/>
+                                <Binding Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" >
+                                    <Binding.ValidationRules>
+                                        <CnsSettingRules:CnsSettingValidationRule />
+                                    </Binding.ValidationRules>
+                                </Binding> 
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridCheckBoxColumn Header="デフォルト設定 " Width="100" Binding="{Binding IsDefaultItemChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></DataGridCheckBoxColumn>
+                        <DataGridCheckBoxColumn Header="デフォルト設定 " Width="100" Binding="{Binding IsDefaultItemChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

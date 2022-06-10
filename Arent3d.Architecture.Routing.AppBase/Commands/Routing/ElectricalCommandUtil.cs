@@ -8,9 +8,7 @@ using Autodesk.Revit.DB ;
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public static class ElectricalCommandUtil
-  {
-    //private const string DefaultConstructionItem = "未設定" ;
-
+  { 
     public static void SetPropertyForCable( Document document, IReadOnlyCollection<Route> routes )
     {
       var connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
