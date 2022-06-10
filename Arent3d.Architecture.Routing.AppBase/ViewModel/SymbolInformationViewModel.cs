@@ -150,18 +150,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
  
     
-    public BitmapSource StringToImage(string base64)
-    { 
-      byte[] photoarray = Convert.FromBase64String(base64); 
-      using (MemoryStream memory = new MemoryStream(photoarray, 0, photoarray.Length)) {
-        memory.Position = 0 ;
-        BitmapImage bitmapImage = new BitmapImage();
+    private BitmapSource StringToImage(string base64)
+    {
+      try {
+        byte[] photoarray = Convert.FromBase64String(base64);
+        using MemoryStream memory = new(photoarray, 0, photoarray.Length) { Position = 0 } ;
+        BitmapImage bitmapImage = new ();
         bitmapImage.BeginInit();
         bitmapImage.StreamSource = memory;
         bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
         bitmapImage.EndInit();
         return bitmapImage;
-      }  
+      }
+      catch {
+        return new BitmapImage() ;
+      }
+      
     }
 
     private List<ElectricalCategoryModel> LoadElectricalCategories(string sheetName, ref Dictionary<string, string> dictData)
@@ -191,33 +195,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var hiroisetSelected = HiroiSetMasterNormalModels.FirstOrDefault( x => x.ParentPartModelNumber == ceedModelNumber ) ;
 
         if ( null == hiroisetSelected ) return ;
-        AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected ) ;
+        AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel?.SelectedCeedModel?.ModelNumber ) ;
       }
       catch {
         
       }
     }
 
-    private void AddCeedDetailBaseOnHiroiSetMaster(HiroiSetMasterModel hiroiSetMasterModel)
+    private void AddCeedDetailBaseOnHiroiSetMaster(HiroiSetMasterModel hiroiSetMasterModel, string? modelNumber)
     {
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode1 ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode2 ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode3 ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode4 ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode5 ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode6 ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode7 ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode8 ) ;  
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode1 , modelNumber) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode2 , modelNumber ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode3  , modelNumber) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode4  , modelNumber) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode5  , modelNumber) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode6  , modelNumber) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode7  , modelNumber) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode8  , modelNumber) ;  
       CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
       CeedDetailSelected = CeedDetailList.Last() ;
     }
 
-    private void AddCeedDetailBaseOnMaterialCode( string materialCode )
+    private void AddCeedDetailBaseOnMaterialCode( string materialCode, string? modelNumber)
     { 
       if ( string.IsNullOrEmpty( materialCode ) ) return ;
       var hiroiMaster = HiroiMasterModels.FirstOrDefault( x => CompareBuzaiCDAndMaterialCode( x.Buzaicd, materialCode ) ) ;
       if(null == hiroiMaster) return;
-      CeedDetailList.Add( new CeedDetailModel( hiroiMaster.Buzaicd, hiroiMaster.Hinmei, hiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, SymbolInformation.Id, TrajectoryDefault, hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1 )  ); 
+      CeedDetailList.Add( new CeedDetailModel( hiroiMaster.Buzaicd, hiroiMaster.Hinmei, hiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, SymbolInformation.Id, TrajectoryDefault, hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1,  modelNumber )  ); 
     }
 
     private bool CompareBuzaiCDAndMaterialCode( string buzaiCd, string materialCode )
@@ -244,6 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       electricalCategoryViewModel.CeedDetailSelected.Order = CeedDetailList.Count + 1 ;
       CeedDetailList.Add( electricalCategoryViewModel.CeedDetailSelected ) ;
+      CeedDetailSelected = CeedDetailList.Last() ;
       CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
     }
 
@@ -274,7 +279,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var hiroiMasterViewModel = new HiroiMasterViewModel( _document, HiroiMasterModels, _hiroiSetMasterEcoModels, _hiroiSetMasterNormalModels,  true ) ;
       var hiroiMasterDialog = new HiroiMasterDialog( hiroiMasterViewModel ) ;
       if ( true == hiroiMasterDialog.ShowDialog() ) {
-        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, CeedDetailList.Count + 1 ) ;
+        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, CeedDetailList.Count + 1, string.Empty ) ;
         CeedDetailList.Add( ceedDetailModel ) ; 
         CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ; 
       }
@@ -289,8 +294,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         return;
       }
        
-      var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, selectedHiroiMaster.Hinmei, selectedHiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2, selectedHiroiMaster.Kikaku, CeedDetailList.Count + 1 ) ;
-      CeedDetailList.Add( ceedDetailModel ) ; 
+      var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, selectedHiroiMaster.Hinmei, selectedHiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2, selectedHiroiMaster.Kikaku, CeedDetailList.Count + 1, string.Empty ) ;
+      CeedDetailList.Add( ceedDetailModel ) ;
+      CeedDetailSelected = CeedDetailList.Last() ;
       CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ; 
     }
 
@@ -329,8 +335,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _electricalCategoriesNormal = LoadElectricalCategories("Normal", ref _dictElectricalCategoriesNormalKey) ;
 
       var base64 =
-        @"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" ;
+        @"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+DQo8c3ZnIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyINCiAgIHhtbG5zOmNjPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyMiDQogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiDQogICB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIg0KICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIg0KICAgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHZpZXdCb3g9IjAgMCAyMDAgMzAwIj4NCiAgIDxwb2x5Z29uIHBvaW50cz0iMTAwLDEwIDQwLDE5OCAxOTAsNzggMTAsNzggMTYwLDE5OCIgc3R5bGU9ImZpbGw6Z3JlZW47c3Ryb2tlOmdyZWVuOyIvPg0KPC9zdmc+DQo=" ;
       _imagePreview = StringToImage( base64 ) ;
     }
+    
+    
   }
 }

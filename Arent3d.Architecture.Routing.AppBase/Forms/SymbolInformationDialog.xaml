@@ -3,12 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms" 
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:converter="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         Title="Symbol Information" Height="700" Width="1100"
         d:DataContext="{d:DesignInstance {x:Type local:DesignSymbolInformationViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
+        <converter:StringColorConverter x:Key="StringColorConverter" />
         <CollectionViewSource x:Key="ClassificationList" Source="{Binding ConstructionClassificationTypeList}" />
     </Window.Resources>
     <Grid>
@@ -32,12 +34,19 @@
         </StackPanel>
         <!--Data Grid Result-->
         <DataGrid Grid.Row="1" Grid.Column="0" Margin="10 10" ItemsSource="{Binding CeedDetailList}"
-                  SelectedItem="{Binding CeedDetailSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserAddRows="False" AutoGenerateColumns="False">
+                  SelectionUnit="FullRow" SelectionMode="Single" SelectedItem="{Binding CeedDetailSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserAddRows="False" AutoGenerateColumns="False">
             <DataGrid.Resources>
                 <Style TargetType="DataGridRow">
                     <Style.Resources>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"  Color="LightSkyBlue"/> 
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"  Color="#0078D7"/>  
                     </Style.Resources>
+                </Style>
+                <Style TargetType="DataGridCell">
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True"> 
+                            <Setter Property="BorderBrush" Value="#0078D7" />
+                        </Trigger>
+                    </Style.Triggers>
                 </Style>
             </DataGrid.Resources>
             <DataGrid.Columns>
@@ -88,7 +97,7 @@
                             <ComboBox Width="70" Height="22" VerticalContentAlignment="Center" Name="CbSymbolKind"
                                       SelectedItem="{Binding SelectedSymbolKind}" />
                             <Label Content="高さ" />
-                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Height}" VerticalContentAlignment="Center" />
+                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Height}" PreviewTextInput="OnSymbolHeightInput" PreviewKeyUp="OnSymbolHightKeyUp" VerticalContentAlignment="Center" />
                             <Label Content="mm幅" />
                             <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Percent}" VerticalContentAlignment="Center"/>
                             <Label Content="%  色" />
@@ -96,22 +105,29 @@
                                       SelectedItem="{Binding SymbolInformation.Color}" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <CheckBox Content="文字付け" Margin="10 0 10 0" Width="100"
+                            <CheckBox Content="文字付け" Margin="10 0 10 0" Width="100" Click="OnCheckedDescriptionChanged"
                                       IsChecked="{Binding SymbolInformation.IsShowText}" VerticalContentAlignment="Center" />
                             <TextBox Width="325" Height="20" Text="{Binding SymbolInformation.Description}" VerticalContentAlignment="Center" />
                         </StackPanel>
                         <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center">
                             <Label Content="付加位置" />
-                            <ComboBox Width="70" Height="22" Name="CbSymbolCoordinate"
+                            <ComboBox Width="70" Height="22" Name="CbSymbolCoordinate" SelectionChanged="OnSymbolCoordinateChange"
                                       SelectedItem="{Binding SelectedSymbolCoordinate}" VerticalContentAlignment="Center" />
                             <Label Content="文字高さ" Margin="20 0 5 0" />
-                            <TextBox Width="100" Height="22" Text="{Binding SymbolInformation.CharacterHeight}" VerticalContentAlignment="Center" />
+                            <TextBox Width="100" Height="22" Text="{Binding SymbolInformation.CharacterHeight}" VerticalContentAlignment="Center" PreviewTextInput="OnSymbolHeightInput" PreviewKeyUp="OnSymbolTextHeightInput" />
                         </StackPanel>
                     </Grid>
                     <!--Preview-->
                     <StackPanel Grid.Column="1">
                         <Label Content="プレビュー" VerticalAlignment="Top" />
-                        <Image Source="{Binding ImagePreview, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                         <Canvas x:Name="CanvasPreview" Width="120" Height="120"> 
+                            <Canvas x:Name="CanvasStar"  Canvas.Left="30" Canvas.Top="30">
+                                <Path x:Name="PathStar" Fill="{Binding SymbolInformation.Color, Converter={StaticResource  StringColorConverter}}"  />
+                            </Canvas>
+                             <Canvas x:Name="CanvasText" Canvas.Left="50" Canvas.Top="20">
+                                 <Label x:Name="LabelDescription" MaxWidth="50" Content="{Binding SymbolInformation.Description}" FontSize="10" FontWeight="Bold" Foreground="{Binding SymbolInformation.Color, Converter={StaticResource  StringColorConverter}}"/>
+                             </Canvas>
+                         </Canvas>
                     </StackPanel>
                 </Grid>
             </GroupBox>

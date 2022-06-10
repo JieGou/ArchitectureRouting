@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Size2,
       Specification,
       Order,
+      ModeNumber,
     }
 
     protected override CeedDetailModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -40,8 +41,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var size2 = deserializer.GetString( SerializeField.Size2 ) ; 
       var specification = deserializer.GetString( SerializeField.Specification ) ; 
       var order = deserializer.GetInt( SerializeField.Order ) ; 
+      var modeNumber = deserializer.GetString( SerializeField.ModeNumber ) ; 
 
-      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order) ;
+      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, modeNumber) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedDetailModel customTypeValue )
@@ -59,6 +61,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Size1, customTypeValue.Size1 ) ;
       serializerObject.AddNonNull( SerializeField.Size2, customTypeValue.Size2 ) ;
       serializerObject.AddNonNull( SerializeField.Specification, customTypeValue.Specification ) ;
+      serializerObject.AddNonNull( SerializeField.ModeNumber, customTypeValue.ModeNumber ) ;
       serializerObject.Add( SerializeField.Order, customTypeValue.Order ) ;
         
       return serializerObject ;

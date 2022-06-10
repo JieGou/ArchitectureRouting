@@ -42,15 +42,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
   
-    private string _searchText = String.Empty ; 
- 
+    private string _searchText = String.Empty ;
+
+    private bool hasOneWordOnly = false ;
     public string SearchText
     {
       get => _searchText ;
       set
       {
         _searchText = value ;
-        OnPropertyChanged( "SearchText" ) ; 
+        OnPropertyChanged( "SearchText" ) ;
+
+        hasOneWordOnly = SearchText.Split( new char[] { ' ', ';', ',' } ).Length <= 1 ;
+        
         var listHiroiMaster = HiroiMasterList.ToList() ;
         var listHiroiSetMaster = _isEcoModel ? _hiroiSetMasterEcoModels?.ToList() : _hiroiSetMasterNormalModels?.ToList() ;
         listHiroiSetMaster = SearchText.Split( new char[] { ' ', ';', ',' } ).Where( textSearch => ! string.IsNullOrEmpty( textSearch ) ).Aggregate( listHiroiSetMaster, ( current, textSearch ) => current!.FindAll( x => CheckContainSearchText( x, textSearch ) ) ) ;
@@ -84,6 +88,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private bool CheckContainSearchText( string textContainer, string textSearch )
     {
+      if ( hasOneWordOnly )
+        return textContainer.Length > textSearch.Length && ( textContainer.Substring( 0, textSearch.Length ).Equals( textSearch, StringComparison.OrdinalIgnoreCase ) || textContainer.Replace( " ","" ).Substring( 0, textSearch.Length ).Equals( textSearch, StringComparison.OrdinalIgnoreCase )) ;
+         
       return textContainer?.IndexOf( textSearch.Trim(), StringComparison.OrdinalIgnoreCase ) >= 0 || textContainer?.Replace( " ","" ).IndexOf( textSearch.Trim(), StringComparison.OrdinalIgnoreCase ) >= 0 ;
     }
 
