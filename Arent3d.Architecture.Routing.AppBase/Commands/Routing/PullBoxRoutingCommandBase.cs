@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var (route, fromEndPoint, toEndPoint, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight ) = pickState ;
 
       List<string> listNameRoute = new() { route.Name } ;
-      RouteGenerator.EraseRoutes( document, listNameRoute, true ) ;
+      RouteGenerator.EraseRoutes( document, listNameRoute, false ) ;
 
       var diameter = route.UniqueDiameter ;
       var classificationInfo = route.GetSystemClassificationInfo() ;
