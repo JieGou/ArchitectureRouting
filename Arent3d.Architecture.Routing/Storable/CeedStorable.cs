@@ -8,7 +8,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "b12df4b4-4726-47db-9848-09e4137a58de" )]
+  [Guid( "6437ab46-a3a2-41ac-8b66-3e907a8320fd" )]
   [StorableVisibility( AppInfo.VendorId )]
   public class CeedStorable : StorableBase
   {
@@ -18,18 +18,24 @@ namespace Arent3d.Architecture.Routing.Storable
     private const string IsShowCeedModelNumberField = "IsShowCeedModelNumber" ;
     private const string ConnectorFamilyUploadField = "ConnectorFamilyUpload" ;
     private const string IsShowOnlyUsingCodeField = "IsShowOnlyUsingCode" ;
+    private const string IsDiffField = "IsDiff" ;
 
     public List<CeedModel> CeedModelData { get ; set ; }
     public List<CeedModel> CeedModelUsedData { get ; set ; }
     public bool IsShowCeedModelNumber { get ; set ; }
     public List<string> ConnectorFamilyUploadData { get ; set ; }
     public bool IsShowOnlyUsingCode { get ; set ; }
+    
+    public bool IsDiff { get ; set ; }
+    
+    public List<CeedModel> OldCeedModelData { get ; set ; }
 
     public CeedStorable( DataStorage owner ) : base( owner, false )
     {
       CeedModelData = new List<CeedModel>() ;
       CeedModelUsedData = new List<CeedModel>() ;
       ConnectorFamilyUploadData = new List<string>() ;
+      OldCeedModelData = new List<CeedModel>() ;
     }
 
     public CeedStorable( Document document ) : base( document, false )
@@ -37,6 +43,7 @@ namespace Arent3d.Architecture.Routing.Storable
       CeedModelData = new List<CeedModel>() ;
       CeedModelUsedData = new List<CeedModel>() ;
       ConnectorFamilyUploadData = new List<string>() ;
+      OldCeedModelData = new List<CeedModel>() ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
@@ -46,6 +53,7 @@ namespace Arent3d.Architecture.Routing.Storable
       IsShowCeedModelNumber = reader.GetSingle<bool>( IsShowCeedModelNumberField ) ;
       ConnectorFamilyUploadData = reader.GetArray<string>( ConnectorFamilyUploadField ).ToList() ;
       IsShowOnlyUsingCode = reader.GetSingle<bool>( IsShowOnlyUsingCodeField ) ;
+      IsDiff = reader.GetSingle<bool>( IsDiffField ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
@@ -55,6 +63,7 @@ namespace Arent3d.Architecture.Routing.Storable
       writer.SetSingle(  IsShowCeedModelNumberField, IsShowCeedModelNumber) ;
       writer.SetArray( ConnectorFamilyUploadField, ConnectorFamilyUploadData ) ;
       writer.SetSingle(  IsShowOnlyUsingCodeField, IsShowOnlyUsingCode) ;
+      writer.SetSingle(  IsDiffField, IsDiff) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
@@ -64,6 +73,7 @@ namespace Arent3d.Architecture.Routing.Storable
       generator.SetSingle<bool>( IsShowCeedModelNumberField  ) ;
       generator.SetArray<string>( ConnectorFamilyUploadField ) ;
       generator.SetSingle<bool>( IsShowOnlyUsingCodeField  ) ;
+      generator.SetSingle<bool>( IsDiffField  ) ;
     }
 
     public override string Name => StorableName ;

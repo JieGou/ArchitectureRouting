@@ -453,7 +453,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var isPickUpByFromConnector = toConnector != null && ( toConnector.Name == ElectricalRoutingFamilyType.PressureConnector.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ) ;
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
-      if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
+      if ( toConnector == null || ( toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) ) return false ;
 
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
