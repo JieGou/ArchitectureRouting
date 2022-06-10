@@ -126,6 +126,10 @@ namespace Arent3d.Architecture.Routing
     [Parameter( "302a0b15-ee8b-44a2-98b2-c5eb105a3579", "IsEcoMode", DataType.Text, ParameterVisibility.ReadOnlyOnHasValue )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConnectorsAndConduits ) )]
     IsEcoMode,
+    
+    [Parameter( "674f8e8e-b923-4bfc-9a3b-399adaa783ee", "Room Condition", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Select Room Condition" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_TEXT, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
+    RoomCondition,
 
     #region Schedules
 
