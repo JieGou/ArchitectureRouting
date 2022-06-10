@@ -28,8 +28,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           "TransactionName.Commands.Routing.ShowFallMark".GetAppStringByKeyOrDefault( "Show Fall Mark" ), _ =>
           {
             var fallMarkInstanceIds = GetExistedFallMarkInstancesIds( document ) ;
-            if ( fallMarkInstanceIds.Count > 0 )
+            if ( fallMarkInstanceIds.Count > 0 ) {
+              var fallMarkTextNoteInstanceIds =
+                GetExistedFallMarkTextNoteInstancesIds( document, fallMarkInstanceIds ) ;
               document.Delete( fallMarkInstanceIds ) ; // remove marks are displaying
+              document.Delete( fallMarkTextNoteInstanceIds ) ;
+            }
             else
               CreateFallMarkForConduitWithVerticalDirection( document ) ;
             return Result.Succeeded ;
@@ -81,7 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var detaiTableModel = detailTableModels.FirstOrDefault( dtm => dtm.RouteName == routeName ) ;
 
-      var fallMarkNoteString = $"{detaiTableModel?.PlumbingType}{detaiTableModel?.PlumbingSize}" ;
+      var fallMarkNoteString = $"{detaiTableModel?.PlumbingType}{detaiTableModel?.PlumbingSize.Replace( "mm","" )}" ;
 
       if ( string.IsNullOrEmpty( fallMarkNoteString ) ) return ;
       
@@ -95,23 +99,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ) ??
                             throw new InvalidOperationException() ;
-      var fallMarkInstanceIds = document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList() .Distinct().ToHashSet();
+      return document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList();
 
-      var listTextNotes = new List<ElementId>() ;
-      
-      foreach ( var groupId in from fallMarkSymbolId in fallMarkInstanceIds select document.GetElement( fallMarkSymbolId ) into fallMarkSymbolElement select fallMarkSymbolElement.GroupId into groupId where ! groupId.Equals(ElementId.InvalidElementId) select groupId ) {
+    }
+
+    private List<ElementId> GetExistedFallMarkTextNoteInstancesIds(Document document , IEnumerable<ElementId> existedFallMarkInstancesIds )
+    {
+      var fallMarkTextNoteInstanceIds = new HashSet<ElementId>() ;
+
+      foreach ( var groupId in from fallMarkSymbolId in existedFallMarkInstancesIds
+               select document.GetElement( fallMarkSymbolId )
+               into fallMarkSymbolElement
+               select fallMarkSymbolElement.GroupId
+               into groupId
+               where ! groupId.Equals( ElementId.InvalidElementId )
+               select groupId ) {
         if ( document.GetElement( groupId ) is not Group parentGroup ) continue ;
         var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
         foreach ( var group in attachedGroup ) {
           var textNoteIds = group.GetMemberIds() ;
-          listTextNotes.AddRange( textNoteIds );
+          fallMarkTextNoteInstanceIds.AddRange( textNoteIds ) ;
           group.UngroupMembers() ;
         }
+
         parentGroup.UngroupMembers() ;
       }
-      fallMarkInstanceIds.AddRange( listTextNotes );
 
-      return fallMarkInstanceIds.ToList() ;
+      return fallMarkTextNoteInstanceIds.ToList();
     }
 
     private static TextNote CreateFallMarkNote(Document document, FamilyInstance fallMarkInstance, string fallMarkNote,XYZ fallMarkPoint)
