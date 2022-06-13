@@ -66,10 +66,10 @@
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <Button Grid.Row="6" Content="配管サイズ＊計算" Command="{Binding SplitPlumbingCommand}" CommandParameter="{Binding ElementName=DtGrid}"/>
+            <Button Grid.Row="6" Content="配管サイズ＊計算" Command="{Binding SplitPlumbingCommand}" />
             <Button Grid.Row="7" Content="上へ" Command="{Binding MoveUpCommand}" />
             <Button Grid.Row="8" Content="下へ" Command="{Binding MoveDownCommand}" />
-            <Button Grid.Row="9" Content="全選択" Command="{Binding SelectAllCommand}" CommandParameter="{Binding ElementName=DtGrid}"/>
+            <Button Grid.Row="9" Content="全選択" Command="{Binding SelectAllCommand}" />
             <Label Grid.Row="10" Content="参照情報" Margin="0,15,5,0"/>
             <Button Grid.Row="11"  Content="▼" Click="BtnHideReferenceDataGrid_Click"/>
             <Button Grid.Row="12" x:Name="BtnReferenceSelectAll" Content="全選択" Command="{Binding ReferenceSelectAllCommand}"/>
@@ -107,7 +107,7 @@
                 <MouseBinding
                     MouseAction="LeftDoubleClick"
                     Command="{Binding DoubleClickCommand}"
-                    CommandParameter="{Binding ElementName=DtGrid}"/>
+                    />
             </DataGrid.InputBindings>
             
             <DataGrid.CellStyle>
