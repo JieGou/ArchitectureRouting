@@ -5,6 +5,7 @@ using System.Windows.Controls ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Autodesk.Revit.DB ;
 using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -151,6 +152,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( sender is not ComboBox comboBox ) return ;
       ViewModel.PlumbingItemsSelection( comboBox ) ;
+    }
+  }
+
+  public class DesignDetailTableViewModel : DetailTableViewModel
+  {
+    public DesignDetailTableViewModel() : base( 
+      default!, 
+      default!,
+      default!,
+      default!,
+      default!,
+      default!,
+      default!,
+      default!,
+      default!,
+      default!,
+      default!,
+      default!,
+      default!,
+      default! )
+    {
     }
   }
 }
