@@ -154,7 +154,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             i++ ;
             if ( i > endRow ) break ;
             name = nextName ;
-            record = workSheet.GetRow( i ).GetCell( 3 ) ;
+            record = workSheet.GetRow( i ).GetCell( ceedNameColumnIndex ) ;
             if ( record == null ) break ;
             nextName = GetCellValue( record ) ;
           } while ( ! ( string.IsNullOrEmpty( name ) && ! string.IsNullOrEmpty( nextName ) ) ) ;

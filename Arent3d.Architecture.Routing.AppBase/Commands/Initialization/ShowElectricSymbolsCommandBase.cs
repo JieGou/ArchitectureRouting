@@ -125,7 +125,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( ! string.IsNullOrEmpty( item.MaterialCode8 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode8 ).ToString() ) ;
 
         if ( ! listMaterialCode.Any() ) continue ;
-        var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
+        var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ).ToList() ;
         foreach ( var master in masterModels ) {
           var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == master.Type && w.DiameterOrNominal == master.Size1 && ( ( w.NumberOfHeartsOrLogarithm == "0" && master.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && master.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
           if ( wiresAndCablesModel == null ) continue ;
@@ -133,8 +133,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var wireSize = master.Size1 ;
           var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
 
-          var ( toPlumbingType, toPlumbingSize, toIsExposure, toIsInDoor ) = GetPlumbingInfoFromChangePlumbingInformationStorable( document, connectorUniqueId, routeName ) ;
-          var endElectricalSymbolModel = new ElectricalSymbolModel( connectorUniqueId, connectorCeedModel.FloorPlanType, connectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, toPlumbingType, toPlumbingSize, toIsExposure, toIsInDoor ) ;
+          var ( plumbingType, plumbingSize, isExposure, isInDoor ) = GetPlumbingInfoFromChangePlumbingInformationStorable( document, connectorUniqueId, routeName ) ;
+          if ( plumbingType == DefaultPlumbingType && ! string.IsNullOrEmpty( item.MaterialCode2 ) ) {
+            var masterModel = masterModels.FirstOrDefault( x => int.Parse( x.Buzaicd ).ToString() == int.Parse( item.MaterialCode2 ).ToString() ) ;
+            if ( masterModel != null ) {
+              plumbingType = masterModel.Type ;
+              plumbingSize = masterModel.Size1 ;
+            }
+          }
+          var endElectricalSymbolModel = new ElectricalSymbolModel( connectorUniqueId, connectorCeedModel.FloorPlanType, connectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, plumbingType, plumbingSize, isExposure, isInDoor ) ;
           electricalSymbolModels.Add( endElectricalSymbolModel ) ;
         }
       }
