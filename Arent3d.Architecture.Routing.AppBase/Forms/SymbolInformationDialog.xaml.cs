@@ -212,4 +212,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
     }
   }
+  
+  public class CustomComboBoxColumn : System.Windows.Controls.DataGridComboBoxColumn
+  {
+    protected override FrameworkElement GenerateElement(DataGridCell cell, object dataItem)
+    {
+      FrameworkElement fe = base.GenerateElement(cell, dataItem);
+      if ( fe is System.Windows.Controls.Control control ) 
+        control.Margin = new Thickness(5, 0, 0, 0); 
+      
+      return fe;
+    }
+  }
 }
