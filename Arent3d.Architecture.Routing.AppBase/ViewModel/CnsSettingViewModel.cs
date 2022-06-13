@@ -163,7 +163,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void AddDefaultValue()
     {
       if ( CnsSettingModels.Count == 0 ) {
-        CnsSettingModels.Add( new CnsSettingModel( sequence: 1, categoryName: "未設定" ) ) ;
+        CnsSettingModels.Add( new CnsSettingModel( sequence: 1, categoryName: "未設定", true ) ) ;
       }
     }
     
