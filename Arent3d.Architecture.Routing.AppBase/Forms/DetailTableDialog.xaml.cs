@@ -37,6 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public Dictionary<string, string> RoutesWithConstructionItemHasChanged { get ; }
     public Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged { get ; }
     private bool _isMixConstructionItems ;
+    private bool _isCallFromAddWiringInformationCommand ;
     
     private static string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage =
       "Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?" ;
@@ -67,6 +68,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var rowStyle = new Style( typeof( DataGridRow ) ) ;
       rowStyle.Setters.Add( new EventSetter( MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
+    }
+    
+    public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, bool mixConstructionItems, bool isCallFromAddWiringInformationCommand )
+    {
+      InitializeComponent() ;
+      _document = document ;
+      DataContext = viewModel ;
+      _detailTableViewModel = viewModel ;
+      _detailSymbolStorable = document.GetDetailSymbolStorable() ;
+      DetailTableViewModelSummary = viewModel ;
+      _conduitsModelData = conduitsModelData ;
+      _wiresAndCablesModelData = wiresAndCablesModelData ;
+      _isMixConstructionItems = mixConstructionItems ;
+      RoutesWithConstructionItemHasChanged = new Dictionary<string, string>() ;
+      DetailSymbolIdsWithPlumbingTypeHasChanged = new Dictionary<string, string>() ;
+      _selectedDetailTableRows = new List<DetailTableModel>() ;
+      _selectedDetailTableRowsSummary = new List<DetailTableModel>() ;
+      _copyDetailTableRow = null ;
+      _copyDetailTableRowSummary = null ;
+      _selectedReferenceDetailTableRows = new List<DetailTableModel>() ;
+
+      CreateDetailTableViewModelByGroupId() ;
+      HideReferenceDataGrid( ! viewModel.IsAddReference ) ;
+      viewModel.IsAddReference = false ;
+      
+      var rowStyle = new Style( typeof( DataGridRow ) ) ;
+      rowStyle.Setters.Add( new EventSetter( MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
+      DtGrid.RowStyle = rowStyle ;
+      _isCallFromAddWiringInformationCommand = isCallFromAddWiringInformationCommand ; 
     }
     
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )

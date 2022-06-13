@@ -27,6 +27,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       PlumbingItems,
       Remark,
       ParentPartMode,
+      SetCode,
+      IsEcoModel,
     }
   
     protected override WiringModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -50,8 +52,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var plumbingItems = deserializer.GetString( SerializeField.PlumbingItems ) ;
       var remark = deserializer.GetString( SerializeField.Remark ) ;
       var parentPartMode = deserializer.GetString( SerializeField.ParentPartMode ) ;
+      var setCode = deserializer.GetString( SerializeField.SetCode ) ;
+      var isEcoModel = deserializer.GetBool( SerializeField.IsEcoModel ) ;
   
-      return new WiringModel( id, idOfToConnector, routeName, floor, generalDisplayDeviceSymbol, wireType, wireSize, wireStrip, pipingType, pipingSize, numberOfPlumbing,constructionClassification, signalType, constructionItems, plumbingItems, remark, parentPartMode  ) ;
+      return new WiringModel( id, idOfToConnector, routeName, floor, generalDisplayDeviceSymbol, wireType, wireSize, wireStrip, pipingType, pipingSize, numberOfPlumbing,constructionClassification, signalType, constructionItems, plumbingItems, remark, parentPartMode, setCode, isEcoModel ) ;
     }
   
     protected override ISerializerObject Serialize( Element storedElement, WiringModel customTypeValue )
@@ -75,6 +79,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Remark, customTypeValue.Remark ) ;  
       serializerObject.AddNonNull( SerializeField.ParentPartMode, customTypeValue.ParentPartMode ) ;  
       serializerObject.AddNonNull( SerializeField.NumberOfPlumbing, customTypeValue.NumberOfPlumbing ) ;  
+      serializerObject.AddNonNull( SerializeField.SetCode, customTypeValue.SetCode ) ;  
+      serializerObject.Add( SerializeField.IsEcoModel, customTypeValue.IsEcoModel ) ;  
   
       return serializerObject ;
     }

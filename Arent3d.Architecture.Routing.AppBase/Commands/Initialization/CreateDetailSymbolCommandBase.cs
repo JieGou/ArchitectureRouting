@@ -138,7 +138,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( textNote, string.Join( ",", lineIds ) ) ;
     }
 
-    private List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
+    public List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
     {
       List<string> routeNames = new List<string>() ;
       if ( pickConduit is Conduit ) {

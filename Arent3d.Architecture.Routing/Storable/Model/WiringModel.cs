@@ -8,24 +8,24 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string IdOfToConnector { get ; set ; }
     public string RouteName { get ; set ; }
     public string Floor { get ; set ; }
+    public string SetCode { get ; set ; }
     public string GeneralDisplayDeviceSymbol { get ; set ; }
     public string WireType { get ; set ; }
     public string WireSize { get ; set ; }
     public string WireStrip { get ; set ; }
     public string PipingType { get ; set ; }
-    public string PipingSize { get ; set ; }
-    
-    public string NumberOfPlumbing { get ; set ; }
-    
+    public string PipingSize { get ; set ; } 
+    public string NumberOfPlumbing { get ; set ; } 
     public string ConstructionClassification { get ; set ; }
     public string SignalType { get ; set ; }
     public string ConstructionItems { get ; set ; }
     public string PlumbingItems { get ; set ; }
     public string Remark { get ; set ; }
     public string ParentPartMode { get ; set ; }
+    public bool IsEcoModel { get ; set ; }
 
     public WiringModel( string? id, string? idOfToConnector, string? routeName, string? floor, string? generalDisplayDeviceSymbol, string? wireType, string? wireSize, string? wireStrip, string? pipingType, string? pipingSize, 
-      string? numberOfPlumbing, string ? constructionClassification, string? signalType, string? constructionItems, string? plumbingItems, string? remark, string? parentPartMode)
+      string? numberOfPlumbing, string ? constructionClassification, string? signalType, string? constructionItems, string? plumbingItems, string? remark, string? parentPartMode, string? setCode, bool? isEcoModel)
     {
       Id = id ?? string.Empty ;
       IdOfToConnector = idOfToConnector ?? string.Empty ;
@@ -44,6 +44,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       PlumbingItems = plumbingItems ?? string.Empty ;
       Remark = remark ?? string.Empty ;
       ParentPartMode = parentPartMode ?? string.Empty ;
+      SetCode = setCode ?? string.Empty;
+      IsEcoModel = isEcoModel ?? false ;
     }
   }
 }
