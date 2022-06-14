@@ -13,7 +13,7 @@
         <Style x:Key="DefaultButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Width" Value="100"/>
             <Setter Property="Height" Value="25"/>
-            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Margin" Value="5,0,5,5"/>
         </Style>
         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource DefaultButtonStyle}"/>
         <Style x:Key="DualHeightButton" TargetType="{x:Type Button}" BasedOn="{StaticResource DefaultButtonStyle}">
@@ -599,7 +599,7 @@
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
                 
-                <DataGridTextColumn Header="備考" Width="90" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}"  IsReadOnly="False">
+                <DataGridTextColumn Header="備考" Width="70" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}"  IsReadOnly="False">
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="TextBox.IsReadOnly" Value="{Binding IsReadOnlyParameters}" />

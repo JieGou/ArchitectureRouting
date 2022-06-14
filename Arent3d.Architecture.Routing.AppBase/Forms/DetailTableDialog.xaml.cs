@@ -44,12 +44,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       BtnAddReference.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
       BtnAddReferenceRows.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
       DtReferenceGrid.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
-      DtReferenceGrid.Height = isVisible ? 0 : 370 ;
-      DetailTableWindow.Height = isVisible ? 590 : 980 ;
+      DtReferenceGrid.Height = isVisible ? 0 : 250 ;
+      DtGrid.Height = DtReferenceGrid.Visibility == Visibility.Visible ? 250 : 410 ;
+      DetailTableWindow.Height = isVisible ? 590 : 700 ;
       if ( isVisible ) return ;
-      DetailTableWindow.WindowStartupLocation = WindowStartupLocation.Manual ;
-      DetailTableWindow.Top = 50 ;
-      DetailTableWindow.Left = 400 ;
+      DetailTableWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen ;
     }
     
     private void PlumpingTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
