@@ -77,7 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
       var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
       var errorMess = string.Empty ;
-      var ceedModelList = new List<(CeedModel ceedModel, string ceelConnectorUniqueId)>() ;
+      var ceedModelList = new List<(CeedModel ceedModel, string ceedConnectorUniqueId, string routeName)>() ;
       
       var routePicked = conduits.Select( e => e.GetRouteName() ).Distinct().ToList() ;
       foreach ( var routeName in routePicked ) {
@@ -91,18 +91,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
 
         if ( fromConnectorCeedModel != null && showCeedModelSymbols.Any( legend => legend == fromConnectorCeedModel.LegendDisplay ) ) {
-          ceedModelList.Add( new( fromConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId ) ) ;
+          ceedModelList.Add( new( fromConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, routeName! ) ) ;
         }
 
         if ( toConnectorCeedModel != null && showCeedModelSymbols.Any( legend => legend == toConnectorCeedModel.LegendDisplay ) ) {
-          ceedModelList.Add( new( toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ) ;
+          ceedModelList.Add( new( toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId, routeName! ) ) ;
         }
+      }
+      
+      ceedModelList = ceedModelList.OrderBy( cmd => cmd.ceedModel.CeedModelNumber, new CeedModelNumberComparer() ).ToList() ;
 
-        ceedModelList = ceedModelList.OrderBy( cmd => cmd.ceedModel.CeedModelNumber, new CeedModelNumberComparer() ).ToList() ;
-
-        foreach ( var ceedModel in ceedModelList ) {
-          InsertDataFromRegularDatabaseIntoElectricalSymbolModel( doc, wiresAndCablesModelData, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, ceedModel.ceedModel, ceedModel.ceelConnectorUniqueId, routeName! ) ;
-        }
+      foreach ( var (ceedModel, ceedConnectorUniqueId, routeName) in ceedModelList ) {
+        InsertDataFromRegularDatabaseIntoElectricalSymbolModel( doc, wiresAndCablesModelData, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, ceedModel, ceedConnectorUniqueId, routeName ) ;
       }
     }
 
