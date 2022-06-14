@@ -224,7 +224,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       冷媒管共巻配線,
       漏水帯コロガシ,
       漏水帯配管巻,
-      導圧管類
+      導圧管類,
+      天井ふところ, 
+      二重床, 
+    } 
+    
+    public enum ClassificationType
+    {
+      露出,
+      隠蔽
     }
 
     public static string CreateDetailTableSchedule( Document document, IReadOnlyCollection<DetailTableModel> detailTableModels, string levelName )

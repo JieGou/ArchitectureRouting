@@ -11,8 +11,9 @@
         d:DataContext="{d:DesignInstance {x:Type local:DesignSymbolInformationViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <converter:StringColorConverter x:Key="StringColorConverter" />
-        <CollectionViewSource x:Key="ClassificationList" Source="{Binding ConstructionClassificationTypeList}" />
-        <Style x:Key="Body_Content_DataGrid_Centering" TargetType="{x:Type DataGridCell}">
+        <CollectionViewSource x:Key="ClassificationList" Source="{Binding ClassificationTypeList}" />
+        <CollectionViewSource x:Key="ConstructionClassificationList" Source="{Binding ConstructionClassificationTypeList}" />
+        <Style x:Key="BodyContentDataGridCentering" TargetType="{x:Type DataGridCell}">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type DataGridCell}">
@@ -46,7 +47,7 @@
         <!--Data Grid Result-->
         <DataGrid Grid.Row="1" Grid.Column="0" RowHeight="25" Margin="10 10" ItemsSource="{Binding CeedDetailList}"
                   SelectionUnit="FullRow" SelectionMode="Single" SelectedItem="{Binding CeedDetailSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserAddRows="False" AutoGenerateColumns="False"
-                  CellStyle="{StaticResource Body_Content_DataGrid_Centering}">
+                  CellStyle="{StaticResource BodyContentDataGridCentering}">
             <DataGrid.Resources>
                 <Style TargetType="DataGridRow">
                     <Style.Resources>
@@ -60,23 +61,37 @@
                         </Trigger>
                     </Style.Triggers>
                 </Style>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                </Style>
             </DataGrid.Resources>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="品名コード" Width="100" CanUserSort="False" IsReadOnly="True"
-                                    Binding="{Binding ProductCode, ValidatesOnExceptions=True}" />
-                <DataGridTextColumn Header="品名" Width="150" Binding="{Binding ProductName, ValidatesOnExceptions=True}"
-                                    CanUserSort="True" IsReadOnly="True" />
-                <DataGridTextColumn Header="規格" Width="150" Binding="{Binding Standard, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="セットコード" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding CeedCode, ValidatesOnExceptions=True}" />
                 <local:CustomComboBoxColumn Header="施工区分" Width="150"
-                                        ItemsSource="{Binding Source={StaticResource ClassificationList}}"
-                                        SelectedItemBinding="{Binding Classification}" />
-                <DataGridTextColumn Header="単位" Width="100" Binding="{Binding Unit, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="False" />
-                <DataGridTextColumn Header="数量" Width="100" Binding="{Binding Quantity, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" />
-                <DataGridTextColumn Header="軌跡" Width="*" Binding="{Binding Trajectory, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" />
+                                            ItemsSource="{Binding Source={StaticResource ConstructionClassificationList}}"
+                                            SelectedItemBinding="{Binding ConstructionClassification}" />
+                <local:CustomComboBoxColumn Header="施工区分" Width="100"
+                                            ItemsSource="{Binding Source={StaticResource ClassificationList}}"
+                                            SelectedItemBinding="{Binding Classification}" >
+                    <local:CustomComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="IsEnabled" Value="{Binding Path=AllowChangeClassification}" />
+                        </Style>
+                    </local:CustomComboBoxColumn.CellStyle>
+                </local:CustomComboBoxColumn>
+                <DataGridTextColumn Header="品名コード" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding ProductCode, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="品名" Width="100" CanUserSort="True" IsReadOnly="True" Binding="{Binding ProductName, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="数量（手入力）" Width="100" CanUserSort="False" Binding="{Binding Quantity, ValidatesOnExceptions=True}">
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="IsEnabled" Value="{Binding Path=AllowInputQuantity}" />
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="数量（自動算出）" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding QuantityCalculate, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="Set数" Width="100" CanUserSort="False" Binding="{Binding QuantitySet, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="総数量" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding Total, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="備考" Width="*" CanUserSort="False" IsReadOnly="True" Binding="{Binding Description, ValidatesOnExceptions=True}" />
             </DataGrid.Columns>
         </DataGrid>
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10">

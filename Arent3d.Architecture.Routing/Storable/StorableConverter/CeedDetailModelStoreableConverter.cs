@@ -23,6 +23,13 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Specification,
       Order,
       ModeNumber,
+      CeedCode,
+      ConstructionClassification,
+      QuantityCalculate,
+      QuantitySet,
+      Total,
+      Description,
+      AllowInputQuantity,
     }
 
     protected override CeedDetailModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -41,9 +48,16 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var size2 = deserializer.GetString( SerializeField.Size2 ) ; 
       var specification = deserializer.GetString( SerializeField.Specification ) ; 
       var order = deserializer.GetInt( SerializeField.Order ) ; 
+      var ceedCode = deserializer.GetString( SerializeField.CeedCode ) ; 
+      var constructionClassification = deserializer.GetString( SerializeField.ConstructionClassification ) ; 
+      var quantityCalculate = deserializer.GetDouble( SerializeField.QuantityCalculate ) ; 
+      var quantitySet = deserializer.GetDouble( SerializeField.QuantitySet ) ; 
+      var total = deserializer.GetDouble( SerializeField.Total ) ;  
       var modeNumber = deserializer.GetString( SerializeField.ModeNumber ) ; 
+      var description = deserializer.GetString( SerializeField.Description ) ; 
+      var allowInputQuantity = deserializer.GetBool( SerializeField.AllowInputQuantity ) ; 
 
-      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, modeNumber) ;
+      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, modeNumber, ceedCode, constructionClassification, quantityCalculate, quantitySet, total, description, allowInputQuantity) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedDetailModel customTypeValue )
@@ -63,6 +77,13 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Specification, customTypeValue.Specification ) ;
       serializerObject.AddNonNull( SerializeField.ModeNumber, customTypeValue.ModeNumber ) ;
       serializerObject.Add( SerializeField.Order, customTypeValue.Order ) ;
+      serializerObject.AddNonNull( SerializeField.ConstructionClassification, customTypeValue.ConstructionClassification ) ;
+      serializerObject.AddNonNull( SerializeField.CeedCode, customTypeValue.CeedCode ) ;
+      serializerObject.Add( SerializeField.QuantityCalculate, customTypeValue.QuantityCalculate ) ;
+      serializerObject.Add( SerializeField.QuantitySet, customTypeValue.QuantitySet ) ;
+      serializerObject.Add( SerializeField.Total, customTypeValue.Total ) ;
+      serializerObject.AddNonNull( SerializeField.Description, customTypeValue.Description ) ;
+      serializerObject.Add( SerializeField.AllowInputQuantity, customTypeValue.AllowInputQuantity ) ;
         
       return serializerObject ;
     }
