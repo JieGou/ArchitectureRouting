@@ -19,8 +19,9 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using ComboBox = System.Windows.Controls.ComboBox ;
 using DataGrid = System.Windows.Controls.DataGrid ;
-using MessageBox = System.Windows.MessageBox ;
 using System.Windows.Controls ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
+using MessageBox = System.Windows.Forms.MessageBox ;
 using TextBox = System.Windows.Controls.TextBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -81,8 +82,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     public bool IsCreateDetailTableOnFloorPlanView { get ; set ; }
 
-    private bool _isCancelCreateDetailTable ;
-    
     public bool IsAddReference { get ; set ; }
     
     public List<DetailTableModel.ComboboxItemType> ConduitTypes { get ;}
@@ -406,78 +405,81 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private void SaveDetailTable(Window window)
     {
-      SaveData( _document, _detailTableModelsOrigin ) ;
-      SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
-      window.DialogResult = true ;
-      window.Close();
-      
-      const string defaultConstructionItems = "未設定" ;
-      // Configure open file dialog box
-      SaveFileDialog dlg = new() { FileName = string.Empty, DefaultExt = ".ctl", Filter = "CTL files|*.ctl" } ;
-
-      // Show open file dialog box
-      var result = dlg.ShowDialog() ;
-
-      // Process open file dialog box results
-      if ( result != DialogResult.OK ) return ;
-      string createText = string.Empty ;
-      foreach ( var item in DetailTableModels ) {
-        string line = string.Join( ";", 
-          item.Floor, 
-          item.CeedCode, 
-          item.DetailSymbol, 
-          item.DetailSymbolId,
-          item.WireType, 
-          item.WireSize, 
-          item.WireStrip, 
-          item.WireBook, 
-          item.EarthType, 
-          item.EarthSize, 
-          item.NumberOfGrounds, 
-          item.PlumbingType, 
-          item.PlumbingSize, 
-          item.NumberOfPlumbing, 
-          item.ConstructionClassification, 
-          item.SignalType, 
-          item.ConstructionItems, 
-          item.PlumbingItems, 
-          item.Remark, 
-          item.WireCrossSectionalArea, 
-          item.CountCableSamePosition,
-          item.RouteName, 
-          item.IsEcoMode, 
-          item.IsParentRoute, 
-          item.IsReadOnly, 
-          item.PlumbingIdentityInfo, 
-          item.GroupId, 
-          item.IsReadOnlyPlumbingItems, 
-          item.IsMixConstructionItems, 
-          item.CopyIndex ) ;
-        createText += line.Trim() + Environment.NewLine ;
+      var mixtureOfMultipleConstructionClassificationsInDetailSymbol = string.Empty ;
+      if ( IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol( _detailTableModelsOrigin, ref mixtureOfMultipleConstructionClassificationsInDetailSymbol ) ) {
+        MyMessageBox.Show(string.Format( "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol), "Error") ;
       }
+      else {
+        SaveData( _document, _detailTableModelsOrigin ) ;
+        SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
+        window.DialogResult = true ;
+        window.Close();
+      
+        const string defaultConstructionItems = "未設定" ;
+        // Configure open file dialog box
+        SaveFileDialog dlg = new() { FileName = string.Empty, DefaultExt = ".ctl", Filter = "CTL files|*.ctl" } ;
 
-      if ( ! string.IsNullOrWhiteSpace( createText.Trim() ) && createText.Trim() != defaultConstructionItems ) {
-        File.WriteAllText( dlg.FileName, createText.Trim() ) ;
+        // Show open file dialog box
+        var result = dlg.ShowDialog() ;
+
+        // Process open file dialog box results
+        if ( result != DialogResult.OK ) return ;
+        string createText = string.Empty ;
+        foreach ( var item in DetailTableModels ) {
+          string line = string.Join( ";", 
+            item.Floor, 
+            item.CeedCode, 
+            item.DetailSymbol, 
+            item.DetailSymbolId,
+            item.WireType, 
+            item.WireSize, 
+            item.WireStrip, 
+            item.WireBook, 
+            item.EarthType, 
+            item.EarthSize, 
+            item.NumberOfGrounds, 
+            item.PlumbingType, 
+            item.PlumbingSize, 
+            item.NumberOfPlumbing, 
+            item.ConstructionClassification, 
+            item.SignalType, 
+            item.ConstructionItems, 
+            item.PlumbingItems, 
+            item.Remark, 
+            item.WireCrossSectionalArea, 
+            item.CountCableSamePosition,
+            item.RouteName, 
+            item.IsEcoMode, 
+            item.IsParentRoute, 
+            item.IsReadOnly, 
+            item.PlumbingIdentityInfo, 
+            item.GroupId, 
+            item.IsReadOnlyPlumbingItems, 
+            item.IsMixConstructionItems, 
+            item.CopyIndex ) ;
+          createText += line.Trim() + Environment.NewLine ;
+        }
+
+        if ( ! string.IsNullOrWhiteSpace( createText.Trim() ) && createText.Trim() != defaultConstructionItems ) {
+          File.WriteAllText( dlg.FileName, createText.Trim() ) ;
+        }
       }
     }
     
     private void CreateDetailTable(Window window)
     {
-      var confirmResult = MessageBoxResult.OK ;
       var mixtureOfMultipleConstructionClassificationsInDetailSymbol = string.Empty ;
-      if ( IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol( _detailTableModelsOrigin, ref mixtureOfMultipleConstructionClassificationsInDetailSymbol ) )
-        confirmResult = MessageBox.Show( string.Format( "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol ), "Warning", MessageBoxButton.OKCancel ) ;
-      if ( confirmResult == MessageBoxResult.OK ) {
+      if ( IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol( _detailTableModelsOrigin, ref mixtureOfMultipleConstructionClassificationsInDetailSymbol ) ) {
+        MyMessageBox.Show(string.Format( "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol), "Error") ;
+        IsCreateDetailTableOnFloorPlanView = false ;
+      }
+      else {
         SaveData( _document, _detailTableModelsOrigin ) ;
         SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
         window.DialogResult = true ;
         window.Close() ;
+        IsCreateDetailTableOnFloorPlanView = true ;
       }
-      
-      _isCancelCreateDetailTable = confirmResult == MessageBoxResult.Cancel ;
-      
-      if ( _isCancelCreateDetailTable ) return ;
-      IsCreateDetailTableOnFloorPlanView = true ;
     }
 
     private bool IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol(ObservableCollection<DetailTableModel> detailTableModels, ref string mixtureOfMultipleConstructionClassificationsInDetailSymbol )

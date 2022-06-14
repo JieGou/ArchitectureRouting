@@ -599,7 +599,7 @@
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
                 
-                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}"  IsReadOnly="False">
+                <DataGridTextColumn Header="備考" Width="90" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}"  IsReadOnly="False">
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="TextBox.IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
@@ -668,10 +668,10 @@
             </DataGrid.Columns>
         </DataGrid>
         
-        <Grid VerticalAlignment="Bottom" Width="1100" Height="70">
+        <Grid VerticalAlignment="Bottom" Width="1000" Height="70" HorizontalAlignment="Left">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="540" />
-                <ColumnDefinition Width="540" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid Grid.Column="0" Margin="10" DockPanel.Dock="Left">
                 <Grid.RowDefinitions>
