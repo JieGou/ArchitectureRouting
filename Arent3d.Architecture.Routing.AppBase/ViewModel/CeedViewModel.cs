@@ -16,6 +16,7 @@ using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using MoreLinq ;
@@ -97,14 +98,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       set
       {
         _isShowCondition = value ;
+        CeedModels.Clear();
         if ( _isShowCondition.HasValue ) {
           if ( _isShowCondition.Value ) {
-            CeedModels = new ObservableCollection<CeedModel>( _ceedModels ) ;
-            OnPropertyChanged(nameof(CeedModels));
+            CeedModels.AddRange( _ceedModels );
           }
           else {
-            CeedModels = new ObservableCollection<CeedModel>(GroupCeedModel(_ceedModels))  ;
-            OnPropertyChanged(nameof(CeedModels));
+            CeedModels.AddRange( GroupCeedModel(_ceedModels) );
           }
         }
         OnPropertyChanged();
@@ -242,6 +242,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       _commandData = commandData ;
       _document = commandData.Application.ActiveUIDocument.Document ;
+      CeedModels = new() ;
       DtGrid = new DataGrid() ;
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable is null ) {
@@ -249,7 +250,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _usingCeedModel = new List<CeedModel>() ;
         _usedCeedModels = new List<CeedModel>() ;
         _previousCeedModels = new List<CeedModel>() ;
-        CeedModels = new() ;
         _previewList = new ObservableCollection<CeedModel>() ;
       }
       else {
@@ -260,12 +260,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _previousCeedModels = new List<CeedModel>( _usedCeedModels ) ;
         IsShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
         IsShowCondition = oldCeedStorable.IsShowCondition ;
-        if ( IsShowCondition ) {
-          CeedModels = new ObservableCollection<CeedModel>( GroupCeedModel( _ceedModels ) ) ;
-        }
-        else {
-          CeedModels = new ObservableCollection<CeedModel>( _ceedModels ) ;
-        }
         IsShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
         AddModelNumber( CeedModels ) ;
         if ( _usingCeedModel.Any() )
