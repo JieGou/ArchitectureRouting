@@ -28,6 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private const string DefaultChildPlumbingSymbol = "↑" ;
     private const string NoPlumping = "配管なし" ;
     private const string NoPlumbingSize = "（なし）" ;
+    private static bool _isCreatDetailTableForAddWiringInfo = false ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
@@ -799,6 +800,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
       }
+
+      if ( _isCreatDetailTableForAddWiringInfo ) { 
+        var detailTableRow = new DetailTableModel( false, floor, string.Empty, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, string.Empty, string.Empty, string.Empty, "1", 
+          string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, string.Empty, string.Empty, 
+          constructionItem, constructionItem, string.Empty, 0, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, 
+          string.Empty, string.Empty, true, mixConstructionItems, string.Empty, false, false, false, new List<DetailTableModel.ComboboxItemType>(), new List<DetailTableModel.ComboboxItemType>(), new List<DetailTableModel.ComboboxItemType>(), new List<DetailTableModel.ComboboxItemType>(), new List<DetailTableModel.ComboboxItemType>() ) ;
+        detailTableModels.Add( detailTableRow ) ;
+      }
     }
 
     private static bool CheckMixConstructionItems( List<DetailTableModel> detailTableModelsData, List<string> detailSymbolIds )
@@ -821,5 +830,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return false ;
       }
     }
+    
+    #region CreateDetailTableInCaseAddWiringInfo
+    public static ( ObservableCollection<DetailTableModel>, bool, bool ) CreateDetailTableAddWiringInfo( Document doc, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, List<Element> conduits, List<string> elementIds, bool isReferenceDetailTableModels )
+    {
+      _isCreatDetailTableForAddWiringInfo = true ;
+      var detailTable = CreateDetailTable( doc, csvStorable, detailSymbolStorable, conduits, elementIds, isReferenceDetailTableModels ) ;
+      _isCreatDetailTableForAddWiringInfo = false ;
+      return detailTable ;
+    }
+
+    #endregion
   }
 }

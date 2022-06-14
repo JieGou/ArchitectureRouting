@@ -8,6 +8,7 @@ using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -41,11 +42,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var wiringStore = document.GetWiringStorable() ;
         
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical ) ;
-        //Get all route name related to selected conduit
-        var wiringList = GetAllConduitRelated( document, pickInfo.Element, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData, hiroiSetCdMasterEcoModelData, hiroiSetCdMasterNormalModelData ) ;
-
-        //Create Detail table from wiringlist
-        var detailTableModels = CreateDetailTableModelsFromWiringList( wiringList ) ;
+        //Create detailSymbol model
+        CreateDetailSymbolModel( document, pickInfo.Element, detailSymbolStorable) ;
+        List<Element> conduits = new List<Element>() { pickInfo.Element } ;
+        List<string> elementIds = new List<string>() { pickInfo.Element.UniqueId } ;
+        var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, conduits, elementIds, false ) ;
+        
         var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
         var conduitTypes = ( from conduitTypeName in conduitTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
         conduitTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
@@ -176,6 +178,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       } 
       return selectWiringModels ;
+    }
+
+    public void CreateDetailSymbolModel( Document doc, Element pickConduit, DetailSymbolStorable detailSymbolStorable )
+    {
+      const string defaultPlumbingType = "E" ; 
+      List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
+      var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
+      var routeNameSamePosition = GetRouteNameSamePosition( doc, representativeRouteName!, pickConduit ) ;
+      
+      foreach ( var routeName in routeNameSamePosition ) {
+        var conduitOfRoutes = allConduit.Where( c => c.GetRouteName() == routeName ).ToList() ;
+        var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, false ) ;
+        if ( null == toConnector ) continue ;
+        
+        toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
+        var ceedSetCode = ceedSetCodeModel?.Split( ':' ).ToList() ;
+        var ceedCode = ceedSetCode?[ 0 ] ;
+        foreach ( var conduitOfRoute in conduitOfRoutes ) {
+          DetailSymbolModel detailSymbolModel = new DetailSymbolModel( toConnector.UniqueId, "*", conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, defaultPlumbingType ) ;
+          if(null == detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.DetailSymbolId == detailSymbolModel.DetailSymbolId && x.ConduitId == detailSymbolModel.ConduitId )) 
+            detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel );
+        } 
+      } 
     }
 
     public List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
