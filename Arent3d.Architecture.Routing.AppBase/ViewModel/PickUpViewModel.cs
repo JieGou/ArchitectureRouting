@@ -28,8 +28,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<PickUpModel> _pickUpModels ;
     private PickUpStorable _pickUpStorable ;
     private SymbolInformationStorable _symbolInformationStorable ;
-    private WiringInformationChangedStorable _wiringInformationChangedStorable ; 
-    private WiringStorable _wiringStorable ; 
+    private DetailSymbolStorable _detailSymbolStorable ;
+    private DetailTableStorable _detailTableStorable ;
     private CeedDetailStorable _ceedDetailStorable ;
     private readonly List<CeedModel> _ceedModels ;
     private readonly List<RegistrationOfBoardDataModel> _registrationOfBoardDataModels ;
@@ -80,8 +80,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
 
-      _wiringInformationChangedStorable = _document.GetWiringInformationChangedStorable() ;
-      _wiringStorable = _document.GetWiringStorable() ;
+      _detailSymbolStorable = document.GetDetailSymbolStorable() ;
+      _detailTableStorable = document.GetDetailTableStorable() ;
 
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null ) _ceedModels = ceedStorable.CeedModelData ;
@@ -199,19 +199,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceedModelNumber ) ) {
               var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
 
-              //In case conduit info has been changed, we get hiroiSetMasterModel base on wiringInformationStorable
-              if ( _wiringInformationChangedStorable.WiringInformationChangedData.Any() && productType == ProductType.Conduit ) {
-                var wiringInformationChanged = _wiringInformationChangedStorable.WiringInformationChangedData.FirstOrDefault( x => x.ConnectorUniqueId == element.UniqueId ) ;
-                if ( null != wiringInformationChanged )
-                  hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, wiringInformationChanged.MaterialCode ) ) ;
-              }
-              // if ( _wiringStorable.WiringData.Any() && productType == ProductType.Conduit ) {
-              //   var wiringChanged = _wiringStorable.WiringData.FirstOrDefault( x => x.IdOfToConnector == element.UniqueId ) ;
-              //   if ( null != wiringChanged )
-              //     hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, wiringChanged.MaterialCode ) ) ;
-              // }
-
-              if ( hiroiSetMasterModel != null ) {
+              //In case conduit info has been changed, we get hiroiSetMasterModel base on detailTableStorable
+              var detailTableModelList = _detailTableStorable.DetailTableModelData.Where( x => x.DetailSymbolId == connector.UniqueId ).ToList() ;
+              if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 ) {
+                foreach ( var hiroiMasterModel in from detailTableModel in detailTableModelList select detailTableModel.WireType +  detailTableModel.WireSize + "x" + detailTableModel.WireStrip into kikaku select _hiroiMasterModels.FirstOrDefault( x => string.Equals( x.Kikaku.Replace( " ","" ), kikaku, StringComparison.CurrentCultureIgnoreCase ) ) into hiroiMasterModel where null != hiroiMasterModel select hiroiMasterModel ) {
+                  hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Kikaku ) ) ;
+                  if ( hiroiSetMasterModel == null ) continue ;
+                  var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
+                  if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
+                    PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, @group, layer,
+                      classification, pickUpNumber, direction ) ;
+                  }
+                }
+              } else if ( hiroiSetMasterModel != null ) {
                 var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                   PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
@@ -221,7 +221,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
           }
         }
-
+         
         //Set pickupModel in case productType is Conduit and connector is Power
         if ( productType == ProductType.Conduit && dictMaterialCode != null && dictMaterialCode.Any() && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
           modelNumber = string.Empty ;
@@ -397,8 +397,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var isPickUpByFromConnector = toConnector != null && ( toConnector.Name == ElectricalRoutingFamilyType.PressureConnector.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ) ;
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
-      if ( toConnector == null || ( toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) ) return false ;
+      if ( toConnector == null || (_detailTableStorable.DetailTableModelData.FirstOrDefault(x=>x.DetailSymbolId == toConnector.UniqueId) == null
+           &&  toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
 
+      //Case connector haven't setCode and detailTableStore contain connector's uniqueId
+      //Điền thông tin vào materialcode
+      // var detailTableModelList = _detailTableStorable.DetailTableModelData.Where( x => x.DetailSymbolId == toConnector.UniqueId ).ToList() ;
+      // if(detailTableModelList.Count > 0)
+      // foreach ( var hiroiMasterModel in from detailTableModel in detailTableModelList select detailTableModel.WireType +  detailTableModel.WireSize + "x" + detailTableModel.WireStrip into kikaku select _hiroiMasterModels.FirstOrDefault( x => string.Equals( x.Kikaku.Replace( " ","" ), kikaku, StringComparison.CurrentCultureIgnoreCase ) ) into hiroiMasterModel where null != hiroiMasterModel select hiroiMasterModel ) {
+      //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Kikaku ) ) ;
+      //   if ( hiroiSetMasterModel == null ) continue ;
+      //   var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
+      //   if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
+      //     PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, @group, layer,
+      //       classification, pickUpNumber, direction ) ;
+      //   }
+      // }
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
