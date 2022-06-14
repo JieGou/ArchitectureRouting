@@ -202,7 +202,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                     var plumbingName = plumbingInfo.First() ;
                     var plumbingType = plumbingInfo.ElementAt( 1 ) ;
                     var plumbingSize = plumbingInfo.ElementAt( 2 ) ;
-                    var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => plumbingName.Contains( h.Hinmei ) && plumbingType.Contains( h.Type ) && plumbingSize == h.Size1 ) ;
+                    var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => plumbingName.Contains( h.Hinmei ) && plumbingType.Contains( h.Type ) && plumbingSize == h.Size1 ) 
+                                           ?? _hiroiMasterModels.FirstOrDefault( h => plumbingType.Contains( h.Type ) && plumbingSize == h.Size1 ) ;
                     if ( hiroiMasterModel != null ) {
                       materialCodes.Add( hiroiMasterModel.Buzaicd, hiroiMasterModel.Kikaku ) ;
                     }

@@ -124,21 +124,33 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         OnPropertyChanged() ;
       }
     }
+    
+    private int _selectedIndex ;
+
+    public int SelectedIndex
+    {
+      get => _selectedIndex ;
+      set
+      {
+        _selectedIndex = value ;
+        ConstructionClassification = ChangePlumbingInformationModels.ElementAt( _selectedIndex ).ConstructionClassification ;
+        OnPropertyChanged() ;
+      }
+    }
 
     public List<ChangePlumbingInformationModel> ChangePlumbingInformationModels { get ; set ; }
     public List<DetailTableModel.ComboboxItemType> PlumbingTypes { get ; }
     public List<DetailTableModel.ComboboxItemType> ConstructionClassifications { get ; }
     public List<DetailTableModel.ComboboxItemType> ConcealmentOrExposure { get ; }
     public List<DetailTableModel.ComboboxItemType> InOrOutDoor { get ; }
-    public List<DetailTableModel.ComboboxItemType> ConduitIds { get ; }
+    public List<ConnectorInfo> ConnectorInfos { get ; }
 
-    public ICommand SelectionChangedConnectorCommand => new RelayCommand( SelectionChangedConnector ) ;
     public ICommand SelectionChangedPlumbingTypeCommand => new RelayCommand( SetPlumbingSizes ) ;
     public ICommand SelectionChangedConcealmentOrExposureCommand => new RelayCommand( SelectionChangedConcealmentOrExposure ) ;
     public ICommand SelectionChangedInOrOutDoorCommand => new RelayCommand( SelectionChangedInOrOutDoor ) ;
     public RelayCommand<Window> ApplyCommand => new(Apply) ;
     
-    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> concealmentOrExposure, List<DetailTableModel.ComboboxItemType> inOrOutDoor, List<DetailTableModel.ComboboxItemType> conduitIds )
+    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> concealmentOrExposure, List<DetailTableModel.ComboboxItemType> inOrOutDoor, List<ConnectorInfo> connectorInfos )
     {
       _conduitsModelData = conduitsModelData ;
       var changePlumbingInformationModel = changePlumbingInformationModels.First() ;
@@ -149,20 +161,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _constructionClassification = changePlumbingInformationModel.ConstructionClassification ;
       _constructionItem = changePlumbingInformationModel.ConstructionItems ;
       _isExposure = changePlumbingInformationModel.IsExposure ;
-      _isEnabled = GetIsEnabled() ;
+      _isInDoor = changePlumbingInformationModel.IsInDoor ;
+      _isEnabled = true ;
+      _selectedIndex = -1 ;
       PlumbingTypes = plumbingTypes ;
       ConstructionClassifications = constructionClassifications ;
       ConcealmentOrExposure = concealmentOrExposure ;
       InOrOutDoor = inOrOutDoor ;
-      ConduitIds = conduitIds ;
+      ConnectorInfos = connectorInfos ;
       ChangePlumbingInformationModels = changePlumbingInformationModels ;
     }
     
     private void SetPlumbingSizes()
     {
       const double percentage = 0.32 ;
-      var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
-      if ( changePlumbingInformationModel != null ) {
+      foreach ( var changePlumbingInformationModel in ChangePlumbingInformationModels ) {
         var wireCrossSectionalArea = changePlumbingInformationModel.WireCrossSectionalArea ;
         if ( _plumbingType != NoPlumping ) {
           var conduitsModels = _conduitsModelData.Where( c => c.PipingType == _plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
@@ -181,32 +194,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         changePlumbingInformationModel.NumberOfPlumbing = NumberOfPlumbing ;
       }
     }
-    
-    private void SelectionChangedConnector()
-    {
-      var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
-      if ( changePlumbingInformationModel == null ) return ;
-      PlumbingType = changePlumbingInformationModel.PlumbingType ;
-      PlumbingSize = changePlumbingInformationModel.PlumbingSize ;
-      NumberOfPlumbing = changePlumbingInformationModel.NumberOfPlumbing ;
-      ConstructionClassification = changePlumbingInformationModel.ConstructionClassification ;
-      ConstructionItem = changePlumbingInformationModel.ConstructionItems ;
-      IsExposure = changePlumbingInformationModel.IsExposure ;
-      IsInDoor = changePlumbingInformationModel.IsInDoor ;
-    }
-    
+
     private void SelectionChangedConcealmentOrExposure()
     {
-      var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
-      if ( changePlumbingInformationModel != null ) {
+      foreach ( var changePlumbingInformationModel in ChangePlumbingInformationModels ) {
         changePlumbingInformationModel.IsExposure = IsExposure ;
       }
     }
 
     private void SelectionChangedInOrOutDoor()
     {
-      var changePlumbingInformationModel = ChangePlumbingInformationModels.SingleOrDefault( c => c.ConduitId == _conduitId ) ;
-      if ( changePlumbingInformationModel != null ) {
+      foreach ( var changePlumbingInformationModel in ChangePlumbingInformationModels ) {
         changePlumbingInformationModel.IsInDoor = IsInDoor ;
       }
     }
@@ -222,6 +220,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     {
       window.DialogResult = true ;
       window.Close() ;
+    }
+    
+    public class ConnectorInfo
+    {
+      public string Connector { get ; }
+      public string ConstructionItems { get ; }
+
+      public ConnectorInfo( string connector, string constructionItems )
+      {
+        Connector = connector ;
+        ConstructionItems = constructionItems ;
+      }
     }
   }
 }

@@ -145,7 +145,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var inOrOutDoor = new List<DetailTableModel.ComboboxItemType>() { new( InOrOutDoor.屋内.GetFieldName(), "True" ), new( InOrOutDoor.屋外.GetFieldName(), "False" ) } ;
 
       var changePlumbingInformationModels = new List<ChangePlumbingInformationModel>() ;
-      var conduitIds = new List<DetailTableModel.ComboboxItemType>() ;
+      var connectorInfos = new List<ChangePlumbingInformationViewModel.ConnectorInfo>() ;
       foreach ( var (conduit, connector) in conduitAndConnectorDic ) {
         var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
         var detailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.ConduitId == conduit.UniqueId ) ;
@@ -204,14 +204,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           plumbingName = string.Empty ;
         }
 
-        var constructionItem = oldChangePlumbingInformationModel != null ? oldChangePlumbingInformationModel.ConstructionItems : DefaultConstructionItems ;
-        if ( oldChangePlumbingInformationModel == null ) {
-          conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? conduitConstructionItem ) ;
-          constructionItem = string.IsNullOrEmpty( conduitConstructionItem ) ? DefaultConstructionItems : conduitConstructionItem ;
-        }
+        conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? conduitConstructionItem ) ;
+        var constructionItem = string.IsNullOrEmpty( conduitConstructionItem ) ? DefaultConstructionItems : conduitConstructionItem ;
 
-        var isExposure = ( oldChangePlumbingInformationModel?.IsExposure ?? false ) || constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ;
-        var isInDoor = oldChangePlumbingInformationModel?.IsExposure ?? true ;
+        var isExposure = oldChangePlumbingInformationModel?.IsExposure ?? false ;
+        var isInDoor = oldChangePlumbingInformationModel?.IsInDoor ?? true ;
 
         var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, connector.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, plumbingName, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure, isInDoor ) ;
         changePlumbingInformationModels.Add( changePlumbingInformationModel ) ;
@@ -219,10 +216,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var connectorLocation = ( connector.Location as LocationPoint ) ! ;
         var (x, y, z) = connectorLocation.Point ;
         var connectorName = deviceSymbol + " ( X:" + Math.Round( x, 3 ) + ", Y:" + Math.Round( y, 3 ) + ", Z:" + Math.Round( z, 3 ) + " )" ;
-        conduitIds.Add( new DetailTableModel.ComboboxItemType( connectorName, conduit.UniqueId ) ) ;
+        connectorInfos.Add( new ChangePlumbingInformationViewModel.ConnectorInfo( connectorName, constructionItem! ) ) ;
       }
 
-      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, changePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, inOrOutDoor, conduitIds ) ;
+      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, changePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, inOrOutDoor, connectorInfos ) ;
       return viewModel ;
     }
 
