@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing
 
     public Domain Domain { get ; }
 
-    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
+    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary, bool needCheckRoomObstacle = false )
     {
       if ( 0 == subRoutes.Count ) throw new ArgumentException() ;
 
@@ -100,11 +100,11 @@ namespace Arent3d.Architecture.Routing
       LineId = $"{firstSubRoute.Route.RouteName}@{firstSubRoute.SubRouteIndex}" ;
 
       var trueFixedBopHeight = firstSubRoute.GetTrueFixedBopHeight( FixedHeightUsage.Default ) ;
-      var listListBox3dRoom = ObstacleGeneration.GetAllObstacleRoomBox( document ) ;
+      var listListBox3dRoom = needCheckRoomObstacle? ObstacleGeneration.GetAllObstacleRoomBox( document ): new List<List<Box3d>>() ;
       Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ], trueFixedBopHeight , listListBox3dRoom) ;
     }
 
-    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority, AutoRoutingEndPoint fromEndPoint, AutoRoutingEndPoint toEndPoint, double? forcedFixedHeight )
+    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority, AutoRoutingEndPoint fromEndPoint, AutoRoutingEndPoint toEndPoint, double? forcedFixedHeight , bool needCheckRoomObstacle = false)
     {
       Routes = new[] { subRoute.Route } ;
       Domain = subRoute.Route.Domain ;
@@ -114,7 +114,7 @@ namespace Arent3d.Architecture.Routing
       _ep2SubRoute = new Dictionary<AutoRoutingEndPoint, SubRoute> { { fromEndPoint, subRoute }, { toEndPoint, subRoute } } ;
 
       LineId = $"{subRoute.Route.RouteName}@{subRoute.SubRouteIndex}" ;
-      var listListBox3dRoom = ObstacleGeneration.GetAllObstacleRoomBox( document ) ;
+      var listListBox3dRoom = needCheckRoomObstacle? ObstacleGeneration.GetAllObstacleRoomBox( document ): new List<List<Box3d>>() ;
       Condition = new AutoRoutingCondition( document, subRoute, priority, forcedFixedHeight, listListBox3dRoom ) ;
     }
 

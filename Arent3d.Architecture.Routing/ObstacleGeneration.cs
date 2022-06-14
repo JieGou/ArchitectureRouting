@@ -1,7 +1,6 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.Utils ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Architecture ;
 using Application = Autodesk.Revit.ApplicationServices.Application ;
@@ -19,14 +18,41 @@ namespace Arent3d.Architecture.Routing
       var allRooms = GetAllRoomsInCurrentAndLinkDocument( doc ) ;
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
       var otherRooms = allRooms.Except( livingRooms ) ;
-
-      var livingListBox3d = CreateBox3dFromDividedRoom( livingRooms ) ;
-      var otherListBox3d = CreateBox3dFromDividedRoom( otherRooms ) ;
-
+      var livingListBox3d = GetObstacleRoomBoxes( livingRooms ) ;
+      var otherListBox3d = GetObstacleRoomBoxes( otherRooms.ToList() ) ;
       _listRoomBox3dInCurrentProject = new List<List<Box3d>> { livingListBox3d, otherListBox3d } ;
       return _listRoomBox3dInCurrentProject ;
     }
 
+    private static List<Box3d> GetObstacleRoomBoxes(List<Room> rooms)
+    {
+      var box3dList = new List<Box3d>() ;
+      foreach ( var room in rooms ) {
+        box3dList.AddRange( GetRoomWallBoxes(room) );
+      }
+
+      return box3dList ;
+    }
+    private static Box3d GetBox3d( ElementId id, Document document )
+    {
+      var boundingBox = document.GetElement( id ).get_BoundingBox( null ) ;
+      return new Box3d( new Vector3d( boundingBox.Min.X, boundingBox.Min.Y, boundingBox.Min.Z ), new Vector3d( boundingBox.Max.X, boundingBox.Max.Y, boundingBox.Max.Z ) ) ;
+    }
+    private static List<Box3d> GetRoomWallBoxes( Room room )
+    {
+      var box3dList = new List<Box3d>() ;
+      var option = new SpatialElementBoundaryOptions() ;
+      option.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish ;
+      var boundarySegments = room.GetBoundarySegments(option) ;
+      foreach ( var segments in boundarySegments ) {
+        var box3ds = ( from boundarySegment in segments select GetBox3d( boundarySegment.ElementId, room.Document ) ).ToList() ;
+        var min = new Vector3d( box3ds.Min( b => b.Min.x ), box3ds.Min( b => b.Min.y ), box3ds.Min( b => b.Min.z ) ) ;
+        var max = new Vector3d( box3ds.Max( b => b.Max.x ), box3ds.Max( b => b.Max.y ), box3ds.Max( b => b.Max.z ) ) ;
+        box3dList.Add( new Box3d( min,max ) );
+      }
+
+      return box3dList ;
+    }
 
     private static IList<Room> GetAllRoomsInCurrentAndLinkDocument( Document doc )
     {
@@ -72,70 +98,6 @@ namespace Arent3d.Architecture.Routing
       }
       
       return null ;
-    }
-
-    private static List<Box3d> CreateBox3dFromDividedRoom( IEnumerable<Room> list )
-    {
-      var listOut = new List<Box3d>() ;
-      var option = new SpatialElementBoundaryOptions() ;
-      option.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish ;
-
-      foreach ( var room in list ) {
-        try {
-          //Get all boundary segments
-          var height = room.UnboundedHeight ;
-          var bb = room.get_BoundingBox( null ) ;
-          var lenghtMaxY = bb.Max.Y - bb.Min.Y ;
-
-          var curves = room.GetBoundarySegments( option ).First().Select( x => x.GetCurve() ).Cast<Line>().ToList() ;
-          var curvesFix = GeometryUtil.FixDiagonalLines( curves, lenghtMaxY * 2 ) ;
-
-          //Joined unnecessary segments 
-          var listJoinedX = GeometryUtil.GetAllXLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.Y, 4 ) ).Select( d => GeometryUtil.JoinListStraitLines( d.ToList() ) ).ToList() ;
-          var listJoinedY = GeometryUtil.GetAllYLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.X, 4 ) ).Select( d => GeometryUtil.JoinListStraitLines( d.ToList() ) ).ToList();
-
-          //get all points in boundary
-          var allConnerPoints = new List<XYZ>() ;
-          listJoinedY.ForEach( x =>
-          {
-            allConnerPoints.Add( x.GetEndPoint( 0 ) ) ;
-            allConnerPoints.Add( x.GetEndPoint( 1 ) ) ;
-          } ) ;
-
-          //get all points of intersect with Y to X curves
-          foreach ( var lineY in listJoinedY ) {
-            var lineExtend = lineY.ExtendBothY( lenghtMaxY * 2 ) ;
-            var intersected = lineExtend.TryIntersectPoint( listJoinedX, out var points ) ;
-            if ( intersected ) {
-              allConnerPoints.AddRange( points ) ;
-            }
-          }
-
-          //distinct points
-          var comparer = new XyzComparer() ;
-          var arrayGroupByX = allConnerPoints
-            .Distinct( comparer )
-            .GroupBy( x => Math.Round( x.X, 4 ) )
-            .OrderBy( d => d.Key )
-            .Where( d => d.ToList().Count > 1 )
-            .Select( x=>x.ToList() )
-            .ToArray() ;
-          
-          //Find out the rectangular
-          for ( var i = 0 ; i < arrayGroupByX.Length - 1 ; i++ ) {
-            var l1 = arrayGroupByX[ i ] ;
-            var l2 = arrayGroupByX[ i + 1 ]  ;
-            l1.AddRange( l2 ) ;
-            var recBox = GeometryUtil.FindRectangularBox( l1, GeometryUtil.GetAllXLine( curvesFix ), lenghtMaxY * 2, height ) ;
-            listOut.AddRange( recBox ) ;
-          }
-        }
-        catch {
-          //ignore
-        }
-      }
-
-      return listOut ;
     }
 
     public static void ShowRoomBox( Document document )
