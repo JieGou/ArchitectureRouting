@@ -8,7 +8,7 @@
         x:Name="WdChangePlumbingInformation"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Title="ChangePlumbingInformationDialog" Height="350" Width="390">
+        Title="立配管情報追加" Height="350" Width="390">
     <Grid>
         <StackPanel Margin="10" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" >
             <StackPanel Orientation="Horizontal" Margin="10, 5">

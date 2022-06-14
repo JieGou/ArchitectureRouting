@@ -234,6 +234,9 @@
 
         <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregationAll</key>
         <string>電気シンボル集計(ALL)</string>
+        
+        <key>Electrical.App.Commands.Routing.ChangePlumbingInformationCommand</key>
+        <string>立配管情報追加</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
