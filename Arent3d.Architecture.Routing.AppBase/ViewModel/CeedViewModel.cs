@@ -43,6 +43,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public DataGrid DtGrid ;
 
+    public IReadOnlyCollection<CeedModel> OriginCeedModels => new ReadOnlyCollection<CeedModel>( _ceedModels );
+
     public ObservableCollection<CeedModel> CeedModels { get ; set ; }
 
     private CeedStorable? CeedStorable { get ; set ; }
