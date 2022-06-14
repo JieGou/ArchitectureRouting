@@ -152,7 +152,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) return ( string.Empty, string.Empty ) ;
       var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
       var ceedCode = ceedSetCode.FirstOrDefault() ;
-      var deviceSymbol = ceedSetCode.ElementAt( 1 ) ;
+      var deviceSymbol = ceedSetCode.Count > 1 ? ceedSetCode.ElementAt( 1 ) : string.Empty ;
       return ( ceedCode ?? string.Empty, deviceSymbol ?? string.Empty ) ;
     }
 

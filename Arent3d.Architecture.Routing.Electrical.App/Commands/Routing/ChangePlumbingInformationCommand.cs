@@ -131,6 +131,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var detailSymbolStorable = doc.GetDetailSymbolStorable() ;
       var csvStorable = doc.GetCsvStorable() ;
       var conduitsModelData = csvStorable.ConduitsModelData ;
+      var registrationOfBoardDataModels = doc.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
 
       var plumbingTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
       var plumbingTypes = ( from conduitTypeName in plumbingTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
@@ -158,26 +159,27 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           : constructionClassificationNames.First() ;
         var wireCrossSectionalArea = oldChangePlumbingInformationModel?.WireCrossSectionalArea ?? 0 ;
         var (ceedCode, deviceSymbol) = ElectricalCommandUtil.GetCeedCodeAndDeviceSymbolOfElement( connector ) ;
+        var registrationOfBoardDataModel = registrationOfBoardDataModels.FirstOrDefault( b => b.AutoControlPanel == ceedCode || b.SignalDestination == ceedCode ) ;
         if ( oldChangePlumbingInformationModel == null && ! string.IsNullOrEmpty( ceedCode ) ) {
-          var hiroiSetCdMasterModel = hiroiCdModel.FirstOrDefault( h => h.SetCode == ceedCode ) ;
-          if ( hiroiSetCdMasterModel != null ) {
-            constructionClassification = hiroiSetCdMasterModel.ConstructionClassification ;
-            var ceedModelNumber = hiroiSetCdMasterModel.LengthParentPartModelNumber ;
-            var hiroiSetMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) 
-              ? csvStorable.HiroiSetMasterEcoModelData 
-              : csvStorable.HiroiSetMasterNormalModelData ;
-            var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
-            if ( hiroiSetMasterModel != null ) {
-              var materialCode = hiroiSetMasterModel.MaterialCode1 ;
-              var masterModel = csvStorable.HiroiMasterModelData.FirstOrDefault( x => int.Parse( x.Buzaicd ).ToString() == int.Parse( materialCode ).ToString() ) ;
-              if ( masterModel != null ) {
-                var wireType = masterModel.Type ;
-                var wireSize = masterModel.Size1 ;
-                var wiresAndCablesModel = csvStorable.WiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModel.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModel.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
-                if ( wiresAndCablesModel != null )
-                  wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+          if ( registrationOfBoardDataModel == null ) {
+            var hiroiSetCdMasterModel = hiroiCdModel.FirstOrDefault( h => h.SetCode == ceedCode ) ;
+            if ( hiroiSetCdMasterModel != null ) {
+              constructionClassification = hiroiSetCdMasterModel.ConstructionClassification ;
+              var ceedModelNumber = hiroiSetCdMasterModel.LengthParentPartModelNumber ;
+              var hiroiSetMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) 
+                ? csvStorable.HiroiSetMasterEcoModelData 
+                : csvStorable.HiroiSetMasterNormalModelData ;
+              var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
+              if ( hiroiSetMasterModel != null ) {
+                var materialCode = hiroiSetMasterModel.MaterialCode1 ;
+                wireCrossSectionalArea = GetWireCrossSectionalArea( csvStorable.HiroiMasterModelData, csvStorable.WiresAndCablesModelData, materialCode ) ;
               }
             }
+          }
+          else {
+            var materialCode = registrationOfBoardDataModel.MaterialCode1 ;
+            wireCrossSectionalArea = GetWireCrossSectionalArea( csvStorable.HiroiMasterModelData, csvStorable.WiresAndCablesModelData, materialCode ) ;
+            deviceSymbol = ceedCode ;
           }
         }
 
@@ -222,6 +224,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, changePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, inOrOutDoor, conduitIds ) ;
       return viewModel ;
+    }
+
+    private double GetWireCrossSectionalArea( List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, string materialCode )
+    {
+      var masterModel = hiroiMasterModelData.FirstOrDefault( h => int.Parse( h.Buzaicd ).ToString() == int.Parse( materialCode ).ToString() ) ;
+      if ( masterModel == null ) return 0 ;
+      var wireType = masterModel.Type ;
+      var wireSize = masterModel.Size1 ;
+      var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModel.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModel.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+      if ( wiresAndCablesModel == null ) return 0 ;
+      var wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+      return wireCrossSectionalArea ;
     }
   }
 }

@@ -760,10 +760,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         for (var i = startRow; i <= endRow; i++)
         {
           var autoControlPanel = workSheet.GetRow(i).GetCell(0);
-          var autoControlPanelValue = GetCellValue(autoControlPanel);
+          var autoControlPanelValue = GetCellValue(autoControlPanel).Normalize( NormalizationForm.FormKC );
 
           var signalDestination = workSheet.GetRow(i).GetCell(1);
-          var signalDestinationValue = GetCellValue(signalDestination);
+          var signalDestinationValue = GetCellValue(signalDestination).Normalize( NormalizationForm.FormKC );
 
           var kind1 = workSheet.GetRow(i).GetCell(2);
           var kind1Value = GetCellValue(kind1);
