@@ -43,7 +43,14 @@
                                 </Binding> 
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridCheckBoxColumn Header="デフォルト設定 " Width="100" Binding="{Binding IsDefaultItemChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <!-- <DataGridCheckBoxColumn Header="デフォルト設定 " Width="100" Binding="{Binding IsDefaultItemChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" /> -->
+                        <DataGridTemplateColumn Header="デフォルト設定" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsDefaultItemChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

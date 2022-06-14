@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public static class ElectricalCommandUtil
   { 
-    public static void SetPropertyForCable( Document document, IReadOnlyCollection<Route> routes )
+    public static void SetPropertyForCable( Document document, IEnumerable<Route> routes )
     {
       var connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       using Transaction t = new Transaction( document, "Set Construction item." ) ;
@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var segment = subRoute.Segments.FirstOrDefault() ;
         if ( segment == null ) continue ;
 
-        var defaultConstructionItem = document.GetDefaultConstructionItem() ;
+        const string defaultConstructionItem = "未設定" ;
         var fromConstructionItem = defaultConstructionItem ;
         var fromIsEcoMode = defaultIsEcoModeValue ;
         var fromEndPointKey = segment.FromEndPoint.Key ;

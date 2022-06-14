@@ -19,8 +19,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private int _editingRowIndex = -1 ;
     private readonly CnsSettingViewModel _cnsSettingViewModel ;
     private readonly Document _document ;
-    private readonly ObservableCollection<CnsSettingModel> _currentCnsSettingData ; 
-    
+    private readonly ObservableCollection<CnsSettingModel> _currentCnsSettingData ;
+    private bool _isEditModel = false ;
     public CnsSettingDialog( CnsSettingViewModel viewModel, Document document)
     {
       InitializeComponent() ;
@@ -38,8 +38,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( selectedItem.CategoryName == "未設定" ) return ;
       if ( CheckDuplicateName( e ) ) return ;
       grdCategories.IsReadOnly = false ;
-      grdCategories.CurrentCell = new DataGridCellInfo( grdCategories.SelectedItem, grdCategories.Columns[ 1 ] ) ;
-      grdCategories.BeginEdit() ;
+      _isEditModel = true ;
+      grdCategories.CurrentCell = new DataGridCellInfo( grdCategories.SelectedItem, grdCategories.Columns[ 1 ] ) ; 
+      grdCategories.BeginEdit() ; 
     }
 
     private void Close_Dialog()
@@ -61,10 +62,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( isDuplicateName ) {
           MessageBox.Show( "工事項目名称がすでに存在しています。再度工事項目名称を入力してください。" ) ;
           _editingRowIndex = e.Row.GetIndex() ;
+          _isEditModel = false ;
           e.Cancel = true ;
           return ;
         }
       }
+
+      _isEditModel = false ;
       _editingRowIndex = -1 ; 
     }
 
@@ -74,6 +78,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _cnsSettingViewModel.AddRowCommand.CanExecute( null ) )
         _cnsSettingViewModel.AddRowCommand.Execute( null ) ;
       grdCategories.IsReadOnly = false ;
+      _isEditModel = true ;
+      grdCategories.SelectedIndex = grdCategories.Items.Count - 1 ;
+      grdCategories.SelectedItem = grdCategories.Items.IndexOf( grdCategories.SelectedIndex ) ;
+      grdCategories.CurrentCell = new DataGridCellInfo( grdCategories.SelectedItem, grdCategories.Columns[ 1 ] ) ; 
+      grdCategories.BeginEdit() ; 
     }
 
     private void Delete_Click( object sender, RoutedEventArgs e )
@@ -285,9 +294,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     private void GrdCategories_OnCellBeforeEdit( object sender, DataGridPreparingCellForEditEventArgs e )
-    {
+    { 
       if ( e.EditingElement is not TextBox ) return ; 
-      if ( ((TextBox)e.EditingElement).Text == "未設定" )
+      if ( ((TextBox)e.EditingElement).Text == "未設定" || !_isEditModel)
         grdCategories.CancelEdit( DataGridEditingUnit.Cell ) ;
 
     }
