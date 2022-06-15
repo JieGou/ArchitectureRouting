@@ -134,6 +134,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       {
         _selectedIndex = value ;
         ConstructionClassification = ChangePlumbingInformationModels.ElementAt( _selectedIndex ).ConstructionClassification ;
+        IsEnabled = GetIsEnabled() ;
         OnPropertyChanged() ;
       }
     }
@@ -162,7 +163,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _constructionItem = changePlumbingInformationModel.ConstructionItems ;
       _isExposure = changePlumbingInformationModel.IsExposure ;
       _isInDoor = changePlumbingInformationModel.IsInDoor ;
-      _isEnabled = true ;
+      _isEnabled = GetIsEnabled() ;
       _selectedIndex = -1 ;
       PlumbingTypes = plumbingTypes ;
       ConstructionClassifications = constructionClassifications ;
@@ -198,6 +199,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private void SelectionChangedConcealmentOrExposure()
     {
       foreach ( var changePlumbingInformationModel in ChangePlumbingInformationModels ) {
+        if ( changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() 
+             || changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() 
+             || changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.フリーアクセス.GetFieldName() )
         changePlumbingInformationModel.IsExposure = IsExposure ;
       }
     }
@@ -226,11 +230,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     {
       public string Connector { get ; }
       public string ConstructionItems { get ; }
+      public double ConduitDirectionZ { get ; }
 
-      public ConnectorInfo( string connector, string constructionItems )
+      public ConnectorInfo( string connector, string constructionItems, double? conduitDirectionZ )
       {
         Connector = connector ;
         ConstructionItems = constructionItems ;
+        ConduitDirectionZ = conduitDirectionZ ?? 1 ;
       }
     }
   }

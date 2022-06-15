@@ -40,7 +40,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
         {
           var allElementSelected = selection.GetElementIds() ;
-          var connectorsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => allElementSelected.Contains( e.Id ) || allElementSelected.Contains( e.GroupId ) ).ToList() ;
+          var connectorsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
+            .Where( e => ( allElementSelected.Contains( e.Id ) || allElementSelected.Contains( e.GroupId ) ) 
+                         && e is FamilyInstance f && f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() 
+                         && f.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
           var conduitsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => allElementSelected.Contains( e.Id ) ).ToList() ;
           var conduitAndConnectorDic = GetConduitAndConnector( doc, connectorsSelected, conduitsSelected ) ;
           if ( ! conduitAndConnectorDic.Any() ) return Result.Cancelled ;
@@ -54,7 +57,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           foreach ( var item in viewModel.ChangePlumbingInformationModels ) {
             var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == item.ConduitId ) ;
             if ( oldChangePlumbingInformationModel == null ) {
-              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.ConnectorId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.PlumbingName, item.ConstructionClassification, item.ConstructionItems, item.WireCrossSectionalArea, item.IsExposure, item.IsInDoor ) ;
+              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.ConnectorId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.PlumbingName, item.ConstructionClassification, item.ConstructionItems, item.WireCrossSectionalArea, item.IsExposure, item.IsInDoor, item.ConduitDirectionZ ) ;
               changePlumbingInformationStorable.ChangePlumbingInformationModelData.Add( changePlumbingInformationModel ) ;
             }
             else {
@@ -98,7 +101,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
 
       if ( conduits.Any() ) {
-        var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ) ;
+        var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
+          .Where( e => e is FamilyInstance f && f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() 
+                            && f.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
         var allConduitWithDirectionByZ = conduits.Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => ( ( c.Location as LocationCurve )?.Curve as Line )?.Origin ?? new XYZ() ) ;
         foreach ( var (conduit, (x, y, _)) in allConduitWithDirectionByZ ) {
           var connectorOfConduit = allConnectors.Where( c => c.Location is LocationPoint connectorLocation && Math.Abs( connectorLocation.Point.X - x ) < 0.01 && Math.Abs( connectorLocation.Point.Y - y ) < 0.01 ) ;
@@ -207,19 +212,38 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? conduitConstructionItem ) ;
         var constructionItem = string.IsNullOrEmpty( conduitConstructionItem ) ? DefaultConstructionItems : conduitConstructionItem ;
 
-        var isExposure = oldChangePlumbingInformationModel?.IsExposure ?? false ;
+        var isExposure = ( oldChangePlumbingInformationModel?.IsExposure ?? false ) || constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ;
         var isInDoor = oldChangePlumbingInformationModel?.IsInDoor ?? true ;
+        
+        var conduitLocation = conduit.Location as LocationCurve ;
+        var conduitLine = conduitLocation?.Curve as Line ;
+        var conduitDirectionZ = conduitLine?.Direction.Z ;
 
-        var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, connector.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, plumbingName, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure, isInDoor ) ;
+        var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, connector.UniqueId, plumbingType, plumbingSize, numberOfPlumbing, plumbingName, constructionClassification, constructionItem, wireCrossSectionalArea, isExposure, isInDoor, conduitDirectionZ ) ;
         changePlumbingInformationModels.Add( changePlumbingInformationModel ) ;
 
         var connectorLocation = ( connector.Location as LocationPoint ) ! ;
         var (x, y, z) = connectorLocation.Point ;
         var connectorName = deviceSymbol + " ( X:" + Math.Round( x, 3 ) + ", Y:" + Math.Round( y, 3 ) + ", Z:" + Math.Round( z, 3 ) + " )" ;
-        connectorInfos.Add( new ChangePlumbingInformationViewModel.ConnectorInfo( connectorName, constructionItem! ) ) ;
+        var connectorInfo = new ChangePlumbingInformationViewModel.ConnectorInfo( connectorName, constructionItem!, conduitDirectionZ ) ;
+        if ( connectorInfos.FirstOrDefault( c => c.Connector == connectorName && c.ConduitDirectionZ == conduitDirectionZ ) == null )
+          connectorInfos.Add( connectorInfo ) ;
+      }
+      
+      var changePlumbingInformationModelsByConnectors = changePlumbingInformationModels.GroupBy( c => ( c.ConnectorId, c.ConduitDirectionZ ) ).Select( g => g.ToList() ).ToList() ;
+      var newChangePlumbingInformationModels = new List<ChangePlumbingInformationModel>() ;
+      foreach ( var changePlumbingInformationModelsByConnector in changePlumbingInformationModelsByConnectors ) {
+        if ( changePlumbingInformationModelsByConnector.Count > 1 ) {
+          var wireCrossSectionalArea = changePlumbingInformationModelsByConnector.Sum( c => c.WireCrossSectionalArea ) ;
+          changePlumbingInformationModelsByConnector.First().WireCrossSectionalArea = wireCrossSectionalArea ;
+          newChangePlumbingInformationModels.Add( changePlumbingInformationModelsByConnector.First() ) ;
+        }
+        else {
+          newChangePlumbingInformationModels.Add( changePlumbingInformationModelsByConnector.First() ) ;
+        }
       }
 
-      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, changePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, inOrOutDoor, connectorInfos ) ;
+      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, newChangePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, inOrOutDoor, connectorInfos ) ;
       return viewModel ;
     }
 

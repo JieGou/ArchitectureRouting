@@ -13,9 +13,10 @@
     public double WireCrossSectionalArea { get ; set ; }
     public bool IsExposure { get ; set ; }
     public bool IsInDoor { get ; set ; }
+    public double ConduitDirectionZ { get ; set ; }
     
 
-    public ChangePlumbingInformationModel( string? conduitId, string? connectorId, string? plumbingType, string? plumbingSize, string? numberOfPlumbing, string? plumbingName, string? constructionClassification, string? constructionItems, double? wireCrossSectionalArea, bool? isExposure, bool? isInDoor )
+    public ChangePlumbingInformationModel( string? conduitId, string? connectorId, string? plumbingType, string? plumbingSize, string? numberOfPlumbing, string? plumbingName, string? constructionClassification, string? constructionItems, double? wireCrossSectionalArea, bool? isExposure, bool? isInDoor, double? conduitDirectionZ )
     {
       ConduitId = conduitId ?? string.Empty ;
       ConnectorId = connectorId ?? string.Empty ;
@@ -28,6 +29,7 @@
       WireCrossSectionalArea = wireCrossSectionalArea ?? 0 ;
       IsExposure = isExposure ?? false ;
       IsInDoor = isInDoor ?? true ;
+      ConduitDirectionZ = conduitDirectionZ ?? 1 ;
     }
   }
 }
