@@ -1,13 +1,11 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
-using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
@@ -21,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const string SymbolInformationTextNoteTypeName15 = "1.5mm_SymbolInformationText" ;
     private const string SymbolInformationTextNoteTypeName18 = "1.8mm_SymbolInformationText" ;
     private const string SymbolInformationTextNoteTypeName20 = "2.0mm_SymbolInformationText" ;
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
@@ -33,7 +32,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         SymbolInformationModel? model = null ;
         FamilyInstance? symbolInformationInstance = null ;
         var xyz = XYZ.Zero ;
-
 
         var selectedItemIsSymbolInformation = false ;
         TextNote? textNote = null ;
@@ -71,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         if ( selectedItemIsSymbolInformation == false ) {
           try {
-            using Transaction t = new( uiDocument.Document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+            using Transaction t = new(uiDocument.Document, "Electrical.App.Commands.Routing.SymbolInformationCommand") ;
             t.Start() ;
             xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
             symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
@@ -87,10 +85,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var viewModel = new SymbolInformationViewModel( document, model, commandData ) ;
         var dialog = new SymbolInformationDialog( viewModel ) ;
         var ceedDetailStorable = document.GetCeedDetailStorable() ;
- 
+
         if ( dialog.ShowDialog() == true && model != null ) {
-          
-          using Transaction t = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+          using Transaction t = new(document, "Electrical.App.Commands.Routing.SymbolInformationCommand") ;
           t.Start() ;
           //Create group symbol information 
           if ( oldParentGroup != null ) {
@@ -98,7 +95,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             // if ( textNote != null )
             //   document.Delete( textNote.Id ) ;
           }
-          
+
           //*****Save symbol setting***********
           var symbolHeightParameter = symbolInformationInstance?.LookupParameter( "Symbol Height" ) ;
           symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() ) ;
@@ -110,23 +107,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           //Add new data
           ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
           ceedDetailStorable.Save() ;
- 
+
           CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), oldParentGroup ) ;
           OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
           ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
           ogs.SetProjectionLineWeight( 5 ) ;
           document.ActiveView.SetElementOverrides( symbolInformationInstance!.Id, ogs ) ;
-          
+
           t.Commit() ;
         }
         else if ( selectedItemIsSymbolInformation == false ) {
-          using Transaction t = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+          using Transaction t = new(document, "Electrical.App.Commands.Routing.SymbolInformationCommand") ;
           t.Start() ;
           document.Delete( symbolInformationInstance?.Id ) ;
           t.Commit() ;
         }
-
-        
 
         return Result.Succeeded ;
       }
@@ -158,7 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     private static FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz )
-    { 
+    {
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       return symbol.Instantiate( xyz, level, StructuralType.NonStructural ) ;
     }
@@ -186,7 +181,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             txtPosition = new XYZ( xyz.X - 1, xyz.Y - 2, xyz.Z ) ;
             break ;
         }
-
 
         var defaultTextTypeId = document.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
 
@@ -224,7 +218,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         if ( textNoteType != null ) textNote.ChangeTypeId( textNoteType.Id ) ;
-        
+
         textNote.SetOverriddenColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
         groupIds.Add( textNote.Id ) ;
       }

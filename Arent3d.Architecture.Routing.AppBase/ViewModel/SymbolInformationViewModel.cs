@@ -154,7 +154,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return ExcelToModelConverter.GetElectricalCategories( filePath, ref dictData, sheetName ) ;
     }
 
-
     public ObservableCollection<string> ConstructionClassificationTypeList { get ; }
     public ObservableCollection<string> ClassificationTypeList { get ; }
 
@@ -183,16 +182,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         hiroisetSelected = HiroiSetMasterNormalModels.FirstOrDefault( x => x.ParentPartModelNumber == ceedModelNumber ) ;
 
         if ( null != hiroisetSelected )
-          AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel?.SelectedCeedModel, allowInputQuantity ) ;
+          AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel?.SelectedCeedModel, allowInputQuantity, true ) ;
       }
       catch {
       }
     }
 
-    private void AddCeedDetailBaseOnHiroiSetMaster( HiroiSetMasterModel hiroiSetMasterModel, CeedModel? ceedModel, bool allowInputQuantity )
+    private void AddCeedDetailBaseOnHiroiSetMaster( HiroiSetMasterModel hiroiSetMasterModel, CeedModel? ceedModel, bool allowInputQuantity, bool isConduit = false )
     {
       AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode1, hiroiSetMasterModel.Name1, ceedModel, allowInputQuantity ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode2, hiroiSetMasterModel.Name2, ceedModel, allowInputQuantity ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode2, hiroiSetMasterModel.Name2, ceedModel, allowInputQuantity, isConduit ) ;
       AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode3, hiroiSetMasterModel.Name3, ceedModel, allowInputQuantity ) ;
       AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode4, hiroiSetMasterModel.Name4, ceedModel, allowInputQuantity ) ;
       AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode5, hiroiSetMasterModel.Name5, ceedModel, allowInputQuantity ) ;
@@ -203,7 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CeedDetailSelected = CeedDetailList.Last() ;
     }
 
-    private void AddCeedDetailBaseOnMaterialCode( string materialCode, string name, CeedModel? ceedModel, bool allowInputQuantity )
+    private void AddCeedDetailBaseOnMaterialCode( string materialCode, string name, CeedModel? ceedModel, bool allowInputQuantity, bool isConduit = false )
     {
       if ( string.IsNullOrEmpty( materialCode ) ) return ;
       var hiroiMaster = HiroiMasterModels.FirstOrDefault( x => CompareBuzaiCDAndMaterialCode( x.Buzaicd, materialCode ) ) ;
@@ -211,7 +210,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var ceedSetCodeArray = ceedModel?.CeedSetCode?.Split( ':' ) ;
       var ceedCode = ceedSetCodeArray?.Length > 0 ? ceedSetCodeArray[ 0 ] : string.Empty ;
       var newCeedDetail = new CeedDetailModel( hiroiMaster.Buzaicd, name, hiroiMaster.Kikaku, string.Empty, QuantityDefault, UnitDefault, SymbolInformation.Id, TrajectoryDefault, hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1, ceedModel?.ModelNumber, ceedCode,
-        ConstructionClassificationDefault, allowInputQuantity ? 0 : 1, 1, 1, string.Empty, allowInputQuantity ) ;
+        ConstructionClassificationDefault, allowInputQuantity ? 0 : 1, 1, 1, string.Empty, allowInputQuantity, isConduit ) ;
       if ( ! newCeedDetail.AllowInputQuantity )
         newCeedDetail.Quantity = 0 ;
       newCeedDetail.Total = ( newCeedDetail.Quantity + newCeedDetail.QuantityCalculate ) * newCeedDetail.QuantitySet ;
@@ -327,10 +326,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       CeedDetailList.ItemPropertyChanged += CeedDetailListOnItemPropertyChanged ;
 
-
       BuzaiCDList = HiroiMasterModels.Select( x => x.Buzaicd ).ToList() ;
       BuzaiCDListDisplay = new ObservableCollection<string>( BuzaiCDList.Take( DefaultDisplayItem ).ToList() ) ;
-      ConstructionClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( CreateDetailTableCommandBase.ConstructionClassificationType ) ).ToList() ) ;
+      ConstructionClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( ConstructionClassificationType ) ).ToList() ) ;
       ClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( CreateDetailTableCommandBase.ClassificationType ) ).ToList() ) ;
       _dictElectricalCategoriesEcoKey = new Dictionary<string, string>() ;
       _dictElectricalCategoriesNormalKey = new Dictionary<string, string>() ;
@@ -349,9 +347,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         {
           foreach ( var item in restCeedDetails ) {
             _isInChangeLoop = true ;
-            item.ConstructionClassification = itemChanged.ConstructionClassification ; 
+            item.ConstructionClassification = itemChanged.ConstructionClassification ;
             ChangeQuantityInfo( itemChanged ) ;
-          } 
+          }
+
           _isInChangeLoop = false ;
           break ;
         }
@@ -360,7 +359,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           foreach ( var item in restCeedDetails ) {
             _isInChangeLoop = true ;
             item.QuantitySet = itemChanged.QuantitySet ;
-          } 
+          }
+
           _isInChangeLoop = false ;
           break ;
         }
@@ -368,19 +368,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         case "Quantity" :
         {
           ChangeQuantityInfo( itemChanged ) ;
-          break;
-        } 
+          break ;
+        }
       }
     }
 
-    private void ChangeQuantityInfo(CeedDetailModel itemChanged)
+    private void ChangeQuantityInfo( CeedDetailModel itemChanged )
     {
-      var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.ProductName.ToUpper().Contains( "CVV" ) && x.AllowInputQuantity) ;
-      if ( null == itemCvv) return;
-          
-      if(itemChanged.Classification == "隠蔽") {
+      var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.ProductName.ToUpper().Contains( "CVV" ) && x.AllowInputQuantity ) ;
+      if ( null == itemCvv ) return ;
+
+      if ( itemChanged.Classification == "隠蔽" ) {
         itemCvv.QuantityCalculate = itemChanged.Quantity ;
-      } else {
+      }
+      else {
         itemCvv.QuantityCalculate = 0 ;
       }
     }

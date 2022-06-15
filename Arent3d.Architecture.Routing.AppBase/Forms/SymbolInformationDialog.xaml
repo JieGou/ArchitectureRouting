@@ -70,7 +70,7 @@
                 <local:CustomComboBoxColumn Header="施工区分" Width="150"
                                             ItemsSource="{Binding Source={StaticResource ConstructionClassificationList}}"
                                             SelectedItemBinding="{Binding ConstructionClassification}" />
-                <local:CustomComboBoxColumn Header="施工区分" Width="100"
+                <local:CustomComboBoxColumn Header="区分" Width="100"
                                             ItemsSource="{Binding Source={StaticResource ClassificationList}}"
                                             SelectedItemBinding="{Binding Classification}" >
                     <local:CustomComboBoxColumn.CellStyle>
