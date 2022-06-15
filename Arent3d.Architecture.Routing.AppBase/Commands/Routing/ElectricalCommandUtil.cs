@@ -140,10 +140,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return null ;
     }
     
-    public static string GetCeedSetCodeOfElement( Element element )
+    public static List<string> GetCeedSetCodeOfElement( Element element )
     {
       element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
-      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':' ).First() : string.Empty ;
+      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':' ).ToList() : new List<string>() ;
     }
     
     public static ( string, string ) GetCeedCodeAndDeviceSymbolOfElement( Element element )

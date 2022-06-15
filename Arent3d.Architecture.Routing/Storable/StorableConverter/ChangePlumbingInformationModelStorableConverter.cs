@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       PlumbingSize,
       NumberOfPlumbing,
       PlumbingName,
-      ConstructionClassification,
+      ClassificationOfPlumbing,
       ConstructionItems, 
       WireCrossSectionalArea,
       IsExposure,
@@ -34,14 +34,14 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var plumbingSize = deserializer.GetString( SerializeField.PlumbingSize ) ;
       var numberOfPlumbing = deserializer.GetString( SerializeField.NumberOfPlumbing ) ;
       var plumbingName = deserializer.GetString( SerializeField.PlumbingName ) ;
-      var constructionClassification = deserializer.GetString( SerializeField.ConstructionClassification ) ;
+      var classificationOfPlumbing = deserializer.GetString( SerializeField.ClassificationOfPlumbing ) ;
       var constructionItems = deserializer.GetString( SerializeField.ConstructionItems ) ;
       var wireCrossSectionalArea = deserializer.GetDouble( SerializeField.WireCrossSectionalArea ) ;
       var isExposure = deserializer.GetBool( SerializeField.IsExposure ) ;
       var isInDoor = deserializer.GetBool( SerializeField.IsInDoor ) ;
       var conduitDirectionZ = deserializer.GetDouble( SerializeField.ConduitDirectionZ ) ;
 
-      return new ChangePlumbingInformationModel( conduitId, connectorId, plumbingType, plumbingSize, numberOfPlumbing, plumbingName, constructionClassification, constructionItems, wireCrossSectionalArea, isExposure, isInDoor, conduitDirectionZ ) ;
+      return new ChangePlumbingInformationModel( conduitId, connectorId, plumbingType, plumbingSize, numberOfPlumbing, plumbingName, classificationOfPlumbing, constructionItems, wireCrossSectionalArea, isExposure, isInDoor, conduitDirectionZ ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, ChangePlumbingInformationModel customTypeValue )
@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.PlumbingSize, customTypeValue.PlumbingSize ) ;
       serializerObject.AddNonNull( SerializeField.NumberOfPlumbing, customTypeValue.NumberOfPlumbing ) ;
       serializerObject.AddNonNull( SerializeField.PlumbingName, customTypeValue.PlumbingName ) ;
-      serializerObject.AddNonNull( SerializeField.ConstructionClassification, customTypeValue.ConstructionClassification ) ;
+      serializerObject.AddNonNull( SerializeField.ClassificationOfPlumbing, customTypeValue.ClassificationOfPlumbing ) ;
       serializerObject.AddNonNull( SerializeField.ConstructionItems, customTypeValue.ConstructionItems ) ;
       serializerObject.Add( SerializeField.WireCrossSectionalArea, customTypeValue.WireCrossSectionalArea ) ;
       serializerObject.Add( SerializeField.IsExposure, customTypeValue.IsExposure ) ;

@@ -8,16 +8,16 @@
         x:Name="WdChangePlumbingInformation"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Title="立配管情報追加" Height="350" Width="390">
+        Title="立配管情報追加" Height="420" Width="390">
     <Grid>
         <StackPanel Margin="10" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" >
             <StackPanel Orientation="Horizontal" Margin="10, 5">
                 <Label Content="施工区分" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
                 <ComboBox Width="185" 
-                          SelectedValue="{Binding ConstructionClassification, Mode=TwoWay}" 
+                          SelectedValue="{Binding ClassificationOfPlumbing, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
                           SelectedValuePath="Name"
-                          ItemsSource="{Binding ConstructionClassifications}" 
+                          ItemsSource="{Binding ClassificationsOfPlumbing}" 
                           IsEnabled ="False" >
                 </ComboBox>
                 <ComboBox Width="60" Margin="5, 0"
@@ -39,12 +39,8 @@
                           SelectedValue="{Binding IsInDoor, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
                           SelectedValuePath="Name"
+                          IsEnabled="False"
                           ItemsSource="{Binding InOrOutDoor}" >
-                    <i:Interaction.Triggers>
-                        <i:EventTrigger EventName="SelectionChanged">
-                            <i:InvokeCommandAction Command="{Binding SelectionChangedInOrOutDoorCommand}"/>
-                        </i:EventTrigger>
-                    </i:Interaction.Triggers>
                 </ComboBox>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
@@ -60,6 +56,14 @@
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10, 5">
+                <Label Content="配管サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
+                <TextBox Width="250" IsReadOnly="True" Text="{Binding PlumbingSize, Mode=TwoWay}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10, 5">
+                <Label Content="配管本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
+                <TextBox Width="250" IsReadOnly="True" Text="{Binding NumberOfPlumbing, Mode=TwoWay}"/>
             </StackPanel>
             <DataGrid ItemsSource="{Binding ConnectorInfos}" 
                       CanUserAddRows="False" AutoGenerateColumns="False" 

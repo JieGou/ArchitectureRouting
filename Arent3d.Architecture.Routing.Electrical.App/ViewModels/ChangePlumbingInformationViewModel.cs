@@ -65,14 +65,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
 
-    private string _constructionClassification ;
+    private string _classificationOfPlumbing ;
 
-    public string ConstructionClassification
+    public string ClassificationOfPlumbing
     {
-      get => _constructionClassification ;
+      get => _classificationOfPlumbing ;
       set
       {
-        _constructionClassification = value ;
+        _classificationOfPlumbing = value ;
         OnPropertyChanged() ;
       }
     }
@@ -133,7 +133,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       set
       {
         _selectedIndex = value ;
-        ConstructionClassification = ChangePlumbingInformationModels.ElementAt( _selectedIndex ).ConstructionClassification ;
+        ClassificationOfPlumbing = ChangePlumbingInformationModels.ElementAt( _selectedIndex ).ClassificationOfPlumbing ;
+        PlumbingSize = ChangePlumbingInformationModels.ElementAt( _selectedIndex ).PlumbingSize ;
+        NumberOfPlumbing = ChangePlumbingInformationModels.ElementAt( _selectedIndex ).NumberOfPlumbing ;
+        IsInDoor = ChangePlumbingInformationModels.ElementAt( _selectedIndex ).IsInDoor ;
         IsEnabled = GetIsEnabled() ;
         OnPropertyChanged() ;
       }
@@ -141,17 +144,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public List<ChangePlumbingInformationModel> ChangePlumbingInformationModels { get ; set ; }
     public List<DetailTableModel.ComboboxItemType> PlumbingTypes { get ; }
-    public List<DetailTableModel.ComboboxItemType> ConstructionClassifications { get ; }
+    public List<DetailTableModel.ComboboxItemType> ClassificationsOfPlumbing { get ; }
     public List<DetailTableModel.ComboboxItemType> ConcealmentOrExposure { get ; }
     public List<DetailTableModel.ComboboxItemType> InOrOutDoor { get ; }
     public List<ConnectorInfo> ConnectorInfos { get ; }
 
     public ICommand SelectionChangedPlumbingTypeCommand => new RelayCommand( SetPlumbingSizes ) ;
     public ICommand SelectionChangedConcealmentOrExposureCommand => new RelayCommand( SelectionChangedConcealmentOrExposure ) ;
-    public ICommand SelectionChangedInOrOutDoorCommand => new RelayCommand( SelectionChangedInOrOutDoor ) ;
     public RelayCommand<Window> ApplyCommand => new(Apply) ;
     
-    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> concealmentOrExposure, List<DetailTableModel.ComboboxItemType> inOrOutDoor, List<ConnectorInfo> connectorInfos )
+    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> classificationsOfPlumbing, List<DetailTableModel.ComboboxItemType> concealmentOrExposure, List<DetailTableModel.ComboboxItemType> inOrOutDoor, List<ConnectorInfo> connectorInfos )
     {
       _conduitsModelData = conduitsModelData ;
       var changePlumbingInformationModel = changePlumbingInformationModels.First() ;
@@ -159,14 +161,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _plumbingType = changePlumbingInformationModel.PlumbingType ;
       _plumbingSize = changePlumbingInformationModel.PlumbingSize ;
       _numberOfPlumbing = changePlumbingInformationModel.NumberOfPlumbing ;
-      _constructionClassification = changePlumbingInformationModel.ConstructionClassification ;
+      _classificationOfPlumbing = changePlumbingInformationModel.ClassificationOfPlumbing ;
       _constructionItem = changePlumbingInformationModel.ConstructionItems ;
       _isExposure = changePlumbingInformationModel.IsExposure ;
       _isInDoor = changePlumbingInformationModel.IsInDoor ;
       _isEnabled = GetIsEnabled() ;
       _selectedIndex = -1 ;
       PlumbingTypes = plumbingTypes ;
-      ConstructionClassifications = constructionClassifications ;
+      ClassificationsOfPlumbing = classificationsOfPlumbing ;
       ConcealmentOrExposure = concealmentOrExposure ;
       InOrOutDoor = inOrOutDoor ;
       ConnectorInfos = connectorInfos ;
@@ -199,13 +201,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private void SelectionChangedConcealmentOrExposure()
     {
       foreach ( var changePlumbingInformationModel in ChangePlumbingInformationModels ) {
-        if ( changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.地中埋設.GetFieldName()
-             || changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.打ち込み.GetFieldName()
-             || changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.冷媒管共巻配線.GetFieldName() )
+        if ( changePlumbingInformationModel.ClassificationOfPlumbing == CreateDetailTableCommandBase.ConstructionClassificationType.地中埋設.GetFieldName()
+             || changePlumbingInformationModel.ClassificationOfPlumbing == CreateDetailTableCommandBase.ConstructionClassificationType.打ち込み.GetFieldName()
+             || changePlumbingInformationModel.ClassificationOfPlumbing == CreateDetailTableCommandBase.ConstructionClassificationType.冷媒管共巻配線.GetFieldName() )
         {
           changePlumbingInformationModel.IsExposure = false ; // 施工区分が地中埋設、打ち込み、冷媒管共巻配線となっている場合、区分が隠蔽となる
         }
-        else if ( changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ) {
+        else if ( changePlumbingInformationModel.ClassificationOfPlumbing == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ) {
           changePlumbingInformationModel.IsExposure = true ; // 施工区分が露出となっている場合、区分が露出となる
         }
         else {
@@ -214,18 +216,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
 
-    private void SelectionChangedInOrOutDoor()
-    {
-      foreach ( var changePlumbingInformationModel in ChangePlumbingInformationModels ) {
-        changePlumbingInformationModel.IsInDoor = IsInDoor ;
-      }
-    }
-
     private bool GetIsEnabled()
     {
-      return _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() 
-             || _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() 
-             || _constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.フリーアクセス.GetFieldName() ;
+      return _classificationOfPlumbing == CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() 
+             || _classificationOfPlumbing == CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() 
+             || _classificationOfPlumbing == CreateDetailTableCommandBase.ConstructionClassificationType.フリーアクセス.GetFieldName() ;
     }
     
     private void Apply( Window window )

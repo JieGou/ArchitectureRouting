@@ -40,6 +40,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
         {
           var allElementSelected = selection.GetElementIds() ;
+          if ( ! allElementSelected.Any() ) return Result.Cancelled ;
           var connectorsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
             .Where( e => ( allElementSelected.Contains( e.Id ) || allElementSelected.Contains( e.GroupId ) ) 
                          && e is FamilyInstance f && f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() 
@@ -57,7 +58,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           foreach ( var item in viewModel.ChangePlumbingInformationModels ) {
             var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == item.ConduitId ) ;
             if ( oldChangePlumbingInformationModel == null ) {
-              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.ConnectorId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.PlumbingName, item.ConstructionClassification, item.ConstructionItems, item.WireCrossSectionalArea, item.IsExposure, item.IsInDoor, item.ConduitDirectionZ ) ;
+              var changePlumbingInformationModel = new ChangePlumbingInformationModel( item.ConduitId, item.ConnectorId, item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.PlumbingName, item.ClassificationOfPlumbing, item.ConstructionItems, item.WireCrossSectionalArea, item.IsExposure, item.IsInDoor, item.ConduitDirectionZ ) ;
               changePlumbingInformationStorable.ChangePlumbingInformationModelData.Add( changePlumbingInformationModel ) ;
             }
             else {
@@ -65,7 +66,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
               oldChangePlumbingInformationModel.PlumbingSize = item.PlumbingSize ;
               oldChangePlumbingInformationModel.NumberOfPlumbing = item.NumberOfPlumbing ;
               oldChangePlumbingInformationModel.PlumbingName = item.PlumbingName ;
-              oldChangePlumbingInformationModel.ConstructionClassification = item.ConstructionClassification ;
+              oldChangePlumbingInformationModel.ClassificationOfPlumbing = item.ClassificationOfPlumbing ;
               oldChangePlumbingInformationModel.ConstructionItems = item.ConstructionItems ;
               oldChangePlumbingInformationModel.IsExposure = item.IsExposure ;
               oldChangePlumbingInformationModel.IsInDoor = item.IsInDoor ;
@@ -133,6 +134,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private ChangePlumbingInformationViewModel CreateChangePlumbingInformationViewModel( Document doc, Dictionary<Element, Element> conduitAndConnectorDic, ChangePlumbingInformationStorable changePlumbingInformationStorable )
     {
       const double percentage = 0.32 ;
+      const string outDoorCondition = "屋外" ; 
+      var ceedModels = doc.GetCeedStorable().CeedModelData ;
       var detailSymbolStorable = doc.GetDetailSymbolStorable() ;
       var csvStorable = doc.GetCsvStorable() ;
       var conduitsModelData = csvStorable.ConduitsModelData ;
@@ -143,8 +146,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       plumbingTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
 
       var hiroiCdModel = csvStorable.HiroiSetCdMasterNormalModelData ;
-      var constructionClassificationNames = hiroiCdModel.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
-      var constructionClassifications = ( from constructionClassificationName in constructionClassificationNames select new DetailTableModel.ComboboxItemType( constructionClassificationName, constructionClassificationName ) ).ToList() ;
+      var classificationOfPlumbingNames = hiroiCdModel.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
+      var classificationsOfPlumbing = ( from classificationOfPlumbingName in classificationOfPlumbingNames select new DetailTableModel.ComboboxItemType( classificationOfPlumbingName, classificationOfPlumbingName ) ).ToList() ;
 
       var concealmentOrExposure = new List<DetailTableModel.ComboboxItemType>() { new( ConcealmentOrExposure.隠蔽.GetFieldName(), "False" ), new( ConcealmentOrExposure.露出.GetFieldName(), "True" ) } ;
       var inOrOutDoor = new List<DetailTableModel.ComboboxItemType>() { new( InOrOutDoor.屋内.GetFieldName(), "True" ), new( InOrOutDoor.屋外.GetFieldName(), "False" ) } ;
@@ -160,12 +163,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
         conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
         var constructionClassification = oldChangePlumbingInformationModel != null 
-          ? oldChangePlumbingInformationModel.ConstructionClassification 
-          : constructionClassificationNames.First() ;
+          ? oldChangePlumbingInformationModel.ClassificationOfPlumbing 
+          : classificationOfPlumbingNames.First() ;
         var wireCrossSectionalArea = oldChangePlumbingInformationModel?.WireCrossSectionalArea ?? 0 ;
-        var (ceedCode, deviceSymbol) = ElectricalCommandUtil.GetCeedCodeAndDeviceSymbolOfElement( connector ) ;
+        var ceedCodeInfo = ElectricalCommandUtil.GetCeedSetCodeOfElement( connector ) ;
+        var ceedCode = ceedCodeInfo.First() ;
+        var deviceSymbol = ceedCodeInfo.Count > 1 ? ceedCodeInfo.ElementAt( 1 ) : string.Empty ;
+        var modelNumber = ceedCodeInfo.Count > 2 ? ceedCodeInfo.ElementAt( 2 ) : string.Empty ;
+        var ceedModel = ceedModels.FirstOrDefault( c => c.CeedSetCode == ceedCode && c.GeneralDisplayDeviceSymbol == deviceSymbol && c.ModelNumber == modelNumber ) ;
         var registrationOfBoardDataModel = registrationOfBoardDataModels.FirstOrDefault( b => b.AutoControlPanel == ceedCode || b.SignalDestination == ceedCode ) ;
-        if ( oldChangePlumbingInformationModel == null && ! string.IsNullOrEmpty( ceedCode ) ) {
+        var isInDoor = oldChangePlumbingInformationModel?.IsInDoor ?? true ;
+        if ( ! string.IsNullOrEmpty( ceedCode ) ) {
+          List<string> materialCodes = new() ;
           if ( registrationOfBoardDataModel == null ) {
             var hiroiSetCdMasterModel = hiroiCdModel.FirstOrDefault( h => h.SetCode == ceedCode ) ;
             if ( hiroiSetCdMasterModel != null ) {
@@ -176,14 +185,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
                 : csvStorable.HiroiSetMasterNormalModelData ;
               var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
               if ( hiroiSetMasterModel != null ) {
-                var materialCode = hiroiSetMasterModel.MaterialCode1 ;
-                wireCrossSectionalArea = GetWireCrossSectionalArea( csvStorable.HiroiMasterModelData, csvStorable.WiresAndCablesModelData, materialCode ) ;
+                if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode1 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode1 ) ;
+                if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode2 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode2) ;
+                if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode3 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode3 ) ;
+                if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode4 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode4 ) ;
+                if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode5 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode5 ) ;
+                if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode6 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode6 ) ;
+                if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode7 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode7 ) ;
+                if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode8 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode8 ) ;
+                wireCrossSectionalArea = GetWireCrossSectionalArea( csvStorable.HiroiMasterModelData, csvStorable.WiresAndCablesModelData, materialCodes ) ;
               }
+            }
+
+            if ( ceedModel != null ) {
+              isInDoor = ceedModel.Condition != outDoorCondition ;
             }
           }
           else {
-            var materialCode = registrationOfBoardDataModel.MaterialCode1 ;
-            wireCrossSectionalArea = GetWireCrossSectionalArea( csvStorable.HiroiMasterModelData, csvStorable.WiresAndCablesModelData, materialCode ) ;
+            if ( ! string.IsNullOrEmpty( registrationOfBoardDataModel.MaterialCode1 ) ) materialCodes.Add( registrationOfBoardDataModel.MaterialCode1 ) ;
+            if ( ! string.IsNullOrEmpty( registrationOfBoardDataModel.MaterialCode2 ) ) materialCodes.Add( registrationOfBoardDataModel.MaterialCode2 ) ;
+            wireCrossSectionalArea = GetWireCrossSectionalArea( csvStorable.HiroiMasterModelData, csvStorable.WiresAndCablesModelData, materialCodes ) ;
             deviceSymbol = ceedCode ;
           }
         }
@@ -213,8 +234,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var constructionItem = string.IsNullOrEmpty( conduitConstructionItem ) ? DefaultConstructionItems : conduitConstructionItem ;
 
         var isExposure = ( oldChangePlumbingInformationModel?.IsExposure ?? false ) || constructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ;
-        var isInDoor = oldChangePlumbingInformationModel?.IsInDoor ?? true ;
-        
+
         var conduitLocation = conduit.Location as LocationCurve ;
         var conduitLine = conduitLocation?.Curve as Line ;
         var conduitDirectionZ = conduitLine?.Direction.Z ;
@@ -243,19 +263,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
       }
 
-      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, newChangePlumbingInformationModels, plumbingTypes, constructionClassifications, concealmentOrExposure, inOrOutDoor, connectorInfos ) ;
+      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, newChangePlumbingInformationModels, plumbingTypes, classificationsOfPlumbing, concealmentOrExposure, inOrOutDoor, connectorInfos ) ;
       return viewModel ;
     }
 
-    private double GetWireCrossSectionalArea( List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, string materialCode )
+    private double GetWireCrossSectionalArea( List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<string> materialCodes )
     {
-      var masterModel = hiroiMasterModelData.FirstOrDefault( h => int.Parse( h.Buzaicd ).ToString() == int.Parse( materialCode ).ToString() ) ;
-      if ( masterModel == null ) return 0 ;
-      var wireType = masterModel.Type ;
-      var wireSize = masterModel.Size1 ;
-      var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModel.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModel.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
-      if ( wiresAndCablesModel == null ) return 0 ;
-      var wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+      double wireCrossSectionalArea = 0 ;
+      foreach ( var materialCode in materialCodes ) {
+        var masterModel = hiroiMasterModelData.FirstOrDefault( h => int.Parse( h.Buzaicd ).ToString() == int.Parse( materialCode ).ToString() ) ;
+        if ( masterModel == null ) continue ;
+        var wireType = masterModel.Type ;
+        var wireSize = masterModel.Size1 ;
+        var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModel.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModel.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+        if ( wiresAndCablesModel == null ) continue ;
+        wireCrossSectionalArea += double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+      }
+      
       return wireCrossSectionalArea ;
     }
   }
