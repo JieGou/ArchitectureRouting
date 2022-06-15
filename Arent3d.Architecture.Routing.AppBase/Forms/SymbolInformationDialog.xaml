@@ -121,7 +121,7 @@
                         </Grid.RowDefinitions>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Label Content="種類" />
-                            <ComboBox Width="70" Height="22" VerticalContentAlignment="Center" Name="CbSymbolKind"
+                            <ComboBox Width="70" Height="22" VerticalContentAlignment="Center" Name="CbSymbolKind" SelectionChanged="OnSymbolKindChange"
                                       SelectedItem="{Binding SelectedSymbolKind}" />
                             <Label Content="高さ" />
                             <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Height}" PreviewTextInput="OnSymbolHeightInput" PreviewKeyUp="OnSymbolHightKeyUp" VerticalContentAlignment="Center" />

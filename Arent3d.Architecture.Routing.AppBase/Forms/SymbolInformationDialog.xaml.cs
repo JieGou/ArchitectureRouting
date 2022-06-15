@@ -1,4 +1,5 @@
 ﻿using System ;
+using System.Globalization ;
 using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Controls ;
@@ -26,8 +27,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CbSymbolCoordinate.ItemsSource = viewModel.SymbolCoordinates ;
       CbSymbolColor.ItemsSource = viewModel.SymbolColors ;
 
-      PathStar.Data = Geometry.Parse( CreateStarData( viewModel.SymbolInformation.Height ) ) ;
+
+      PathStar.Data = LoadSymbolPathData() ;
       LabelDescription.FontSize = FontSizeDefault + viewModel.SymbolInformation.CharacterHeight ;
+    }
+
+    private Geometry LoadSymbolPathData()
+    {
+      var viewModel = (SymbolInformationViewModel) DataContext ;
+      var symbolData = viewModel.SymbolInformation.SymbolKind == SymbolKindEnum.星.ToString() ? CreateStarData( viewModel.SymbolInformation.Height ) : CreateCircleData( viewModel.SymbolInformation.Height ) ;
+      return Geometry.Parse( symbolData ) ;
     }
 
     private void ButtonOK_Click( object sender, RoutedEventArgs e )
@@ -75,7 +84,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var textBox = (TextBox) sender ;
       double.TryParse( textBox.Text, out var height ) ;
 
-      PathStar.Data = Geometry.Parse( CreateStarData( height ) ) ;
+      var viewModel = ( (SymbolInformationViewModel) DataContext ) ;
+      viewModel.SymbolInformation.Height = height ;
+      PathStar.Data = LoadSymbolPathData() ;
     }
 
     private void OnSymbolHeightInput( object sender, TextCompositionEventArgs e )
@@ -102,13 +113,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           Canvas.SetLeft( CanvasText, 0 ) ;
           Canvas.SetTop( CanvasText, 25 ) ;
           break ;
-        case 2 : //Right
+        case 2: //Middle
+          Canvas.SetLeft( CanvasStar, 30 ) ;
+          Canvas.SetTop( CanvasStar, 30 ) ;
+
+          Canvas.SetLeft( CanvasText, 32 ) ;
+          Canvas.SetTop( CanvasText, 35 ) ;
+          break ;
+        case 3 : //Right
           Canvas.SetLeft( CanvasStar, 0 ) ;
           Canvas.SetTop( CanvasStar, 30 ) ;
 
           Canvas.SetLeft( CanvasText, 60 ) ;
           Canvas.SetTop( CanvasText, 25 ) ;
           break ;
+        
         default : //Bottom
           Canvas.SetLeft( CanvasStar, 30 ) ;
           Canvas.SetTop( CanvasStar, 20 ) ;
@@ -165,7 +184,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return data ;
     }
 
-    private string CreateStarData( double symbolHeight )
+    private static string CreateStarData( double symbolHeight )
     {
       double length = symbolHeight switch
       {
@@ -176,8 +195,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         _ => 14
       } ;
 
-      SinCos( 18, out double sin18, out double cos18 ) ;
-      SinCos( 36, out double sin36, out double cos36 ) ;
+      SinCos( 18, out var sin18, out var cos18 ) ;
+      SinCos( 36, out var sin36, out var cos36 ) ;
 
       var doi18 = sin18 * length ;
       var ke18 = cos18 * length ;
@@ -198,11 +217,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return data ;
     }
 
-    private void SinCos( double degrees, out double sinAngle, out double cosAngle )
+    private static string CreateCircleData( double symbolHeight )
+    {
+      string temp = (symbolHeight * 5).ToString( CultureInfo.InvariantCulture ) ;
+      string data = "M 0," + temp ;
+      data += "A " + temp + "," + temp + " 0 0 1 "+ (symbolHeight * 10).ToString( CultureInfo.InvariantCulture ) + "," + temp  ;
+      data += " A " + temp + "," + temp + " 0 0 1 0," + temp ;
+      return data ;
+    }
+
+    private static void SinCos( double degrees, out double sinAngle, out double cosAngle )
     {
       var angle = Math.PI * degrees / 180.0 ;
       sinAngle = Math.Sin( angle ) ;
       cosAngle = Math.Cos( angle ) ;
+    }
+
+    private void OnSymbolKindChange( object sender, SelectionChangedEventArgs e )
+    {
+      PathStar.Data = LoadSymbolPathData() ;
     }
   }
 

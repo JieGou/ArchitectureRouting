@@ -8,6 +8,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
@@ -49,6 +50,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               if ( null != symbolInformation ) {
                 model = symbolInformation ;
                 var symbolInformationSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ) ?? throw new InvalidOperationException() ;
+                if ( model.SymbolKind == SymbolKindEnum.丸.ToString() ) {
+                  symbolInformationSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolCircle ) ?? throw new InvalidOperationException() ;
+                }
+                
                 symbolInformationInstance = document.GetAllFamilyInstances( symbolInformationSymbols ).FirstOrDefault( x => x.Id.ToString() == symbolInformation.Id ) ;
                 xyz = symbolInformationInstance!.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
                 selectedItemIsSymbolInformation = true ;
@@ -99,7 +104,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             //   document.Delete( textNote.Id ) ;
           }
           
-          //*****Save symbol setting***********
+          //*****Save symbol setting*********** 
+          if ( GetSymbolKindName( symbolInformationInstance!.Symbol.Name ) != viewModel.SymbolInformation.SymbolKind ) {
+            var oldId = symbolInformationInstance.Id ;
+            var oldSymbolInformation = symbolInformationList.FirstOrDefault( x => x.Id == oldId.ToString() ) ;
+            document.Delete( oldId ) ;
+            symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), GetElectricalRoutingFamilyType(viewModel.SelectedSymbolKind) ) ;
+            
+            oldSymbolInformation!.Id = symbolInformationInstance!.Id.ToString() ;
+            //Update parentId in viewModel.CeedDetailList
+            foreach ( var ceedDetail in viewModel.CeedDetailList ) {
+              ceedDetail.ParentId = symbolInformationInstance.Id.ToString() ;
+            } 
+          }
           var symbolHeightParameter = symbolInformationInstance?.LookupParameter( "Symbol Height" ) ;
           symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() ) ;
           symbolInformationStorable.Save() ;
@@ -136,7 +153,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private ElementId? GetElementIdOfSymbolInformationFromGroup( Document document, List<SymbolInformationModel> symbolInformations, Group group, ref TextNote? textNote )
+    private static string GetSymbolKindName(string symbolName)
+    {
+      return symbolName switch
+      {
+        "Symbol Circle" => SymbolKindEnum.丸.GetFieldName(),
+        _ => SymbolKindEnum.星.GetFieldName()
+      } ;
+    }
+
+    private static ElectricalRoutingFamilyType GetElectricalRoutingFamilyType( SymbolKindEnum symbolKind )
+    {
+      return symbolKind switch
+      {
+        SymbolKindEnum.丸 => ElectricalRoutingFamilyType.SymbolCircle,
+        _ => ElectricalRoutingFamilyType.SymbolStar
+      } ;
+    }
+     
+
+    private static ElementId? GetElementIdOfSymbolInformationFromGroup( Document document, List<SymbolInformationModel> symbolInformations, Group group, ref TextNote? textNote )
     {
       var memberIds = group.GetMemberIds() ;
       foreach ( var memberId in memberIds ) {
@@ -157,13 +193,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return null ;
     }
 
-    private static FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz )
+    private static FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz, ElectricalRoutingFamilyType symbolKind = ElectricalRoutingFamilyType.SymbolStar)
     { 
-      var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var symbol = uiDocument.Document.GetFamilySymbols( symbolKind ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       return symbol.Instantiate( xyz, level, StructuralType.NonStructural ) ;
     }
 
-    private void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz, Group? oldParentGroup )
+    private static void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz, Group? oldParentGroup )
     {
       ICollection<ElementId> groupIds = new List<ElementId>() ;
       groupIds.Add( symbolInformationInstanceId ) ;
@@ -171,22 +207,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( model.IsShowText && ! string.IsNullOrEmpty( model.Description ) ) {
         var noteWidth = .05 ;
         var anchor = (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
-        XYZ txtPosition ;
-        switch ( anchor ) {
-          case SymbolCoordinateEnum.上 :
-            txtPosition = new XYZ( xyz.X - 1, xyz.Y + 2, xyz.Z ) ;
-            break ;
-          case SymbolCoordinateEnum.左 :
-            txtPosition = new XYZ( xyz.X - model.Height, xyz.Y + 0.1, xyz.Z ) ;
-            break ;
-          case SymbolCoordinateEnum.右 :
-            txtPosition = new XYZ( xyz.X + model.Height / 3, xyz.Y + 0.1, xyz.Z ) ;
-            break ;
-          default :
-            txtPosition = new XYZ( xyz.X - 1, xyz.Y - 2, xyz.Z ) ;
-            break ;
-        }
-
+        XYZ txtPosition = anchor switch
+        {
+          SymbolCoordinateEnum.上 => new XYZ( xyz.X - 1, xyz.Y + 2, xyz.Z ), //Up
+          SymbolCoordinateEnum.左 => new XYZ( xyz.X - model.Height, xyz.Y + 0.1, xyz.Z ), //Left
+          SymbolCoordinateEnum.右 => new XYZ( xyz.X + model.Height / 3, xyz.Y + 0.1, xyz.Z ), //Right
+          SymbolCoordinateEnum.下 => new XYZ( xyz.X - 1, xyz.Y - 2.3, xyz.Z  ), //Bottom
+          _ => new XYZ( xyz.X - 1, xyz.Y + 0.1, xyz.Z ) //Center
+        } ;
 
         var defaultTextTypeId = document.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
 
@@ -219,7 +247,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var elementType = textNote.TextNoteType.Duplicate( textNodeTypeName ) ;
           textNoteType = elementType as TextNoteType ;
           textNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-          textNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
           textNoteType?.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( textNodeSize.MillimetersToRevitUnits() ) ;
         }
 

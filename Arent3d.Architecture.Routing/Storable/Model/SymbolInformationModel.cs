@@ -6,19 +6,21 @@ namespace Arent3d.Architecture.Routing.Storable.Model
   public enum SymbolKindEnum
   {
     星,
+    丸,
   }
 
   public enum SymbolCoordinateEnum
   {
     上,
     左,
+    真ん中,
     右,
     下,
   }
 
   public class SymbolInformationModel
   {
-    public string Id { get ; init ; } = "-1" ;
+    public string Id { get ; set ; } = "-1" ;
     public string SymbolKind { get ; set ; } = SymbolKindEnum.星.ToString() ;
     public string SymbolCoordinate { get ; set ; } = SymbolCoordinateEnum.右.ToString() ;
     public double Height { get ; set ; } = 3 ;
