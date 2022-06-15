@@ -349,7 +349,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         {
           foreach ( var item in restCeedDetails ) {
             _isInChangeLoop = true ;
-            item.ConstructionClassification = itemChanged.ConstructionClassification ;
+            item.ConstructionClassification = itemChanged.ConstructionClassification ; 
+            ChangeQuantityInfo( itemChanged ) ;
           } 
           _isInChangeLoop = false ;
           break ;
@@ -364,28 +365,24 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           break ;
         }
         case "Classification" :
-        {
-          var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.ProductName.ToUpper().Contains( "CVV" ) && x.AllowInputQuantity) ;
-          if ( null != itemCvv && itemChanged.Classification == "隠蔽") {
-            itemCvv.QuantityCalculate = itemChanged.Quantity ;
-          }
-          break;
-        }
         case "Quantity" :
         {
-          var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.ProductName.ToUpper().Contains( "CVV" ) && x.AllowInputQuantity) ;
-          if ( null != itemCvv && itemChanged.Classification == "隠蔽") {
-            itemCvv.QuantityCalculate = itemChanged.Quantity ;
-          }
+          ChangeQuantityInfo( itemChanged ) ;
           break;
-        }
+        } 
       }
     }
 
-    private void ResetCeedDetailListData( List<CeedDetailModel> data )
+    private void ChangeQuantityInfo(CeedDetailModel itemChanged)
     {
-      CeedDetailList = new ObservableCollectionEx<CeedDetailModel>( data ) ;
-      CeedDetailList.ItemPropertyChanged += CeedDetailListOnItemPropertyChanged ;
+      var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.ProductName.ToUpper().Contains( "CVV" ) && x.AllowInputQuantity) ;
+      if ( null == itemCvv) return;
+          
+      if(itemChanged.Classification == "隠蔽") {
+        itemCvv.QuantityCalculate = itemChanged.Quantity ;
+      } else {
+        itemCvv.QuantityCalculate = 0 ;
+      }
     }
   }
 }

@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections.Generic ;
 using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Controls ;
@@ -27,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CbSymbolCoordinate.ItemsSource = viewModel.SymbolCoordinates ;
       CbSymbolColor.ItemsSource = viewModel.SymbolColors ;
 
-      PathStar.Data = Geometry.Parse( CreateStarDataNotFill( viewModel.SymbolInformation.Height ) ) ;
+      PathStar.Data = Geometry.Parse( CreateStarData( viewModel.SymbolInformation.Height ) ) ;
       LabelDescription.FontSize = FontSizeDefault + viewModel.SymbolInformation.CharacterHeight ;
     }
 
@@ -76,7 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var textBox = (TextBox) sender ;
       double.TryParse( textBox.Text, out var height ) ;
 
-      PathStar.Data = Geometry.Parse( CreateStarDataNotFill( height ) ) ;
+      PathStar.Data = Geometry.Parse( CreateStarData( height ) ) ;
     }
 
     private void OnSymbolHeightInput( object sender, TextCompositionEventArgs e )
@@ -205,69 +204,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       sinAngle = Math.Sin( angle ) ;
       cosAngle = Math.Cos( angle ) ;
     }
-    
-    public static List<T> FindChildrenByType<T>(DependencyObject depObj) where T : DependencyObject
-    {
-      List<T> children = new List<T>();
-      for (var i = 0; i <= VisualTreeHelper.GetChildrenCount(depObj) - 1; i++)
-      {
-        DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
-        if (child is T)
-        {
-          children.Add((T)child);
-        }
-        children.AddRange(FindChildrenByType<T>(child));
-      }
-      return children;
-    }
-      
-    private void DataGridCell_Selected( object sender, RoutedEventArgs e )
-    {
-      if ( e.OriginalSource.GetType() != typeof( DataGridCell ) ) return ;
-      // Starts the Edit on the row;
-      DataGrid grd = (DataGrid)sender;
-      grd.BeginEdit(e);
-    }
-
-    private void DataGridCell_PreviewMouseLeftButtonDown( object sender, MouseButtonEventArgs e )
-    {
-      // var cell = sender as DataGridCell;
-      // if ( cell == null || cell.IsEditing || cell.IsReadOnly ) return ;
-      // if (!cell.IsFocused)
-      // {
-      //   cell.Focus();
-      // }
-      // var dataGrid = FindVisualParent<DataGrid>(cell);
-      // if ( dataGrid == null ) return ;
-      // if (dataGrid.SelectionUnit != DataGridSelectionUnit.FullRow)
-      // {
-      //   if (!cell.IsSelected)
-      //     cell.IsSelected = true;
-      // }
-      // else
-      // {
-      //   var row = FindVisualParent<DataGridRow>(cell);
-      //   if (row is { IsSelected: false })
-      //   {
-      //     row.IsSelected = true;
-      //   }
-      // }
-    }
-    
-    private static T? FindVisualParent<T>(UIElement element) where T : UIElement
-    {
-      var parent = element;
-      while (parent != null)
-      {
-        var correctlyTyped = parent as T;
-        if (correctlyTyped != null)
-        {
-          return correctlyTyped;
-        }
-        parent = VisualTreeHelper.GetParent(parent) as UIElement;
-      }
-      return null;
-    }
   }
 
   public abstract class DesignSymbolInformationViewModel : SymbolInformationViewModel
@@ -286,7 +222,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         control.Margin = new Thickness(5, 0, 0, 0); 
       
       return fe;
-    } 
-      
+    }
   }
 }

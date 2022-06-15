@@ -53,7 +53,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       {
         _constructionClassification = value ;
         OnPropertyChanged( nameof( ConstructionClassification ) ) ;
-  
+
+        if ( ! string.IsNullOrEmpty( Classification ) && value is not ("天井ふところ" or "ケーブルラック配線" or "二重床") )
+          Classification = string.Empty ;
+        
         AllowChangeClassification = AllowInputQuantity && !ProductName.ToUpper().Contains( "CVV" ) & value is "天井ふところ" or "ケーブルラック配線" or "二重床" ;
       }
     }
