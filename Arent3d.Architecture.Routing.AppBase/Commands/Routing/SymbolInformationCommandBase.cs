@@ -1,17 +1,16 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
-using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -75,16 +74,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         if ( selectedItemIsSymbolInformation == false ) {
+          using Transaction transaction = new( uiDocument.Document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+          transaction.Start() ; 
           try {
-            using Transaction t = new( uiDocument.Document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
-            t.Start() ;
             xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
             symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
             model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString(), Floor = level.Name } ;
             symbolInformationList.Add( model ) ;
-            t.Commit() ;
+            transaction.Commit() ;
           }
-          catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+          catch ( OperationCanceledException ) {
+            transaction.RollBack() ;
             return Result.Cancelled ;
           }
         }
@@ -95,13 +95,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
  
         if ( dialog.ShowDialog() == true && model != null ) {
           
-          using Transaction t = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
-          t.Start() ;
+          using Transaction transaction = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+          transaction.Start() ;
           //Create group symbol information 
           if ( oldParentGroup != null ) {
-            oldParentGroup.UngroupMembers() ;
-            // if ( textNote != null )
-            //   document.Delete( textNote.Id ) ;
+            oldParentGroup.UngroupMembers() ; 
           }
           
           //*****Save symbol setting*********** 
@@ -134,13 +132,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           ogs.SetProjectionLineWeight( 5 ) ;
           document.ActiveView.SetElementOverrides( symbolInformationInstance!.Id, ogs ) ;
           
-          t.Commit() ;
+          transaction.Commit() ;
         }
         else if ( selectedItemIsSymbolInformation == false ) {
-          using Transaction t = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
-          t.Start() ;
+          using Transaction transaction = new( document, "Electrical.App.Commands.Routing.SymbolInformationCommand" ) ;
+          transaction.Start() ;
           document.Delete( symbolInformationInstance?.Id ) ;
-          t.Commit() ;
+          transaction.Commit() ;
         }
 
         

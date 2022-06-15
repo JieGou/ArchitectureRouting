@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.ProductName, customTypeValue.ProductName ) ;
       serializerObject.AddNonNull( SerializeField.Standard, customTypeValue.Standard ) ;
       serializerObject.AddNonNull( SerializeField.Classification, customTypeValue.Classification ) ;
-      serializerObject.Add( SerializeField.Quantity, customTypeValue.Quantity ) ;
+      serializerObject.AddNonNull( SerializeField.Quantity, customTypeValue.Quantity ) ;
       serializerObject.AddNonNull( SerializeField.Unit, customTypeValue.Unit ) ;
       serializerObject.AddNonNull( SerializeField.ParentId, customTypeValue.ParentId ) ;
       serializerObject.AddNonNull( SerializeField.Trajectory, customTypeValue.Trajectory ) ;
