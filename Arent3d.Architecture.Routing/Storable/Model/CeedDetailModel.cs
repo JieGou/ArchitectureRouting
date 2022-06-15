@@ -19,6 +19,16 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       {
         _classification = value ;
         OnPropertyChanged( nameof( Classification ) ) ;
+
+        if ( value is "露出" && IsConduit ) {
+          Quantity = Dash ;
+          AllowInputQuantity = false ;
+        }
+
+        if ( value is ( "隠蔽" ) && IsConduit ) {
+          AllowInputQuantity = true ;
+          QuantityCalculate = 0 ;
+        }
       }
     }
 
@@ -61,13 +71,18 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         if ( ! string.IsNullOrEmpty( Classification ) && value is not ("天井ふところ" or "ケーブルラック配線" or "二重床" or "露出") )
           Classification = string.Empty ;
 
-        if ( value is "露出" && IsConduit )
+        if ( value is "露出" && IsConduit ) {
           Classification = "露出" ;
+          Quantity = Dash ;
+          AllowInputQuantity = false ;
+        }
 
-        if ( value is ("地中埋設" or "床隠蔽" or "冷房配管共巻配線") && IsConduit )
+        if ( value is ("地中埋設" or "床隠蔽" or "冷房配管共巻配線") && IsConduit ) {
           Classification = "隠蔽" ;
+          AllowInputQuantity = true ;
+        }
 
-        AllowChangeClassification = AllowInputQuantity && IsConduit & value is "天井ふところ" or "ケーブルラック配線" or "二重床" ;
+        AllowChangeClassification = IsConduit & value is "天井ふところ" or "ケーブルラック配線" or "二重床" ;
       }
     }
 
@@ -115,7 +130,17 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public string Description { get ; set ; }
 
-    public bool AllowInputQuantity { get ; set ; }
+    private bool _allowInputQuantity = false ;
+
+    public bool AllowInputQuantity
+    {
+      get => _allowInputQuantity ;
+      set
+      {
+        _allowInputQuantity = value ;
+        OnPropertyChanged( nameof( AllowInputQuantity ) ) ;
+      }
+    }
 
     private bool _allowChangeClassification = false ;
 

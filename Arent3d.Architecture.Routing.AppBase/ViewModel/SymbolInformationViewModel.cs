@@ -376,7 +376,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ChangeQuantityInfo( CeedDetailModel itemChanged )
     {
-      var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.ProductName.ToUpper().Contains( "CVV" ) && x.AllowInputQuantity ) ;
+      var itemCvv = itemChanged.Classification == "隠蔽" ? CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && ! x.IsConduit && x.AllowInputQuantity ) : CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.IsConduit ) ;
       if ( null == itemCvv ) return ;
 
       if ( itemChanged.Classification == "隠蔽" ) {
@@ -385,6 +385,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       else {
         itemCvv.QuantityCalculate = 0 ;
+      }
+
+      if ( itemCvv.Classification == "露出" ) {
+        var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
+        itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
       }
     }
   }
