@@ -198,15 +198,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 if ( productType == ProductType.Conduit && constructionClassifications != null && ! string.IsNullOrEmpty( constructionClassifications[index] ) ) {
                   construction = constructionClassifications[ index ] ;
                   if ( plumbingInfos != null && ! string.IsNullOrEmpty( plumbingInfos[ index ] ) ) {
-                    var plumbingInfo = plumbingInfos[ index ].Split( ':' ) ;
-                    var plumbingName = plumbingInfo.First() ;
-                    var plumbingType = plumbingInfo.ElementAt( 1 ) ;
-                    var plumbingSize = plumbingInfo.ElementAt( 2 ) ;
-                    var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => plumbingName.Contains( h.Hinmei ) && plumbingType.Contains( h.Type ) && plumbingSize == h.Size1 ) 
-                                           ?? _hiroiMasterModels.FirstOrDefault( h => plumbingType.Contains( h.Type ) && plumbingSize == h.Size1 ) ;
-                    if ( hiroiMasterModel != null ) {
-                      materialCodes.Add( hiroiMasterModel.Buzaicd, hiroiMasterModel.Kikaku ) ;
-                    }
+                    materialCodes = GetMaterialCodes( plumbingInfos, index ) ;
                   }
                 }
                 else {
@@ -228,6 +220,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           specification2 = ceedCodeOfToConnector ?? string.Empty ;
           PickUpModelBaseOnMaterialCode( dictMaterialCode!, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
             classification, pickUpNumber, direction ) ;
+        }
+        
+        if ( productType == ProductType.Conduit && constructionClassifications != null && ! string.IsNullOrEmpty( constructionClassifications[index] ) && ceedCodeModel.Count == 1 ) {
+          construction = constructionClassifications[ index ] ;
+          if ( plumbingInfos != null && ! string.IsNullOrEmpty( plumbingInfos[ index ] ) ) {
+            var materialCodes = GetMaterialCodes( plumbingInfos, index ) ;
+            if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
+              specification2 = ceedCodeModel.First() ?? string.Empty ;
+              PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
+                classification, pickUpNumber, direction ) ;
+            }
+          }
         }
 
         if ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) {
@@ -292,6 +296,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode6 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode6 + "-6", hiroiSetMasterNormalModel.Name6 ) ;
       if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode7 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode7 + "-7", hiroiSetMasterNormalModel.Name7 ) ;
       if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode8 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode8 + "-8", hiroiSetMasterNormalModel.Name8 ) ;
+      return materialCodes ;
+    }
+    
+    private Dictionary<string, string> GetMaterialCodes( List<string> plumbingInfos, int index )
+    {
+      var materialCodes = new Dictionary<string, string>() ;
+      var plumbingInfo = plumbingInfos[ index ].Split( ':' ) ;
+      var plumbingName = plumbingInfo.First() ;
+      var plumbingType = plumbingInfo.ElementAt( 1 ) ;
+      var plumbingSize = plumbingInfo.ElementAt( 2 ) ;
+      var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => plumbingName.Contains( h.Hinmei ) && plumbingType == h.Type && plumbingSize == h.Size1 ) 
+                             ?? _hiroiMasterModels.FirstOrDefault( h => plumbingType.Contains( h.Type ) && plumbingSize == h.Size1 ) ;
+      if ( hiroiMasterModel != null ) {
+        materialCodes.Add( hiroiMasterModel.Buzaicd, hiroiMasterModel.Kikaku ) ;
+      }
       return materialCodes ;
     }
 
@@ -412,7 +431,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
-        var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.SignalDestination == ceedCodeOfToConnector ) ;
+        var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.SignalDestination == ceedCodeOfToConnector || x.AutoControlPanel == ceedCodeOfToConnector ) ;
         if ( registrationOfBoardDataModel == null )
           return false ;
 
