@@ -5,6 +5,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class CeedDetailModel : INotifyPropertyChanged
   {
+    public const string Dash = "-" ;
     public string ProductCode { get ; set ; }
     public string ProductName { get ; set ; }
     public string Standard { get ; set ; }
@@ -24,9 +25,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string Size1 { get ; set ; }
     public string Size2 { get ; set ; }
 
-    private double _quantity = 0 ;
+    private string _quantity = Dash ;
 
-    public double Quantity
+    public string Quantity
     {
       get => _quantity ;
       set
@@ -34,7 +35,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         _quantity = value ;
         OnPropertyChanged( nameof( Quantity ) ) ;
 
-        Total = ( value + QuantityCalculate ) * QuantitySet ;
+        var doubleValue = value == Dash ? "0" : value ;
+        Total = ( double.Parse( doubleValue ) + QuantityCalculate ) * QuantitySet ;
       }
     }
 
@@ -62,7 +64,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         if ( value is "露出" && IsConduit )
           Classification = "露出" ;
 
-        if ( value is ( "地中埋設" or "床隠蔽" or "冷房配管共巻配線" ) && IsConduit )
+        if ( value is ("地中埋設" or "床隠蔽" or "冷房配管共巻配線") && IsConduit )
           Classification = "隠蔽" ;
 
         AllowChangeClassification = AllowInputQuantity && IsConduit & value is "天井ふところ" or "ケーブルラック配線" or "二重床" ;
@@ -79,7 +81,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         _quantityCalculate = value ;
         OnPropertyChanged( nameof( QuantityCalculate ) ) ;
 
-        Total = ( Quantity + QuantityCalculate ) * QuantitySet ;
+        var doubleValue = Quantity == Dash ? "0" : Quantity ;
+        Total = ( double.Parse( doubleValue ) + QuantityCalculate ) * QuantitySet ;
       }
     }
 
@@ -93,7 +96,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         _quantitySet = value ;
         OnPropertyChanged( nameof( QuantitySet ) ) ;
 
-        Total = ( Quantity + QuantityCalculate ) * value ;
+        var doubleValue = Quantity == Dash ? "0" : Quantity ;
+        Total = ( double.Parse( doubleValue ) + QuantityCalculate ) * value ;
       }
     }
 
@@ -134,7 +138,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       ProductName = productName ?? string.Empty ;
       Standard = standard ?? string.Empty ;
       Classification = classification ?? string.Empty ;
-      Quantity = quantity ?? 0 ;
+      Quantity = quantity == null ? Dash : quantity.ToString() ;
       Unit = unit ?? string.Empty ;
       ParentId = parentId ?? string.Empty ;
       Trajectory = trajectory ?? string.Empty ;
@@ -161,7 +165,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
     }
   }
-  
+
   public enum ConstructionClassificationType
   {
     ケーブルラック配線,

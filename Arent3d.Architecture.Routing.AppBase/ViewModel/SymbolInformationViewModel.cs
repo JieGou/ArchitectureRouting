@@ -212,8 +212,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newCeedDetail = new CeedDetailModel( hiroiMaster.Buzaicd, name, hiroiMaster.Kikaku, string.Empty, QuantityDefault, UnitDefault, SymbolInformation.Id, TrajectoryDefault, hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1, ceedModel?.ModelNumber, ceedCode,
         ConstructionClassificationDefault, allowInputQuantity ? 0 : 1, 1, 1, string.Empty, allowInputQuantity, isConduit ) ;
       if ( ! newCeedDetail.AllowInputQuantity )
-        newCeedDetail.Quantity = 0 ;
-      newCeedDetail.Total = ( newCeedDetail.Quantity + newCeedDetail.QuantityCalculate ) * newCeedDetail.QuantitySet ;
+        newCeedDetail.Quantity = CeedDetailModel.Dash ;
+      var doubleValue = newCeedDetail.Quantity == CeedDetailModel.Dash ? "0" : newCeedDetail.Quantity ;
+      newCeedDetail.Total = ( double.Parse( doubleValue ) + newCeedDetail.QuantityCalculate ) * newCeedDetail.QuantitySet ;
       CeedDetailList.Add( newCeedDetail ) ;
     }
 
@@ -379,7 +380,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( null == itemCvv ) return ;
 
       if ( itemChanged.Classification == "隠蔽" ) {
-        itemCvv.QuantityCalculate = itemChanged.Quantity ;
+        var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
+        itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
       }
       else {
         itemCvv.QuantityCalculate = 0 ;
