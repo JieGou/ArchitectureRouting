@@ -199,10 +199,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private void SelectionChangedConcealmentOrExposure()
     {
       foreach ( var changePlumbingInformationModel in ChangePlumbingInformationModels ) {
-        if ( changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.天井コロガシ.GetFieldName() 
-             || changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.ケーブルラック配線.GetFieldName() 
-             || changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.フリーアクセス.GetFieldName() )
-        changePlumbingInformationModel.IsExposure = IsExposure ;
+        if ( changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.地中埋設.GetFieldName()
+             || changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.打ち込み.GetFieldName()
+             || changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.冷媒管共巻配線.GetFieldName() )
+        {
+          changePlumbingInformationModel.IsExposure = false ; // 施工区分が地中埋設、打ち込み、冷媒管共巻配線となっている場合、区分が隠蔽となる
+        }
+        else if ( changePlumbingInformationModel.ConstructionClassification == CreateDetailTableCommandBase.ConstructionClassificationType.露出.GetFieldName() ) {
+          changePlumbingInformationModel.IsExposure = true ; // 施工区分が露出となっている場合、区分が露出となる
+        }
+        else {
+          changePlumbingInformationModel.IsExposure = IsExposure ; // 施工区分がケーブルラック配線、天井コロガシ、二重床となっている場合、区分は隠蔽/露出を選択できる
+        }
       }
     }
 
