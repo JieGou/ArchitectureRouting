@@ -371,6 +371,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
           break;
         }
+        case "Quantity" :
+        {
+          var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.ProductName.ToUpper().Contains( "CVV" ) && x.AllowInputQuantity) ;
+          if ( null != itemCvv && itemChanged.Classification == "隠蔽") {
+            itemCvv.QuantityCalculate = itemChanged.Quantity ;
+          }
+          break;
+        }
       }
     }
 

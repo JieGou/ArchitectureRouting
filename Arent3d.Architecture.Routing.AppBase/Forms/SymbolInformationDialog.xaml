@@ -13,17 +13,17 @@
         <converter:StringColorConverter x:Key="StringColorConverter" />
         <CollectionViewSource x:Key="ClassificationList" Source="{Binding ClassificationTypeList}" />
         <CollectionViewSource x:Key="ConstructionClassificationList" Source="{Binding ConstructionClassificationTypeList}" />
-        <Style x:Key="BodyContentDataGridCentering" TargetType="{x:Type DataGridCell}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type DataGridCell}">
-                        <Grid Background="{TemplateBinding Background}">
-                            <ContentPresenter VerticalAlignment="Center" />
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <!-- <Style x:Key="BodyContentDataGridCentering" TargetType="{x:Type DataGridCell}"> -->
+        <!--     <Setter Property="Template"> -->
+        <!--         <Setter.Value> -->
+        <!--             <ControlTemplate TargetType="{x:Type DataGridCell}"> -->
+        <!--                 <Grid Background="{TemplateBinding Background}"> -->
+        <!--                     <ContentPresenter VerticalAlignment="Center" /> -->
+        <!--                 </Grid> -->
+        <!--             </ControlTemplate> -->
+        <!--         </Setter.Value> -->
+        <!--     </Setter> -->
+        <!-- </Style> -->
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -46,8 +46,7 @@
         </StackPanel>
         <!--Data Grid Result-->
         <DataGrid Grid.Row="1" Grid.Column="0" RowHeight="25" Margin="10 10" ItemsSource="{Binding CeedDetailList}"
-                  SelectionUnit="FullRow" SelectionMode="Single" SelectedItem="{Binding CeedDetailSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserAddRows="False" AutoGenerateColumns="False"
-                  CellStyle="{StaticResource BodyContentDataGridCentering}">
+                  SelectionUnit="FullRow" SelectionMode="Single" SelectedItem="{Binding CeedDetailSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserAddRows="False" AutoGenerateColumns="False">
             <DataGrid.Resources>
                 <Style TargetType="DataGridRow">
                     <Style.Resources>
@@ -56,10 +55,14 @@
                 </Style>
                 <Style TargetType="DataGridCell">
                     <Style.Triggers>
+                        <!-- <Trigger Property="IsMouseOver" Value="True"> -->
+                        <!--     <Setter Property="IsEditing" Value="True" /> -->
+                        <!-- </Trigger>  -->
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="BorderBrush" Value="#0078D7" />
                         </Trigger>
                     </Style.Triggers>
+                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="DataGridCell_PreviewMouseLeftButtonDown" />
                 </Style>
                 <Style TargetType="DataGridColumnHeader">
                     <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -69,10 +72,20 @@
                 <DataGridTextColumn Header="セットコード" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding CeedCode, ValidatesOnExceptions=True}" />
                 <local:CustomComboBoxColumn Header="施工区分" Width="150"
                                             ItemsSource="{Binding Source={StaticResource ConstructionClassificationList}}"
-                                            SelectedItemBinding="{Binding ConstructionClassification}" />
+                                            SelectedItemBinding="{Binding ConstructionClassification}">
+                    <local:CustomComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="IsEditing" Value="True" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </local:CustomComboBoxColumn.CellStyle>
+                </local:CustomComboBoxColumn>
                 <local:CustomComboBoxColumn Header="施工区分" Width="100"
                                             ItemsSource="{Binding Source={StaticResource ClassificationList}}"
-                                            SelectedItemBinding="{Binding Classification}" >
+                                            SelectedItemBinding="{Binding Classification}">
                     <local:CustomComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="IsEnabled" Value="{Binding Path=AllowChangeClassification}" />
@@ -84,6 +97,11 @@
                 <DataGridTextColumn Header="数量（手入力）" Width="100" CanUserSort="False" Binding="{Binding Quantity, ValidatesOnExceptions=True}">
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="IsEditing" Value="True" />
+                                </Trigger>
+                            </Style.Triggers>
                             <Setter Property="IsEnabled" Value="{Binding Path=AllowInputQuantity}" />
                         </Style>
                     </DataGridTextColumn.CellStyle>
