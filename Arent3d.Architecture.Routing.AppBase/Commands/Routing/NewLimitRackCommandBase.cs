@@ -7,6 +7,9 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Utility ;
 using Autodesk.Revit.ApplicationServices ;
@@ -87,6 +90,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private IEnumerable<FamilyInstance> ConnectedRacks( Document document, List<FamilyInstance> cableTrays, List<FamilyInstance> fittings )
     {
+      var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable();
+      var newLimitRackModel = new LimitRackModel() ;
+      newLimitRackModel.LitmitRackFittingIds.AddRange( fittings.Select( x=>x.UniqueId ) );
+      
       var torance = 10d.MillimetersToRevitUnits() ;
       cableTrays = cableTrays.Where( MEPModelOnPlan ).ToList() ;
       fittings = fittings.Where( MEPModelOnPlan ).ToList() ;
@@ -121,7 +128,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var inforCableTrays = ExtendCurves( document, infoCableTrays, fittings ) ;
         var curveLoops = GroupCurves( inforCableTrays ).Select( x => CurveLoop.CreateViaThicken( x.CurveLoop, WidthCableTrayDefault2D, XYZ.BasisZ ) ) ;
         var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        CreateDetailLines( document, curveLoops, lineStyle ) ;
+        CreateDetailLines( document, curveLoops, lineStyle,newLimitRackModel ) ;
       }
       else {
         var curves = new List<Curve>() ;
@@ -132,9 +139,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var curveLoops = mergeCurves.Select( x => CurveLoop.Create( x.ToList() ) ).Select( x => CurveLoop.CreateViaThicken( x, WidthCableTrayDefault2D, XYZ.BasisZ ) ) ;
         var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        CreateDetailLines( document, curveLoops, lineStyle ) ;
+        CreateDetailLines( document, curveLoops, lineStyle ,newLimitRackModel) ;
       }
-
+      newLimitRackModel.LimitRackIds.AddRange(newCableTrays.Select( x=>x.UniqueId ) );
+      limitRackStorable.LimitRackModelData.Add( newLimitRackModel );
+      limitRackStorable.Save();
       return newCableTrays ;
     }
 
@@ -232,12 +241,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return false ;
     }
 
-    private static void CreateDetailLines( Document document, IEnumerable<CurveLoop> curveLoops, Element lineStyle )
+    private static void CreateDetailLines( Document document, IEnumerable<CurveLoop> curveLoops, Element lineStyle ,LimitRackModel limitRackModel)
     {
       foreach ( var curveLoop in curveLoops ) {
         foreach ( var curve in curveLoop ) {
           var detaiLine = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
           detaiLine.LineStyle = lineStyle ;
+          limitRackModel.LimitRackDetailIds.Add( detaiLine.UniqueId );
         }
       }
 

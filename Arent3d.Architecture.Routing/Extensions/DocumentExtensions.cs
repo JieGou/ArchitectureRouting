@@ -1,8 +1,9 @@
-﻿using Arent3d.Architecture.Routing.Storable ;
+﻿using System ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.StorableConverter ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.Exceptions ;
+using InvalidOperationException = Autodesk.Revit.Exceptions.InvalidOperationException ;
 
 namespace Arent3d.Architecture.Routing.Extensions
 {
@@ -139,6 +140,17 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new RackNotationStorable( document ) ;
+      }
+    }
+
+    public static LimitRackStorable GetLimitRackStorable( this Document document )
+    {
+      try {
+        return LimitRackStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( LimitRackStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new LimitRackStorable( document ) ;
       }
     }
 
