@@ -8,7 +8,7 @@
         x:Name="WdChangePlumbingInformation"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Title="ChangePlumbingInformationDialog" Height="350" Width="390">
+        Title="立配管情報追加" Height="350" Width="390">
     <Grid>
         <StackPanel Margin="10" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" >
             <StackPanel Orientation="Horizontal" Margin="10, 5">
@@ -66,7 +66,7 @@
                       Margin="15, 5" Height="130"
                       SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="コネクター" Binding="{Binding Connector}" CanUserSort="False" IsReadOnly="True" Width="200" />
+                    <DataGridTextColumn Header="シンボル" Binding="{Binding Connector}" CanUserSort="False" IsReadOnly="True" Width="200" />
                     <DataGridTextColumn Header="工事項目" Binding="{Binding ConstructionItems}" CanUserSort="False" IsReadOnly="True" Width="100" />
                 </DataGrid.Columns>
             </DataGrid>
