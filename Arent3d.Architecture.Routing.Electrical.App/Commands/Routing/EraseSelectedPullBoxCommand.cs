@@ -16,5 +16,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
+    
+    protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => curveType.Category.Name ;
   }
 }

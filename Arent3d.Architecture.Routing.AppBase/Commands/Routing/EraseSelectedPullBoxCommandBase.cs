@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using System.Text.RegularExpressions ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -9,142 +11,136 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Autodesk.Revit.DB.Electrical ;
 
-
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class EraseSelectedPullBoxCommandBase : RoutingCommandBase<IReadOnlyCollection<Route>>
+  public abstract class EraseSelectedPullBoxCommandBase : RoutingCommandBase<EraseSelectedPullBoxCommandBase.PickState>
   {
+    public record PickState(IEnumerable<IEndPoint> FromEndPoints,IEnumerable<IEndPoint> ToEndPoints, List<Route> RoutesRelatedPullBox, Element PullBox) ;
     protected abstract AddInType GetAddInType() ;
     
-    protected override OperationResult<IReadOnlyCollection<Route>> OperateUI( ExternalCommandData commandData, ElementSet elements )
+    protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
+    
+    protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      return new OperationResult<IReadOnlyCollection<Route>>( SelectRoutes( commandData.Application.ActiveUIDocument ) ) ;
-    }
-
-    private IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
-    {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      //var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
-      // var routingExecutor = GetRoutingExecutor() ;
-      //
-      // var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element) ;
-      //
-      // var element = document.GetElement( pickedObject?.ElementId ) ;
-      //
-      // var connId = element.GetPropertyInt( RoutingFamilyLinkedParameter.RouteConnectorRelationId ) ;
+      PullPoxPickFilter detailSymbolFilter = new() ;
+      var pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, detailSymbolFilter ) ;
+      var elementPullBox = document.GetElement( pickedPullBox?.ElementId ) ;
 
-      //var pullbox = eleConn.GetConnectors().FirstOrDefault( conn => conn.Id == connId ) ;
-      // var routeNames = list.Where( r => ! string.IsNullOrEmpty( r.Name ) ).Select( r => r.Name ).ToHashSet() ;
-      // if ( routeNames.Any() ) ChangeWireTypeCommand.RemoveDetailLinesByRoutes( uiDocument.Document, routeNames ) ;
-      // if ( 0 < list.Count ) return list ;
-
-      // var pullbox = ConnectorPicker.GetPullBox(uiDocument,"Pick pull box", GetAddInType()) ;
-      // var all = pullbox.GetAllRelatedElements() ;
-      // var routes = pullbox.PickedElement.GetRouteName() ;
+      //Get information to reroute
+      var routes = document.CollectRoutes( GetAddInType()) ;
+      var routesRelatedPullBox = GetRouteRelatedPullBox( routes, elementPullBox ).ToList() ;
+      var routeSegments = GetAllRouteSegment(routesRelatedPullBox).ToList() ; ;
+      var (fromEndPoints, toEndPoints) = GetEndPoints( routeSegments ) ;
+      var newFromEndPoints = fromEndPoints.Where( x => ( x as ConnectorEndPoint )?.EquipmentUniqueId != elementPullBox.UniqueId ) ;
+      var newToEndPoints = toEndPoints.Where( x => ( x as ConnectorEndPoint )?.EquipmentUniqueId != elementPullBox.UniqueId ) ;
       
-       PullPoxPickFilter detailSymbolFilter = new() ;
-
-       var pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, detailSymbolFilter ) ;
-       var element = document.GetElement( pickedPullBox?.ElementId ) ;
-      
-     
-      // var allConduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit )).OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
-      //
-      // var route2 = element.GetRouteName() ;
-      //
-      //var routes = document.GetAllElements<Element>().OfCategory( ).OfNotElementType().Where( filter ).OfType<TElement>() ;
-      //var routes =  document.GetAllElements<Route>().OfCategory( BuiltInCategory.OST_RouteCurve ) ;
-      
-      var allConduits = document.GetAllElements<Conduit>().OfCategory( BuiltInCategory.OST_Conduit ) ;
-      
-      //var routeNames = allConduits.Select( conduit =>  conduit.GetRouteName() ).Distinct();
-      //  // .GroupBy( conduit => conduit.GetRouteName() ).Select( conduit => conduit.Key ).ToList() ;
-        var hashSet = document.CollectRoutes( GetAddInType() ).Select( x=>x.Name ) ;
-      //
-       var test = GetRoutesByName( hashSet, document ) ;
-
-      // var test1 = document.CollectRoutes( GetAddInType() ).SelectMany( r => r.GetAllConnectors() ) ;
-      
-      
-
-      //  var list = document.GetAllElementsOfRouteName<Element>(routeNames[0]!).Distinct() ;
-      //
-      // var from = allConduits[ 1 ].GetRoutingConnectors( true ) ;
-      // var to = allConduits[ 1 ].GetRoutingConnectors( false ) ;
-
-      // foreach ( var conduit in allConduits ) {
-      //   GetFromConnectorIdAndToConnectorIdOfCable( conduit, document,element  ) ;
-      // }
-
-      List<Element> listConduit = new List<Element>() ;
-
-      foreach ( var conduit in allConduits ) {
-        var a = ( GetConduitRelatedPullBox( conduit, document, element ) ) ;
-         listConduit.AddRange( a );
-      }
-
-      var allConduitsRelatedPullBox = listConduit ;
-      
-    
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to delete.", GetAddInType() ) ;
-    
-      
-      var pickRouteNames = new HashSet<string>() { pickInfo.Route.Name } ;
-      if ( pickRouteNames.Any() ) ChangeWireTypeCommand.RemoveDetailLinesByRoutes( uiDocument.Document, pickRouteNames ) ;
-      return new[] { pickInfo.Route } ;
+      return new OperationResult<PickState>( new PickState(newFromEndPoints, newToEndPoints, routesRelatedPullBox,  elementPullBox) ) ;
     }
     
-    private IEnumerable<Element> GetConduitRelatedPullBox( Element conduit,  Document document, Element pickedPullBox )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var fromEndPoint = conduit.GetNearestEndPoints( true ) ;
-      var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
-      if ( fromEndPointKey != null ) {
-        var fromElementUniqueId = fromEndPointKey.GetElementUniqueId() ;
-        if ( ! string.IsNullOrEmpty( fromElementUniqueId ) && pickedPullBox.UniqueId == fromElementUniqueId) {
-          yield return conduit ;
-        }
-      }
+      var (newFromEndPoints, newToEndPoints, routesRelatedPullBox, elementPullBox) = pickState ;
+      var diameter = routesRelatedPullBox.First().UniqueDiameter ;
+      var classificationInfo = routesRelatedPullBox.First().GetSystemClassificationInfo() ;
+      var systemType = routesRelatedPullBox.First().GetMEPSystemType() ;
+      var curveType = routesRelatedPullBox.First().UniqueCurveType ;
+      var radius = diameter * 0.5 ;
+      var isRoutingOnPipeSpace = routesRelatedPullBox.First().UniqueIsRoutingOnPipeSpace ?? false ;
+      var avoidType = routesRelatedPullBox.First().UniqueAvoidType ?? AvoidType.Whichever ;
+      var shaftElementUniqueId = routesRelatedPullBox.First().UniqueShaftElementUniqueId ;
+      var fromFixedHeight = routesRelatedPullBox.First().UniqueFromFixedHeight ;
+      var toFixedHeight = routesRelatedPullBox.First().UniqueToFixedHeight ;
+
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var nameBase = GetNameBase( systemType, curveType! ) ;
+      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
+      var name = nameBase + "_" + nextIndex ;
+      routes.FindOrCreate( name ) ;
       
-      var toEndPoint = conduit.GetNearestEndPoints( false ) ;
-      var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
-      if ( toEndPointKey != null ) {
-        var toElementUniqueId = toEndPointKey.GetElementUniqueId() ;
-        if ( ! string.IsNullOrEmpty( toElementUniqueId ) &&  pickedPullBox.UniqueId == toElementUniqueId ) {
-          yield return conduit ;
+      var result = new List<(string RouteName, RouteSegment Segment)>() ;
+
+      result.AddRange( newFromEndPoints.Zip( newToEndPoints, ( f, t ) =>
+      {
+        RenameRoutePassPoint( document, name, f, t ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+        return ( name , segment ) ;
+      } ) ) ;
+      
+      result.AddRange( GetSelectedRouteSegments( document, routesRelatedPullBox ) );
+      
+      //Delete pull box
+      document.Delete( elementPullBox.Id ) ;
+      
+      return result ;
+    }
+    
+    private void RenameRoutePassPoint( Document document, string name, IEndPoint fromEndPoint, IEndPoint toEndPoint) 
+    {
+      var fromEndPointKey = fromEndPoint.Key ;
+      var toEndPointKey   = toEndPoint.Key ;
+      var fromPassPoint = document.GetElementById<Instance>( fromEndPointKey.GetElementUniqueId() ) ;
+      var toPassPoint = document.GetElementById<Instance>( toEndPointKey.GetElementUniqueId() ) ;
+      if ( fromPassPoint?.Name == RoutingFamilyType.PassPoint.GetFamilyName() ) {
+        fromPassPoint?.SetProperty( RoutingParameter.RouteName, name ) ; 
+      }
+      if ( toPassPoint?.Name == RoutingFamilyType.PassPoint.GetFamilyName() ) {
+        toPassPoint?.SetProperty( RoutingParameter.RouteName, name ) ;
+      }
+    }
+    
+    private IEnumerable<RouteSegment> GetAllRouteSegment( IEnumerable<Route> routesRelatedPullBox )
+    {
+      foreach ( var routeRelatedPullBox in routesRelatedPullBox ) {
+        foreach ( var routeSegment in routeRelatedPullBox.RouteSegments ) {
+          yield return routeSegment ;
+
         }
       }
     }
-
-    private IReadOnlyCollection<Route> GetRoutesByName( IEnumerable<string> routeNames, Document document )
+    
+    private int GetRouteNameIndex( RouteCache routes, string? targetName )
     {
-      var dic = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      List<Route> routes = new List<Route>() ;
-      foreach ( var routeName in routeNames ) {
-        if ( routeName != null ) {
-          if ( false == dic.TryGetValue( routeName, out var route )) continue ;
-          var subRoute = route.RouteSegments ;
-          
-        }
-      }
+      string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
+      var regex = new Regex( pattern ) ;
 
-      return routes ;
+      var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
+
+      return lastIndex + 1 ;
     }
-
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, IReadOnlyCollection<Route> routes )
+    
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( Document document, IEnumerable<Route> routesRelatedPullBox )
     {
-      return GetSelectedRouteSegments( document, routes ) ;
-    }
-
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( Document document, IReadOnlyCollection<Route> pickedRoutes )
-    {
-      var selectedRoutes = Route.CollectAllDescendantBranches( pickedRoutes ) ;
+      var selectedRoutes = Route.CollectAllDescendantBranches( routesRelatedPullBox ) ;
 
       var recreatedRoutes = Route.GetAllRelatedBranches( selectedRoutes ) ;
       recreatedRoutes.ExceptWith( selectedRoutes ) ;
-      RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), true ) ;
+      RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), false ) ;
 
       // Returns affected but not deleted routes to recreate them.
       return recreatedRoutes.ToSegmentsWithName().EnumerateAll() ;
+    }
+    
+    private IEnumerable<Route> GetRouteRelatedPullBox( IEnumerable<Route> routes, Element pickedPullBox )
+    {
+      foreach ( var route in routes ) {
+        var connectorsOfRoute = route.GetAllConnectors() ;
+        if ( connectorsOfRoute.Any( x => x.Owner.UniqueId == pickedPullBox.UniqueId ) ) {
+          yield return route ;
+        }
+      }
+    }
+    
+    private (IEnumerable<IEndPoint> fromEndPoints,IEnumerable<IEndPoint> toEndPoints) GetEndPoints( IEnumerable<RouteSegment> segments )
+    {
+      List<IEndPoint> fromEndPoints = new List<IEndPoint>() ;
+      List<IEndPoint> toEndPoints = new List<IEndPoint>() ;
+      foreach ( var segment in segments ) {
+         fromEndPoints.Add(segment.FromEndPoint) ;
+         toEndPoints.Add(segment.ToEndPoint) ;
+      }
+      return ( fromEndPoints, toEndPoints ) ;
     }
     
     private class PullPoxPickFilter : ISelectionFilter
