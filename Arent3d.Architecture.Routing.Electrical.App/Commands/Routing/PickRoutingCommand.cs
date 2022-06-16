@@ -1,7 +1,10 @@
 using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -41,6 +44,25 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, PickState state )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
+    }
+    
+    protected override void CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue )
+    {
+      using var progress = ShowProgressBar( "Routing...", false ) ;
+      while ( true ) {
+        var segments = PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue ) ;
+        if ( ! segments.Any() ) break ;
+        using Transaction transaction = new( document ) ;
+        transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
+        try {
+          var result = executor.Run( segments, progress ) ;
+          executeResultValue = result.Value ;
+        }
+        catch {
+          break ;
+        }
+        transaction.Commit() ;
+      }
     }
   }
 }

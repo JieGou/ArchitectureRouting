@@ -49,6 +49,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // execute after route command
       AfterRouteGenerated( document, executionResult.Value, result ) ;
 
+      CreatePullBoxAfterRouteGenerated( document, executor, executionResult.Value ) ;
+
       return ExecutionResult.Succeeded ;
     }
 
@@ -174,6 +176,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, TUIResult state ) ;
 
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
+    {
+    }
+    
+    protected virtual void CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue )
     {
     }
   }
