@@ -82,10 +82,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var fallMarkInstance = symbol.Instantiate( fallMarkPoint, level, StructuralType.NonStructural ) ;
 
       var routeName = conduit.GetRouteName() ;
+      
+      var changePlumbingInformationStorable = document.GetChangePlumbingInformationStorable() ;
+
+      var existingPlumbingInfo =
+        changePlumbingInformationStorable.ChangePlumbingInformationModelData.FirstOrDefault( x =>
+          x.ConduitId == conduit.UniqueId ) ;
+      
+      
 
       var detaiTableModel = detailTableModels.FirstOrDefault( dtm => dtm.RouteName == routeName ) ;
 
-      var fallMarkNoteString = $"{detaiTableModel?.PlumbingType}{detaiTableModel?.PlumbingSize.Replace( "mm","" )}" ;
+      var fallMarkNoteString = existingPlumbingInfo !=null && !string.IsNullOrEmpty( existingPlumbingInfo.PlumbingSize) ? 
+                               $"{existingPlumbingInfo.PlumbingType}{existingPlumbingInfo.PlumbingSize.Replace( "mm","" )}":
+                               $"{detaiTableModel?.PlumbingType}{detaiTableModel?.PlumbingSize.Replace( "mm","" )}" ;
 
       if ( string.IsNullOrEmpty( fallMarkNoteString ) ) return ;
       
