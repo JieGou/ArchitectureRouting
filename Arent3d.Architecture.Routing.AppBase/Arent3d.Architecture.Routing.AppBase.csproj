@@ -103,6 +103,7 @@
     <Resource Include="resources\InsertPassPoint.png" />
     <Resource Include="resources\MEP.ico" />
     <Resource Include="resources\PickFrom-To.png" />
+    <Resource Include="resources\icon_folder_16x16.png" />
   </ItemGroup>
 
 </Project>

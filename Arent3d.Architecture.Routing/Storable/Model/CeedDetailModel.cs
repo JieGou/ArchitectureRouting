@@ -6,6 +6,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
   public class CeedDetailModel : INotifyPropertyChanged
   {
     public const string Dash = "-" ;
+    private const string DefaultQuantity = "100" ;
     public string ProductCode { get ; set ; }
     public string ProductName { get ; set ; }
     public string Standard { get ; set ; }
@@ -20,12 +21,13 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         _classification = value ;
         OnPropertyChanged( nameof( Classification ) ) ;
 
-        if ( value is "露出" && IsConduit ) {
+        if ( value is nameof( ClassificationType.露出 ) && IsConduit ) {
           Quantity = Dash ;
           AllowInputQuantity = false ;
         }
 
-        if ( value is ( "隠蔽" ) && IsConduit ) {
+        if ( value is nameof( ClassificationType.隠蔽 ) && IsConduit ) {
+          Quantity = DefaultQuantity ;
           AllowInputQuantity = true ;
           QuantityCalculate = 0 ;
         }
@@ -68,21 +70,21 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         _constructionClassification = value ;
         OnPropertyChanged( nameof( ConstructionClassification ) ) ;
 
-        if ( ! string.IsNullOrEmpty( Classification ) && value is not ("天井ふところ" or "ケーブルラック配線" or "二重床" or "露出") )
+        if ( ! string.IsNullOrEmpty( Classification ) && value is not (nameof( ConstructionClassificationType.天井ふところ ) or nameof( ConstructionClassificationType.ケーブルラック配線 ) or nameof( ConstructionClassificationType.二重床 ) or nameof( ConstructionClassificationType.露出 )) )
           Classification = string.Empty ;
 
-        if ( value is "露出" && IsConduit ) {
-          Classification = "露出" ;
+        if ( value is nameof( ClassificationType.露出 ) && IsConduit ) {
+          Classification = nameof( ClassificationType.露出 ) ;
           Quantity = Dash ;
           AllowInputQuantity = false ;
         }
 
-        if ( value is ("地中埋設" or "床隠蔽" or "冷房配管共巻配線") && IsConduit ) {
-          Classification = "隠蔽" ;
+        if ( value is nameof( ConstructionClassificationType.地中埋設 ) or nameof( ConstructionClassificationType.床隠蔽 ) or nameof( ConstructionClassificationType.冷房配管共巻配線 ) && IsConduit ) {
+          Classification = nameof( ClassificationType.隠蔽 ) ;
           AllowInputQuantity = true ;
         }
 
-        AllowChangeClassification = IsConduit & value is "天井ふところ" or "ケーブルラック配線" or "二重床" ;
+        AllowChangeClassification = IsConduit & value is nameof( ConstructionClassificationType.天井ふところ ) or nameof( ConstructionClassificationType.ケーブルラック配線 ) or nameof( ConstructionClassificationType.二重床 ) ;
       }
     }
 
@@ -189,6 +191,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     {
       PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
     }
+  }
+
+  public enum ClassificationType
+  {
+    露出,
+    隠蔽
   }
 
   public enum ConstructionClassificationType

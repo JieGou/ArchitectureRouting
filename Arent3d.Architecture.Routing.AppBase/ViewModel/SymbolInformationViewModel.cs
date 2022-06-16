@@ -7,7 +7,6 @@ using System.Reflection ;
 using System.Windows ;
 using System.Windows.Data ;
 using System.Windows.Input ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
@@ -330,7 +329,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       BuzaiCDList = HiroiMasterModels.Select( x => x.Buzaicd ).ToList() ;
       BuzaiCDListDisplay = new ObservableCollection<string>( BuzaiCDList.Take( DefaultDisplayItem ).ToList() ) ;
       ConstructionClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( ConstructionClassificationType ) ).ToList() ) ;
-      ClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( CreateDetailTableCommandBase.ClassificationType ) ).ToList() ) ;
+      ClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( ClassificationType ) ).ToList() ) ;
       _dictElectricalCategoriesEcoKey = new Dictionary<string, string>() ;
       _dictElectricalCategoriesNormalKey = new Dictionary<string, string>() ;
       _electricalCategoriesEco = LoadElectricalCategories( "Eco", ref _dictElectricalCategoriesEcoKey ) ;
@@ -366,6 +365,24 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           break ;
         }
         case "Classification" :
+        {
+          var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.ParentId == itemChanged.ParentId && x.AllowInputQuantity && ! x.IsConduit ) ;
+          if ( null == itemCvv ) return ;
+
+          if ( itemChanged.Classification == ClassificationType.露出.GetFieldName() ) {
+            var doubleValue = itemCvv.Quantity == CeedDetailModel.Dash ? "0" : itemCvv.Quantity ;
+            itemChanged.QuantityCalculate = double.Parse( doubleValue ) ;
+            itemCvv.QuantityCalculate = 0 ;
+          }
+
+          if ( itemChanged.Classification == ClassificationType.隠蔽.GetFieldName() ) {
+            var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
+            itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
+            itemChanged.QuantityCalculate = 0 ;
+          }
+
+          break ;
+        }
         case "Quantity" :
         {
           ChangeQuantityInfo( itemChanged ) ;
@@ -376,20 +393,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ChangeQuantityInfo( CeedDetailModel itemChanged )
     {
-      var itemCvv = itemChanged.Classification == "隠蔽" ? CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && ! x.IsConduit && x.AllowInputQuantity ) : CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.IsConduit ) ;
+      var itemCvv = itemChanged.Classification == ClassificationType.隠蔽.GetFieldName() ? CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && ! x.IsConduit && x.AllowInputQuantity ) : CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.IsConduit ) ;
       if ( null == itemCvv ) return ;
 
-      if ( itemChanged.Classification == "隠蔽" ) {
+      if ( itemChanged.Classification == ClassificationType.隠蔽.GetFieldName() ) {
         var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
         itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
-      }
-      else {
-        itemCvv.QuantityCalculate = 0 ;
       }
 
-      if ( itemCvv.Classification == "露出" ) {
+      if ( itemCvv.Classification == ClassificationType.露出.GetFieldName() ) {
         var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
         itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
+        doubleValue = itemCvv.Quantity == CeedDetailModel.Dash ? "0" : itemCvv.Quantity ;
+        itemChanged.QuantityCalculate = double.Parse( doubleValue ) ;
       }
     }
   }

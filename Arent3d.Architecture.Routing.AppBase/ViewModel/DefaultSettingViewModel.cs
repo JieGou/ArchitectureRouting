@@ -17,8 +17,11 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI ;
 using System ;
+using System.Data ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Autodesk.Revit.DB ;
+using MoreLinq.Extensions ;
+using DataGrid = System.Windows.Controls.DataGrid ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
@@ -105,10 +108,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<string> DeletedFloorName { get ; set ; }
 
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
-    public ICommand AddImportDwgMappingModelCommand => new RelayCommand( AddImportDwgMappingModel ) ;
-    
+
     public ICommand LoadDefaultDbCommand => new RelayCommand( LoadDefaultDb ) ;
     
+    public ICommand MoveUpCommand => new RelayCommand<DataGrid>( MoveUp ) ;
+    
+    public ICommand MoveDownCommand => new RelayCommand<DataGrid>( MoveDown ) ;
+    
+    public ICommand AddModelBelowCurrentSelectedRowCommand => new RelayCommand<DataGrid>( AddModelBelowCurrentSelectedRow ) ;
+
     public DefaultSettingViewModel( UIDocument uiDocument, DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
     {
       SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
@@ -134,6 +142,40 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       GetCsvFiles( defaultSettingStorable ) ;
     }
     
+    private void AddModelBelowCurrentSelectedRow( DataGrid dtGrid )
+    {
+      const int floorHeightDistance = 3000 ;
+      int index = dtGrid.SelectedIndex ;
+      if ( ! ImportDwgMappingModels.Any() ) return ;
+      if(index < 0) return ;
+      var importDwgMappingModels = ImportDwgMappingModels.ToList() ;
+      var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
+      
+      ImportDwgMappingModels.Insert( index + 1, new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
+    }
+
+    
+    private void MoveUp( DataGrid dtGrid )
+    {
+      var index = dtGrid.SelectedIndex ;
+      if(index == 0) return ;
+      Swap( ImportDwgMappingModels, index, index - 1 ) ;
+      dtGrid.SelectedIndex = index - 1 ;
+    }
+    
+    private void MoveDown( DataGrid dtGrid )
+    {
+      var index = dtGrid.SelectedIndex ;
+      if(index == ImportDwgMappingModels.Count() - 1) return ;
+      Swap( ImportDwgMappingModels, index, index + 1 ) ;
+      dtGrid.SelectedIndex = index + 1 ;
+    }
+    
+    private void Swap(ObservableCollection<ImportDwgMappingModel> list, int indexA, int indexB)
+    {
+      ( list[indexA], list[indexB] ) = ( list[indexB], list[indexA] ) ;
+    }
+    
     private void GetCsvFiles( DefaultSettingStorable defaultSettingStorable)
     {
       if ( defaultSettingStorable.CsvFileData.Any() ) {
@@ -153,15 +195,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _oldFileItems.Add( fileItem ) ;
         FileItems.Add( fileItem ) ;
       }
-    }
-
-    private void AddImportDwgMappingModel()
-    {
-      const int floorHeightDistance = 3000 ;
-      if ( ! ImportDwgMappingModels.Any() ) return ;
-      var importDwgMappingModels = ImportDwgMappingModels.ToList() ;
-      var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
-      ImportDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
     }
 
     public ICommand ApplyCommand
@@ -259,13 +292,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         { "10F", 44700 }
       } ;
       foreach ( var importDwgMappingModel in ImportDwgMappingModels ) {
-        var (key, value) = defaultHeights.FirstOrDefault( x => importDwgMappingModel.FloorName.Contains( x.Key ) ) ;
-        if ( key != null ) {
-          importDwgMappingModel.FloorHeight = value ;
-        }
-        else {
-          if(importDwgMappingModel.IsEnabled)
-            importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
+        if ( _oldImportDwgMappingModels.FirstOrDefault(x=>x.Id == importDwgMappingModel.Id) == null) {
+          var (key, value) = defaultHeights.FirstOrDefault( x => importDwgMappingModel.FloorName.Contains( x.Key ) ) ;
+          if ( key != null ) {
+            importDwgMappingModel.FloorHeight = value ;
+          }
+          else {
+            if(importDwgMappingModel.IsEnabled)
+              importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
+          }
         }
       }
 

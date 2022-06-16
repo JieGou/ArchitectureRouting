@@ -472,6 +472,9 @@
         <!-- File Names -->
         <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
         <string>Arent-export-layers.txt</string>
+        
+        <key>Electrical.App.Commands.Initialization.RegisterSymbolFolderPath</key>
+        <string>RegisterSymbolFolderPath.txt</string>
       
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>

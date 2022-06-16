@@ -16,8 +16,10 @@ using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using MoreLinq ;
 using Button = System.Windows.Controls.Button ;
 using CheckBox = System.Windows.Controls.CheckBox ;
 using ComboBox = System.Windows.Controls.ComboBox ;
@@ -41,7 +43,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public DataGrid DtGrid ;
 
-    public ObservableCollection<CeedModel> CeedModels { get ; }
+    public IReadOnlyCollection<CeedModel> OriginCeedModels => new ReadOnlyCollection<CeedModel>( _ceedModels );
+
+    public ObservableCollection<CeedModel> CeedModels { get ; set ; }
+
     private CeedStorable? CeedStorable { get ; set ; }
 
     public ObservableCollection<string> CeedSetCodes { get ; } = new() ;
@@ -87,6 +92,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     public bool IsShowCeedModelNumber { get ; set ; }
+
+    private bool? _isShowCondition;
+    public bool IsShowCondition
+    {
+      get => _isShowCondition ??= true ;
+      set
+      {
+        _isShowCondition = value ;
+        CeedModels.Clear();
+        if ( _isShowCondition.HasValue ) {
+          if ( _isShowCondition.Value ) {
+            CeedModels.AddRange( _ceedModels );
+          }
+          else {
+            CeedModels.AddRange( GroupCeedModel(_ceedModels) );
+          }
+        }
+        OnPropertyChanged();
+      }
+    }
 
     public bool IsShowOnlyUsingCode { get ; set ; }
 
@@ -199,12 +224,27 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
+    public ICommand SearchCommand => new RelayCommand( Search ) ;
     public ICommand ResetCommand => new RelayCommand( Reset ) ;
+    
+    public ICommand OkCommand
+    {
+      get
+      {
+        return new RelayCommand<Window>( wd => null != wd, wd =>
+        {
+          Save() ;
+          wd.DialogResult = true ;
+          wd.Close() ;
+        } ) ;
+      }
+    }
 
     public CeedViewModel( ExternalCommandData commandData )
     {
       _commandData = commandData ;
       _document = commandData.Application.ActiveUIDocument.Document ;
+      CeedModels = new() ;
       DtGrid = new DataGrid() ;
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable is null ) {
@@ -212,7 +252,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _usingCeedModel = new List<CeedModel>() ;
         _usedCeedModels = new List<CeedModel>() ;
         _previousCeedModels = new List<CeedModel>() ;
-        CeedModels = new() ;
         _previewList = new ObservableCollection<CeedModel>() ;
       }
       else {
@@ -221,8 +260,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
         _usedCeedModels = oldCeedStorable.CeedModelData ;
         _previousCeedModels = new List<CeedModel>( _usedCeedModels ) ;
-        CeedModels = new( _ceedModels ) ;
         IsShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
+        IsShowCondition = oldCeedStorable.IsShowCondition ;
         IsShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
         AddModelNumber( CeedModels ) ;
         if ( _usingCeedModel.Any() )
@@ -242,8 +281,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CeedStorable = ceedStorable ;
       _ceedModels = ceedStorable.CeedModelData ;
       CeedModels.Clear() ;
+      PreviewList.Clear() ;
       foreach ( var dataModel in _ceedModels ) {
         CeedModels.Add( dataModel ) ;
+        PreviewList.Add( dataModel ) ;
       }
 
       AddModelNumber( CeedModels ) ;
@@ -256,8 +297,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ceedStorable != null )
         CeedStorable = ceedStorable ;
       CeedModels.Clear() ;
+      PreviewList.Clear() ;
       foreach ( var dataModel in ceedModels ) {
         CeedModels.Add( dataModel ) ;
+        PreviewList.Add( dataModel ) ;
       }
 
       AddModelNumber( CeedModels ) ;
@@ -284,6 +327,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! DeviceSymbols.Contains( ceedModel.GeneralDisplayDeviceSymbol ) )
           DeviceSymbols.Add( ceedModel.GeneralDisplayDeviceSymbol ) ;
       }
+      
+      ResetComboboxValue() ;
     }
 
     private List<CategoryModel> GetCategoryModels()
@@ -384,6 +429,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         using Transaction t = new( _document, "Save data" ) ;
         t.Start() ;
         ceedStorable.IsShowCeedModelNumber = IsShowCeedModelNumber ;
+        ceedStorable.IsShowCondition = IsShowCondition ;
         ceedStorable.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
         ceedStorable.IsDiff = IsShowDiff ;
         ceedStorable.Save() ;
@@ -409,10 +455,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Reset()
     {
+      ResetComboboxValue() ;
+      Search() ;
+    }
+
+    private void ResetComboboxValue()
+    {
       SelectedCeedSetCode = string.Empty ;
       SelectedModelNumber = string.Empty ;
       SelectedDeviceSymbolValue = string.Empty ;
-      Search() ;
     }
 
     public void LoadUsingCeedModel( CheckBox checkBox )
@@ -462,6 +513,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       DtGrid.Columns[ 1 ].Visibility = Visibility.Visible ;
       label.Visibility = Visibility.Visible ;
       comboBox.Visibility = Visibility.Visible ;
+    }
+
+    private IEnumerable<CeedModel> GroupCeedModel(IEnumerable<CeedModel> ceedModels )
+    {
+      return ceedModels.GroupBy( x => x.GeneralDisplayDeviceSymbol ).Select( x => x.ToList().DistinctBy( y => y.ModelNumber ) ).SelectMany( x => x ) ;
     }
 
     public void UnShowCeedModelNumberColumn( Label label, ComboBox comboBox )
