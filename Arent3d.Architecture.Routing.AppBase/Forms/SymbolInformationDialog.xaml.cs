@@ -100,40 +100,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var comboBox = (ComboBox) sender ;
       switch ( comboBox.SelectedIndex ) {
         case 0 : //Top
-          Canvas.SetLeft( CanvasStar, 40 ) ;
-          Canvas.SetTop( CanvasStar, 50 ) ;
-
-          Canvas.SetLeft( CanvasText, 35 ) ;
+          Canvas.SetLeft( CanvasStar, 42 ) ;
+          Canvas.SetTop( CanvasStar, 50 ) ; 
+          
           Canvas.SetTop( CanvasText, 0 ) ;
+          LabelDescription.HorizontalContentAlignment = HorizontalAlignment.Center ;
           break ;
         case 1 : //Left
           Canvas.SetLeft( CanvasStar, 50 ) ;
           Canvas.SetTop( CanvasStar, 30 ) ;
-
-          Canvas.SetLeft( CanvasText, 0 ) ;
+ 
           Canvas.SetTop( CanvasText, 25 ) ;
+          LabelDescription.HorizontalContentAlignment = HorizontalAlignment.Left ;
           break ;
         case 2: //Middle
-          Canvas.SetLeft( CanvasStar, 30 ) ;
+          Canvas.SetLeft( CanvasStar, 42 ) ;
           Canvas.SetTop( CanvasStar, 30 ) ;
-
-          Canvas.SetLeft( CanvasText, 32 ) ;
-          Canvas.SetTop( CanvasText, 35 ) ;
+ 
+          Canvas.SetTop( CanvasText, 25 ) ;
+          LabelDescription.HorizontalContentAlignment = HorizontalAlignment.Center ;
           break ;
         case 3 : //Right
           Canvas.SetLeft( CanvasStar, 0 ) ;
           Canvas.SetTop( CanvasStar, 30 ) ;
-
-          Canvas.SetLeft( CanvasText, 60 ) ;
+ 
           Canvas.SetTop( CanvasText, 25 ) ;
+          LabelDescription.HorizontalContentAlignment = HorizontalAlignment.Right ;
           break ;
         
         default : //Bottom
-          Canvas.SetLeft( CanvasStar, 30 ) ;
+          Canvas.SetLeft( CanvasStar, 42 ) ;
           Canvas.SetTop( CanvasStar, 20 ) ;
-
-          Canvas.SetLeft( CanvasText, 35 ) ;
-          Canvas.SetTop( CanvasText, 60 ) ;
+ 
+          Canvas.SetTop( CanvasText, 70 ) ;
+          LabelDescription.HorizontalContentAlignment = HorizontalAlignment.Center ;
           break ;
       }
     }
@@ -219,6 +219,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private static string CreateCircleData( double symbolHeight )
     {
+      if ( symbolHeight > 5 )
+        symbolHeight = 5 ;
       string temp = (symbolHeight * 5).ToString( CultureInfo.InvariantCulture ) ;
       string data = "M 0," + temp ;
       data += "A " + temp + "," + temp + " 0 0 1 "+ (symbolHeight * 10).ToString( CultureInfo.InvariantCulture ) + "," + temp  ;
