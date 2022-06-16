@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public class ShowFallMarkCommandBase : IExternalCommand
   {
     private const double VerticalOffset = 0.1 ;
-    private const string FallMarkTextNoteTypeName = "1.5mm_ConditionText" ;
+    private const string FallMarkTextNoteTypeName = "1.5mm_FallMarkText" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -150,7 +150,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var fallMarkTextNoteType = GetTextNoteTypeForFallMarkNote( document ) ;
       TextNoteOptions opts = new( fallMarkTextNoteType.Id ) { HorizontalAlignment = HorizontalTextAlignment.Right } ;
-      var txtPosition = new XYZ( fallMarkPoint.X + 1 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, fallMarkPoint.Y, fallMarkPoint.Z ) ;
+      var txtPosition = new XYZ( fallMarkPoint.X + 1.2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, fallMarkPoint.Y - 0.25 *TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification , fallMarkPoint.Z ) ;
 
       var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition,fallMarkNote ,opts) ;
 
@@ -161,9 +161,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static TextNoteType GetTextNoteTypeForFallMarkNote(Document doc)
     {
-      var fallMarktTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( FallMarkTextNoteTypeName, tt.Name ) ) ;
-      
-      if ( fallMarktTextNoteType != null ) return fallMarktTextNoteType ;
+      var fallMarkTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( FallMarkTextNoteTypeName, tt.Name ) ) ;
+
+      if ( fallMarkTextNoteType != null ) return fallMarkTextNoteType ;
       
       var defaultTextNoteId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       var defaultTextNoteType = doc.GetElement( defaultTextNoteId ) as TextNoteType ;
@@ -172,13 +172,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         throw new NullReferenceException( "can not find default text note type!" ) ;
       }
       var elementType = defaultTextNoteType.Duplicate( FallMarkTextNoteTypeName ) ;
-      fallMarktTextNoteType = elementType as TextNoteType ;
-      fallMarktTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-      fallMarktTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
-      var colorParam = fallMarktTextNoteType?.get_Parameter( BuiltInParameter.LINE_COLOR ) ;
-      fallMarktTextNoteType?.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( ParamUtils.ToColorParameterValue( 255,128,64 ) );
+      fallMarkTextNoteType = elementType as TextNoteType ;
 
-      return fallMarktTextNoteType ?? throw new InvalidOperationException();
+      fallMarkTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+      fallMarkTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+      fallMarkTextNoteType?.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( ParamUtils.ToColorParameterValue( 255,128,64 ) );
+
+      return fallMarkTextNoteType ?? throw new InvalidOperationException();
     }
     
   }
