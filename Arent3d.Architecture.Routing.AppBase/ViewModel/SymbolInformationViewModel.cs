@@ -182,16 +182,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         hiroisetSelected = HiroiSetMasterNormalModels.FirstOrDefault( x => x.ParentPartModelNumber == ceedModelNumber ) ;
 
         if ( null != hiroisetSelected )
-          AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel?.SelectedCeedModel, allowInputQuantity, true ) ;
+          AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel?.SelectedCeedModel, allowInputQuantity ) ;
       }
       catch {
       }
     }
 
-    private void AddCeedDetailBaseOnHiroiSetMaster( HiroiSetMasterModel hiroiSetMasterModel, CeedModel? ceedModel, bool allowInputQuantity, bool isConduit = false )
+    private void AddCeedDetailBaseOnHiroiSetMaster( HiroiSetMasterModel hiroiSetMasterModel, CeedModel? ceedModel, bool allowInputQuantity )
     {
       AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode1, hiroiSetMasterModel.Name1, ceedModel, allowInputQuantity ) ;
-      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode2, hiroiSetMasterModel.Name2, ceedModel, allowInputQuantity, isConduit ) ;
+      AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode2, hiroiSetMasterModel.Name2, ceedModel, allowInputQuantity ) ;
       AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode3, hiroiSetMasterModel.Name3, ceedModel, allowInputQuantity ) ;
       AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode4, hiroiSetMasterModel.Name4, ceedModel, allowInputQuantity ) ;
       AddCeedDetailBaseOnMaterialCode( hiroiSetMasterModel.MaterialCode5, hiroiSetMasterModel.Name5, ceedModel, allowInputQuantity ) ;
@@ -202,8 +202,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CeedDetailSelected = CeedDetailList.Last() ;
     }
 
-    private void AddCeedDetailBaseOnMaterialCode( string materialCode, string name, CeedModel? ceedModel, bool allowInputQuantity, bool isConduit = false )
+    private void AddCeedDetailBaseOnMaterialCode( string materialCode, string name, CeedModel? ceedModel, bool allowInputQuantity )
     {
+      if ( _csvStorable == null ) return ;
+      var conduitData = _csvStorable.ConduitsModelData ;
+      var conduit = conduitData.FirstOrDefault( x => x.PipingType + x.Size == name ) ;
+      var isConduit = conduit != null ;
+      
       if ( string.IsNullOrEmpty( materialCode ) ) return ;
       var hiroiMaster = HiroiMasterModels.FirstOrDefault( x => CompareBuzaiCDAndMaterialCode( x.Buzaicd, materialCode ) ) ;
       if ( null == hiroiMaster ) return ;
