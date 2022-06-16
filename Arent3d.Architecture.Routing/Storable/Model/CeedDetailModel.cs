@@ -27,7 +27,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         }
 
         if ( value is nameof( ClassificationType.隠蔽 ) && IsConduit ) {
-          Quantity = DefaultQuantity ;
+          if ( Quantity == Dash )
+            Quantity = DefaultQuantity ;
           AllowInputQuantity = true ;
           QuantityCalculate = 0 ;
         }

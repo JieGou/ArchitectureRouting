@@ -404,8 +404,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( itemCvv.Classification == ClassificationType.露出.GetFieldName() ) {
         var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
         itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
-        doubleValue = itemCvv.Quantity == CeedDetailModel.Dash ? "0" : itemCvv.Quantity ;
-        itemChanged.QuantityCalculate = double.Parse( doubleValue ) ;
+        itemChanged.QuantityCalculate = 0 ;
       }
     }
   }
