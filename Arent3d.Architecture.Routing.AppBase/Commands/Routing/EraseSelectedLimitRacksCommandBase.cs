@@ -1,33 +1,32 @@
+using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
-using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public class EraseSelectedLimitRacksCommandBase :IExternalCommand
+  public class EraseSelectedLimitRacksCommandBase : EraseLimitRackCommandBase
   {
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    protected override (IEnumerable<string>? allCableTrayIds, IEnumerable<string>? limitRackDetailIds,LimitRackModel? selectedLimitRackModel) 
+      GetLimitRackIds( UIDocument ui, Document doc,LimitRackStorable limitRackStorable )
     {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
-      
-      var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable();
+      var selectedLimitRackDetailCurves = ui.Selection
+        .PickElementsByRectangle( DetailtLimitRackSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ) ;
 
-      var selectedLimitRacks = uiDocument.Selection
-        .PickElementsByRectangle( CableTraySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-        .Where( x => x is FamilyInstance  or CableTray) ;
+      if ( ! selectedLimitRackDetailCurves.Any() ) return new (null,null,null);
 
-      if ( selectedLimitRacks.Any() ) {
-        
-      }
-      
-      return Result.Succeeded ;
+      var selectedLimitRackModel = GetSelectedLimitRackModel( limitRackStorable,selectedLimitRackDetailCurves ) ;
+
+      return selectedLimitRackModel is null ? (null,null,null) : new ValueTuple<IEnumerable<string>?,IEnumerable<string>?,LimitRackModel?>(selectedLimitRackModel.LimitRackIds.Concat( selectedLimitRackModel.LitmitRackFittingIds ),selectedLimitRackModel.LimitRackDetailIds,selectedLimitRackModel) ;
+    }
+
+    private static LimitRackModel? GetSelectedLimitRackModel(LimitRackStorable limitRackStorable, IEnumerable<Element> selectedLimitRackDetailCurves )
+    {
+      return limitRackStorable.LimitRackModelData.FirstOrDefault( limitRackModel => limitRackModel.LimitRackDetailIds.Any( limitRackDetailId => selectedLimitRackDetailCurves.Any( x => x.UniqueId == limitRackDetailId ) ) ) ;
     }
   }
 }
