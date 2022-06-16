@@ -108,7 +108,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
             viewModel.ReferenceDetailTableModelsOrigin.Add( referenceDetailTableModelRow ) ;
           }
-          
+
           dialog = new DetailTableDialog( viewModel ) ;
           dialog.ShowDialog() ;
         }
@@ -128,7 +128,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               transaction.Commit() ;
             }
           }
-          
+
           if ( viewModel.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
             UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, viewModel.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
           }
@@ -841,18 +841,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( wiresAndCablesModel == null ) continue ;
             var signalType = wiresAndCablesModel.Classification ;
             var wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
-            
+
             var wireSizesOfWireType = wiresAndCablesModelData.Where( w => w.WireType == wireType ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
             var wireSizes = wireSizesOfWireType.Any() ? ( from wireSizeType in wireSizesOfWireType select new DetailTableModel.ComboboxItemType( wireSizeType, wireSizeType ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
-            
+
             var wireStripsOfWireType = wiresAndCablesModelData.Where( w => w.WireType == wireType && w.DiameterOrNominal == wireSize ).Select( w => w.NumberOfHeartsOrLogarithm == "0" ? "-" : w.NumberOfHeartsOrLogarithm + w.COrP ).Distinct().ToList() ;
             var wireStrips = wireStripsOfWireType.Any() ? ( from wireStripType in wireStripsOfWireType select new DetailTableModel.ComboboxItemType( wireStripType, wireStripType ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
 
-            var plumbingItemTypes = new List<DetailTableModel.ComboboxItemType> { new( constructionItem, constructionItem ) } ;
-            
-            var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", 
-              string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, 
-              constructionItem, constructionItem, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, 
+            var plumbingItemTypes = new List<DetailTableModel.ComboboxItemType> { new(constructionItem, constructionItem) } ;
+
+            var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1",
+              string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType,
+              constructionItem, constructionItem, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute,
               string.Empty, string.Empty, true, mixConstructionItems, string.Empty, false, false, false, wireSizes, wireStrips, new List<DetailTableModel.ComboboxItemType>(), new List<DetailTableModel.ComboboxItemType>(), plumbingItemTypes ) ;
             detailTableModels.Add( detailTableRow ) ;
           }
@@ -870,6 +870,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private class DetailSymbolPickFilter : ISelectionFilter
     {
       private const string DetailSymbolType = "DetailSymbol-TNT" ;
+
       public bool AllowElement( Element e )
       {
         return ( e.GetBuiltInCategory() == BuiltInCategory.OST_TextNotes && e.GroupId == ElementId.InvalidElementId && e.Name.Contains( DetailSymbolType ) ) ;

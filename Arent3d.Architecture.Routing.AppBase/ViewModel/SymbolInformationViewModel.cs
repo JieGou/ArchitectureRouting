@@ -7,6 +7,7 @@ using System.Reflection ;
 using System.Windows ;
 using System.Windows.Data ;
 using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
@@ -340,7 +341,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var itemChanged = CeedDetailList[ e.CollectionIndex ] ;
       if ( _isInChangeLoop ) return ;
-      var restCeedDetails = CeedDetailList.Where( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode ).ToList() ;
+      var restCeedDetails = CeedDetailList.Where( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode ).ToList() ;
 
       switch ( e.PropertyName ) {
         case "ConstructionClassification" :
@@ -348,7 +349,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           foreach ( var item in restCeedDetails ) {
             _isInChangeLoop = true ;
             item.ConstructionClassification = itemChanged.ConstructionClassification ;
-            ChangeQuantityInfo( itemChanged ) ;
+            SymbolInformationUtils.UpdateQuantity( CeedDetailList, itemChanged, item ) ;
           }
 
           _isInChangeLoop = false ;
@@ -366,45 +367,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
         case "Classification" :
         {
-          var itemCvv = CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.ParentId == itemChanged.ParentId && x.AllowInputQuantity && ! x.IsConduit ) ;
-          if ( null == itemCvv ) return ;
-
-          if ( itemChanged.Classification == ClassificationType.露出.GetFieldName() ) {
-            var doubleValue = itemCvv.Quantity == CeedDetailModel.Dash ? "0" : itemCvv.Quantity ;
-            itemChanged.QuantityCalculate = double.Parse( doubleValue ) ;
-            itemCvv.QuantityCalculate = 0 ;
-          }
-
-          if ( itemChanged.Classification == ClassificationType.隠蔽.GetFieldName() ) {
-            var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
-            itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
-            itemChanged.QuantityCalculate = 0 ;
-          }
-
+          SymbolInformationUtils.UpdateQuantity( CeedDetailList, itemChanged, itemChanged ) ;
           break ;
         }
         case "Quantity" :
         {
-          ChangeQuantityInfo( itemChanged ) ;
+          SymbolInformationUtils.ChangeQuantityInfo( CeedDetailList, itemChanged ) ;
           break ;
         }
-      }
-    }
-
-    private void ChangeQuantityInfo( CeedDetailModel itemChanged )
-    {
-      var itemCvv = itemChanged.Classification == ClassificationType.隠蔽.GetFieldName() ? CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && ! x.IsConduit && x.AllowInputQuantity ) : CeedDetailList.FirstOrDefault( x => ! string.IsNullOrEmpty( x.CeedCode ) && x.CeedCode == itemChanged.CeedCode && x.ProductCode != itemChanged.ProductCode && x.IsConduit ) ;
-      if ( null == itemCvv ) return ;
-
-      if ( itemChanged.Classification == ClassificationType.隠蔽.GetFieldName() ) {
-        var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
-        itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
-      }
-
-      if ( itemCvv.Classification == ClassificationType.露出.GetFieldName() ) {
-        var doubleValue = itemChanged.Quantity == CeedDetailModel.Dash ? "0" : itemChanged.Quantity ;
-        itemCvv.QuantityCalculate = double.Parse( doubleValue ) ;
-        itemChanged.QuantityCalculate = 0 ;
       }
     }
   }

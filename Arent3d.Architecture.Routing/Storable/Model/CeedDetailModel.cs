@@ -30,7 +30,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
           if ( Quantity == Dash )
             Quantity = DefaultQuantity ;
           AllowInputQuantity = true ;
-          QuantityCalculate = 0 ;
         }
       }
     }
