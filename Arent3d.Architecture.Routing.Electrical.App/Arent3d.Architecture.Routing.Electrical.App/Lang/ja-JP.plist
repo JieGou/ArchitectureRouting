@@ -394,7 +394,7 @@
         <string>工事項目付加結果</string>
 		
 		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
-        <string>明細記号 {0} には施工区分が混在しています。そのまま明細表作成に進めますか。</string>
+        <string>明細記号 {0} には施工区分が混在しています。再度確認してください。</string>
 
         <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.EcoMode</key>
         <string>エコモード</string>
