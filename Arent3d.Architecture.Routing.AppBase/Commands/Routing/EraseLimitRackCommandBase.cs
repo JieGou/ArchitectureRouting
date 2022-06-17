@@ -23,23 +23,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable();
       var allLimitRackIds = GetLimitRackIds( uiDocument, document,limitRackStorable  ) ;
 
-      if ( allLimitRackIds.allCableTrayIds == null )
-        return Result.Failed ;
-
-      var allCableTrayIds = GetAllCableTrayIds( allLimitRackIds.allCableTrayIds, document ) ;
-
-      if ( ! allCableTrayIds.Any() )
-        return Result.Failed ;
-
       try {
         using var transaction = new Transaction( document, EraseLimitRackTransactionName ) ;
         transaction.Start() ;
-        RemoveLimitRacks( document, allCableTrayIds ) ;
-        RemoveBoundaryCableTray( document, allLimitRackIds.limitRackDetailIds ) ;
-        if ( allLimitRackIds.selectedLimitRackModel != null ) {
-          limitRackStorable.LimitRackModelData.Remove( allLimitRackIds.selectedLimitRackModel ) ;
-          limitRackStorable.Save();
-        }
+        RemoveLimitRacks( document, allLimitRackIds.rackIds ) ;
+        RemoveBoundaryCableTray( document, allLimitRackIds.detailCurverIds ) ;
+        RemoveLimitRackModels(limitRackStorable,allLimitRackIds.limitRackModels) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -49,26 +38,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected abstract (IEnumerable<string>? allCableTrayIds, IEnumerable<string>? limitRackDetailIds ,LimitRackModel? selectedLimitRackModel) GetLimitRackIds(
+    protected abstract (IEnumerable<string> rackIds,IEnumerable<string> detailCurverIds,IEnumerable<LimitRackModel> limitRackModels) GetLimitRackIds(
       UIDocument ui, Document doc,LimitRackStorable limitRackStorable ) ;
-
-    private IEnumerable<string> GetAllCableTrayIds( IEnumerable<string> allLimitRackIds, Document document )
-    {
-      var allLimitRackElements = allLimitRackIds.Select( document.GetElement ) ;
-      foreach ( var cableTray in allLimitRackElements ) {
-        var comment = cableTray.ParametersMap
-          .get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ) )
-          .AsString() ;
-        if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
-          yield return cableTray.UniqueId ;
-      }
-    }
+    
+    protected abstract void RemoveLimitRackModels(LimitRackStorable limitRackStorable,IEnumerable<LimitRackModel> selectedLimitRackModels) ;
 
     private void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
     {
       if ( allLimitRacks.Any() ) {
         RemoveRackNotation( document, allLimitRacks ) ;
-        document.Delete( allLimitRacks.Select( document.GetElement ).Select( x => x.Id ).ToList() ) ;
+        var allLimitRackElements = allLimitRacks.Select( document.GetElement ).Where( x=>x!=null ) ;
+        document.Delete( allLimitRackElements.Select( x => x.Id ).ToList() ) ;
       }
     }
 

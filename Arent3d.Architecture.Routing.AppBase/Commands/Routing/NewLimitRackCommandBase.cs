@@ -49,6 +49,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       UIApplication uiApp = commandData.Application ;
       Application app = uiApp.Application ;
+      var limitRackStoreAble = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable();
+      
       try {
         var result = document.Transaction( _transactioName, _ =>
         {
@@ -61,15 +63,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               var conduit = ( mepCurve as Conduit )! ;
               var cableRackWidth = CalcCableRackMaxWidth( element, elements, document ) ;
 
-              CreateCableRackForConduit( uiDocument, conduit, cableRackWidth, racks ) ;
+              CreateCableRackForConduit( uiDocument, conduit, cableRackWidth, racks, limitRackStoreAble) ;
             }
           }
 
           foreach ( var elbow in elbowsToCreate ) {
-            CreateElbow( uiDocument, elbow.Key, elbow.Value, fittings ) ;
+            CreateElbow( uiDocument, elbow.Key, elbow.Value, fittings,limitRackStoreAble ) ;
           }
 
-          var newRacks = ConnectedRacks( document, racks, fittings ) ;
+          var newRacks = ConnectedRacks( document, racks, fittings ,limitRackStoreAble) ;
 
           //insert notation for racks
           NewRackCommandBase.CreateNotationForRack( document, app, newRacks ) ;
@@ -88,12 +90,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private IEnumerable<FamilyInstance> ConnectedRacks( Document document, List<FamilyInstance> cableTrays, List<FamilyInstance> fittings )
+    private IEnumerable<FamilyInstance> ConnectedRacks( Document document, List<FamilyInstance> cableTrays, List<FamilyInstance> fittings,LimitRackStorable limitRackStorable )
     {
-      var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable();
-      var newLimitRackModel = new LimitRackModel() ;
-      newLimitRackModel.LitmitRackFittingIds.AddRange( fittings.Select( x=>x.UniqueId ) );
-      
       var torance = 10d.MillimetersToRevitUnits() ;
       cableTrays = cableTrays.Where( MEPModelOnPlan ).ToList() ;
       fittings = fittings.Where( MEPModelOnPlan ).ToList() ;
@@ -128,7 +126,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var inforCableTrays = ExtendCurves( document, infoCableTrays, fittings ) ;
         var curveLoops = GroupCurves( inforCableTrays ).Select( x => CurveLoop.CreateViaThicken( x.CurveLoop, WidthCableTrayDefault2D, XYZ.BasisZ ) ) ;
         var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        CreateDetailLines( document, curveLoops, lineStyle,newLimitRackModel ) ;
+        CreateDetailLines( document, curveLoops, lineStyle ) ;
       }
       else {
         var curves = new List<Curve>() ;
@@ -139,11 +137,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var curveLoops = mergeCurves.Select( x => CurveLoop.Create( x.ToList() ) ).Select( x => CurveLoop.CreateViaThicken( x, WidthCableTrayDefault2D, XYZ.BasisZ ) ) ;
         var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        CreateDetailLines( document, curveLoops, lineStyle ,newLimitRackModel) ;
+        CreateDetailLines( document, curveLoops, lineStyle) ;
       }
-      newLimitRackModel.LimitRackIds.AddRange(newCableTrays.Select( x=>x.UniqueId ) );
-      limitRackStorable.LimitRackModelData.Add( newLimitRackModel );
-      limitRackStorable.Save();
       return newCableTrays ;
     }
 
@@ -241,13 +236,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return false ;
     }
 
-    private static void CreateDetailLines( Document document, IEnumerable<CurveLoop> curveLoops, Element lineStyle ,LimitRackModel limitRackModel)
+    private static void CreateDetailLines( Document document, IEnumerable<CurveLoop> curveLoops, Element lineStyle)
     {
       foreach ( var curveLoop in curveLoops ) {
         foreach ( var curve in curveLoop ) {
           var detaiLine = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
           detaiLine.LineStyle = lineStyle ;
-          limitRackModel.LimitRackDetailIds.Add( detaiLine.UniqueId );
         }
       }
 
@@ -484,7 +478,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <param name="uiDocument"></param>
     /// <param name="routeName"></param>
-    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth, List<FamilyInstance> racks )
+    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth, List<FamilyInstance> racks ,LimitRackStorable limitRackStorable)
     {
       if ( conduit != null ) {
         var document = uiDocument.Document ;
@@ -503,6 +497,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             return ;
           }
 
+          // Store conduitId and rackId to use in delete selection function
+          StoreConduitAndLimitRackToLimitRackModel(limitRackStorable,conduit,instance);
+          
           racks.Add( instance ) ;
 
           if ( 1.0 != line.Direction.Z && -1.0 != line.Direction.Z ) {
@@ -525,13 +522,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
+    private void StoreConduitAndLimitRackToLimitRackModel(LimitRackStorable limitRackStorable, Element conduit, FamilyInstance rackInstance)
+    {
+      var limitRackModel = new LimitRackModel(conduit.UniqueId,rackInstance.UniqueId)  ;
+      limitRackStorable?.LimitRackModelData.Add( limitRackModel );
+      limitRackStorable?.Save();
+    }
+
     /// <summary>
     /// Create elbow for 2 cable rack
     /// </summary>
     /// <param name="uiDocument"></param>
     /// <param name="elementId"></param>
     /// <param name="connectors"></param>
-    private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors, List<FamilyInstance> racks )
+    private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors, List<FamilyInstance> racks,LimitRackStorable limitRackStorable )
     {
       var document = uiDocument.Document ;
       using var transaction = new SubTransaction( document ) ;
@@ -545,7 +549,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var location = ( conduit.Location as LocationPoint )! ;
         var instance = NewRackCommandBase.CreateRackForFittingConduit( uiDocument, conduit, location, cableTrayDefaultBendRadius ) ;
-
+        
         // check cable tray exists
         if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
           transaction.RollBack() ;
@@ -572,6 +576,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
           }
         }
+
+        // Store conduitId and rackId to use in delete selection function
+        StoreConduitAndLimitRackToLimitRackModel(limitRackStorable,conduit,instance);
 
         racks.Add( instance ) ;
 

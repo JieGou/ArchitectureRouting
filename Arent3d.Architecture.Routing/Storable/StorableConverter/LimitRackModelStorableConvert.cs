@@ -3,6 +3,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 {
@@ -11,33 +12,28 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
   {
     private enum SerializeField
     {
-      LimitRackIds,
-      LimitRackFittingIds,
-      LimitRackDetailIds
+      ConduitId,
+      RackId
     }
 
     protected override LimitRackModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
-      var limitRackIds = deserializer.GetNonNullStringArray( SerializeField.LimitRackIds).ToList() ;
-      var limitRackFittingIds = deserializer.GetNonNullStringArray( SerializeField.LimitRackFittingIds).ToList() ;
-      var limitRackDetailIds = deserializer.GetNonNullStringArray( SerializeField.LimitRackDetailIds ).ToList() ;
+      var conduitId = deserializer.GetString( SerializeField.ConduitId) ;
+      var rackId = deserializer.GetString( SerializeField.RackId) ;
       return new LimitRackModel( )
       {
-        LimitRackIds = limitRackIds,
-        LitmitRackFittingIds = limitRackFittingIds,
-        LimitRackDetailIds = limitRackDetailIds
-        
+        ConduitId = conduitId!,
+        RackId = rackId!
       };
     }
 
     protected override ISerializerObject Serialize( Element storedElement, LimitRackModel customTypeValue )
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
-      serializerObject.AddNonNull( SerializeField.LimitRackIds, customTypeValue.LimitRackIds ) ;
-      serializerObject.AddNonNull( SerializeField.LimitRackFittingIds, customTypeValue.LitmitRackFittingIds ) ;
-      serializerObject.AddNonNull( SerializeField.LimitRackDetailIds, customTypeValue.LimitRackDetailIds ) ;
+      serializerObject.AddNonNull( SerializeField.ConduitId, customTypeValue.ConduitId ) ;
+      serializerObject.AddNonNull( SerializeField.RackId, customTypeValue.RackId ) ;
       return serializerObject ;
     }
   }
