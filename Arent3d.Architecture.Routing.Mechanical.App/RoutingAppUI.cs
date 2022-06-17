@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
     private readonly Guid _dpid = new Guid( "6D3D42B6-981A-4A55-A0BF-2C99D7C0D500" ) ;
 
-    private RoutingAppUI( UIControlledApplication application ) : base( application )
+    private RoutingAppUI( UIControlledApplication application ) : base( application, DefaultCommandAssemblyResolver.Instance )
     {
       _registerFromToTreeCommand = new RegisterFromToTreeCommand( application, _dpid, new PostCommandExecutor() ) ;
 
