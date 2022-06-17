@@ -7,7 +7,6 @@ using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
@@ -28,10 +27,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return document.Transaction(
           "TransactionName.Commands.Routing.ShowFallMark".GetAppStringByKeyOrDefault( "Show Fall Mark" ), _ =>
           {
-            var fallMarkInstanceIds = GetExistedFallMarkInstancesIds( document ) ;
-            if ( fallMarkInstanceIds.Count > 0 ) {
-              var fallMarkTextNoteInstanceIds =
-                GetExistedFallMarkTextNoteInstancesIds( document, fallMarkInstanceIds ) ;
+            var fallMarkInstances = GetExistedFallMarkInstances( document ) ;
+            var fallMarkInstanceIds = fallMarkInstances.Select( instance => instance.Id ).ToList() ;
+            if ( fallMarkInstanceIds.Any() ) {
+              var fallMarkTextNoteInstanceIds = GetExistedFallMarkTextNoteInstancesIds( document, fallMarkInstances ) ;
               document.Delete( fallMarkInstanceIds ) ; // remove marks are displaying
               document.Delete( fallMarkTextNoteInstanceIds ) ;
             }
@@ -66,21 +65,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ).FirstOrDefault() ??
                    throw new InvalidOperationException() ;
 
-      symbol.TryGetProperty( "Lenght", out double lenghtMark ) ;
-
-      var detailTableModels = conduitWithZDirection.GetDetailTableModelsFromConduits( document ) ;
-
-      Color color = new Color( (byte)255, 128, (byte)64 ) ;
-      OverrideGraphicSettings overrideGraphicSetting = new OverrideGraphicSettings() ;
-      overrideGraphicSetting.SetProjectionLineColor( color ) ;
+      var detailTableModels = conduitWithZDirection.GetDetailTableModelsFromConduits( document ).ToList() ;
 
       foreach ( var conduit in conduitWithZDirection ) {
-        GenerateFallMarks( document, symbol, conduit, detailTableModels, overrideGraphicSetting ) ;
+        GenerateFallMarks( document, symbol, conduit, detailTableModels ) ;
       }
     }
 
     private static void GenerateFallMarks( Document document, FamilySymbol symbol, Conduit conduit,
-      IEnumerable<DetailTableModel> detailTableModels, OverrideGraphicSettings overrideGraphicSetting )
+      IEnumerable<DetailTableModel> detailTableModels )
     {
       var level = conduit.ReferenceLevel ;
       var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() +
@@ -109,48 +102,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       if ( string.IsNullOrEmpty( fallMarkNoteString ) ) return ;
 
-      var fallMarkTextNote = CreateFallMarkNote( document,  fallMarkNoteString, fallMarkPoint,
-        overrideGraphicSetting ) ;
-      var fallMarkGroupIds = new[] { fallMarkInstance.Id, fallMarkTextNote.Id } ;
-      var group = document.Create.NewGroup( fallMarkGroupIds ) ;
-      group.GroupType.Name = fallMarkInstance.UniqueId ;
+      var fallMarkTextNote = CreateFallMarkNote( document, fallMarkNoteString, fallMarkPoint ) ;
+      fallMarkInstance.GetParameter( "FallMarkTextNoteId" )?.Set( fallMarkTextNote.UniqueId ) ;
     }
 
-    private static List<ElementId> GetExistedFallMarkInstancesIds( Document document )
+    private static List<FamilyInstance> GetExistedFallMarkInstances( Document document )
     {
       var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ) ??
                             throw new InvalidOperationException() ;
-      return document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList() ;
+      return document.GetAllFamilyInstances( fallMarkSymbols ).ToList() ;
     }
 
     private static List<ElementId> GetExistedFallMarkTextNoteInstancesIds( Document document,
-      IEnumerable<ElementId> existedFallMarkInstancesIds )
+      IEnumerable<Element> existedFallMarkInstancesIds )
     {
       var fallMarkTextNoteInstanceIds = new HashSet<ElementId>() ;
 
-      foreach ( var groupId in from fallMarkSymbolId in existedFallMarkInstancesIds
-               select document.GetElement( fallMarkSymbolId )
-               into fallMarkSymbolElement
-               select fallMarkSymbolElement.GroupId
-               into groupId
-               where ! groupId.Equals( ElementId.InvalidElementId )
-               select groupId ) {
-        if ( document.GetElement( groupId ) is not Group parentGroup ) continue ;
-        var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-        foreach ( var group in attachedGroup ) {
-          var textNoteIds = group.GetMemberIds() ;
-          fallMarkTextNoteInstanceIds.AddRange( textNoteIds ) ;
-          group.UngroupMembers() ;
+      foreach ( var existedFallMarkInstancesId in existedFallMarkInstancesIds ) {
+        var fallMarkTextNoteId =
+          existedFallMarkInstancesId.GetParameter( "FallMarkTextNoteId" )?.AsValueString() ;
+        var existedFallMarkTextNote = document.GetElement( fallMarkTextNoteId ) ;
+        if ( existedFallMarkTextNote != null ) {
+          fallMarkTextNoteInstanceIds.Add( existedFallMarkTextNote.Id ) ;
         }
-
-        parentGroup.UngroupMembers() ;
       }
 
       return fallMarkTextNoteInstanceIds.ToList() ;
     }
 
-    private static TextNote CreateFallMarkNote( Document document, string fallMarkNote,
-      XYZ fallMarkPoint, OverrideGraphicSettings overrideGraphicSetting )
+    private static TextNote CreateFallMarkNote( Document document, string fallMarkNote, XYZ fallMarkPoint )
     {
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var fallMarkTextNoteType = GetTextNoteTypeForFallMarkNote( document ) ;
@@ -161,8 +141,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           fallMarkPoint.Z ) ;
 
       var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, fallMarkNote, opts ) ;
-
-      document.ActiveView.SetElementOverrides( textNote.Id, overrideGraphicSetting ) ;
 
       return textNote ;
     }
