@@ -74,6 +74,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           result.Add( ( route.RouteName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
         }
         else {
+          if ( isBeforeSegment ) {
+            using Transaction t = new( document, "Create pull box" ) ;
+            t.Start() ;
+            if ( segment.FromEndPoint.TypeName == PassPointEndPoint.Type ) {
+              var passPoint = document.GetElement( segment.FromEndPoint.Key.GetElementUniqueId() ) ;
+              passPoint.TrySetProperty( RoutingParameter.RouteName, name ) ;
+            }
+            
+            if ( segment.ToEndPoint.TypeName == PassPointEndPoint.Type ) {
+              var passPoint = document.GetElement( segment.ToEndPoint.Key.GetElementUniqueId() ) ;
+              passPoint.TrySetProperty( RoutingParameter.RouteName, name ) ;
+            }
+
+            t.Commit() ;
+          }
+
           result.Add( isBeforeSegment 
             ? ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ) 
             : ( route.RouteName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
@@ -135,13 +151,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var ceedCode = toConnectorOfRoute != null && toConnectorOfRoute.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) && ! string.IsNullOrEmpty( ceedCodeOfToConnector ) 
         ? ceedCodeOfToConnector !
         : string.Empty ;
-      
+
       if ( instance.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) )
         instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem ) ;
-      
+
       if ( instance.HasParameter( ElectricalRoutingElementParameter.IsEcoMode ) )
         instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode ) ;
-      
+
       if ( instance.HasParameter( ElectricalRoutingElementParameter.CeedCode ) )
         instance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
 
@@ -352,9 +368,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     private static ConduitInfo? GetPullBoxAndConnectorPosition( Document document, List<Element> allConduits, Element conduitFitting )
     {
-      var index = allConduits.FindIndex( c => c.UniqueId == conduitFitting.UniqueId ) ;
-      if ( index != -1 ) {
-        var fromConduit = allConduits.ElementAt( index - 1 ) ;
+      var conduitFittingLocation = ( conduitFitting.Location as LocationPoint ) ! ;
+      var conduitFittingPoint = conduitFittingLocation.Point ;
+      var conduits = allConduits.Where( c => c.GetBuiltInCategory() == BuiltInCategory.OST_Conduit ).ToList() ;
+      var minDistance = double.MaxValue ;
+      var fromConduit = conduits.First() ;
+      foreach ( var conduit in conduits ) {
+        var fromConduitLocation = ( conduit.Location as LocationCurve ) ! ;
+        var fromConduitLine = ( fromConduitLocation.Curve as Line ) ! ;
+        var fromConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
+        var distance = fromConduitPoint.DistanceTo( conduitFittingPoint ) ;
+        if ( ! ( distance < minDistance ) ) continue ;
+        minDistance = distance ;
+        fromConduit = conduit ;
+      }
+
+      if ( fromConduit == null ) return null ;
+      {
         var fromConduitLocation = ( fromConduit.Location as LocationCurve ) ! ;
         var fromConduitLine = ( fromConduitLocation.Curve as Line ) ! ;
         var fromConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
@@ -370,13 +400,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           x = fromConduitPoint.X ;
           y = fromConduitPoint.Y - fromConduitDirection.Y * PullBoxLenght ;
         }
-        
+
         var pullBoxPosition = new XYZ( x, y, fromConduitPoint.Z ) ;
         var level = document.GetAllElements<Level>().SingleOrDefault( l => l.Id == fromConduit.GetLevelId() ) ;
         return new ConduitInfo( fromConduit, pullBoxPosition, fromConduitDirection, level! ) ;
       }
-      
-      return null ;
     }
     
     private class ConduitInfo
