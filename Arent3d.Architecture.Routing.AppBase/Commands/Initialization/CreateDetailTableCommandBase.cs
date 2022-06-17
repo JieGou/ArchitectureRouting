@@ -41,21 +41,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
       try {
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
-        var pickedObjectIds = pickedObjects.Select( p => p.UniqueId ).ToList() ;
-        var ( detailTableModels, isMixConstructionItems, isExistDetailTableModelRow ) = CreateDetailTable( doc, csvStorable, detailSymbolStorable, pickedObjects, pickedObjectIds, false ) ;
+        var pickedObjectIds = pickedObjects.Select( p => p.UniqueId ) ;
+        var (detailTableModels, isMixConstructionItems, isExistDetailTableModelRow) =
+          CreateDetailTable( doc, csvStorable, detailSymbolStorable, pickedObjects, pickedObjectIds, false ) ;
 
-        var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
+        var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct() ;
         var conduitTypes = ( from conduitTypeName in conduitTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
         conduitTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
 
         var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
-        var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new DetailTableModel.ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
+        var constructionItems = constructionItemNames.Any()
+          ? ( from constructionItemName in constructionItemNames select new DetailTableModel.ComboboxItemType( constructionItemName, constructionItemName ) )
+          : new List<DetailTableModel.ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
 
-        var levelNames = doc.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).Select( l => l.Name ).ToList() ;
-        var levels = ( from levelName in levelNames select new DetailTableModel.ComboboxItemType( levelName, levelName ) ).ToList() ;
+        var levelNames = doc.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).Select( l => l.Name ) ;
+        var levels = ( from levelName in levelNames select new DetailTableModel.ComboboxItemType( levelName, levelName ) ) ;
 
-        var wireTypeNames = wiresAndCablesModelData.Select( w => w.WireType ).Distinct().ToList() ;
-        var wireTypes = ( from wireType in wireTypeNames select new DetailTableModel.ComboboxItemType( wireType, wireType ) ).ToList() ;
+        var wireTypeNames = wiresAndCablesModelData.Select( w => w.WireType ).Distinct() ;
+        var wireTypes = ( from wireType in wireTypeNames select new DetailTableModel.ComboboxItemType( wireType, wireType ) ) ;
 
         var earthTypes = new List<DetailTableModel.ComboboxItemType>() { new( "IV", "IV" ), new( "EM-IE", "EM-IE" ) } ;
 
@@ -64,16 +67,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           numbers.Add( new DetailTableModel.ComboboxItemType( i.ToString(), i.ToString() ) ) ;
         }
 
-        var constructionClassificationTypeNames = hiroiSetCdMasterNormalModelData.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
-        var constructionClassificationTypes = ( from constructionClassification in constructionClassificationTypeNames select new DetailTableModel.ComboboxItemType( constructionClassification, constructionClassification ) ).ToList() ;
+        var constructionClassificationTypeNames = hiroiSetCdMasterNormalModelData.Select( h => h.ConstructionClassification ).Distinct() ;
+        var constructionClassificationTypes = ( from constructionClassification in constructionClassificationTypeNames
+          select new DetailTableModel.ComboboxItemType( constructionClassification, constructionClassification ) ) ;
 
-        var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
+        var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) )
+          select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ) ;
 
-        var viewModel = new DetailTableViewModel( detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes ) ;
-        var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
+        var viewModel =
+          new DetailTableViewModel(
+            doc, 
+            detailTableModels,
+            new ObservableCollection<DetailTableModel>(),
+            conduitTypes,
+            constructionItems,
+            levels,
+            wireTypes,
+            earthTypes,
+            numbers,
+            constructionClassificationTypes,
+            signalTypes,
+            conduitsModelData,
+            wiresAndCablesModelData,
+            isMixConstructionItems ) ;
+        var dialog = new DetailTableDialog( viewModel ) ;
         dialog.ShowDialog() ;
 
-        while ( dialog.DialogResult != null && ! dialog.DialogResult.Value && dialog.DetailTableViewModelSummary.IsAddReference ) {
+        while ( dialog.DialogResult is false && viewModel.IsAddReference ) {
           DetailSymbolPickFilter detailSymbolFilter = new() ;
           List<string> detailSymbolIds = new() ;
           var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
@@ -86,16 +106,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           var ( referenceDetailTableModels, _, _) = CreateDetailTable( doc, csvStorable, detailSymbolStorable, new List<Element>(), detailSymbolIds, true ) ;
           foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
-            viewModel.ReferenceDetailTableModels.Add( referenceDetailTableModelRow ) ;
+            viewModel.ReferenceDetailTableModelsOrigin.Add( referenceDetailTableModelRow ) ;
           }
           
-          dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
+          dialog = new DetailTableDialog( viewModel ) ;
           dialog.ShowDialog() ;
         }
 
         if ( isExistDetailTableModelRow || dialog.DialogResult == true ) {
-          if ( dialog.RoutesWithConstructionItemHasChanged.Any() ) {
-            var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, dialog.RoutesWithConstructionItemHasChanged ) ;
+          if ( viewModel.RoutesWithConstructionItemHasChanged.Any() ) {
+            var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, viewModel.RoutesWithConstructionItemHasChanged ) ;
             if ( connectorGroups.Any() ) {
               using Transaction transaction = new( doc, "Group connector" ) ;
               transaction.Start() ;
@@ -105,26 +125,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 groupIds.AddRange( textNoteIds ) ;
                 doc.Create.NewGroup( groupIds ) ;
               }
-
               transaction.Commit() ;
             }
           }
           
-          if ( dialog.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
-            UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, dialog.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
+          if ( viewModel.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
+            UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, viewModel.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
           }
         }
 
         if ( dialog.DialogResult ?? false ) {
           return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
           {
-            if ( ! viewModel.IsCreateDetailTableOnFloorPlanView && ! dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
+            if ( ! viewModel.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
             var level = uiDoc.ActiveView.GenLevel ;
-            var detailTableData = viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel.DetailTableModels : dialog.DetailTableViewModelSummary.DetailTableModels ;
+            var detailTableData = viewModel.DetailTableModels ;
             var scheduleName = CreateDetailTableSchedule( doc, detailTableData, level.Name ) ;
             MessageBox.Show( string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ), "Message" ) ;
             viewModel.IsCreateDetailTableOnFloorPlanView = false ;
-            dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView = false ;
 
             return Result.Succeeded ;
           } ) ;
@@ -137,7 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    public static ( ObservableCollection<DetailTableModel>, bool, bool ) CreateDetailTable( Document doc, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, List<Element> conduits, List<string> elementIds, bool isReferenceDetailTableModels )
+    public static ( ObservableCollection<DetailTableModel>, bool, bool ) CreateDetailTable( Document doc, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, List<Element> conduits, IEnumerable<string> elementIds, bool isReferenceDetailTableModels )
     {
       var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
       var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
@@ -201,8 +219,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      SortDetailTableModel( ref detailTableModels, isMixConstructionItems ) ;
-      return ( detailTableModels, isMixConstructionItems, detailSymbolIdsOnDetailTableModels.Any() ) ;
+      var resultDetailTableModels = SortDetailTableModel( detailTableModels, isMixConstructionItems ) ;
+      return ( resultDetailTableModels, isMixConstructionItems, detailSymbolIdsOnDetailTableModels.Any() ) ;
     }
 
     public enum SignalType
@@ -378,11 +396,44 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( plumbingType, numberOfPlumbing ) ;
     }
 
-    private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool isMixConstructionItems )
+    private static ObservableCollection<DetailTableModel> SortDetailTableModel( ObservableCollection<DetailTableModel> detailTableModels, bool isMixConstructionItems )
     {
       List<DetailTableModel> sortedDetailTableModelsList = detailTableModels.ToList() ;
-      DetailTableViewModel.SortDetailTableModel( ref sortedDetailTableModelsList, isMixConstructionItems ) ;
-      detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
+      var resultSortDetailModel = SortDetailModel( sortedDetailTableModelsList, isMixConstructionItems ) ;
+      return new ObservableCollection<DetailTableModel>( resultSortDetailModel ) ;
+    }
+    
+     private static List<DetailTableModel> SortDetailModel( List<DetailTableModel> detailTableModels, bool isMixConstructionItems )
+     {
+        List<DetailTableModel> sortedDetailTableModelsList = new() ;
+        var detailTableModelsGroupByDetailSymbolId = detailTableModels.OrderBy( d => d.DetailSymbol ).GroupBy( d => d.DetailSymbolId ).Select( g => g.ToList() ) ;
+        foreach ( var detailTableRowsGroupByDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
+          var signalTypes = (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType )) ;
+          foreach ( var signalType in signalTypes ) {
+            var detailTableRowsWithSameSignalType = detailTableRowsGroupByDetailSymbolId.Where( d => d.SignalType == signalType.GetFieldName() ).ToList() ;
+            SortDetailTableRows( sortedDetailTableModelsList, detailTableRowsWithSameSignalType, isMixConstructionItems ) ;
+          }
+
+          var signalTypeNames = signalTypes.Select( s => s.GetFieldName() ) ;
+          var detailTableRowsNotHaveSignalType = detailTableRowsGroupByDetailSymbolId.Where( d => ! signalTypeNames.Contains( d.SignalType ) ).ToList() ;
+          SortDetailTableRows( sortedDetailTableModelsList, detailTableRowsNotHaveSignalType, isMixConstructionItems ) ;
+        }
+
+        return sortedDetailTableModelsList ;
+     }
+    
+    private static void SortDetailTableRows( List<DetailTableModel> sortedDetailTableModelsList, List<DetailTableModel> detailTableRowsWithSameSignalType, bool isMixConstructionItems )
+    {
+      if ( ! isMixConstructionItems ) detailTableRowsWithSameSignalType = detailTableRowsWithSameSignalType.OrderBy( d => d.ConstructionItems ).ToList() ;
+      var detailTableRowsGroupByPlumbingIdentityInfo = detailTableRowsWithSameSignalType.GroupBy( d => d.PlumbingIdentityInfo ).Select( g => g.ToList() ) ;
+      foreach ( var detailTableRowsWithSamePlumbingIdentityInfo in detailTableRowsGroupByPlumbingIdentityInfo ) {
+        var sortedDetailTableModels = 
+            detailTableRowsWithSamePlumbingIdentityInfo
+              .OrderByDescending( x => x.IsParentRoute )
+              .ThenBy( x => x.GroupId ) ;
+
+        sortedDetailTableModelsList.AddRange( sortedDetailTableModels ) ;
+      }
     }
 
     protected internal static void SetNoPlumbingDataForOneSymbol( List<DetailTableModel> detailTableModels, bool isMixConstructionItems )
@@ -779,23 +830,74 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var wireType = master.Type ;
             var wireSize = master.Size1 ;
             var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
-            var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && master.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && master.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+            var wiresAndCablesModel = wiresAndCablesModelData
+              .FirstOrDefault( w => 
+                w.WireType == wireType 
+                && w.DiameterOrNominal == wireSize
+                && ( ( w.NumberOfHeartsOrLogarithm == "0" && master.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && master.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
             if ( wiresAndCablesModel == null ) continue ;
             var signalType = wiresAndCablesModel.Classification ;
             var wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
             
-            var wireSizesOfWireType = wiresAndCablesModelData.Where( w => w.WireType == wireType ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
-            var wireSizes = wireSizesOfWireType.Any() ? ( from wireSizeType in wireSizesOfWireType select new DetailTableModel.ComboboxItemType( wireSizeType, wireSizeType ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
+            var wireSizesOfWireType = wiresAndCablesModelData
+              .Where( w => w.WireType == wireType )
+              .Select( w => w.DiameterOrNominal )
+              .Distinct()
+              .ToList() ;
+            var wireSizes = wireSizesOfWireType.Any() ? 
+              ( from wireSizeType in wireSizesOfWireType select new DetailTableModel.ComboboxItemType( wireSizeType, wireSizeType ) ).ToList() 
+              : new List<DetailTableModel.ComboboxItemType>() ;
             
-            var wireStripsOfWireType = wiresAndCablesModelData.Where( w => w.WireType == wireType && w.DiameterOrNominal == wireSize ).Select( w => w.NumberOfHeartsOrLogarithm == "0" ? "-" : w.NumberOfHeartsOrLogarithm + w.COrP ).Distinct().ToList() ;
-            var wireStrips = wireStripsOfWireType.Any() ? ( from wireStripType in wireStripsOfWireType select new DetailTableModel.ComboboxItemType( wireStripType, wireStripType ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
+            var wireStripsOfWireType = wiresAndCablesModelData
+              .Where( w => w.WireType == wireType && w.DiameterOrNominal == wireSize )
+              .Select( w => w.NumberOfHeartsOrLogarithm == "0" ? "-" : w.NumberOfHeartsOrLogarithm + w.COrP )
+              .Distinct()
+              .ToList() ;
+            var wireStrips = wireStripsOfWireType.Any() ? 
+              ( from wireStripType in wireStripsOfWireType select new DetailTableModel.ComboboxItemType( wireStripType, wireStripType ) ).ToList() 
+              : new List<DetailTableModel.ComboboxItemType>() ;
 
             var plumbingItemTypes = new List<DetailTableModel.ComboboxItemType> { new( constructionItem, constructionItem ) } ;
             
-            var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", 
-              string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, 
-              constructionItem, constructionItem, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, 
-              string.Empty, string.Empty, true, mixConstructionItems, string.Empty, false, false, false, wireSizes, wireStrips, new List<DetailTableModel.ComboboxItemType>(), new List<DetailTableModel.ComboboxItemType>(), plumbingItemTypes ) ;
+            var detailTableRow = new DetailTableModel( 
+              false, 
+              floor, 
+              ceedCode,
+              detailSymbolModel.DetailSymbol,
+              detailSymbolModel.DetailSymbolId, 
+              wireType, 
+              wireSize,
+              wireStrip, 
+              "1", 
+              string.Empty, 
+              string.Empty, 
+              string.Empty,
+              plumbingType, 
+              string.Empty,
+              string.Empty, 
+              constructionClassification, 
+              signalType, 
+              constructionItem, 
+              constructionItem,
+              remark, 
+              wireCrossSectionalArea, 
+              detailSymbolModel.CountCableSamePosition,
+              detailSymbolModel.RouteName,
+              isEcoMode, isParentRoute, 
+              ! isParentRoute, 
+              string.Empty, 
+              string.Empty, 
+              true,
+              mixConstructionItems, 
+              string.Empty, 
+              false, 
+              false, 
+              false,
+              wireSizes,
+              wireStrips, 
+              new List<DetailTableModel.ComboboxItemType>(), 
+              new List<DetailTableModel.ComboboxItemType>(), 
+              plumbingItemTypes ) ;
             detailTableModels.Add( detailTableRow ) ;
           }
         }

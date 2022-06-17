@@ -75,8 +75,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var signalTypes = ( from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
 
-        var viewModel = new DetailTableViewModel( detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes ) ;
-        var dialog = new DetailTableDialog( document, viewModel, conduitsModelData, wiresAndCablesModelData, false, true ) ;
+        var viewModel = new DetailTableViewModel( document, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, conduitsModelData, wiresAndCablesModelData, false, true ) ;
+        var dialog = new DetailTableDialog(  viewModel ) ;
          if ( dialog.ShowDialog() == true ) {
         //   foreach ( var detailTableModel in viewModel.DetailTableModels ) {
         //     if(wiringStore.WiringData.FirstOrDefault(x=>x.IdOfToConnector == detailTableModel.id))

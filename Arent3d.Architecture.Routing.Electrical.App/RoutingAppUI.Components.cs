@@ -197,6 +197,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( AddWiringInformationCommand ), OnlyInitialized = true )]
           private static class AddWiringInformationCommandButton { }
+
+          [Button( typeof( ChangePlumbingInformationCommand ), OnlyInitialized = true )]
+          private static class ChangePlumbingInformationCommandButton
+          {
+            
+          }
         }
 
         [SplitButton( "arent3d.architecture.routing.drawing.rack", TitleKey = "Electrical.App.Panels.Routing.Drawing.Rack" )]
@@ -206,6 +212,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class NewLimitRackCommandButton
           {
           }
+          
+          [Button( typeof( NewLimitRackCircleCommand ), OnlyInitialized = true )]
+          private static class NewLimitRackCircleCommandButton
+          {
+          }
+          
+          
 
           [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
           private static class NewRackCommandButton
