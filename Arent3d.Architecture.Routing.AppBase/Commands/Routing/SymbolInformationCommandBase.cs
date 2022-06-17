@@ -115,7 +115,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           var symbolHeightParameter = symbolInformationInstance?.LookupParameter( "Symbol Height" ) ;
-          symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() ) ;
+          symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() / 2 ) ; // シンボルのファミリは2倍のサイズで作成されてあるため、ここで　model.Height/2の高さを指定する。Symbol Height = 1の場合、シンボルの高さは200mmとなる。
           symbolInformationStorable.Save() ;
 
           //****Save ceedDetails******
@@ -124,7 +124,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           //Add new data
           ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
           ceedDetailStorable.Save() ;
-
+          
           CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
           OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
           ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
@@ -201,13 +201,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       groupIds.Add( symbolInformationInstanceId ) ;
 
       if ( model.IsShowText && ! string.IsNullOrEmpty( model.Description ) ) {
-        // var noteWidth = ( model.Height ).MillimetersToRevitUnits() ;
         var noteWidth = model.Description.Length * 1d.MillimetersToRevitUnits() ;
-        var symbolKind = (SymbolKindEnum) Enum.Parse( typeof( SymbolKindEnum ), model.SymbolKind! ) ;
-        var delta = 1.0 ;
-        if ( symbolKind == SymbolKindEnum.丸 )
-          delta *= 1.5 ;
-        
+        const double delta = 1.0 ;
+
         var anchor = (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
 
         XYZ txtPosition = anchor switch
@@ -236,25 +232,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = horizontalAlignment, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
 
+        const double maxCharacterHeight = 200 ;
+
         var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, noteWidth, model.Description, opts ) ;
-        var textNodeTypeName = model.CharacterHeight switch
-        {
-          1 => SymbolInformationTextNoteTypeName10,
-          2 => SymbolInformationTextNoteTypeName12,
-          3 => SymbolInformationTextNoteTypeName15,
-          4 => SymbolInformationTextNoteTypeName18,
-          _ => SymbolInformationTextNoteTypeName20
-        } ;
+        var textNodeTypeName = $"SymbolInformationText_{model.CharacterHeight}mm" ;
+        
         var textNoteType = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( textNodeTypeName, tt.Name ) ) ;
         if ( textNoteType == null ) {
-          var textNodeSize = model.CharacterHeight switch
-          {
-            1 => 1.0,
-            2 => 1.2,
-            3 => 1.5,
-            4 => 1.8,
-            _ => 2.0
-          } ;
+          var textNodeSize = model.CharacterHeight < maxCharacterHeight ? model.CharacterHeight : maxCharacterHeight ;
           var elementType = textNote.TextNoteType.Duplicate( textNodeTypeName ) ;
           textNoteType = elementType as TextNoteType ;
           textNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
