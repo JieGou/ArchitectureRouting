@@ -268,7 +268,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           IsExistUsingCode = true ;
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
         else IsShowDiff = oldCeedStorable.IsDiff ;
-        _previewList = new ObservableCollection<CeedModel>() ;
+        _previewList = CeedModels ;
       }
 
       _selectedCeedSetCode = string.Empty ;
