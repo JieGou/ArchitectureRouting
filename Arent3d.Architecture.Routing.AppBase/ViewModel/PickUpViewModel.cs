@@ -329,15 +329,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var origin = line?.Origin ;
       var conduitDirection = line?.Direction ;
       foreach ( var pullBox in pullBoxs ) {
-        var a = pullBox.LookupParameter( "a" )?.AsDouble() ;
-        var b = pullBox.LookupParameter( "b" )?.AsDouble() ;
+        var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
+        var height = pullBox.LookupParameter( "Height" )?.AsDouble() ;
         var minDistance = ( 15.0 ).MillimetersToRevitUnits() ;
-        if ( conduitDirection?.X is 1 or -1 && a != null ) {
-          minDistance = (double) a  ;
+        if ( conduitDirection?.X is 1 or -1 && width != null ) {
+          minDistance = (double) width  ;
         }
 
-        if ( conduitDirection?.Y is 1 or -1 && b != null ) {
-          minDistance = (double) b  ;
+        if ( conduitDirection?.Y is 1 or -1 && height != null ) {
+          minDistance = (double) height  ;
         }
         var pullBoxLocation = pullBox.Location as LocationPoint ;
         var pullBoxOrigin = pullBoxLocation?.Point ;
