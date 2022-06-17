@@ -201,7 +201,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       groupIds.Add( symbolInformationInstanceId ) ;
 
       if ( model.IsShowText && ! string.IsNullOrEmpty( model.Description ) ) {
-        var noteWidth = model.Description.Length * 1d.MillimetersToRevitUnits() ;
+        var noteWidth = model.Description.Length * model.CharacterHeight.MillimetersToRevitUnits() ;
         const double delta = 1.0 ;
 
         var anchor = (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
