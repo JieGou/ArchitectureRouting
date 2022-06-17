@@ -5,7 +5,6 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -20,15 +19,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable();
-      var allLimitRackIds = GetLimitRackIds( uiDocument, document,limitRackStorable  ) ;
+      var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ??
+                              document.GetLimitRackStorable() ;
+      var allLimitRackIds = GetLimitRackIds( uiDocument, document, limitRackStorable ) ;
 
       try {
         using var transaction = new Transaction( document, EraseLimitRackTransactionName ) ;
         transaction.Start() ;
         RemoveLimitRacks( document, allLimitRackIds.rackIds ) ;
         RemoveBoundaryCableTray( document, allLimitRackIds.detailCurverIds ) ;
-        RemoveLimitRackModels(limitRackStorable,allLimitRackIds.limitRackModels) ;
+        RemoveLimitRackModels( limitRackStorable, allLimitRackIds.limitRackModels ) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -38,18 +38,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected abstract (IEnumerable<string> rackIds,IEnumerable<string> detailCurverIds,IEnumerable<LimitRackModel> limitRackModels) GetLimitRackIds(
-      UIDocument ui, Document doc,LimitRackStorable limitRackStorable ) ;
-    
-    protected abstract void RemoveLimitRackModels(LimitRackStorable limitRackStorable,IEnumerable<LimitRackModel> selectedLimitRackModels) ;
+    protected abstract (IEnumerable<string> rackIds, IEnumerable<string> detailCurverIds, IEnumerable<LimitRackModel>
+      limitRackModels) GetLimitRackIds( UIDocument ui, Document doc, LimitRackStorable limitRackStorable ) ;
 
-    private void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
+    protected abstract void RemoveLimitRackModels( LimitRackStorable limitRackStorable,
+      IEnumerable<LimitRackModel> selectedLimitRackModels ) ;
+
+    private static void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
     {
-      if ( allLimitRacks.Any() ) {
-        RemoveRackNotation( document, allLimitRacks ) ;
-        var allLimitRackElements = allLimitRacks.Select( document.GetElement ).Where( x=>x!=null ) ;
-        document.Delete( allLimitRackElements.Select( x => x.Id ).ToList() ) ;
-      }
+      var rackUniqueIds = allLimitRacks as string[] ?? allLimitRacks.ToArray() ;
+      if ( ! rackUniqueIds.Any() ) return ;
+      RemoveRackNotation( document, rackUniqueIds ) ;
+      var allLimitRackElements = rackUniqueIds.Select( document.GetElement ).Where( x => x != null ) ;
+      document.Delete( allLimitRackElements.Select( x => x.Id ).ToList() ) ;
     }
 
     private static void RemoveRackNotation( Document document, IEnumerable<string> rackUniqueIds )

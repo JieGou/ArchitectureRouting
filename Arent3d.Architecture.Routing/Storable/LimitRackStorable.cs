@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.Storable
 
     #region Constructor
 
-    public LimitRackStorable( DataStorage owner ) : base( owner, false)
+    public LimitRackStorable( DataStorage owner ) : base( owner, false )
     {
     }
 
@@ -29,11 +29,10 @@ namespace Arent3d.Architecture.Routing.Storable
     }
 
     #endregion Constructor
-    
+
     protected override void LoadAllFields( FieldReader reader )
     {
       LimitRackModelData = reader.GetArray<LimitRackModel>( LimitRackModelField ).ToList() ;
-
     }
 
     protected override void SaveAllFields( FieldWriter writer )
