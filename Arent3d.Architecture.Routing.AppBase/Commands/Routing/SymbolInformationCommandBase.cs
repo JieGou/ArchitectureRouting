@@ -98,9 +98,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           using Transaction transaction = new(document, "Electrical.App.Commands.Routing.SymbolInformationCommand") ;
           transaction.Start() ;
           //Create group symbol information 
-          if ( oldParentGroup != null ) {
-            oldParentGroup.UngroupMembers() ;
-          }
+          oldParentGroup?.UngroupMembers() ;
 
           //*****Save symbol setting*********** 
           if ( GetSymbolKindName( symbolInformationInstance!.Symbol.Name ) != viewModel.SymbolInformation.SymbolKind ) {
@@ -127,7 +125,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
           ceedDetailStorable.Save() ;
 
-          CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), oldParentGroup ) ;
+          CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
           OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
           ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
           ogs.SetProjectionLineWeight( 5 ) ;
@@ -197,13 +195,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return symbol.Instantiate( xyz, level, StructuralType.NonStructural ) ;
     }
 
-    private static void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz, Group? oldParentGroup )
+    private static void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz )
     {
       ICollection<ElementId> groupIds = new List<ElementId>() ;
       groupIds.Add( symbolInformationInstanceId ) ;
 
       if ( model.IsShowText && ! string.IsNullOrEmpty( model.Description ) ) {
-        var noteWidth = ( model.Height ).MillimetersToRevitUnits() ;
+        // var noteWidth = ( model.Height ).MillimetersToRevitUnits() ;
+        var noteWidth = model.Description.Length * 1d.MillimetersToRevitUnits() ;
         var symbolKind = (SymbolKindEnum) Enum.Parse( typeof( SymbolKindEnum ), model.SymbolKind! ) ;
         var delta = 1.0 ;
         if ( symbolKind == SymbolKindEnum.丸 )
@@ -213,11 +212,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         XYZ txtPosition = anchor switch
         {
-          SymbolCoordinateEnum.上 => new XYZ( xyz.X - noteWidth * 50, xyz.Y + noteWidth * delta * 100, xyz.Z ), //Up
-          SymbolCoordinateEnum.左 => new XYZ( xyz.X - noteWidth * 200 * delta, xyz.Y, xyz.Z ), //Left
-          SymbolCoordinateEnum.右 => new XYZ( xyz.X + noteWidth * 100 * delta, xyz.Y, xyz.Z ), //Right
-          SymbolCoordinateEnum.下 => new XYZ( xyz.X - noteWidth * 50, xyz.Y - noteWidth * delta * 100, xyz.Z ), //Bottom
-          _ => new XYZ( xyz.X - noteWidth * 50, xyz.Y, xyz.Z ) //Center
+          SymbolCoordinateEnum.上 => new XYZ( xyz.X, xyz.Y + noteWidth * delta * 50, xyz.Z ), //Up
+          SymbolCoordinateEnum.左 => new XYZ( xyz.X - noteWidth * 50 * delta, xyz.Y, xyz.Z ), //Left
+          SymbolCoordinateEnum.右 => new XYZ( xyz.X + noteWidth * 50 * delta, xyz.Y, xyz.Z ), //Right
+          SymbolCoordinateEnum.下 => new XYZ( xyz.X, xyz.Y - noteWidth * delta * 50, xyz.Z ), //Bottom
+          SymbolCoordinateEnum.中心 => xyz, //Center
+          _ => throw new ArgumentOutOfRangeException()
+        } ;
+
+        var horizontalAlignment = anchor switch
+        {
+          SymbolCoordinateEnum.左 => HorizontalTextAlignment.Right,
+          SymbolCoordinateEnum.右 => HorizontalTextAlignment.Left,
+          _ => HorizontalTextAlignment.Center
         } ;
 
         var defaultTextTypeId = document.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
@@ -227,7 +234,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var maxWidth = TextElement.GetMaximumAllowedWidth( document, defaultTextTypeId ) ;
         noteWidth = noteWidth < minWidth ? minWidth : ( noteWidth > maxWidth ? maxWidth : noteWidth ) ;
 
-        TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
+        TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = horizontalAlignment, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
 
         var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, noteWidth, model.Description, opts ) ;
         var textNodeTypeName = model.CharacterHeight switch
