@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
 
     public static void UpdateQuantity( ObservableCollectionEx<CeedDetailModel> ceedDetailList, CeedDetailModel itemChanged, CeedDetailModel conduit )
     {
+      if ( conduit.CeedCode == string.Empty ) return ;
       var electricalWireInfo = GetElectricalWireInfo( ceedDetailList, itemChanged ) ;
       if ( null == electricalWireInfo ) return ;
 
@@ -41,6 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
 
     public static void ChangeQuantityInfo( IEnumerable<CeedDetailModel> ceedDetailList, CeedDetailModel itemChanged )
     {
+      if ( itemChanged.CeedCode == string.Empty ) return ;
       var itemCvv = itemChanged.Classification == ClassificationType.隠蔽.GetFieldName() ? GetElectricalWireInfo( ceedDetailList, itemChanged ) : GetConduitInfo( ceedDetailList, itemChanged ) ;
       if ( null == itemCvv ) return ;
 

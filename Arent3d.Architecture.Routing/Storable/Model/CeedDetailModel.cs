@@ -21,13 +21,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         _classification = value ;
         OnPropertyChanged( nameof( Classification ) ) ;
 
-        if ( value is nameof( ClassificationType.露出 ) && IsConduit ) {
-          Quantity = Dash ;
+        if ( value is nameof( ClassificationType.露出 ) && IsConduit && CeedCode != string.Empty ) {
+          if ( CeedCode != string.Empty )
+            Quantity = Dash ;
           AllowInputQuantity = false ;
         }
 
         if ( value is nameof( ClassificationType.隠蔽 ) && IsConduit ) {
-          if ( Quantity == Dash )
+          if ( Quantity == Dash && CeedCode != string.Empty )
             Quantity = DefaultQuantity ;
           AllowInputQuantity = true ;
         }
@@ -75,8 +76,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
         if ( value is nameof( ClassificationType.露出 ) && IsConduit ) {
           Classification = nameof( ClassificationType.露出 ) ;
-          Quantity = Dash ;
-          AllowInputQuantity = false ;
+          if ( CeedCode != string.Empty ) {
+            Quantity = Dash ;
+            AllowInputQuantity = false ;
+          }
         }
 
         if ( value is nameof( ConstructionClassificationType.地中埋設 ) or nameof( ConstructionClassificationType.床隠蔽 ) or nameof( ConstructionClassificationType.冷房配管共巻配線 ) && IsConduit ) {

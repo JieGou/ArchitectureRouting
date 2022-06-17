@@ -205,8 +205,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void AddCeedDetailBaseOnMaterialCode( string materialCode, string name, CeedModel? ceedModel, bool allowInputQuantity )
     {
       if ( _csvStorable == null ) return ;
-      var conduitData = _csvStorable.ConduitsModelData ;
-      var conduit = conduitData.FirstOrDefault( x => x.PipingType + x.Size == name ) ;
+      var conduit = _csvStorable.ConduitsModelData.FirstOrDefault( x => x.PipingType + x.Size == name ) ;
       var isConduit = conduit != null ;
       
       if ( string.IsNullOrEmpty( materialCode ) ) return ;
@@ -214,7 +213,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( null == hiroiMaster ) return ;
       var ceedSetCodeArray = ceedModel?.CeedSetCode?.Split( ':' ) ;
       var ceedCode = ceedSetCodeArray?.Length > 0 ? ceedSetCodeArray[ 0 ] : string.Empty ;
-      var newCeedDetail = new CeedDetailModel( hiroiMaster.Buzaicd, name, hiroiMaster.Kikaku, string.Empty, QuantityDefault, UnitDefault, SymbolInformation.Id, TrajectoryDefault, hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1, ceedModel?.ModelNumber, ceedCode,
+      var newCeedDetail = new CeedDetailModel( hiroiMaster.Buzaicd, name, hiroiMaster.Kikaku, string.Empty, QuantityDefault, UnitDefault, SymbolInformation.Id, TrajectoryDefault,
+        hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Kikaku, CeedDetailList.Count + 1, ceedModel?.ModelNumber, ceedCode,
         ConstructionClassificationDefault, allowInputQuantity ? 0 : 1, 1, 1, string.Empty, allowInputQuantity, isConduit ) ;
       if ( ! newCeedDetail.AllowInputQuantity )
         newCeedDetail.Quantity = CeedDetailModel.Dash ;
@@ -295,9 +295,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( CeedDetailList.FirstOrDefault( x => x.ProductCode == buzaiCd ) != null ) {
         return ;
       }
-
-      var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, selectedHiroiMaster.Hinmei, selectedHiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2, selectedHiroiMaster.Kikaku,
-        CeedDetailList.Count + 1, string.Empty, string.Empty, string.Empty, 1, 1, 1, string.Empty, true ) ;
+      
+      var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, selectedHiroiMaster.Kikaku, selectedHiroiMaster.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2, selectedHiroiMaster.Kikaku,
+        CeedDetailList.Count + 1, string.Empty, string.Empty, string.Empty, 0, 1, QuantityDefault, string.Empty, true ) ;
+      
+      if ( _document == null ) return ;
+      var csvStorable = _document!.GetCsvStorable() ;
+      var conduit = csvStorable.ConduitsModelData.FirstOrDefault( x => x.PipingType + x.Size == ceedDetailModel.ProductName ) ;
+      ceedDetailModel.IsConduit = conduit != null ;
+      
       CeedDetailList.Add( ceedDetailModel ) ;
       CeedDetailSelected = CeedDetailList.Last() ;
       CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
