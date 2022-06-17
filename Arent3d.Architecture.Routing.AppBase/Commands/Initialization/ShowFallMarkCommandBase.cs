@@ -149,8 +149,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var fallMarkTextNoteType = GetTextNoteTypeForFallMarkNote( document ) ;
-      TextNoteOptions opts = new( fallMarkTextNoteType.Id ) { HorizontalAlignment = HorizontalTextAlignment.Right } ;
-      var txtPosition = new XYZ( fallMarkPoint.X + 1.2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, fallMarkPoint.Y - 0.25 *TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification , fallMarkPoint.Z ) ;
+      TextNoteOptions opts = new( fallMarkTextNoteType.Id ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
+      var txtPosition = new XYZ( fallMarkPoint.X + .6 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, fallMarkPoint.Y - 0.2 *TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification , fallMarkPoint.Z ) ;
 
       var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition,fallMarkNote ,opts) ;
 
@@ -173,7 +173,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       var elementType = defaultTextNoteType.Duplicate( FallMarkTextNoteTypeName ) ;
       fallMarkTextNoteType = elementType as TextNoteType ;
-
+      fallMarkTextNoteType?.GetParameter( BuiltInParameter.TEXT_SIZE )?.Set( 1.5.MillimetersToRevitUnits() ) ;
       fallMarkTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
       fallMarkTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
       fallMarkTextNoteType?.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( ParamUtils.ToColorParameterValue( 255,128,64 ) );
