@@ -75,8 +75,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         }
         else {
           if ( isBeforeSegment ) {
-            using Transaction t = new( document, "Create pull box" ) ;
-            t.Start() ;
             if ( segment.FromEndPoint.TypeName == PassPointEndPoint.Type ) {
               var passPoint = document.GetElement( segment.FromEndPoint.Key.GetElementUniqueId() ) ;
               passPoint.TrySetProperty( RoutingParameter.RouteName, name ) ;
@@ -86,8 +84,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               var passPoint = document.GetElement( segment.ToEndPoint.Key.GetElementUniqueId() ) ;
               passPoint.TrySetProperty( RoutingParameter.RouteName, name ) ;
             }
-
-            t.Commit() ;
           }
 
           result.Add( isBeforeSegment 
@@ -106,6 +102,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         else {
           result.Add( ( routeName, segment ) ) ;
         }
+        
+        // isBeforeSegment = true ;
+        // nextIndex++ ;
+        // name = nameBase + "_" + nextIndex ;
+        // foreach ( var mainSegment in route.RouteSegments.EnumerateAll() ) {
+        //   if ( detector.IsPassingThrough( mainSegment ) ) {
+        //     isBeforeSegment = false ;
+        //     result.Add( ( name, new RouteSegment( mainSegment.SystemClassificationInfo, mainSegment.SystemType, mainSegment.CurveType, mainSegment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+        //   }
+        //   else {
+        //     if ( isBeforeSegment ) {
+        //       result.Add( ( name, new RouteSegment( mainSegment.SystemClassificationInfo, mainSegment.SystemType, mainSegment.CurveType, mainSegment.FromEndPoint, mainSegment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+        //     }
+        //     else {
+        //       break ;
+        //     }
+        //   }
+        // }
       }
 
       return result ;
@@ -194,11 +208,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return lastIndex + 1 ;
     }
 
-    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBox ( Document document, IReadOnlyCollection<Route> executeResultValue )
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBox ( Document document, IReadOnlyCollection<Route> executeResultValue, List<string> boardUniqueIds, List<XYZ> pullBoxPositions )
     {
       const string angleParameter = "角度" ;
       const double maxAngle = 270 ;
-      var maxLength = 30 ;
+      var maxLength = ( 30.0 ).MetersToRevitUnits() ;
 
       string conduitFittingLengthParam = "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ;
       string conduitLengthParam = "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ;
@@ -235,8 +249,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             sumLength += length ;
           }
 
-          if ( sumLength < maxLength || allConduitsOfRoute[i] is not Conduit ) continue ;
-          selectedConduit = allConduitsOfRoute[i] ;
+          if ( sumLength < maxLength ) continue ;
+          selectedConduit = allConduitsOfRoute[ i ] ;
           break;
         }
 
@@ -244,7 +258,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var boardConnector = new List<Element>() ;
         foreach ( var connector in connectorsOfRoute ) {
           var element = connector.Owner ;
-          if ( element == null ) continue;
+          if ( element == null || boardUniqueIds.Contains( element.UniqueId ) ) continue;
           element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfConnector ) ;
           if ( string.IsNullOrEmpty( ceedCodeOfConnector ) ) continue ;
           var registrationOfBoardDataModel = registrationOfBoardDataModels.FirstOrDefault( x => x.AutoControlPanel == ceedCodeOfConnector || x.SignalDestination == ceedCodeOfConnector ) ;
@@ -261,31 +275,43 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( conduitInfo == null ) continue ;
           var (originX, originY, originZ) = conduitInfo.ConduitOrigin ;
           result = CreatePullBoxAndGetSegments( document, route, conduitInfo.Conduit, originX, originY, originZ, conduitInfo.Level, conduitInfo.ConduitDirection, nameBase! ).ToList() ;
+          boardUniqueIds.Add( board.UniqueId ) ;
           return result ;
         }
         
         if ( conduitFittingsOfRoute.Count >= 4 ) {
           var conduitFitting = conduitFittingsOfRoute.ElementAt( conduitFittingsOfRoute.Count - 3 ) ;
-          var conduitInfo = GetPullBoxAndConnectorPosition( document, allConduitsOfRoute, conduitFitting ) ;
+          var conduitInfo = GetConduitInfo( document, allConduitsOfRoute, conduitFitting ) ;
           if ( conduitInfo == null ) continue ;
+          var isSamePullBoxPositions = ComparePullBoxPosition( pullBoxPositions, conduitInfo.ConduitOrigin ) ;
+          if ( isSamePullBoxPositions ) continue ;
+          
           var ( originX, originY, originZ)  = conduitInfo.ConduitOrigin ;
-          var height = originZ - conduitInfo.Level.Elevation ;
           var direction = conduitInfo.ConduitDirection ;
-          result = CreatePullBoxAndGetSegments( document, route, conduitInfo.Conduit, originX, originY, height, conduitInfo.Level, direction, nameBase! ).ToList() ;
+          result = CreatePullBoxAndGetSegments( document, route, conduitInfo.Conduit, originX, originY, originZ, conduitInfo.Level, direction, nameBase! ).ToList() ;
+          pullBoxPositions.Add( conduitInfo.ConduitOrigin ) ;
           return result ;
         }
 
         if ( sumAngle > maxAngle && selectedConduitFitting != null ) {
-          var conduitInfo = GetPullBoxAndConnectorPosition( document, allConduitsOfRoute, selectedConduitFitting ) ;
+          var conduitInfo = GetConduitInfo( document, allConduitsOfRoute, selectedConduitFitting ) ;
           if ( conduitInfo == null ) continue ;
+          var isSamePullBoxPositions = ComparePullBoxPosition( pullBoxPositions, conduitInfo.ConduitOrigin ) ;
+          if ( isSamePullBoxPositions ) continue ;
+          
           var ( originX, originY, originZ)  = conduitInfo.ConduitOrigin ;
-          var height = originZ - conduitInfo.Level.Elevation ;
           var direction = conduitInfo.ConduitDirection ;
-          result = CreatePullBoxAndGetSegments( document, route, conduitInfo.Conduit, originX, originY, height, conduitInfo.Level, direction, nameBase! ).ToList() ;
+          result = CreatePullBoxAndGetSegments( document, route, conduitInfo.Conduit, originX, originY, originZ, conduitInfo.Level, direction, nameBase! ).ToList() ;
+          pullBoxPositions.Add( conduitInfo.ConduitOrigin ) ;
           return result ;
         }
 
         if ( sumLength > maxLength && selectedConduit != null ) {
+          if ( selectedConduit is not Conduit ) {
+            selectedConduit = GetConduit( allConduitsOfRoute, selectedConduit ) ;
+          }
+
+          if ( selectedConduit == null ) continue ;
           var level = document.GetAllElements<Level>().SingleOrDefault( l => l.Id == selectedConduit.GetLevelId() ) ;
           var location = ( selectedConduit.Location as LocationCurve ) ! ;
           var line = ( location.Curve as Line ) ! ;
@@ -302,6 +328,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           }
 
           result = CreatePullBoxAndGetSegments( document, route, selectedConduit, originX, originY, height, level, direction, nameBase! ).ToList() ;
+          pullBoxPositions.Add( new XYZ( originX, originY, height ) ) ;
           return result ;
         }
       }
@@ -312,13 +339,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     {
       var pullBoxHeight = ( 15.0 ).MillimetersToRevitUnits() ;
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
-      using Transaction t = new( document, "Create pull box" ) ;
-      t.Start() ;
-      var pullBox = GenerateConnector( document, ElectricalRoutingFamilyType.PullBox, ConnectorFamilyType.PullBox, originX, originY, originZ - pullBoxHeight, level, route.RouteName ) ;
-      t.Commit() ;
+      try {
+        using Transaction t = new( document, "Create pull box" ) ;
+        t.Start() ;
+        var pullBox = GenerateConnector( document, ElectricalRoutingFamilyType.PullBox, ConnectorFamilyType.PullBox, originX, originY, originZ - pullBoxHeight, level, route.RouteName ) ;
+        t.Commit() ;
 
-      result.AddRange( GetRouteSegments( document, route, route.SubRoutes.First(), element, pullBox, originZ, originZ, direction, true, nameBase ) ) ;
+        using Transaction t1 = new( document, "Get segments" ) ;
+        t1.Start() ;
+        result.AddRange( GetRouteSegments( document, route, route.SubRoutes.First(), element, pullBox, originZ, originZ, direction, true, nameBase ) ) ;
+        t1.Commit() ;
+      }
+      catch {
+        //
+      }
       return result ;
+    }
+
+    private static bool ComparePullBoxPosition( IEnumerable<XYZ> pullBoxPositions, XYZ newPullBoxPosition )
+    {
+      var minDistance = ( 300.0 ).MillimetersToRevitUnits() ;
+      foreach ( var pullBoxPosition in pullBoxPositions ) {
+        if ( newPullBoxPosition.DistanceTo( pullBoxPosition ) < minDistance ) {
+          return true ;
+        }
+      }
+
+      return false ;
     }
 
     private static ConduitInfo? GetConduitOfBoard( Document document, string routeName, Element board )
@@ -366,8 +413,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return conduitInfo ;
     }
 
-    private static ConduitInfo? GetPullBoxAndConnectorPosition( Document document, List<Element> allConduits, Element conduitFitting )
+    private static ConduitInfo? GetConduitInfo( Document document, List<Element> allConduits, Element conduitFitting )
     {
+      string conduitLengthParam = "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ;
+      var defaultMinLenght = ( 100.0 ).MillimetersToRevitUnits() ;
       var conduitFittingLocation = ( conduitFitting.Location as LocationPoint ) ! ;
       var conduitFittingPoint = conduitFittingLocation.Point ;
       var conduits = allConduits.Where( c => c.GetBuiltInCategory() == BuiltInCategory.OST_Conduit ).ToList() ;
@@ -378,7 +427,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var fromConduitLine = ( fromConduitLocation.Curve as Line ) ! ;
         var fromConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
         var distance = fromConduitPoint.DistanceTo( conduitFittingPoint ) ;
-        if ( ! ( distance < minDistance ) ) continue ;
+        var length = conduit.ParametersMap.get_Item( conduitLengthParam ).AsDouble() ;
+        if ( distance > minDistance || length < defaultMinLenght ) continue ;
         minDistance = distance ;
         fromConduit = conduit ;
       }
@@ -401,10 +451,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           y = fromConduitPoint.Y - fromConduitDirection.Y * PullBoxLenght ;
         }
 
-        var pullBoxPosition = new XYZ( x, y, fromConduitPoint.Z ) ;
         var level = document.GetAllElements<Level>().SingleOrDefault( l => l.Id == fromConduit.GetLevelId() ) ;
+        var height = fromConduitPoint.Z - level!.Elevation ;
+        var pullBoxPosition = new XYZ( x, y, height) ;
         return new ConduitInfo( fromConduit, pullBoxPosition, fromConduitDirection, level! ) ;
       }
+    }
+    
+    private static Element? GetConduit( List<Element> allConduits, Element conduitFitting )
+    {
+      var conduitFittingLocation = ( conduitFitting.Location as LocationPoint ) ! ;
+      var conduitFittingPoint = conduitFittingLocation.Point ;
+      var conduits = allConduits.Where( c => c.GetBuiltInCategory() == BuiltInCategory.OST_Conduit ).ToList() ;
+      var minDistance = double.MaxValue ;
+      var prevConduit = conduits.First() ;
+      foreach ( var conduit in conduits ) {
+        var fromConduitLocation = ( conduit.Location as LocationCurve ) ! ;
+        var fromConduitLine = ( fromConduitLocation.Curve as Line ) ! ;
+        var fromConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
+        var distance = fromConduitPoint.DistanceTo( conduitFittingPoint ) ;
+        if ( distance > minDistance ) continue ;
+        minDistance = distance ;
+        prevConduit = conduit ;
+      }
+
+      return prevConduit ;
     }
     
     private class ConduitInfo

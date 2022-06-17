@@ -58,24 +58,27 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }
     
-    protected override void CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue )
+    protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue )
     {
       using var progress = ShowProgressBar( "Routing...", false ) ;
-      var routeNames = executeResultValue.Select( r => r.RouteName ).Distinct().ToHashSet() ;
+      List<string> boards = new() ;
+      List<XYZ> pullBoxPositions = new() ;
       while ( true ) {
-        var segments = PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue ) ;
+        var segments = PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue, boards, pullBoxPositions ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
         try {
           var result = executor.Run( segments, progress ) ;
-          executeResultValue = result.Value.Where( r => routeNames.Contains( r.RouteName ) ).ToList() ;
+          executeResultValue = result.Value ;
         }
         catch {
           break ;
         }
         transaction.Commit() ;
       }
+
+      return executeResultValue ;
     }
   }
 }
