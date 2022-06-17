@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App
 
     private readonly Guid _dpid = new Guid( "42260C8B-92A0-46E1-9506-3701153502C7" ) ;
 
-    private RoutingAppUI( UIControlledApplication application ) : base( application )
+    private RoutingAppUI( UIControlledApplication application ) : base( application, DefaultCommandAssemblyResolver.Instance )
     {
       _registerFromToTreeCommand = new RegisterFromToTreeCommand( application, _dpid, new PostCommandExecutor() ) ;
 
