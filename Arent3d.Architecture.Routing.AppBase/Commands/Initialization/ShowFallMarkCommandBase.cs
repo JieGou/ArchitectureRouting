@@ -37,6 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
             else
               CreateFallMarkForConduitWithVerticalDirection( document ) ;
+
             return Result.Succeeded ;
           } ) ;
       }
@@ -56,32 +57,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var conduitLine = ( conduitPosition.Curve as Line ) ! ;
         var conduitDirection = conduitLine.Direction ;
         if ( conduitDirection.Z is not (1.0 or -1.0) ) continue ;
-        if ( ! conduitWithZDirection.Any( item => ((item.Location as LocationCurve )!.Curve as Line )!.Origin.IsAlmostEqualTo( conduitLine.Origin )))
+        if ( ! conduitWithZDirection.Any( item =>
+              ( ( item.Location as LocationCurve )!.Curve as Line )!.Origin.IsAlmostEqualTo( conduitLine.Origin ) ) )
           conduitWithZDirection.Add( conduit ) ;
       }
 
       if ( ! conduitWithZDirection.Any() ) return ;
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ).FirstOrDefault() ??
                    throw new InvalidOperationException() ;
-      
+
       symbol.TryGetProperty( "Lenght", out double lenghtMark ) ;
 
       var detailTableModels = conduitWithZDirection.GetDetailTableModelsFromConduits( document ) ;
-      
-      Color color = new Color(
-        (byte) 255, 128, (byte) 64 );
-      OverrideGraphicSettings overrideGraphicSetting = new OverrideGraphicSettings();
-      overrideGraphicSetting.SetProjectionLineColor( color );
-      
+
+      Color color = new Color( (byte)255, 128, (byte)64 ) ;
+      OverrideGraphicSettings overrideGraphicSetting = new OverrideGraphicSettings() ;
+      overrideGraphicSetting.SetProjectionLineColor( color ) ;
+
       foreach ( var conduit in conduitWithZDirection ) {
-        GenerateFallMarks( document, symbol, conduit,detailTableModels,overrideGraphicSetting ) ;
+        GenerateFallMarks( document, symbol, conduit, detailTableModels, overrideGraphicSetting ) ;
       }
     }
 
-    private static void GenerateFallMarks( Document document, FamilySymbol symbol, Conduit conduit, IEnumerable<DetailTableModel> detailTableModels, OverrideGraphicSettings overrideGraphicSetting )
+    private static void GenerateFallMarks( Document document, FamilySymbol symbol, Conduit conduit,
+      IEnumerable<DetailTableModel> detailTableModels, OverrideGraphicSettings overrideGraphicSetting )
     {
       var level = conduit.ReferenceLevel ;
-      var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() + VerticalOffset ;
+      var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() +
+                   VerticalOffset ;
       var conduitPosition = ( conduit.Location as LocationCurve ) ! ;
       var conduitLine = ( conduitPosition.Curve as Line ) ! ;
 
@@ -89,38 +92,39 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var fallMarkInstance = symbol.Instantiate( fallMarkPoint, level, StructuralType.NonStructural ) ;
 
       var routeName = conduit.GetRouteName() ;
-      
+
       var changePlumbingInformationStorable = document.GetChangePlumbingInformationStorable() ;
 
       var existingPlumbingInfo =
         changePlumbingInformationStorable.ChangePlumbingInformationModelData.FirstOrDefault( x =>
           x.ConduitId == conduit.UniqueId ) ;
-      
-      
 
-      var detaiTableModel = detailTableModels.FirstOrDefault( dtm => dtm.RouteName == routeName ) ;
 
-      var fallMarkNoteString = existingPlumbingInfo !=null && !string.IsNullOrEmpty( existingPlumbingInfo.PlumbingSize) ? 
-                               $"{existingPlumbingInfo.PlumbingType}":
-                               $"{detaiTableModel?.PlumbingType}" ;
+      var detailTableModel = detailTableModels.FirstOrDefault( dtm => dtm.RouteName == routeName ) ;
+
+      var fallMarkNoteString =
+        existingPlumbingInfo != null && ! string.IsNullOrEmpty( existingPlumbingInfo.PlumbingSize )
+          ? $"{existingPlumbingInfo.PlumbingType}"
+          : $"{detailTableModel?.PlumbingType}" ;
 
       if ( string.IsNullOrEmpty( fallMarkNoteString ) ) return ;
-      
-      var fallMarkTextNote = CreateFallMarkNote( document, fallMarkInstance, fallMarkNoteString,fallMarkPoint ,overrideGraphicSetting) ;
+
+      var fallMarkTextNote = CreateFallMarkNote( document,  fallMarkNoteString, fallMarkPoint,
+        overrideGraphicSetting ) ;
       var fallMarkGroupIds = new[] { fallMarkInstance.Id, fallMarkTextNote.Id } ;
-      var group = document.Create.NewGroup(fallMarkGroupIds);
-      group.GroupType.Name= fallMarkInstance.UniqueId ;
-      
+      var group = document.Create.NewGroup( fallMarkGroupIds ) ;
+      group.GroupType.Name = fallMarkInstance.UniqueId ;
     }
+
     private static List<ElementId> GetExistedFallMarkInstancesIds( Document document )
     {
       var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ) ??
                             throw new InvalidOperationException() ;
-      return document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList();
-
+      return document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList() ;
     }
 
-    private List<ElementId> GetExistedFallMarkTextNoteInstancesIds(Document document , IEnumerable<ElementId> existedFallMarkInstancesIds )
+    private static List<ElementId> GetExistedFallMarkTextNoteInstancesIds( Document document,
+      IEnumerable<ElementId> existedFallMarkInstancesIds )
     {
       var fallMarkTextNoteInstanceIds = new HashSet<ElementId>() ;
 
@@ -142,44 +146,51 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         parentGroup.UngroupMembers() ;
       }
 
-      return fallMarkTextNoteInstanceIds.ToList();
+      return fallMarkTextNoteInstanceIds.ToList() ;
     }
 
-    private static TextNote CreateFallMarkNote(Document document, FamilyInstance fallMarkInstance, string fallMarkNote,XYZ fallMarkPoint,OverrideGraphicSettings overrideGraphicSetting)
+    private static TextNote CreateFallMarkNote( Document document, string fallMarkNote,
+      XYZ fallMarkPoint, OverrideGraphicSettings overrideGraphicSetting )
     {
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var fallMarkTextNoteType = GetTextNoteTypeForFallMarkNote( document ) ;
-      TextNoteOptions opts = new( fallMarkTextNoteType.Id ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
-      var txtPosition = new XYZ( fallMarkPoint.X + .6 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, fallMarkPoint.Y - 0.2 *TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification , fallMarkPoint.Z ) ;
+      TextNoteOptions opts = new(fallMarkTextNoteType.Id) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
+      var txtPosition =
+        new XYZ( fallMarkPoint.X + .6 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification,
+          fallMarkPoint.Y - 0.2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification,
+          fallMarkPoint.Z ) ;
 
-      var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition,fallMarkNote ,opts) ;
+      var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, fallMarkNote, opts ) ;
 
       document.ActiveView.SetElementOverrides( textNote.Id, overrideGraphicSetting ) ;
 
-      return textNote;
+      return textNote ;
     }
 
-    private static TextNoteType GetTextNoteTypeForFallMarkNote(Document doc)
+    private static TextNoteType GetTextNoteTypeForFallMarkNote( Document doc )
     {
-      var fallMarkTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( FallMarkTextNoteTypeName, tt.Name ) ) ;
+      var fallMarkTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) )
+        .WhereElementIsElementType().Cast<TextNoteType>()
+        .FirstOrDefault( tt => Equals( FallMarkTextNoteTypeName, tt.Name ) ) ;
 
       if ( fallMarkTextNoteType != null ) return fallMarkTextNoteType ;
-      
+
       var defaultTextNoteId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       var defaultTextNoteType = doc.GetElement( defaultTextNoteId ) as TextNoteType ;
 
       if ( defaultTextNoteType == null ) {
         throw new NullReferenceException( "can not find default text note type!" ) ;
       }
+
       var elementType = defaultTextNoteType.Duplicate( FallMarkTextNoteTypeName ) ;
       fallMarkTextNoteType = elementType as TextNoteType ;
       fallMarkTextNoteType?.GetParameter( BuiltInParameter.TEXT_SIZE )?.Set( 1.5.MillimetersToRevitUnits() ) ;
       fallMarkTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
       fallMarkTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
-      fallMarkTextNoteType?.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( ParamUtils.ToColorParameterValue( 255,128,64 ) );
+      fallMarkTextNoteType?.get_Parameter( BuiltInParameter.LINE_COLOR )
+        .Set( ParamUtils.ToColorParameterValue( 255, 128, 64 ) ) ;
 
-      return fallMarkTextNoteType ?? throw new InvalidOperationException();
+      return fallMarkTextNoteType ?? throw new InvalidOperationException() ;
     }
-    
   }
 }
