@@ -121,5 +121,39 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       t.Commit() ;
     }
+    
+    public static Element? GetConnectorOfRoute( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, bool isFrom = false )
+    {
+      var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      foreach ( var conduit in conduitsOfRoute ) {
+        var toEndPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.First().Key ;
+        var toElementId = toEndPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
+        return toConnector ;
+      }
+
+      return null ;
+    }
+    
+    public static List<string> GetCeedSetCodeOfElement( Element element )
+    {
+      element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
+      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':' ).ToList() : new List<string>() ;
+    }
+    
+    public static ( string, string ) GetCeedCodeAndDeviceSymbolOfElement( Element element )
+    {
+      element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
+      if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) return ( string.Empty, string.Empty ) ;
+      var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
+      var ceedCode = ceedSetCode.FirstOrDefault() ;
+      var deviceSymbol = ceedSetCode.Count > 1 ? ceedSetCode.ElementAt( 1 ) : string.Empty ;
+      return ( ceedCode ?? string.Empty, deviceSymbol ?? string.Empty ) ;
+    }
+
   }
 }

@@ -10,9 +10,10 @@ using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class CeedModelDialog
+  public partial class CeedModelDialog : Window
   {
-    private CeedViewModel ViewModel => (CeedViewModel)DataContext ;
+    private CeedViewModel ViewModel => (CeedViewModel) DataContext ;
+
     public CeedModelDialog( CeedViewModel viewModel )
     {
       InitializeComponent() ;
@@ -30,52 +31,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
-      ViewModel.Load(CbShowOnlyUsingCode);
+      ViewModel.Load( CbShowOnlyUsingCode ) ;
       if ( CbShowDiff.IsChecked == false ) {
         CbShowDiff.IsChecked = true ;
-      } 
+      }
+
       BtnReplaceSymbol.IsEnabled = false ;
     }
 
-    private void Button_OK( object sender, RoutedEventArgs e )
+    private void CmbKeyUp( object sender, KeyEventArgs e )
     {
-      SaveCeedModelNumberDisplayAndOnlyUsingCodeState() ;
-      DialogResult = true ;
-      Close() ;
-    }
-    
-    private void Button_Search( object sender, RoutedEventArgs e )
-    {
-      ViewModel.Search() ;
-    }
-
-    private void CmbModelNumbers_KeyDown( object sender, KeyEventArgs e )
-    {
+      var comboBox = (ComboBox) sender ;
       if ( e.Key == Key.Enter ) {
         ViewModel.Search() ;
       }
+      else {
+        comboBox.IsDropDownOpen = true ;
+      }
     }
 
-    private void SaveCeedModelNumberDisplayAndOnlyUsingCodeState()
-    {
-      ViewModel.Save() ;
-    }
-    
     private void ShowCeedModelNumberColumn_Checked( object sender, RoutedEventArgs e )
     {
-      ViewModel.ShowCeedModelNumberColumn(LbCeedModelNumbers, CmbCeedModelNumbers) ;
+      ViewModel.ShowCeedModelNumberColumn( LbCeedModelNumbers, CmbCeedModelNumbers ) ;
     }
-    
+
     private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
     {
-      ViewModel.UnShowCeedModelNumberColumn(LbCeedModelNumbers, CmbCeedModelNumbers) ;
+      ViewModel.UnShowCeedModelNumberColumn( LbCeedModelNumbers, CmbCeedModelNumbers ) ;
     }
 
     private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
     {
-      ViewModel.LoadUsingCeedModel(CbShowOnlyUsingCode) ;
+      ViewModel.LoadUsingCeedModel( CbShowOnlyUsingCode ) ;
     }
-    
+
     private void ShowOnlyUsingCode_Checked( object sender, RoutedEventArgs e )
     {
       ViewModel.ShowOnlyUsingCode() ;
@@ -85,7 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       ViewModel.UnShowOnlyUsingCode() ;
     }
-    
+
     private void Row_MouseLeftButtonUp( object sender, MouseButtonEventArgs e )
     {
       BtnReplaceSymbol.IsEnabled = false ;
@@ -93,13 +82,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
         return ;
       }
-    
+
       ViewModel.SelectedCeedModel = ( (DataGridRow) sender ).DataContext as CeedModel ;
       BtnReplaceSymbol.IsEnabled = true ;
-      ViewModel.PreviewList.Clear() ;
-      ViewModel.PreviewList.Add( ViewModel.SelectedCeedModel! ) ;
+      // ViewModel.PreviewList.Clear() ;
+      // ViewModel.PreviewList.Add( ViewModel.SelectedCeedModel! ) ;
     }
-    
+
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
     {
       var selectedItem = (CeedModel) DtGrid.SelectedValue ;
@@ -109,16 +98,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
       ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
       if ( string.IsNullOrEmpty( ViewModel.SelectedDeviceSymbol ) ) return ;
-      SaveCeedModelNumberDisplayAndOnlyUsingCodeState() ;
+      ViewModel.Save() ;
       DialogResult = true ;
       Close() ;
     }
 
     private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
     {
-      ViewModel.ReplaceSymbol(DtGrid, BtnReplaceSymbol );
+      ViewModel.ReplaceSymbol( DtGrid, BtnReplaceSymbol ) ;
     }
-    
+
     private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
     {
       ViewModel.ReplaceMultipleSymbols( DtGrid ) ;
