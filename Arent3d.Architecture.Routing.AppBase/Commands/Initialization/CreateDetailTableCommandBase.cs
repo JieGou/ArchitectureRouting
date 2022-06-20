@@ -23,7 +23,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class CreateDetailTableCommandBase : IExternalCommand
   {
-    private const string DefaultParentPlumbingType = "E" ;
     private const string DefaultConstructionItems = "未設定" ;
     private const string DefaultChildPlumbingSymbol = "↑" ;
     private const string NoPlumping = "配管なし" ;
@@ -204,7 +203,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       if ( detailTableModels.Any() ) {
-        SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableModels, DefaultParentPlumbingType ) ;
+        SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableModels ) ;
       }
 
       if ( detailSymbolIdsOnDetailTableModels.Any() ) {
@@ -480,10 +479,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      SetPlumbingDataForEachWiring( new List<DetailTableModel>(), conduitsModelData, ref detailTableRowsSinglePlumbing, plumbingType ) ;
+      SetPlumbingDataForEachWiring( new List<DetailTableModel>(), conduitsModelData, ref detailTableRowsSinglePlumbing ) ;
     }
 
-    private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType )
+    private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels )
     {
       const double percentage = 0.32 ;
       var newDetailTableRows = new List<DetailTableModel>() ;
@@ -491,17 +490,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         const int plumbingCount = 1 ;
         var oldDetailTableRows = detailTableModelData.Where( d => d.DetailSymbolId == detailTableRow.DetailSymbolId && d.RouteName == detailTableRow.RouteName ).ToList() ;
         if ( ! oldDetailTableRows.Any() ) {
-          var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+          var conduitsModels = conduitsModelData.Where( c => c.PipingType == detailTableRow.PlumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
           var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
           var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage ;
           if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
             var plumbing = conduitsModels.Last() ;
-            detailTableRow.PlumbingType = plumbingType ;
             detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
           }
           else {
             var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
-            detailTableRow.PlumbingType = plumbingType ;
             detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
           }
 
@@ -936,9 +933,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     #region CreateDetailTableInCaseAddWiringInfo
     public static ( ObservableCollection<DetailTableModel>, bool, bool ) CreateDetailTableAddWiringInfo( Document doc, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, List<Element> conduits, List<string> elementIds, bool isReferenceDetailTableModels )
     {
-      _isCreatDetailTableForAddWiringInfo = true ;
-      var detailTable = CreateDetailTable( doc, csvStorable, detailSymbolStorable, conduits, elementIds, isReferenceDetailTableModels ) ;
       _isCreatDetailTableForAddWiringInfo = false ;
+      var detailTable = CreateDetailTable( doc, csvStorable, detailSymbolStorable, conduits, elementIds, isReferenceDetailTableModels ) ;
+      // _isCreatDetailTableForAddWiringInfo = false ;
       return detailTable ;
     }
 

@@ -5,7 +5,6 @@ using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -27,25 +26,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       try {
         var uiDocument = commandData.Application.ActiveUIDocument ;
-        Document document = uiDocument.Document ;
+        var document = uiDocument.Document ;
 
         var csvStorable = document.GetCsvStorable() ;
         var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
         var conduitsModelData = csvStorable.ConduitsModelData ;
         var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
-        var hiroiSetCdMasterEcoModelData = csvStorable.HiroiSetCdMasterEcoModelData ;
-        var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
-        var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
-        var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
         var cnsStorable = document.GetCnsSettingStorable() ;
         var detailSymbolStorable = document.GetDetailSymbolStorable() ;
-        var wiringStore = document.GetWiringStorable() ;
         
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical ) ;
-        //Create detailSymbol model
-        CreateDetailSymbolModel( document, pickInfo.Element, detailSymbolStorable) ;
-        List<Element> conduits = new List<Element>() { pickInfo.Element } ;
-        List<string> elementIds = new List<string>() { pickInfo.Element.UniqueId } ;
+        
+        CreateDetailSymbolModel( document, pickInfo.Element, csvStorable, detailSymbolStorable) ;
+        var conduits = new List<Element> { pickInfo.Element } ;
+        var elementIds = new List<string> { pickInfo.Element.UniqueId } ;
         var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, conduits, elementIds, false ) ;
         
         if ( IsExistSymBol( detailTableModels ) ) {
@@ -82,14 +76,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var viewModel = new DetailTableViewModel( document, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, conduitsModelData, wiresAndCablesModelData, false, true ) ;
         var dialog = new DetailTableDialog(  viewModel ) ;
-         if ( dialog.ShowDialog() == true ) {
-        //   foreach ( var detailTableModel in viewModel.DetailTableModels ) {
-        //     if(wiringStore.WiringData.FirstOrDefault(x=>x.IdOfToConnector == detailTableModel.id))
-        //   }
-        //   wiringStore.Save();
-         }
- 
-
+        dialog.ShowDialog() ;
+        
         return Result.Succeeded ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -106,111 +94,59 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return detailTableModels.Any( x => x.DetailSymbol != "*" ) ;
     }
 
-    private ObservableCollection<DetailTableModel> CreateDetailTableModelsFromWiringList( List<WiringModel> wiringList )
+    public void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable )
     {
-      ObservableCollection<DetailTableModel> detailTableModels = new ObservableCollection<DetailTableModel>() ;
-      foreach ( var wiring in wiringList ) {
-        var detailTableModel = new DetailTableModel( false, wiring.Floor, wiring.SetCode, "*", null, wiring.WireType, wiring.WireSize, wiring.WireStrip, null, null, null, null, wiring.PipingType, wiring.PipingSize, wiring.NumberOfPlumbing, wiring.ConstructionClassification, wiring.SignalType,
-          wiring.ConstructionItems, wiring.PlumbingItems, wiring.Remark, null, null, wiring.RouteName, wiring.IsEcoModel.ToString(), null, null, null, null, null, null, null ) ;
-        detailTableModels.Add( detailTableModel ) ;
-      }
-
-      return detailTableModels ;
-    }
-
-    private List<WiringModel> GetAllConduitRelated( Document doc, Element pickConduit, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData,
-      List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData )
-    {
-      const string defaultPlumbingType = "配管なし" ;
-      var ceedStorable = doc.GetCeedStorable() ;
-      var wiringStorable = doc.GetWiringStorable() ;
+      // using var transaction = new Transaction( document ) ;
+      // transaction.Start("Delete Store") ;
+      // detailSymbolStorable.DetailSymbolModelData = new List<DetailSymbolModel>() ;
+      // detailSymbolStorable.Save();
+      // transaction.Commit() ;
+      
+      var allConduit = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
       var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
-      var routeNameSamePosition = GetRouteNameSamePosition( doc, representativeRouteName!, pickConduit ) ;
-      List<WiringModel> selectWiringModels = new() ;
-
-      foreach ( var routeName in routeNameSamePosition ) { 
-        var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, false ) ;
-        if ( null == toConnector ) return selectWiringModels ;
-
-        var existedConduitInWiringStorable = wiringStorable.WiringData.FirstOrDefault( x => x.IdOfToConnector == toConnector.UniqueId ) ;
-        if ( null != existedConduitInWiringStorable ) {
-          selectWiringModels.Add( existedConduitInWiringStorable ) ;
-        }
-
-        var floor = doc.GetAllElements<Level>().FirstOrDefault( l => l.Id == toConnector.LevelId )?.Name ?? string.Empty ; 
-        string constructionItem =  DefaultConstructionItems ;
-
-        toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
-        var isEco = false ;
-        if ( ! string.IsNullOrEmpty( isEcoMode ) )
-          Boolean.TryParse( isEcoMode, out isEco ) ;
-
-        toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
-        if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) {
-          selectWiringModels.Add( new WiringModel( toConnector.Id.ToString(), toConnector.UniqueId, routeName!, floor, "*", null, null, null, defaultPlumbingType, "", string.Empty, null, null, constructionItem, constructionItem, "*", null, null, isEco ) ) ;
-        }
-        else {
-          var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
-          if ( ceedSetCode.Count < 3 ) return selectWiringModels ;
-
-          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == ceedSetCode[ 0 ] && x.GeneralDisplayDeviceSymbol == ceedSetCode[ 1 ] && x.ModelNumber == ceedSetCode[ 2 ] ) ;
-          if ( toConnectorCeedModel == null ) return selectWiringModels ;
-
-          var hiroiSetModels = isEco ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) ;
-          var hiroiCdModel = isEco ? hiroiSetCdMasterEcoModelData.FirstOrDefault( x => x.SetCode == ceedSetCode[ 1 ] ) : hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedSetCode[ 1 ] ) ;
-          var constructionClassification = hiroiCdModel?.ConstructionClassification ;
-          foreach ( var item in hiroiSetModels ) {
-            List<string> listMaterialCode = new() ;
-            if ( ! string.IsNullOrEmpty( item.MaterialCode1 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
-            if ( ! string.IsNullOrEmpty( item.MaterialCode2 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode2 ).ToString() ) ;
-            if ( ! string.IsNullOrEmpty( item.MaterialCode3 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode3 ).ToString() ) ;
-            if ( ! string.IsNullOrEmpty( item.MaterialCode4 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode4 ).ToString() ) ;
-            if ( ! string.IsNullOrEmpty( item.MaterialCode5 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode5 ).ToString() ) ;
-            if ( ! string.IsNullOrEmpty( item.MaterialCode6 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode6 ).ToString() ) ;
-            if ( ! string.IsNullOrEmpty( item.MaterialCode7 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode7 ).ToString() ) ;
-            if ( ! string.IsNullOrEmpty( item.MaterialCode8 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode8 ).ToString() ) ;
-
-            if ( ! listMaterialCode.Any() ) continue ;
-            var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
-            foreach ( var master in masterModels ) {
-              var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w =>
-                w.WireType == master.Type && w.DiameterOrNominal == master.Size1 && ( ( w.NumberOfHeartsOrLogarithm == "0" && master.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && master.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
-              if ( wiresAndCablesModel == null ) continue ;
-              var wireType = master.Type ;
-              var wireSize = master.Size1 ;
-              var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
-              var signalType = wiresAndCablesModel.Classification ;
-
-              selectWiringModels.Add( new WiringModel( toConnector.Id.ToString(), toConnector.UniqueId, routeName!, floor, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, "", string.Empty, constructionClassification, signalType, constructionItem,
-                constructionItem, toConnectorCeedModel.GeneralDisplayDeviceSymbol, item.ParentPartModelNumber, ceedSetCode[ 0 ], isEco ) ) ;
-            }
-          }
-        }
-      } 
-      return selectWiringModels ;
-    }
-
-    public void CreateDetailSymbolModel( Document doc, Element pickConduit, DetailSymbolStorable detailSymbolStorable )
-    {
-      const string defaultPlumbingType = "E" ; 
-      List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
-      var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
-      var routeNameSamePosition = GetRouteNameSamePosition( doc, representativeRouteName!, pickConduit ) ;
+      var routeNameSamePosition = GetRouteNameSamePosition( document, representativeRouteName!, pickConduit ) ;
       
       foreach ( var routeName in routeNameSamePosition ) {
         var conduitOfRoutes = allConduit.Where( c => c.GetRouteName() == routeName ).ToList() ;
-        var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, false ) ;
+        var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName!, false ) ;
         if ( null == toConnector ) continue ;
         
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
+        toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? connectorIsEcoMode ) ;
         var ceedSetCode = ceedSetCodeModel?.Split( ':' ).ToList() ;
         var ceedCode = ceedSetCode?[ 0 ] ;
+        
+        var isEcoMode = bool.TryParse( connectorIsEcoMode, out var value ) && value ;
+        var hiroiSetCdMasterModels = isEcoMode ? csvStorable.HiroiSetCdMasterEcoModelData : csvStorable.HiroiSetCdMasterNormalModelData ;
+        var hiroiSetCdMasterModel = hiroiSetCdMasterModels.First( h => h.SetCode == ceedCode ) ;
+        var hiroiSetMasterModels = isEcoMode ? csvStorable.HiroiSetMasterEcoModelData : csvStorable.HiroiSetMasterNormalModelData ;
+        var hiroiSetMasterModel = hiroiSetMasterModels.First( h => h.ParentPartModelNumber == hiroiSetCdMasterModel.LengthParentPartModelNumber ) ;
+        var name = GetName( hiroiSetMasterModel.Name2 ) ;
+        
         foreach ( var conduitOfRoute in conduitOfRoutes ) {
-          DetailSymbolModel detailSymbolModel = new DetailSymbolModel( toConnector.UniqueId, "*", conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, defaultPlumbingType ) ;
+          var detailSymbolModel = new DetailSymbolModel( toConnector.UniqueId, "*", conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, name ) ;
           if(null == detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.DetailSymbolId == detailSymbolModel.DetailSymbolId && x.ConduitId == detailSymbolModel.ConduitId )) 
             detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel );
         } 
       } 
+    }
+
+    private string GetName( string name )
+    {
+      if ( string.IsNullOrEmpty( name ) )
+        return string.Empty ;
+
+      var str = string.Empty ;
+      foreach ( var n in name ) {
+        if(char.IsDigit(n))
+          break;
+        
+        if(char.IsWhiteSpace(n))
+          continue;
+
+        str += n ;
+      }
+      return str ;
     }
 
     public List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
