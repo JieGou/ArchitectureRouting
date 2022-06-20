@@ -100,7 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<DetailTableModel.ComboboxItemType> ConstructionClassificationTypes { get ; }
 
     public List<DetailTableModel.ComboboxItemType> SignalTypes { get ; }
-    
+
     public ICommand SaveDetailTableCommand => new RelayCommand<Window>( SaveDetailTable ) ;
     
     public ICommand CreateDetailTableCommand => new RelayCommand<Window>( CreateDetailTable ) ;
@@ -954,6 +954,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var newDetailTableModels = new List<DetailTableModel>() ;
       var newDetailTableRow = new DetailTableModel( selectDetailTableRow.DetailSymbol, selectDetailTableRow.DetailSymbolId ) ;
+      if ( _isCallFromAddWiringInformationCommand ) {
+        newDetailTableRow.PlumbingType = "E" ;
+        newDetailTableRow.ConstructionClassification = "露出" ;
+        newDetailTableRow.ConstructionItems = "未設定" ;
+        newDetailTableRow.PlumbingItems = "未設定" ;
+        newDetailTableRow.Remark = "TE1" ;
+      }
+      
       foreach ( var detailTableRow in _detailTableModelsOrigin ) {
         newDetailTableModels.Add( detailTableRow ) ;
         if ( detailTableRow == selectDetailTableRow ) {
