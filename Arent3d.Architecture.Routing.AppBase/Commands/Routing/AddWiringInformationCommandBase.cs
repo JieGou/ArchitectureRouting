@@ -2,7 +2,7 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
-using System.Windows ;
+using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
@@ -47,6 +47,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         List<Element> conduits = new List<Element>() { pickInfo.Element } ;
         List<string> elementIds = new List<string>() { pickInfo.Element.UniqueId } ;
         var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, conduits, elementIds, false ) ;
+        
+        if ( IsExistSymBol( detailTableModels ) ) {
+          MessageBox.Show(@"You must select route don't have symbol", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+          return Result.Cancelled ;
+        }
         
         var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
         var conduitTypes = ( from conduitTypeName in conduitTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
@@ -94,6 +99,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
+    }
+    
+    private bool IsExistSymBol(IEnumerable<DetailTableModel> detailTableModels)
+    {
+      return detailTableModels.Any( x => x.DetailSymbol != "*" ) ;
     }
 
     private ObservableCollection<DetailTableModel> CreateDetailTableModelsFromWiringList( List<WiringModel> wiringList )
