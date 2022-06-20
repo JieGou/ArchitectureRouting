@@ -201,11 +201,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
               //In case conduit info has been changed, we get hiroiSetMasterModel base on detailTableStorable
               var detailTableModelList = _detailTableStorable.DetailTableModelData.Where( x => x.DetailSymbolId == connector.UniqueId ).ToList() ;
-              if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 ) {
+              if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 && null != hiroiSetMasterModel) {
                 foreach ( var hiroiMasterModel in from detailTableModel in detailTableModelList select detailTableModel.WireType +  detailTableModel.WireSize + "x" + detailTableModel.WireStrip into kikaku select _hiroiMasterModels.FirstOrDefault( x => string.Equals( x.Kikaku.Replace( " ","" ), kikaku, StringComparison.CurrentCultureIgnoreCase ) ) into hiroiMasterModel where null != hiroiMasterModel select hiroiMasterModel ) {
+                  var materialCodes = GetMaterialCodes( hiroiSetMasterModel! ) ;
                   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Kikaku ) ) ;
                   if ( hiroiSetMasterModel == null ) continue ;
-                  var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
+                  materialCodes.AddRange( GetMaterialCodes( hiroiSetMasterModel ) );
                   if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                     PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, @group, layer,
                       classification, pickUpNumber, direction ) ;
