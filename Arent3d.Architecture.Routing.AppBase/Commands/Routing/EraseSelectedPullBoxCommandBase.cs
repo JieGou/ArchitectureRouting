@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class EraseSelectedPullBoxCommandBase : RoutingCommandBase<EraseSelectedPullBoxCommandBase.PickState>
   {
-    public record PickState(IEnumerable<IEndPoint> FromEndPoints,IEnumerable<IEndPoint> ToEndPoints, List<Route> RoutesRelatedPullBox, Element PullBox) ;
+    public record PickState(List<Route> RoutesRelatedPullBox, Element PullBox) ;
     protected abstract AddInType GetAddInType() ;
     
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
@@ -24,24 +24,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      PullPoxPickFilter detailSymbolFilter = new() ;
-      var pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, detailSymbolFilter ) ;
+      var pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, new PullPoxPickFilter() ) ;
       var elementPullBox = document.GetElement( pickedPullBox?.ElementId ) ;
 
       //Get information to reroute
       var routes = document.CollectRoutes( GetAddInType()) ;
-      var routesRelatedPullBox = GetRouteRelatedPullBox( routes, elementPullBox ).ToList() ;
-      var routeSegments = GetAllRouteSegment(routesRelatedPullBox).ToList() ; ;
-      var (fromEndPoints, toEndPoints) = GetEndPoints( routeSegments ) ;
-      var newFromEndPoints = fromEndPoints.Where( x => ( x as ConnectorEndPoint )?.EquipmentUniqueId != elementPullBox.UniqueId ) ;
-      var newToEndPoints = toEndPoints.Where( x => ( x as ConnectorEndPoint )?.EquipmentUniqueId != elementPullBox.UniqueId ) ;
+      var routesRelatedPullBox = GetRouteRelatedPullBox( routes, elementPullBox ).ToList();
       
-      return new OperationResult<PickState>( new PickState(newFromEndPoints, newToEndPoints, routesRelatedPullBox,  elementPullBox) ) ;
+      return new OperationResult<PickState>( new PickState(routesRelatedPullBox, elementPullBox) ) ;
     }
     
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (newFromEndPoints, newToEndPoints, routesRelatedPullBox, elementPullBox) = pickState ;
+      var (routesRelatedPullBox, elementPullBox) = pickState ;
+      
+      var routeRecords = GetRelatedBranchSegments( routesRelatedPullBox.FirstOrDefault(x=>x.RouteSegments.Count() > 1) ).ToList() ;
+      
       var diameter = routesRelatedPullBox.First().UniqueDiameter ;
       var classificationInfo = routesRelatedPullBox.First().GetSystemClassificationInfo() ;
       var systemType = routesRelatedPullBox.First().GetMEPSystemType() ;
@@ -52,42 +50,142 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var shaftElementUniqueId = routesRelatedPullBox.First().UniqueShaftElementUniqueId ;
       var fromFixedHeight = routesRelatedPullBox.First().UniqueFromFixedHeight ;
       var toFixedHeight = routesRelatedPullBox.First().UniqueToFixedHeight ;
-
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
       var name = nameBase + "_" + nextIndex ;
       routes.FindOrCreate( name ) ;
       
+      // init result route
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
 
-      result.AddRange( newFromEndPoints.Zip( newToEndPoints, ( f, t ) =>
-      {
-        RenameRoutePassPoint( document, name, f, t ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
-        return ( name , segment ) ;
-      } ) ) ;
-      
+      // Remove old route
       result.AddRange( GetSelectedRouteSegments( document, routesRelatedPullBox ) );
       
+      var allRouteSegments =  GetAllRouteSegment(routesRelatedPullBox) ;
+      List<IEndPoint> fromEndPoints = new List<IEndPoint>() ;
+      List<IEndPoint> toEndPoints = new List<IEndPoint>() ;
+      bool isHaveFromEndPoint = false ;
+      bool isHaveToEndPoint = false ;
+      var routeSegments = allRouteSegments.ToList() ;
+      foreach ( var routeSegment in routeSegments ) {
+        if ( isHaveFromEndPoint && isHaveToEndPoint ) break ;
+        if ( routeSegment.ToEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) 
+        {
+          fromEndPoints.Add( routeSegment.FromEndPoint );
+          isHaveFromEndPoint = true ;
+        }
+        
+        if ( routeSegment.FromEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) 
+        {
+          toEndPoints.Add( routeSegment.ToEndPoint );
+          isHaveToEndPoint = true ;
+        }
+      }
+      
+      List<RouteSegment> routeSegmentsTemp = new List<RouteSegment>() ;
+      int countAddSegmentPullBox = 0 ;
+      foreach ( var routeSegment in routeSegments ) {
+        if ( routeSegment.FromEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId || routeSegment.ToEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) 
+        {
+          if ( countAddSegmentPullBox < 1 ) {
+            routeSegmentsTemp.Add( new RouteSegment( classificationInfo, systemType, curveType, fromEndPoints.First(), toEndPoints.First(), diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) );
+            countAddSegmentPullBox++ ;
+          }
+        }
+        else {
+          // var segment = new RouteSegment( routeSegment.SystemClassificationInfo, routeSegment.SystemType, routeSegment.CurveType,  routeSegment.FromEndPoint, routeSegment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+          routeSegmentsTemp.Add(  routeSegment ) ;
+        }
+      }
+      
+      // Rename route name for pass point 
+      RenameRoutePassPoint( document, name, routeSegmentsTemp ) ;
+      
+      // Add main route
+      var firstRouteSegment = FirstRouteSegment( routeSegmentsTemp ) ;
+      result.Add( (name, firstRouteSegment)) ;       // Add first segment
+
+      // Add next segments
+      while ( true ) {
+        var nextSegment = NextRouteSegment( result.Last().Segment.ToEndPoint, routeSegmentsTemp ) ;
+        if(nextSegment == null) break ;
+        result.Add( (name, nextSegment) ) ;
+      }
+
+      // Add branch route
+      foreach ( var ( routeName, segment ) in routeRecords ) {
+        var passPointEndPointUniqueId = segment.FromEndPoint.Key.GetElementUniqueId() ;
+        if ( segment.FromEndPoint.DisplayTypeName == PassPointBranchEndPoint.Type ) {
+          var fromEndPointKey = GetFromEndPointKey( document, result, passPointEndPointUniqueId ) ?? firstRouteSegment.FromEndPoint.Key ;
+          var branchEndPoint = new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
+          result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+        }
+        else {
+          result.Add( ( routeName, segment ) ) ;
+        }
+      }
+
       //Delete pull box
       document.Delete( elementPullBox.Id ) ;
-      
+
       return result ;
     }
-    
-    private void RenameRoutePassPoint( Document document, string name, IEndPoint fromEndPoint, IEndPoint toEndPoint) 
+
+    private RouteSegment FirstRouteSegment(List<RouteSegment> routeSegments)
     {
-      var fromEndPointKey = fromEndPoint.Key ;
-      var toEndPointKey   = toEndPoint.Key ;
-      var fromPassPoint = document.GetElementById<Instance>( fromEndPointKey.GetElementUniqueId() ) ;
-      var toPassPoint = document.GetElementById<Instance>( toEndPointKey.GetElementUniqueId() ) ;
-      if ( fromPassPoint?.Name == RoutingFamilyType.PassPoint.GetFamilyName() ) {
-        fromPassPoint?.SetProperty( RoutingParameter.RouteName, name ) ; 
+      return routeSegments.First( x => x.FromEndPoint is ConnectorEndPoint) ;
+    } 
+
+    private RouteSegment? NextRouteSegment(IEndPoint toEndPoint , List<RouteSegment> routeSegments)
+    {
+      return routeSegments.FirstOrDefault( x => x.FromEndPoint.Key.GetElementUniqueId() == toEndPoint.Key.GetElementUniqueId() ) ;
+    }
+    
+    private EndPointKey? GetFromEndPointKey( Document document, List<(string RouteName, RouteSegment Segment)> segments, string passPointEndPointUniqueId )
+    {
+      var fromRouteName = string.Empty ;
+      foreach ( var ( routeName, segment ) in segments ) {
+        if ( segment.FromEndPoint.Key.GetElementUniqueId() != passPointEndPointUniqueId && segment.FromEndPoint.Key.GetElementUniqueId() != passPointEndPointUniqueId ) continue ;
+        fromRouteName = routeName ;
+        break ;
       }
-      if ( toPassPoint?.Name == RoutingFamilyType.PassPoint.GetFamilyName() ) {
-        toPassPoint?.SetProperty( RoutingParameter.RouteName, name ) ;
+
+      if ( string.IsNullOrEmpty( fromRouteName ) ) return null ;
+      var fromSegment = segments.FirstOrDefault( s => s.RouteName == fromRouteName ) ;
+      var fromEndPointKey = fromSegment.Segment.FromEndPoint.Key ;
+      var passPoint = document.GetElementById<Instance>( passPointEndPointUniqueId ) ;
+      passPoint?.SetProperty( RoutingParameter.RouteName, fromRouteName ) ;
+      
+      return fromEndPointKey ;
+    }
+    
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetRelatedBranchSegments( Route? route )
+    {
+      if ( route == null) {
+        return new List<(string RouteName, RouteSegment Segment)>() ;
       }
+      // add all related branches
+      var relatedBranches = route.GetAllRelatedBranches() ;
+      relatedBranches.Remove( route ) ;
+      return relatedBranches.ToSegmentsWithName() ;
+    }
+    
+    private void RenameRoutePassPoint( Document document, string name, List<RouteSegment> routeSegments) 
+    {
+      foreach ( var routeSegment in routeSegments ) {
+        var fromEndPointKey = routeSegment.FromEndPoint.Key ;
+        var toEndPointKey   = routeSegment.ToEndPoint.Key ;
+        var fromPassPoint = document.GetElementById<Instance>( fromEndPointKey.GetElementUniqueId() ) ;
+        var toPassPoint = document.GetElementById<Instance>( toEndPointKey.GetElementUniqueId() ) ;
+        if ( fromPassPoint?.Name == RoutingFamilyType.PassPoint.GetFamilyName() ) {
+          fromPassPoint?.SetProperty( RoutingParameter.RouteName, name ) ; 
+        }
+        if ( toPassPoint?.Name == RoutingFamilyType.PassPoint.GetFamilyName() ) {
+          toPassPoint?.SetProperty( RoutingParameter.RouteName, name ) ;
+        }
+      }
+    
     }
     
     private IEnumerable<RouteSegment> GetAllRouteSegment( IEnumerable<Route> routesRelatedPullBox )
@@ -95,7 +193,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var routeRelatedPullBox in routesRelatedPullBox ) {
         foreach ( var routeSegment in routeRelatedPullBox.RouteSegments ) {
           yield return routeSegment ;
-
         }
       }
     }
@@ -130,17 +227,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           yield return route ;
         }
       }
-    }
-    
-    private (IEnumerable<IEndPoint> fromEndPoints,IEnumerable<IEndPoint> toEndPoints) GetEndPoints( IEnumerable<RouteSegment> segments )
-    {
-      List<IEndPoint> fromEndPoints = new List<IEndPoint>() ;
-      List<IEndPoint> toEndPoints = new List<IEndPoint>() ;
-      foreach ( var segment in segments ) {
-         fromEndPoints.Add(segment.FromEndPoint) ;
-         toEndPoints.Add(segment.ToEndPoint) ;
-      }
-      return ( fromEndPoints, toEndPoints ) ;
     }
     
     private class PullPoxPickFilter : ISelectionFilter
