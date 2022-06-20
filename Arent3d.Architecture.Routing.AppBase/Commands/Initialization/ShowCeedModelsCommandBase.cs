@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -28,6 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
       const string grade3 = "グレード3" ;
+      
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       
@@ -43,10 +45,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
 
-        var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        var point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        var condition = "屋外" ; // デフォルトの条件
+        
+        var symbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+        var filter = new FamilyInstanceFilter( doc, symbol.Id ) ;
+        var rooms = new FilteredElementCollector( doc ).WherePasses( filter ).OfType<FamilyInstance>().Where(x =>
+        {
+          var bb = x.get_BoundingBox( null ) ;
+          var ol = new Outline( bb.Min, bb.Max ) ;
+          return ol.Contains( point, GeometryHelper.Tolerance ) ;
+        }).ToList() ;
+
+        switch ( rooms.Count ) {
+          case 0 :
+            TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
+            return Result.Cancelled ;
+          case > 1 when CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() :
+          {
+            var vm = new ArentRoomViewModel { Conditions = conditions } ;
+            var view = new ArentRoomView { DataContext = vm } ;
+            view.ShowDialog() ;
+            if ( ! vm.IsCreate )
+              return Result.Cancelled ;
+
+            condition = vm.SelectedCondition ;
+            break ;
+          }
+          case > 1 :
+            TaskDialog.Show( "Arent", "指定された条件が見つかりませんでした。" ) ;
+            return Result.Cancelled ;
+          default :
+          {
+            if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
+              condition = value ;
+            }
+
+            break ;
+          }
+        }
+        
+        if ( !viewModel.OriginCeedModels.Any(cmd=>cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == viewModel.SelectedDeviceSymbol) ) {
+          TaskDialog.Show( "Arent", $"We can not find any ceedmodel \"{viewModel.SelectedDeviceSymbol}\" match with this room \"{condition}\"。" ) ;
+          return Result.Cancelled ;
+        }
+
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
+        element = GenerateConnector( uiDoc, point.X, point.Y, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
         var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
         if ( element is FamilyInstance familyInstance ) {
           element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
@@ -57,7 +103,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
         TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        var txtPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
+        var txtPosition = new XYZ( point.X - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, point.Y + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, viewModel.SelectedDeviceSymbol, opts ) ;
 
         var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
@@ -73,25 +119,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
-        if ( ! string.IsNullOrEmpty( viewModel.SelectedCondition ) ) {
-          var txtConditionPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, viewModel.SelectedCondition, opts ) ;
+        
+        var txtConditionPosition = new XYZ( point.X - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
+        var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, condition, opts ) ;
 
-          var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
-          if ( textNoteType == null ) {
-            Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
-            textNoteType = ( ele as TextNoteType )! ;
-            TextElementType textType = conditionTextNote.Symbol ;
-            const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
-            Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
-            textSize.Set( .005 ) ;
-            textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-            textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
-          }
-
-          conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
-          groupIds.Add( conditionTextNote.Id ) ;
+        var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
+        if ( textNoteType == null ) {
+          Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
+          textNoteType = ( ele as TextNoteType )! ;
+          const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
+          Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
+          textSize.Set( .005 ) ;
+          textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+          textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
         }
+
+        conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
+        groupIds.Add( conditionTextNote.Id ) ;
 
         return Result.Succeeded ;
       } ) ;
@@ -125,14 +169,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           SetIsEcoMode( uiDocument, instance );
           return instance ;
         }
-        else {
-          if ( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == floorPlanType ) is Family family ) {
-            foreach ( ElementId familySymbolId in (IEnumerable<ElementId>) family.GetFamilySymbolIds() ) {
-              var symbol = uiDocument.Document.GetElementById<FamilySymbol>( familySymbolId ) ?? throw new InvalidOperationException() ;
-              instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
-              SetIsEcoMode( uiDocument, instance );
-              return instance ;
-            }
+
+        if ( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == floorPlanType ) is Family family ) {
+          foreach ( var familySymbolId in family.GetFamilySymbolIds() ) {
+            var symbol = uiDocument.Document.GetElementById<FamilySymbol>( familySymbolId ) ?? throw new InvalidOperationException() ;
+            instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+            SetIsEcoMode( uiDocument, instance );
+            return instance ;
           }
         }
       }
@@ -143,7 +186,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return instance ;
     }
 
-    private ConnectorOneSideFamilyType GetConnectorFamilyType( string floorPlanType )
+    private static ConnectorOneSideFamilyType GetConnectorFamilyType( string floorPlanType )
     {
       var connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide1 ;
       if ( string.IsNullOrEmpty( floorPlanType ) ) return connectorOneSideFamilyType ;
@@ -154,7 +197,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return connectorOneSideFamilyType ;
     }
 
-    private void SetIsEcoMode(UIDocument uiDocument, FamilyInstance instance)
+    private static void SetIsEcoMode(UIDocument uiDocument, FamilyInstance instance)
     { 
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
       instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
