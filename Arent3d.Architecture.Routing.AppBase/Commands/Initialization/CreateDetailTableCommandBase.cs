@@ -23,6 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class CreateDetailTableCommandBase : IExternalCommand
   {
+    private const string DefaultPlumpingType = "E" ;
     private const string DefaultConstructionItems = "未設定" ;
     private const string DefaultChildPlumbingSymbol = "↑" ;
     private const string NoPlumping = "配管なし" ;
@@ -202,8 +203,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
+      var detailSymbolModel = conduits.Any() ? detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.ConduitId.Equals( conduits.First().UniqueId ) ) : null;
+      var plumpingType = null != detailSymbolModel ? detailSymbolModel.PlumbingType : DefaultPlumpingType ;
       if ( detailTableModels.Any() ) {
-        SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableModels ) ;
+        SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableModels, plumpingType ) ;
       }
 
       if ( detailSymbolIdsOnDetailTableModels.Any() ) {
@@ -479,10 +482,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      SetPlumbingDataForEachWiring( new List<DetailTableModel>(), conduitsModelData, ref detailTableRowsSinglePlumbing ) ;
+      SetPlumbingDataForEachWiring( new List<DetailTableModel>(), conduitsModelData, ref detailTableRowsSinglePlumbing, plumbingType ) ;
     }
 
-    private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels )
+    private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumpingType )
     {
       const double percentage = 0.32 ;
       var newDetailTableRows = new List<DetailTableModel>() ;
@@ -498,10 +501,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage ;
           if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
             var plumbing = conduitsModels.Last() ;
+            detailTableRow.PlumbingType = plumpingType ;
             detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
           }
           else {
             var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
+            detailTableRow.PlumbingType = plumpingType ;
             detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
           }
 

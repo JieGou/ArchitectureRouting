@@ -955,11 +955,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newDetailTableModels = new List<DetailTableModel>() ;
       var newDetailTableRow = new DetailTableModel( selectDetailTableRow.DetailSymbol, selectDetailTableRow.DetailSymbolId ) ;
       if ( _isCallFromAddWiringInformationCommand ) {
-        newDetailTableRow.PlumbingType = "E" ;
-        newDetailTableRow.ConstructionClassification = "露出" ;
-        newDetailTableRow.ConstructionItems = "未設定" ;
-        newDetailTableRow.PlumbingItems = "未設定" ;
-        newDetailTableRow.Remark = "TE1" ;
+        newDetailTableRow.PlumbingType = DefaultParentPlumbingType ;
+        newDetailTableRow.ConstructionClassification = selectDetailTableRow.ConstructionClassification ;
+        newDetailTableRow.SignalType = selectDetailTableRow.SignalType ;
+        newDetailTableRow.ConstructionItems = selectDetailTableRow.ConstructionItems ;
+        newDetailTableRow.PlumbingItems = selectDetailTableRow.PlumbingItems ;
+        newDetailTableRow.Remark = selectDetailTableRow.Remark ;
       }
       
       foreach ( var detailTableRow in _detailTableModelsOrigin ) {
