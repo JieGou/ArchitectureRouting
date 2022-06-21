@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return doc.Transaction( "TransactionName.Commands.Initialization.ShowElectricSymbolsCommand".GetAppStringByKeyOrDefault( "Create electrical schedule" ), _ =>
       {
         var level = doc.ActiveView.GenLevel.Name ;
-        var scheduleName = CreateElectricalSchedule( doc, electricalSymbolModels, level ) ;
+        var scheduleName = CreateElectricalSchedule( doc, electricalSymbolModels, level, false) ;
         MessageBox.Show( string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ), "Message" ) ;
         return Result.Succeeded ;
       } ) ;
@@ -223,7 +223,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return new ConnectorInfo( ceedSetCode, deviceSymbol, modelNumber ) ;
     }
 
-    public static string CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels, string level )
+    public static string CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels, string level , bool isDuplicated = true)
     {
       string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + " - " + level + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
       var electricalSchedule = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
@@ -232,8 +232,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         electricalSchedule.Name = scheduleName ;
         electricalSchedule.TrySetProperty( ElectricalRoutingElementParameter.ScheduleBaseName, scheduleName ) ;
       }
-
-      CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;
+      
+      if( isDuplicated )
+        CreateScheduleDataDuplicated( document, electricalSchedule, electricalSymbolModels ) ;
+      else
+        CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;
       return scheduleName ;
     }
 
@@ -254,6 +257,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       [DisplayStringKey( "（屋外）" )]
       OutPlumbingType,
     }
+
+    #region Not allow duplicated electrical symbol
 
     private static void CreateScheduleData( Document document, ViewSchedule viewSchedule, List<ElectricalSymbolModel> electricalSymbolModels )
     {
@@ -376,6 +381,134 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
     }
+
+    #endregion
+
+    #region Allow duplicated electrical symbol
+
+    private static void CreateScheduleDataDuplicated( Document document, ViewSchedule viewSchedule, List<ElectricalSymbolModel> electricalSymbolModels )
+    {
+      const int startRowData = 3 ;
+      const int defaultColumnCount = 5 ;
+
+      TableData tableData = viewSchedule.GetTableData() ;
+      viewSchedule.SetScheduleHeaderRowCount( HeaderRowCount ) ;
+      TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
+      var rowCount = tsdHeader.NumberOfRows ;
+      var columnCount = tsdHeader.NumberOfColumns ;
+
+      // remove old data
+      if ( columnCount != 1 ) {
+        for ( var i = 1 ; i < rowCount ; i++ ) {
+          tsdHeader.RemoveRow( tsdHeader.FirstRowNumber ) ;
+        }
+
+        for ( var i = 1 ; i < columnCount ; i++ ) {
+          tsdHeader.RemoveColumn( tsdHeader.FirstColumnNumber ) ;
+        }
+      }
+
+      var electricalSymbolModelsGroupByUniqueId = electricalSymbolModels.GroupBy( d => d.UniqueId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      List<string> floorPlanSymbols = new() ;
+      List<string> generalDisplayDeviceSymbols = new() ;
+      List<string> wiringTypes = new() ;
+      List<string> plumingTypes = new() ;
+      List<bool> isExposures = new() ;
+      List<bool> isInDoors = new() ;
+      SummarizeElectricalSymbolByUniqueId( electricalSymbolModelsGroupByUniqueId, floorPlanSymbols, generalDisplayDeviceSymbols, wiringTypes, plumingTypes, isExposures, isInDoors ) ;
+
+      for ( var i = 0 ; i < defaultColumnCount ; i++ ) {
+        if ( i != 2 ) tsdHeader.InsertColumn( i ) ;
+      }
+
+      for ( var i = 1 ; i < wiringTypes.Count + startRowData ; i++ ) {
+        tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
+      }
+
+      // Set columns name
+      tsdHeader.MergeCells( new TableMergedCell( 0, 0, 0, 4 ) ) ;
+      tsdHeader.SetCellText( 0, 0, "機器凡例" ) ;
+      tsdHeader.MergeCells( new TableMergedCell( 1, 3, 1, 4 ) ) ;
+      tsdHeader.SetCellText( 1, 3, "配管" ) ;
+
+      for ( var i = 0 ; i < defaultColumnCount ; i++ ) {
+        if ( i < 3 ) tsdHeader.MergeCells( new TableMergedCell( 1, i, 2, i ) ) ;
+        var columnWidth = 0.1 ;
+        switch ( i ) {
+          case 0 :
+            tsdHeader.SetCellText( 1, i, ScheduleColumns.FloorPlanSymbol.GetDisplayStringKey().StringKey ) ;
+            break ;
+          case 1 :
+            tsdHeader.SetCellText( 1, i, ScheduleColumns.DeviceSymbol.GetDisplayStringKey().StringKey ) ;
+            break ;
+          case 2 :
+            tsdHeader.SetCellText( 1, i, ScheduleColumns.WiringType.GetDisplayStringKey().StringKey ) ;
+            columnWidth = 0.2 ;
+            break ;
+          case 3 :
+            tsdHeader.SetCellText( 2, i, ScheduleColumns.InPlumbingType.GetDisplayStringKey().StringKey ) ;
+            columnWidth = 0.15 ;
+            break ;
+          default :
+            tsdHeader.SetCellText( 2, i, ScheduleColumns.OutPlumbingType.GetDisplayStringKey().StringKey ) ;
+            columnWidth = 0.15 ;
+            break ;
+        }
+
+        tsdHeader.SetColumnWidth( i, columnWidth ) ;
+      }
+
+      for ( var j = 0 ; j < wiringTypes.Count ; j++ ) {
+        if ( ! string.IsNullOrEmpty( floorPlanSymbols.ElementAt( j ) ) ) {
+          var pathToImage = GetFloorPlanImagePath( floorPlanSymbols.ElementAt( j ) ) ;
+          var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ;
+          if ( imageType == null ) {
+#if REVIT2019
+            imageType = ImageType.Create( document, pathToImage ) ;
+#elif REVIT2020
+            imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false ) ) ;
+#elif REVIT2021
+            imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
+#elif REVIT2022
+            imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
+#endif
+          }
+
+          if ( imageType != null ) {
+            tsdHeader.InsertImage( startRowData + j, 0, imageType.Id ) ;
+            viewSchedule.AddImageToImageMap( startRowData + j, 0, imageType.Id ) ;
+          }
+
+          tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
+        }
+
+        tsdHeader.SetCellText( startRowData + j, 2, wiringTypes.ElementAt( j ) ) ;
+        tsdHeader.SetCellText( startRowData + j, isInDoors.ElementAt( j ) ? 3 : 4, plumingTypes.ElementAt( j ) ) ;
+      }
+    }
+
+    private static void SummarizeElectricalSymbolByUniqueId( Dictionary<string, List<ElectricalSymbolModel>> electricalSymbolModelsGroupByUniqueId, List<string> floorPlanSymbols, List<string> generalDisplayDeviceSymbols, List<string> wiringTypes, List<string> plumingTypes, List<bool> isExposures, List<bool> isInDoors )
+    {
+      foreach ( var (_, electricalSymbolModels) in electricalSymbolModelsGroupByUniqueId ) {
+        List<string> wiringAndPlumbingTypes = new() ;
+        var detailTableModel = electricalSymbolModels.FirstOrDefault() ;
+        foreach ( var item in electricalSymbolModels ) {
+          var count = electricalSymbolModels.Count( d => d.WireType == item.WireType && d.WireSize == item.WireSize && d.WireStrip == item.WireStrip && d.PipingType + d.PipingSize == item.PipingType + item.PipingSize ) ;
+          string wiringType = string.IsNullOrEmpty( item.WireStrip ) || item.WireStrip == "-" ? $"{item.WireType + item.WireSize,-15}{"x " + count,15}" : $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
+          string plumbingType = "(" + item.PipingType + item.PipingSize + ")" ;
+          if ( wiringAndPlumbingTypes.Contains( wiringType + "-" + plumbingType ) ) continue ;
+          wiringAndPlumbingTypes.Add( wiringType + "-" + plumbingType ) ;
+          floorPlanSymbols.Add( wiringAndPlumbingTypes.Count == 1 ? detailTableModel!.FloorPlanSymbol : string.Empty ) ;
+          generalDisplayDeviceSymbols.Add( wiringAndPlumbingTypes.Count == 1 ? detailTableModel!.GeneralDisplayDeviceSymbol : string.Empty ) ;
+          wiringTypes.Add( wiringType ) ;
+          plumingTypes.Add( plumbingType ) ;
+          isExposures.Add( item.IsExposure ) ;
+          isInDoors.Add( item.IsInDoor ) ;
+        }
+      }
+    }
+
+    #endregion
 
     private static string GetFloorPlanImagePath( string floorPlanType )
     {
