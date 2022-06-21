@@ -1,9 +1,6 @@
-﻿using System.ComponentModel ;
-using System.Runtime.CompilerServices ;
-
-namespace Arent3d.Architecture.Routing.Storable.Model
+﻿namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  public class CeedDetailModel : INotifyPropertyChanged
+  public class CeedDetailModel : NotifyPropertyChanged
   {
     public const string Dash = "-" ;
     private const string DefaultQuantity = "100" ;
@@ -190,13 +187,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       AllowInputQuantity = allowInputQuantity ?? false ;
       AllowChangeClassification = isConduit & constructionClassification is nameof( ConstructionClassificationType.天井ふところ ) or nameof( ConstructionClassificationType.ケーブルラック配線 ) or nameof( ConstructionClassificationType.二重床 ) ;
       Supplement = supplement ?? string.Empty ;
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged ;
-
-    private void OnPropertyChanged( [CallerMemberName] string? propertyName = null )
-    {
-      PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
     }
   }
 
