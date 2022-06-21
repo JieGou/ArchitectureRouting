@@ -219,11 +219,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return recreatedRoutes.ToSegmentsWithName().EnumerateAll() ;
     }
     
-    private IEnumerable<Route> GetRouteRelatedPullBox( IEnumerable<Route> routes, Element pickedPullBox )
+    private IEnumerable<Route> GetRouteRelatedPullBox( IEnumerable<Route> routes, Element pickedPullBox)
     {
       foreach ( var route in routes ) {
-        var connectorsOfRoute = route.GetAllConnectors() ;
-        if ( connectorsOfRoute.Any( x => x.Owner.UniqueId == pickedPullBox.UniqueId ) ) {
+        var connectorsOfRoute = route.GetAllConnectors().ToList() ;
+
+        if ( connectorsOfRoute.Any( x => x.Owner.UniqueId == pickedPullBox.UniqueId )  && connectorsOfRoute.Count() > 1) {
           yield return route ;
         }
       }
