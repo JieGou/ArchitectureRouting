@@ -47,18 +47,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       searchValue = isEcoModel ? DictElectricalCategoriesEcoKey.ContainsKey( searchValue ) ? DictElectricalCategoriesEcoKey[ searchValue ] : searchValue : DictElectricalCategoriesNormalKey.ContainsKey( searchValue ) ? DictElectricalCategoriesNormalKey[ searchValue ] : searchValue ;
       var hiroiMasterViewModel = new HiroiMasterViewModel( _document, HiroiMasterModels, HiroiSetMasterEcoModels, HiroiSetMasterNormalModels, isEcoModel ) { SearchText = searchValue } ;
       var hiroiMasterDialog = new HiroiMasterDialog( hiroiMasterViewModel ) ;
-      var productName = hiroiMasterViewModel.HiroiMasterSelected?.Syurui == SymbolInformationViewModel.LenghtMaterialType ? hiroiMasterViewModel.HiroiMasterSelected?.Kikaku : hiroiMasterViewModel.HiroiMasterSelected?.Hinmei ;
-      CeedDetailSelected = 
-        true == hiroiMasterDialog.ShowDialog() 
-        ? new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, productName, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", 
-        _quantityDefault.ToString(), hiroiMasterViewModel.HiroiMasterSelected?.Tani, _symbolInformationId, _trajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, 
-        1, string.Empty, string.Empty, string.Empty, 0, 1, _quantityDefault, string.Empty, true, string.Empty ) 
-        : null ;
+      CeedDetailSelected = null ;
+      if ( true == hiroiMasterDialog.ShowDialog() ) {
+        var productName = hiroiMasterViewModel.HiroiMasterSelected?.Syurui == SymbolInformationViewModel.LenghtMaterialType ? hiroiMasterViewModel.HiroiMasterSelected?.Kikaku : hiroiMasterViewModel.HiroiMasterSelected?.Hinmei ;
+        CeedDetailSelected = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, productName, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", 
+              _quantityDefault.ToString(), hiroiMasterViewModel.HiroiMasterSelected?.Tani, _symbolInformationId, _trajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, 
+              1, string.Empty, string.Empty, string.Empty, 0, 1, _quantityDefault, string.Empty, true, string.Empty ) ;
+      }
 
-      if ( _document == null ) return CeedDetailSelected ;
+      if ( _document == null || CeedDetailSelected == null ) return CeedDetailSelected ;
       var csvStorable = _document!.GetCsvStorable() ;
       var conduit = csvStorable.ConduitsModelData.FirstOrDefault( x => x.PipingType + x.Size == CeedDetailSelected?.ProductName ) ;
-      if ( CeedDetailSelected == null ) return CeedDetailSelected ;
       CeedDetailSelected.IsConduit = conduit != null ;
 
       return CeedDetailSelected ;
