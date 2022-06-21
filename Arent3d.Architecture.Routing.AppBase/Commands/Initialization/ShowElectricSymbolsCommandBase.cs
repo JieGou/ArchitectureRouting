@@ -22,6 +22,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public class ShowElectricSymbolsCommandBase : IExternalCommand
   {
+    private record ElectricalSymbolRecord(string FloorPlanSymbol, string GeneralDisplayDeviceSymbol, string PlumingType, string WiringType, bool IsInDoor) ;
+    
     private const int HeaderRowCount = 3 ;
     private const string DefaultPlumbingType = "配管なし" ;
     public const string CreateScheduleSuccessfullyMessage = "集計表 \"'{0}'\" を作成しました" ;
@@ -276,19 +278,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       var electricalSymbolModelsGroupByUniqueId = electricalSymbolModels.GroupBy( d => d.UniqueId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-      List<string> floorPlanSymbols = new() ;
-      List<string> generalDisplayDeviceSymbols = new() ;
-      List<string> wiringTypes = new() ;
-      List<string> plumingTypes = new() ;
-      List<bool> isExposures = new() ;
-      List<bool> isInDoors = new() ;
-      SummarizeElectricalSymbolByUniqueId( electricalSymbolModelsGroupByUniqueId, floorPlanSymbols, generalDisplayDeviceSymbols, wiringTypes, plumingTypes, isExposures, isInDoors ) ;
+      HashSet<ElectricalSymbolRecord> electricalSymbolRecords = new() ;
+      SummarizeElectricalSymbolByUniqueId( electricalSymbolModelsGroupByUniqueId, electricalSymbolRecords ) ;
 
       for ( var i = 0 ; i < defaultColumnCount ; i++ ) {
         if ( i != 2 ) tsdHeader.InsertColumn( i ) ;
       }
 
-      for ( var i = 1 ; i < wiringTypes.Count + startRowData ; i++ ) {
+      for ( var i = 1 ; i < electricalSymbolRecords.Count + startRowData ; i++ ) {
         tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
       }
 
@@ -325,11 +322,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         tsdHeader.SetColumnWidth( i, columnWidth ) ;
       }
 
-      for ( var j = 0 ; j < wiringTypes.Count ; j++ ) {
-        if ( ! string.IsNullOrEmpty( floorPlanSymbols.ElementAt( j ) ) ) {
-          var pathToImage = GetFloorPlanImagePath( floorPlanSymbols.ElementAt( j ) ) ;
-          var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ;
-          if ( imageType == null ) {
+      var electricalSymbolRecordsGroup = electricalSymbolRecords
+        .GroupBy( e => new { e.FloorPlanSymbol, e.GeneralDisplayDeviceSymbol } )
+        .ToDictionary( g => g.Key, g => g.ToList() ) ;
+
+      var rowIndex = 0 ;
+      foreach ( var (_, electricalSymbolRecs) in electricalSymbolRecordsGroup ) {
+        for ( var j = 0 ; j < electricalSymbolRecs.Count ; j++ ) {
+          var electricalSymbol = electricalSymbolRecs.ElementAt( j ) ;
+          if ( ! string.IsNullOrEmpty( electricalSymbol.FloorPlanSymbol ) && j == 0 ) {
+            var pathToImage = GetFloorPlanImagePath( electricalSymbol.FloorPlanSymbol ) ;
+            var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ;
+            if ( imageType == null ) {
 #if REVIT2019
             imageType = ImageType.Create( document, pathToImage ) ;
 #elif REVIT2020
@@ -337,40 +341,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 #elif REVIT2021
             imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
 #elif REVIT2022
-            imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
+              imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
 #endif
+            }
+
+            if ( imageType != null ) {
+              tsdHeader.InsertImage( startRowData + rowIndex + j, 0, imageType.Id ) ;
+              viewSchedule.AddImageToImageMap( startRowData + rowIndex + j, 0, imageType.Id ) ;
+            }
+
+            tsdHeader.SetCellText( startRowData + rowIndex + j, 1, electricalSymbol.GeneralDisplayDeviceSymbol ) ;
           }
 
-          if ( imageType != null ) {
-            tsdHeader.InsertImage( startRowData + j, 0, imageType.Id ) ;
-            viewSchedule.AddImageToImageMap( startRowData + j, 0, imageType.Id ) ;
-          }
-
-          tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
+          tsdHeader.SetCellText( startRowData + rowIndex + j, 2, electricalSymbol.WiringType ) ;
+          tsdHeader.SetCellText( startRowData + rowIndex + j, electricalSymbol.IsInDoor ? 3 : 4, electricalSymbol.PlumingType ) ;
         }
-
-        tsdHeader.SetCellText( startRowData + j, 2, wiringTypes.ElementAt( j ) ) ;
-        tsdHeader.SetCellText( startRowData + j, isInDoors.ElementAt( j ) ? 3 : 4, plumingTypes.ElementAt( j ) ) ;
+        rowIndex += electricalSymbolRecs.Count ;
       }
     }
 
-    private static void SummarizeElectricalSymbolByUniqueId( Dictionary<string, List<ElectricalSymbolModel>> electricalSymbolModelsGroupByUniqueId, List<string> floorPlanSymbols, List<string> generalDisplayDeviceSymbols, List<string> wiringTypes, List<string> plumingTypes, List<bool> isExposures, List<bool> isInDoors )
+    private static void SummarizeElectricalSymbolByUniqueId( Dictionary<string, List<ElectricalSymbolModel>> electricalSymbolModelsGroupByUniqueId, HashSet<ElectricalSymbolRecord> electricalSymbolRecords )
     {
       foreach ( var (_, electricalSymbolModels) in electricalSymbolModelsGroupByUniqueId ) {
-        List<string> wiringAndPlumbingTypes = new() ;
         var detailTableModel = electricalSymbolModels.FirstOrDefault() ;
         foreach ( var item in electricalSymbolModels ) {
           var count = electricalSymbolModels.Count( d => d.WireType == item.WireType && d.WireSize == item.WireSize && d.WireStrip == item.WireStrip && d.PipingType + d.PipingSize == item.PipingType + item.PipingSize ) ;
           string wiringType = string.IsNullOrEmpty( item.WireStrip ) || item.WireStrip == "-" ? $"{item.WireType + item.WireSize,-15}{"x " + count,15}" : $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
           string plumbingType = "(" + item.PipingType + item.PipingSize + ")" ;
-          if ( wiringAndPlumbingTypes.Contains( wiringType + "-" + plumbingType ) ) continue ;
-          wiringAndPlumbingTypes.Add( wiringType + "-" + plumbingType ) ;
-          floorPlanSymbols.Add( wiringAndPlumbingTypes.Count == 1 ? detailTableModel!.FloorPlanSymbol : string.Empty ) ;
-          generalDisplayDeviceSymbols.Add( wiringAndPlumbingTypes.Count == 1 ? detailTableModel!.GeneralDisplayDeviceSymbol : string.Empty ) ;
-          wiringTypes.Add( wiringType ) ;
-          plumingTypes.Add( plumbingType ) ;
-          isExposures.Add( item.IsExposure ) ;
-          isInDoors.Add( item.IsInDoor ) ;
+          string floorPlanSymbol = detailTableModel!.FloorPlanSymbol ;
+          string generalDisplayDeviceSymbol =  detailTableModel!.GeneralDisplayDeviceSymbol ;
+          ElectricalSymbolRecord electricalSymbolRecord = new ElectricalSymbolRecord( floorPlanSymbol,
+            generalDisplayDeviceSymbol, plumbingType, wiringType, item.IsInDoor ) ;
+          electricalSymbolRecords.Add( electricalSymbolRecord ) ;
         }
       }
     }
