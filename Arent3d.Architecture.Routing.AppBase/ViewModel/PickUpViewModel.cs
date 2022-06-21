@@ -568,7 +568,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var symbolInformation in symbolInformations ) {
         var floor = symbolInformation.Floor ;
         foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.Id ) ) {
-          PickUpModel newPickUpModel = new( null, floor, DefaultConstructionItem, ProductType.Conduit.GetFieldName(), ceedDetail.ProductName, null, null, ceedDetail.Classification, ceedDetail.ModeNumber, ceedDetail.Specification, null, ceedDetail.Size2, ceedDetail.Total.ToString( CultureInfo.InvariantCulture ), ceedDetail.Unit, null, null, null, null,
+          PickUpModel newPickUpModel = new( null, floor, DefaultConstructionItem, ProductType.Conduit.GetFieldName(), ceedDetail.ProductName, null, null, ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, 
+            ceedDetail.Specification, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Total.ToString( CultureInfo.InvariantCulture ), ceedDetail.Unit, ceedDetail.Supplement, null, null, null,
             ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode ) ;
           var oldPickUpModel = pickUpModels.FirstOrDefault( x => x.Floor == newPickUpModel.Floor && x.ProductName == newPickUpModel.ProductName && x.ProductCode == newPickUpModel.ProductCode && x.Specification == newPickUpModel.Specification) ;
           if ( null != oldPickUpModel ) {
