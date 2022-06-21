@@ -170,10 +170,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var ceedCode = ceedCodeInfo.FirstOrDefault() ;
         var deviceSymbol = ceedCodeInfo.Count > 1 ? ceedCodeInfo.ElementAt( 1 ) : string.Empty ;
         var modelNumber = ceedCodeInfo.Count > 2 ? ceedCodeInfo.ElementAt( 2 ) : string.Empty ;
-        var ceedModel = ceedModels.FirstOrDefault( c => ceedCode != null && c.CeedSetCode == ceedCode && c.GeneralDisplayDeviceSymbol == deviceSymbol && c.ModelNumber == modelNumber ) ;
-        var registrationOfBoardDataModel = registrationOfBoardDataModels.FirstOrDefault( b => ceedCode != null && (b.AutoControlPanel == ceedCode || b.SignalDestination == ceedCode) ) ;
         var isInDoor = oldChangePlumbingInformationModel?.IsInDoor ?? true ;
         if ( ! string.IsNullOrEmpty( ceedCode ) ) {
+          var ceedModel = ceedModels.FirstOrDefault( c => c.CeedSetCode == ceedCode && c.GeneralDisplayDeviceSymbol == deviceSymbol && c.ModelNumber == modelNumber ) ;
+          var registrationOfBoardDataModel = registrationOfBoardDataModels.FirstOrDefault( b => b.AutoControlPanel == ceedCode || b.SignalDestination == ceedCode ) ;
           List<string> materialCodes = new() ;
           if ( registrationOfBoardDataModel == null ) {
             var hiroiSetCdMasterModel = hiroiCdModel.FirstOrDefault( h => h.SetCode == ceedCode ) ;
