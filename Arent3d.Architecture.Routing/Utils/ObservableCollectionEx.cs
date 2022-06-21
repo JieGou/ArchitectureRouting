@@ -2,11 +2,12 @@ using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Collections.Specialized ;
-using System.ComponentModel ; 
+using System.ComponentModel ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.Utils
 {
-  public class ObservableCollectionEx<T> : ObservableCollection<T> where T : INotifyPropertyChanged
+  public class ObservableCollectionEx<T> : ObservableCollection<T> where T : NotifyPropertyChanged
   {
     /// <summary>
     /// Occurs when a property is changed within an item.
