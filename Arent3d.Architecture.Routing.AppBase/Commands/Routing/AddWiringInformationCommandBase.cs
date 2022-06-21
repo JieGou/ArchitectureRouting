@@ -96,12 +96,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable )
     {
-      // using var transaction = new Transaction( document ) ;
-      // transaction.Start("Delete Store") ;
-      // detailSymbolStorable.DetailSymbolModelData = new List<DetailSymbolModel>() ;
-      // detailSymbolStorable.Save();
-      // transaction.Commit() ;
-      
       var allConduit = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
       var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
       var routeNameSamePosition = GetRouteNameSamePosition( document, representativeRouteName!, pickConduit ) ;
@@ -109,7 +103,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var routeName in routeNameSamePosition ) {
         var conduitOfRoutes = allConduit.Where( c => c.GetRouteName() == routeName ).ToList() ;
         var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName!, false ) ;
-        if ( null == toConnector ) continue ;
+        if ( null == toConnector ) 
+          continue ;
         
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? connectorIsEcoMode ) ;
@@ -118,35 +113,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         
         var isEcoMode = bool.TryParse( connectorIsEcoMode, out var value ) && value ;
         var hiroiSetCdMasterModels = isEcoMode ? csvStorable.HiroiSetCdMasterEcoModelData : csvStorable.HiroiSetCdMasterNormalModelData ;
-        var hiroiSetCdMasterModel = hiroiSetCdMasterModels.First( h => h.SetCode == ceedCode ) ;
+        var hiroiSetCdMasterModel = hiroiSetCdMasterModels.FirstOrDefault( h => h.SetCode == ceedCode ) ;
+        if(null == hiroiSetCdMasterModel)
+          continue;
+        
         var hiroiSetMasterModels = isEcoMode ? csvStorable.HiroiSetMasterEcoModelData : csvStorable.HiroiSetMasterNormalModelData ;
-        var hiroiSetMasterModel = hiroiSetMasterModels.First( h => h.ParentPartModelNumber == hiroiSetCdMasterModel.LengthParentPartModelNumber ) ;
-        var name = GetName( hiroiSetMasterModel.Name2 ) ;
+        var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == hiroiSetCdMasterModel.LengthParentPartModelNumber ) ;
+        if(null == hiroiSetMasterModel)
+          continue;
+        
+        var plumbingType = GetPlumpingType( hiroiSetMasterModel, csvStorable.ConduitsModelData ) ;
         
         foreach ( var conduitOfRoute in conduitOfRoutes ) {
-          var detailSymbolModel = new DetailSymbolModel( toConnector.UniqueId, "*", conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, name ) ;
+          var detailSymbolModel = new DetailSymbolModel( toConnector.UniqueId, "*", conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, plumbingType ) ;
           if(null == detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.DetailSymbolId == detailSymbolModel.DetailSymbolId && x.ConduitId == detailSymbolModel.ConduitId )) 
             detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel );
         } 
       } 
     }
 
-    private string GetName( string name )
+    private string GetPlumpingType( HiroiSetMasterModel hiroiSetMasterModel, List<ConduitsModel> conduitsModels)
     {
-      if ( string.IsNullOrEmpty( name ) )
-        return string.Empty ;
+      if ( string.IsNullOrEmpty( hiroiSetMasterModel.Name2 ) )
+        return NoPlumping ;
 
-      var str = string.Empty ;
-      foreach ( var n in name ) {
-        if(char.IsDigit(n))
-          break;
-        
-        if(char.IsWhiteSpace(n))
-          continue;
+      var conduitsModel = conduitsModels.FirstOrDefault( x => $"{x.PipingType}{x.Size}".Equals( hiroiSetMasterModel.Name2 ) ) ;
+      if ( null != conduitsModel )
+        return conduitsModel.PipingType ;
 
-        str += n ;
-      }
-      return str ;
+      return NoPlumping ;
     }
 
     public List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )

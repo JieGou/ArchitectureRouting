@@ -491,6 +491,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var oldDetailTableRows = detailTableModelData.Where( d => d.DetailSymbolId == detailTableRow.DetailSymbolId && d.RouteName == detailTableRow.RouteName ).ToList() ;
         if ( ! oldDetailTableRows.Any() ) {
           var conduitsModels = conduitsModelData.Where( c => c.PipingType == detailTableRow.PlumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+          if(!conduitsModels.Any())
+            continue;
+          
           var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
           var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage ;
           if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
