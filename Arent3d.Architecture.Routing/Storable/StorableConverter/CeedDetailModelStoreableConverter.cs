@@ -30,6 +30,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Total,
       Description,
       AllowInputQuantity,
+      Supplement,
+      IsConduit
     }
 
     protected override CeedDetailModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -40,7 +42,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var productName = deserializer.GetString( SerializeField.ProductName ) ;
       var standard = deserializer.GetString( SerializeField.Standard ) ;
       var classification = deserializer.GetString( SerializeField.Classification ) ;
-      var quantity = deserializer.GetDouble( SerializeField.Quantity ) ;
+      var quantity = deserializer.GetString( SerializeField.Quantity ) ;
       var unit = deserializer.GetString( SerializeField.Unit ) ; 
       var parentId = deserializer.GetString( SerializeField.ParentId ) ; 
       var trajectory = deserializer.GetString( SerializeField.Trajectory ) ; 
@@ -55,9 +57,11 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var total = deserializer.GetDouble( SerializeField.Total ) ;  
       var modeNumber = deserializer.GetString( SerializeField.ModeNumber ) ; 
       var description = deserializer.GetString( SerializeField.Description ) ; 
-      var allowInputQuantity = deserializer.GetBool( SerializeField.AllowInputQuantity ) ; 
+      var allowInputQuantity = deserializer.GetBool( SerializeField.AllowInputQuantity ) ;
+      var supplement = deserializer.GetString( SerializeField.Supplement ) ; 
+      var isConduit = deserializer.GetBool( SerializeField.IsConduit ) ?? false ;
 
-      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, modeNumber, ceedCode, constructionClassification, quantityCalculate, quantitySet, total, description, allowInputQuantity) ;
+      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, modeNumber, ceedCode, constructionClassification, quantityCalculate, quantitySet, total, description, allowInputQuantity, supplement, isConduit ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedDetailModel customTypeValue )
@@ -84,6 +88,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.Add( SerializeField.Total, customTypeValue.Total ) ;
       serializerObject.AddNonNull( SerializeField.Description, customTypeValue.Description ) ;
       serializerObject.Add( SerializeField.AllowInputQuantity, customTypeValue.AllowInputQuantity ) ;
+      serializerObject.AddNonNull( SerializeField.Supplement, customTypeValue.Supplement ) ;
+      serializerObject.Add( SerializeField.IsConduit, customTypeValue.IsConduit ) ;
         
       return serializerObject ;
     }

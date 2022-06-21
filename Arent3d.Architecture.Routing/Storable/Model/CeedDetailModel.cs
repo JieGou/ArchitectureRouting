@@ -71,9 +71,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         _constructionClassification = value ;
         OnPropertyChanged( nameof( ConstructionClassification ) ) ;
 
-        if ( ! string.IsNullOrEmpty( Classification ) && value is not (nameof( ConstructionClassificationType.天井ふところ ) or nameof( ConstructionClassificationType.ケーブルラック配線 ) or nameof( ConstructionClassificationType.二重床 ) or nameof( ConstructionClassificationType.露出 )) )
-          Classification = string.Empty ;
-
         if ( value is nameof( ClassificationType.露出 ) && IsConduit ) {
           Classification = nameof( ClassificationType.露出 ) ;
           if ( CeedCode != string.Empty ) {
@@ -83,6 +80,11 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         }
 
         if ( value is nameof( ConstructionClassificationType.地中埋設 ) or nameof( ConstructionClassificationType.床隠蔽 ) or nameof( ConstructionClassificationType.冷房配管共巻配線 ) && IsConduit ) {
+          Classification = nameof( ClassificationType.隠蔽 ) ;
+          AllowInputQuantity = true ;
+        }
+
+        if ( string.IsNullOrEmpty( Classification ) && value is (nameof( ConstructionClassificationType.天井ふところ ) or nameof( ConstructionClassificationType.ケーブルラック配線 ) or nameof( ConstructionClassificationType.二重床 ) ) && IsConduit ) {
           Classification = nameof( ClassificationType.隠蔽 ) ;
           AllowInputQuantity = true ;
         }
@@ -161,14 +163,16 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public string ModeNumber { get ; set ; }
     public bool IsConduit { get ; set ; }
+    public string Supplement { get ; set ; }
 
-    public CeedDetailModel( string? productCode, string? productName, string? standard, string? classification, double? quantity, string? unit, string? parentId, string? trajectory, string? size1, string? size2, string? specification, int? order, string? modeNumber, string? ceedCode, string? constructionClassification, double? quantityCalculate, double? quantitySet, double? total, string? description, bool? allowInputQuantity, bool isConduit = false )
+    public CeedDetailModel( string? productCode, string? productName, string? standard, string? classification, string? quantity, string? unit, string? parentId, string? trajectory, string? size1, string? size2, string? specification, int? order, string? modeNumber, string? ceedCode, string? constructionClassification, double? quantityCalculate, double? quantitySet, double? total, string? description, bool? allowInputQuantity, string? supplement, bool isConduit = false )
     {
+      IsConduit = isConduit ;
       ProductCode = productCode ?? string.Empty ;
       ProductName = productName ?? string.Empty ;
       Standard = standard ?? string.Empty ;
       Classification = classification ?? string.Empty ;
-      Quantity = quantity == null ? Dash : quantity.ToString() ;
+      Quantity = quantity ?? Dash ;
       Unit = unit ?? string.Empty ;
       ParentId = parentId ?? string.Empty ;
       Trajectory = trajectory ?? string.Empty ;
@@ -184,8 +188,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Total = total ?? 0 ;
       Description = description ?? string.Empty ;
       AllowInputQuantity = allowInputQuantity ?? false ;
-      AllowChangeClassification = false ;
-      IsConduit = isConduit ;
+      AllowChangeClassification = isConduit & constructionClassification is nameof( ConstructionClassificationType.天井ふところ ) or nameof( ConstructionClassificationType.ケーブルラック配線 ) or nameof( ConstructionClassificationType.二重床 ) ;
+      Supplement = supplement ?? string.Empty ;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged ;
