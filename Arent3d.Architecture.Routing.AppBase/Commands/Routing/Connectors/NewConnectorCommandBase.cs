@@ -15,6 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
   {
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
     private const string DefaultConstructionItem = "未設定" ;
+    private const string DefaultConnectorWidth = "100" ;
+    private const string DefaultConnectorLength = "150" ;
     protected virtual ConnectorFamilyType? ConnectorType => null ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -49,8 +51,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
 
-      if ( false == instance.TryGetProperty( "W", out string? connectorWidthString,true ) && string.IsNullOrEmpty( connectorWidthString ) ) return;
-      if  ( false == instance.TryGetProperty( "D",out string? connectorLengthString,true ) && string.IsNullOrEmpty( connectorLengthString )) return;
+      if ( false == instance.TryGetProperty( "W", out string? connectorWidthString,true ) && string.IsNullOrEmpty( connectorWidthString ) ) connectorWidthString = DefaultConnectorWidth;
+      if  ( false == instance.TryGetProperty( "D",out string? connectorLengthString,true ) && string.IsNullOrEmpty( connectorLengthString )) connectorLengthString = DefaultConnectorLength;
 
       if ( false == int.TryParse( connectorLengthString, out var connectorWidth ) ) return ;
       if ( false == int.TryParse( connectorWidthString,out var connectorLength )) return;
