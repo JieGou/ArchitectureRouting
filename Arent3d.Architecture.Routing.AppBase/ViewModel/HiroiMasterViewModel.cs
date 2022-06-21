@@ -57,24 +57,67 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         
         var listHiroiMaster = HiroiMasterList.ToList() ;
         var listHiroiSetMaster = _isEcoModel ? _hiroiSetMasterEcoModels?.ToList() : _hiroiSetMasterNormalModels?.ToList() ;
-        listHiroiSetMaster = SearchText.Split( new char[] { ' ', ';', ',' } ).Where( textSearch => ! string.IsNullOrEmpty( textSearch ) ).Aggregate( listHiroiSetMaster, ( current, textSearch ) => current!.FindAll( x => CheckContainSearchText( x, textSearch ) ) ) ;
+        var materialCodes = new List<string>() ;
+        foreach ( var textSearch in SearchText.Split( new char[] { ' ', ';', ',' } ).Where( textSearch => ! string.IsNullOrEmpty( textSearch ) ) ) {
+          materialCodes.AddRange( CheckContainSearchText( listHiroiSetMaster, textSearch ) ) ;
+        }
 
-        listHiroiMaster = listHiroiMaster.FindAll( x => listHiroiSetMaster!.FirstOrDefault( y => y.MaterialCode1 == x.Buzaicd || y.MaterialCode2 == x.Buzaicd  || y.MaterialCode3 == x.Buzaicd  || y.MaterialCode4 == x.Buzaicd  || y.MaterialCode5 == x.Buzaicd  || y.MaterialCode6 == x.Buzaicd  || y.MaterialCode7 == x.Buzaicd  || y.MaterialCode8 == x.Buzaicd ) != null ) ;
-        HiroiMasterListDisplay = new ObservableCollection<HiroiMasterModel>( listHiroiMaster ) ; 
+        if ( materialCodes.Any() ) {
+          listHiroiMaster = listHiroiMaster.Where( x => materialCodes.Contains( int.Parse( x.Buzaicd ).ToString() ) ).ToList() ;
+          HiroiMasterListDisplay = new ObservableCollection<HiroiMasterModel>( listHiroiMaster ) ; 
+        }
+        else {
+          HiroiMasterListDisplay = new ObservableCollection<HiroiMasterModel>() ; 
+        }
       }
     }
     
-    private bool CheckContainSearchText( HiroiSetMasterModel x, string textSearch )
+    private List<string> CheckContainSearchText( List<HiroiSetMasterModel>? listHiroiSetMaster, string textSearch )
     {
-      if ( string.IsNullOrEmpty( textSearch ) )
-        return true ;
+      var materialCodes = new List<string>() ;
+      if ( string.IsNullOrEmpty( textSearch ) || listHiroiSetMaster == null )
+        return materialCodes ;
+      
+      foreach ( var x in listHiroiSetMaster ) {
+        var isHasMaterialCode = false ;
+        if ( CheckContainSearchText( x.Name1, textSearch ) && ! string.IsNullOrEmpty( x.MaterialCode1 ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode1 ).ToString() ) ;
+          isHasMaterialCode = true ;
+        }
+        if ( CheckContainSearchText( x.Name2, textSearch ) && ! string.IsNullOrEmpty( x.MaterialCode2 ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode2 ).ToString() ) ;
+          isHasMaterialCode = true ;
+        }
+        if ( CheckContainSearchText( x.Name3, textSearch ) && ! string.IsNullOrEmpty( x.MaterialCode3 ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode3 ).ToString() ) ;
+          isHasMaterialCode = true ;
+        }
+        if ( CheckContainSearchText( x.Name4, textSearch ) && ! string.IsNullOrEmpty( x.MaterialCode4 ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode4 ).ToString() ) ;
+          isHasMaterialCode = true ;
+        }
+        if ( CheckContainSearchText( x.Name5, textSearch ) && ! string.IsNullOrEmpty( x.MaterialCode5 ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode5 ).ToString() ) ;
+          isHasMaterialCode = true ;
+        }
+        if ( CheckContainSearchText( x.Name6, textSearch ) && ! string.IsNullOrEmpty( x.MaterialCode6 ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode6 ).ToString() ) ;
+          isHasMaterialCode = true ;
+        }
+        if ( CheckContainSearchText( x.Name7, textSearch ) && ! string.IsNullOrEmpty( x.MaterialCode7 ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode7 ).ToString() ) ;
+          isHasMaterialCode = true ;
+        }
+        if ( CheckContainSearchText( x.Name8, textSearch ) && ! string.IsNullOrEmpty( x.MaterialCode8 ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode8 ).ToString() ) ;
+          isHasMaterialCode = true ;
+        }
+        if ( ! isHasMaterialCode && ! string.IsNullOrEmpty( x.MaterialCode1 ) && CheckContainSearchText( x.ParentPartName, textSearch ) ) {
+          materialCodes.Add( int.Parse( x.MaterialCode1 ).ToString() ) ;
+        }
+      }
 
-      return CheckContainSearchText( x.Name1, textSearch ) || CheckContainSearchText( x.Quantity1, textSearch ) || CheckContainSearchText( x.MaterialCode1, textSearch ) || CheckContainSearchText( x.Name2, textSearch ) || CheckContainSearchText( x.Quantity2, textSearch ) ||
-             CheckContainSearchText( x.MaterialCode2, textSearch ) || CheckContainSearchText( x.Name3, textSearch ) || CheckContainSearchText( x.Quantity3, textSearch ) || CheckContainSearchText( x.MaterialCode3, textSearch ) || CheckContainSearchText( x.Name4, textSearch ) ||
-             CheckContainSearchText( x.Quantity4, textSearch ) || CheckContainSearchText( x.MaterialCode4, textSearch ) || CheckContainSearchText( x.Name5, textSearch ) || CheckContainSearchText( x.Quantity5, textSearch ) || CheckContainSearchText( x.MaterialCode5, textSearch ) ||
-             CheckContainSearchText( x.Name6, textSearch ) || CheckContainSearchText( x.Quantity6, textSearch ) || CheckContainSearchText( x.MaterialCode6, textSearch ) || CheckContainSearchText( x.Name7, textSearch ) || CheckContainSearchText( x.Quantity7, textSearch ) ||
-             CheckContainSearchText( x.MaterialCode7, textSearch ) || CheckContainSearchText( x.Name8, textSearch ) || CheckContainSearchText( x.Quantity8, textSearch ) || CheckContainSearchText( x.MaterialCode8, textSearch ) || CheckContainSearchText( x.ParentPartName, textSearch ) ||
-             CheckContainSearchText( x.ParentPartsQuantity, textSearch ) || CheckContainSearchText( x.ParentPartModelNumber, textSearch ) ;
+      return materialCodes ;
     }
  
     private bool CheckContainSearchText( HiroiMasterModel x, string textSearch )
@@ -89,7 +132,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private bool CheckContainSearchText( string textContainer, string textSearch )
     {
       if ( hasOneWordOnly )
-        return textContainer.Length > textSearch.Length && ( textContainer.Substring( 0, textSearch.Length ).Equals( textSearch, StringComparison.OrdinalIgnoreCase ) || textContainer.Replace( " ","" ).Substring( 0, textSearch.Length ).Equals( textSearch, StringComparison.OrdinalIgnoreCase )) ;
+        return textContainer.Length > textSearch.Length && ( textContainer.Substring( 0, textSearch.Length ).Equals( textSearch, StringComparison.OrdinalIgnoreCase ) 
+                                                             || textContainer.Replace( " ","" ).Substring( 0, textSearch.Length ).Equals( textSearch, StringComparison.OrdinalIgnoreCase )
+                                                             || textContainer.Replace( " ","" ).Contains( textSearch ) ) ;
          
       return textContainer?.IndexOf( textSearch.Trim(), StringComparison.OrdinalIgnoreCase ) >= 0 || textContainer?.Replace( " ","" ).IndexOf( textSearch.Trim(), StringComparison.OrdinalIgnoreCase ) >= 0 ;
     }
