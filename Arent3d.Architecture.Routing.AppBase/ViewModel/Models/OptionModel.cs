@@ -1,4 +1,6 @@
-﻿namespace Arent3d.Architecture.Routing.AppBase.ViewModel.Models
+﻿using Arent3d.Architecture.Routing.Storable.Model ;
+
+namespace Arent3d.Architecture.Routing.AppBase.ViewModel.Models
 {
   public class OptionModel : NotifyPropertyChanged
   {

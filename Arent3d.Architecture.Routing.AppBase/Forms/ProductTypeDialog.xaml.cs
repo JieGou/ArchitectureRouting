@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
     private void Button_Click( object sender, RoutedEventArgs e )
     {
-      ProductTypeViewModel vm = (ProductTypeViewModel)DataContext ;
+      ProductTypeViewModel vm = (ProductTypeViewModel) DataContext ;
       var button = (Button) sender ;
       vm.SelectedProductType = vm.ProductTypes[ button.CommandParameter.ToString() ] ;
       this.DialogResult = true ;

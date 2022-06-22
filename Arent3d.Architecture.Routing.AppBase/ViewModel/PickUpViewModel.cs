@@ -311,7 +311,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
               specification2 = ceedCodeModel.First() ?? string.Empty ;
               PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
-                classification, pickUpNumber, direction ) ;
+                classification, pickUpNumber, direction, ceedSetCode, deviceSymbol, condition ) ;
             }
           }
         }
