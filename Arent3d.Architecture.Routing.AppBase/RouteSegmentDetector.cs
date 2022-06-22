@@ -51,6 +51,11 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       return ContainsFromEndPoint( info.FromEndPoint ) && ContainsToEndPoint( info.ToEndPoint ) ;
     }
+    
+    public bool IsPassingThroughFrom( RouteSegment info )
+    {
+      return ContainsFromEndPoint( info.FromEndPoint ) ;
+    }
 
     private bool ContainsFromEndPoint( IEndPoint endPoint )
     {
