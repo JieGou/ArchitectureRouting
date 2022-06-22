@@ -4,19 +4,19 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class ProductTypeDialog : Window
+  public partial class EquipmentCategoryDialog : Window
   {
-    public ProductTypeDialog()
+    public EquipmentCategoryDialog()
     {
       InitializeComponent() ;
     }
     private void Button_Click( object sender, RoutedEventArgs e )
     {
-      ProductTypeViewModel vm = (ProductTypeViewModel) DataContext ;
+      EquipmentCategoryViewModel vm = (EquipmentCategoryViewModel) DataContext ;
       var button = (Button) sender ;
-      vm.SelectedProductType = vm.ProductTypes[ button.CommandParameter.ToString() ] ;
-      this.DialogResult = true ;
-      this.Close() ;
+      vm.SelectedEquipmentCategory = vm.EquipmentCategories[ button.CommandParameter.ToString() ] ;
+      DialogResult = true ;
+      Close() ;
     }
   }
 }

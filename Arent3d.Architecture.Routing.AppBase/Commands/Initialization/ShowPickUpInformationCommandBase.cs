@@ -17,11 +17,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var document = commandData.Application.ActiveUIDocument.Document ;
       ResetSymbolInformationData( document ) ;
       
-      var vm = new ProductTypeViewModel() ;
-      var view = new ProductTypeDialog() { DataContext = vm } ;
+      var vm = new EquipmentCategoryViewModel() ;
+      var view = new EquipmentCategoryDialog() { DataContext = vm } ;
       view.ShowDialog() ;
 
-      PickUpViewModel pickUpViewModel = new PickUpViewModel( document, vm.SelectedProductType ) ;
+      PickUpViewModel pickUpViewModel = new PickUpViewModel( document, vm.SelectedEquipmentCategory ) ;
       var pickUpDialog = new PickupDialog( pickUpViewModel ) ;
       if(!pickUpViewModel.OriginPickUpModels.Any())
         return Result.Cancelled ;

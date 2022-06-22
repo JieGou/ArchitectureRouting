@@ -88,6 +88,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       Conduit,
       Cable
     }
+    
+    public enum EquipmentCategory
+    {
+      ElectricalEquipment,
+      MechanicalEquipment
+    }
 
     private enum ConduitType
     {
@@ -136,7 +142,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #region Constructor
 
-    public PickUpViewModel( Document document, ProductType? productType = null)
+    public PickUpViewModel( Document document, EquipmentCategory? equipmentCategory = null)
     {
       _document = document ;
       _ceedModels = new List<CeedModel>() ;
@@ -166,7 +172,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       _symbolInformationStorable = _document.GetSymbolInformationStorable() ;
       _ceedDetailStorable = _document.GetCeedDetailStorable() ;
-      _pickUpModels = GetPickUpData(productType) ;
+      _pickUpModels = GetPickUpData(equipmentCategory) ;
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have element.", "Result Message" ) ;
       else {
@@ -183,11 +189,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #region Business Function
 
-    private List<PickUpModel> GetPickUpData(ProductType? productType = null)
+    private List<PickUpModel> GetPickUpData(EquipmentCategory? equipmentCategory = null)
     {
       List<PickUpModel> pickUpModels = new() ;
 
-      if ( productType is null or ProductType.Connector ) {
+      if ( equipmentCategory is null or EquipmentCategory.ElectricalEquipment ) {
         List<double> quantities = new() ;
         List<int> pickUpNumbers = new() ;
         List<string> directionZ = new() ;
@@ -205,10 +211,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null, null, null ) ;
       }
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
-      if(productType is null or ProductType.Conduit)
+      if ( equipmentCategory is null or EquipmentCategory.MechanicalEquipment ) {
         GetToConnectorsOfConduit( connectors, pickUpModels ) ;
-      if(productType is null or ProductType.Cable)
         GetToConnectorsOfCables( connectors, pickUpModels ) ;
+      }
       GetDataFromSymbolInformation( pickUpModels ) ;
       return pickUpModels ;
     }
