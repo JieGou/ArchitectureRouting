@@ -204,7 +204,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         
         SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null, null, null ) ;
       }
-      
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       if(productType is null or ProductType.Conduit)
         GetToConnectorsOfConduit( connectors, pickUpModels ) ;
@@ -312,6 +311,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               specification2 = ceedCodeModel.First() ?? string.Empty ;
               PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
                 classification, pickUpNumber, direction, ceedSetCode, deviceSymbol, condition ) ;
+            }
+          }
+        }
+        
+        if ( productType == ProductType.Conduit && constructionClassifications != null && ! string.IsNullOrEmpty( constructionClassifications[index] ) && ceedCodeModel.Count == 1 ) {
+          construction = constructionClassifications[ index ] ;
+          if ( plumbingInfos != null && ! string.IsNullOrEmpty( plumbingInfos[ index ] ) ) {
+            var materialCodes = GetMaterialCodes( plumbingInfos, index ) ;
+            if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
+              specification2 = ceedCodeModel.First() ?? string.Empty ;
+              PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
+                classification, pickUpNumber, direction ) ;
             }
           }
         }
