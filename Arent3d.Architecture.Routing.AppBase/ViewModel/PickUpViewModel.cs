@@ -562,7 +562,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             .GroupBy( x => ( x.ConstructionItems, x.Construction ) )
             .Select( g => g.ToList() ) ;
           foreach ( var pickUpModelByConstructionItemsAndConstruction in pickUpModelsByConstructionItemsAndConstruction ) {
-            var sumQuantity = Math.Round(pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ),2) ;
+            var sumQuantity = Math.Round(pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ), 1) ;
             var pickUpModel = pickUpModelByConstructionItemsAndConstruction.FirstOrDefault() ;
             if ( pickUpModel == null ) continue ;
             PickUpModel newPickUpModel = new( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification,
