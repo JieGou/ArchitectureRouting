@@ -1,0 +1,33 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.ProductTypeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:vm="clr-namespace:Arent3d.Architecture.Routing.AppBase.ViewModel"
+        mc:Ignorable="d"
+        Title="ProductTypeDialog" Height="Auto" Width="300" WindowStartupLocation="CenterScreen" UseLayoutRounding="True" 
+        Topmost="True" SizeToContent="Height" ResizeMode="NoResize">
+    <Window.DataContext>
+        <vm:ProductTypeViewModel/>
+    </Window.DataContext>
+    <Border Margin="10 5 10 10">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="製品型" FontWeight="Bold" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" Padding="6" VerticalContentAlignment="Center"
+                          ItemsSource="{Binding Path=ProductTypes}"
+                          DisplayMemberPath="Key"
+                          SelectedValuePath="Value"
+                          SelectedValue="{Binding Path=SelectedProductType, UpdateSourceTrigger=PropertyChanged}"/>
+            </Grid>
+            <Button Content="フィルター" Margin="0 10 0 0" Padding="0 5" Width="75" FontWeight="Bold"
+                    Command="{Binding Path=FilterCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
+        </StackPanel>
+    </Border>
+</Window>

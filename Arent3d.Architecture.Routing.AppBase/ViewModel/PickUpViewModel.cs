@@ -136,7 +136,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #region Constructor
 
-    public PickUpViewModel( Document document )
+    public PickUpViewModel( Document document, ProductType? productType = null)
     {
       _document = document ;
       _ceedModels = new List<CeedModel>() ;
@@ -170,11 +170,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have element.", "Result Message" ) ;
       else {
-        List<PickUpModel> pickUpConduitByNumbers = PickUpModelByNumber( ProductType.Conduit ) ;
-        List<PickUpModel> pickUpRackByNumbers = PickUpModelByNumber( ProductType.Cable ) ;
-        var pickUpModels = _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+        List<PickUpModel> pickUpConduitByNumbers = productType is null or ProductType.Conduit ? PickUpModelByNumber( ProductType.Conduit ) : new() ;
+        List<PickUpModel> pickUpRackByNumbers = productType is null or ProductType.Cable ? PickUpModelByNumber( ProductType.Cable ) : new() ;
+        List<PickUpModel> pickUpConnectors = productType is null or ProductType.Connector ? _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() : new() ;
+        List<PickUpModel> pickUpModels = new() ;
         if ( pickUpConduitByNumbers.Any() ) pickUpModels.AddRange( pickUpConduitByNumbers ) ;
         if ( pickUpRackByNumbers.Any() ) pickUpModels.AddRange( pickUpRackByNumbers ) ;
+        if ( pickUpConnectors.Any() ) pickUpModels.AddRange( pickUpConnectors ) ;
         OriginPickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
       }
     }
