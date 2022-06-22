@@ -215,7 +215,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var ceedSetCodeArray = ceedModel?.CeedSetCode?.Split( ':' ) ;
       var ceedCode = ceedSetCodeArray?.Length > 0 ? ceedSetCodeArray[ 0 ] : string.Empty ;
       var newCeedDetail = new CeedDetailModel( hiroiMaster.Buzaicd, name, hiroiMaster.Kikaku, string.Empty, QuantityDefault.ToString(), hiroiMaster.Tani, SymbolInformation.Id, TrajectoryDefault,
-        hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Hinmei, CeedDetailList.Count + 1, ceedModel?.ModelNumber, ceedCode,
+        hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Hinmei, CeedDetailList.Count + 1, hiroiMaster.Type, string.Empty, ceedModel?.ModelNumber, ceedCode,
         ConstructionClassificationDefault, allowInputQuantity ? 0 : 1, 1, 1, string.Empty, allowInputQuantity, ceedModel?.Name, isConduit ) ;
       if ( ! newCeedDetail.AllowInputQuantity )
         newCeedDetail.Quantity = CeedDetailModel.Dash ;
@@ -283,7 +283,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( true == hiroiMasterDialog.ShowDialog() ) {
         var productName = hiroiMasterViewModel.HiroiMasterSelected?.Syurui == LenghtMaterialType ? hiroiMasterViewModel.HiroiMasterSelected?.Kikaku : hiroiMasterViewModel.HiroiMasterSelected?.Hinmei ;
         var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, productName, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault.ToString(), hiroiMasterViewModel.HiroiMasterSelected?.Tani, this.SymbolInformation.Id, TrajectoryDefault,
-          hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, CeedDetailList.Count + 1, string.Empty, string.Empty, string.Empty, 1, 1, 1, string.Empty, true, string.Empty ) ;
+          hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, CeedDetailList.Count + 1, hiroiMasterViewModel.HiroiMasterSelected?.Type, string.Empty,string.Empty, string.Empty, string.Empty, 1, 1, 1, string.Empty, true, string.Empty ) ;
         CeedDetailList.Add( ceedDetailModel ) ;
         CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
       }
@@ -295,7 +295,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( null == selectedHiroiMaster ) return ;
       var productName = selectedHiroiMaster.Syurui == LenghtMaterialType ? selectedHiroiMaster.Kikaku : selectedHiroiMaster.Hinmei ;
       var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, productName, selectedHiroiMaster.Kikaku, "", QuantityDefault.ToString(), selectedHiroiMaster.Tani, SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2,
-        selectedHiroiMaster.Hinmei, CeedDetailList.Count + 1, string.Empty, string.Empty, string.Empty, 0, 1, QuantityDefault, string.Empty, true, string.Empty ) ;
+        selectedHiroiMaster.Hinmei, CeedDetailList.Count + 1, selectedHiroiMaster.Type, string.Empty, string.Empty, string.Empty, string.Empty, 0, 1, QuantityDefault, string.Empty, true, string.Empty ) ;
       
       if ( _document == null ) return ;
       var csvStorable = _document!.GetCsvStorable() ;

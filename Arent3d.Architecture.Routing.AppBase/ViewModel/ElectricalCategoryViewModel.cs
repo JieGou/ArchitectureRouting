@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var productName = hiroiMasterViewModel.HiroiMasterSelected?.Syurui == SymbolInformationViewModel.LenghtMaterialType ? hiroiMasterViewModel.HiroiMasterSelected?.Kikaku : hiroiMasterViewModel.HiroiMasterSelected?.Hinmei ;
         CeedDetailSelected = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, productName, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", 
               _quantityDefault.ToString(), hiroiMasterViewModel.HiroiMasterSelected?.Tani, _symbolInformationId, _trajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, 
-              1, string.Empty, string.Empty, string.Empty, 0, 1, _quantityDefault, string.Empty, true, string.Empty ) ;
+              1, hiroiMasterViewModel.HiroiMasterSelected?.Type, string.Empty, string.Empty, string.Empty, string.Empty, 0, 1, _quantityDefault, string.Empty, true, string.Empty ) ;
       }
 
       if ( _document == null || CeedDetailSelected == null ) return CeedDetailSelected ;

@@ -164,7 +164,7 @@
     public bool IsConduit { get ; set ; }
     public string Supplement { get ; set ; }
 
-    public CeedDetailModel( string? productCode, string? productName, string? standard, string? classification, string? quantity, string? unit, string? parentId, string? trajectory, string? size1, string? size2, string? specification, int? order, string? modeNumber, string? ceedCode, string? constructionClassification, double? quantityCalculate, double? quantitySet, double? total, string? description, bool? allowInputQuantity, string? supplement, bool isConduit = false )
+    public CeedDetailModel( string? productCode, string? productName, string? standard, string? classification, string? quantity, string? unit, string? parentId, string? trajectory, string? size1, string? size2, string? specification, int? order, string? type, string? parentPartModel, string? modeNumber, string? ceedCode, string? constructionClassification, double? quantityCalculate, double? quantitySet, double? total, string? description, bool? allowInputQuantity, string? supplement, bool isConduit = false )
     {
       IsConduit = isConduit ;
       ProductCode = productCode ?? string.Empty ;

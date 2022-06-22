@@ -63,11 +63,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var supplement = deserializer.GetString( SerializeField.Supplement ) ; 
       var isConduit = deserializer.GetBool( SerializeField.IsConduit ) ?? false ;
 
-      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, type, modeNumber, ceedCode, constructionClassification, quantityCalculate, quantitySet, total, description, allowInputQuantity, supplement, isConduit ) ;
+      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, type, string.Empty, modeNumber, ceedCode, constructionClassification, quantityCalculate, quantitySet, total, description, allowInputQuantity, supplement, isConduit ) ;
     }
 
-    protected override ISerializerObject Serialize( Element storedElement, CeedDetailModel custom
-    Value )
+    protected override ISerializerObject Serialize( Element storedElement, CeedDetailModel customTypeValue )
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
 
