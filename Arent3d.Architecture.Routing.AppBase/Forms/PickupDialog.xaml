@@ -275,20 +275,11 @@
                 <Button Content="全選択"
                         Command="{Binding SelectAllCommand}"
                         CommandParameter="{Binding ElementName=DataGrid}"/>
-                <Button Content="全選択"
+                <Button Content="データ削除"
                         Command="{Binding DeleteDbCommand}"
                         CommandParameter="{Binding ElementName=DataGrid}"/>
-                <Button Content="更新"
-                        Command="{Binding UpdateCommand}"
-                        CommandParameter="{Binding ElementName=ThisWindow}"/>
-                <Button Content="表示切替"
-                        Command="{Binding DisplaySwitchingCommand}"
-                        CommandParameter="{Binding ElementName=ThisWindow}"/>
                 <Button Content="拾い表出力"
                         Command="{Binding ExportFileCommand}"/>
-                <Button Content="一括削除"
-                        Command="{Binding DeleteCommand}"
-                        CommandParameter="{Binding ElementName=ThisWindow}"/>
             </StackPanel>
             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" Margin="25, 0">
                 <Button Content="保存終了"

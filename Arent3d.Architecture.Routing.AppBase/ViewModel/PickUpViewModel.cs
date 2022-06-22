@@ -49,9 +49,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public RelayCommand<Window> ExportFileCommand => new(ExportFile) ;
     public RelayCommand<Window> SaveCommand => new(Save) ;
-    public RelayCommand<Window> DeleteCommand => new(Delete) ;
-    public ICommand UpdateCommand => new RelayCommand( Update ) ;
-    public RelayCommand<Window> DisplaySwitchingCommand => new(DisplaySwitching) ;
     public RelayCommand<Window> CancelCommand => new(Cancel) ;
     public ICommand SelectAllCommand
     {
@@ -646,28 +643,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void DisplaySwitching( Window window )
-    {
-      window.DialogResult = true ;
-      window.Close() ;
-    }
-
-    private void Update()
-    {
-    }
-
     private void Cancel( Window window )
     {
       window.DialogResult = false ;
       window.Close() ;
     }
 
-    private void Delete( Window window )
-    {
-      window.DialogResult = true ;
-      window.Close() ;
-    }
-    
     public ICommand FilterCommand
     {
       get
