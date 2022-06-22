@@ -10,7 +10,7 @@ using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class CeedModelDialog
+  public partial class CeedModelDialog : Window
   {
     private CeedViewModel ViewModel => (CeedViewModel) DataContext ;
 
