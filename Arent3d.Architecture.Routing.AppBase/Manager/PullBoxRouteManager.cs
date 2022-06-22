@@ -320,7 +320,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         instance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
 
       instance.SetConnectorFamilyType( connectorType ?? ConnectorFamilyType.PullBox ) ;
-
+      
       return instance ;
     }
     
@@ -515,6 +515,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         //
       }
       return result ;
+    }
+
+    public static void CreateTextNoteAndGroupWithPullBox(Document doc, XYZ point, Element pullBox, string text)
+    {
+      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
+      TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
+      
+      var txtPosition = new XYZ( point.X, point.Y, point.Z ) ;
+      
+      var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
+
+      var textNoteType = textNote.TextNoteType ;
+      double newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
+      textNote.ChangeTypeId( textNoteType.Id ) ;
+      
+      ICollection<ElementId> groupIds = new List<ElementId>() ;
+      groupIds.Add( pullBox.Id ) ;
+      groupIds.Add( textNote.Id ) ;
+      doc.Create.NewGroup( groupIds ) ;
     }
 
     private static bool ComparePullBoxPosition( IEnumerable<XYZ> pullBoxPositions, XYZ newPullBoxPosition )

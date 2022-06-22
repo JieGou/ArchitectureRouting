@@ -46,6 +46,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       t.Start() ;
       var pullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, originX, originY, heightConnector - connectorHeight, level, pickInfo.Route.Name ) ;
       t.Commit() ;
+      
+      using Transaction t2 = new( document, "Create text note" ) ;
+      t.Start() ;
+      XYZ? position = null ;
+      if ( pickInfo.RouteDirection.X is 1.0 or -1.0 ) {
+        position = new XYZ( originX, originY + 0.5, connectorHeight ) ;
+      } else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 ) {
+        position = new XYZ( originX + 0.2, originY + 0.2, connectorHeight ) ;
+      }
+      else {
+        position = new XYZ( originX, originY, connectorHeight ) ;
+      }
+
+      PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, position , pullBox, "PB" );
+      t.Commit() ;
 
       return new OperationResult<PickState>( new PickState( pickInfo, pullBox, heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, fromDirection, toDirection ) ) ;
     }
