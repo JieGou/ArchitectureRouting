@@ -10,7 +10,7 @@
             <TabControl>
                 <TabItem Header="Eco model">
                     <Grid>
-                        <DataGrid x:Name="DataGridEco" ItemsSource="{Binding ElectricalCategoriesEco}" HeadersVisibility="None" AutoGenerateColumns="False" CanUserAddRows="False">
+                        <DataGrid x:Name="DataGridEco" ItemsSource="{Binding ElectricalCategoriesEco}" SelectionUnit="Cell" HeadersVisibility="None" AutoGenerateColumns="False" CanUserAddRows="False">
                             <DataGrid.Columns>
                                 <DataGridTextColumn IsReadOnly="True" Width="120" Binding="{Binding Col1}"/>
                                 <DataGridTextColumn IsReadOnly="True" Width="120" Binding="{Binding Col2}"/>
@@ -21,7 +21,7 @@
                 </TabItem>
                 <TabItem Header="Normal model">
                     <Grid>
-                        <DataGrid x:Name="DataGridNormal" ItemsSource="{Binding ElectricalCategoriesNormal}" HeadersVisibility="None" AutoGenerateColumns="False" CanUserAddRows="False">
+                        <DataGrid x:Name="DataGridNormal" ItemsSource="{Binding ElectricalCategoriesNormal}"  SelectionUnit="Cell"  HeadersVisibility="None" AutoGenerateColumns="False" CanUserAddRows="False">
                             <DataGrid.Columns>
                                 <DataGridTextColumn IsReadOnly="True" Width="120" Binding="{Binding Col1}"/>
                                 <DataGridTextColumn IsReadOnly="True" Width="120" Binding="{Binding Col2}"/>
