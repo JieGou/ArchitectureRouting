@@ -166,17 +166,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       _symbolInformationStorable = _document.GetSymbolInformationStorable() ;
       _ceedDetailStorable = _document.GetCeedDetailStorable() ;
-      _pickUpModels = GetPickUpData() ;
+      _pickUpModels = GetPickUpData(productType) ;
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have element.", "Result Message" ) ;
       else {
-        List<PickUpModel> pickUpConduitByNumbers = productType is null or ProductType.Conduit ? PickUpModelByNumber( ProductType.Conduit ) : new() ;
-        List<PickUpModel> pickUpRackByNumbers = productType is null or ProductType.Cable ? PickUpModelByNumber( ProductType.Cable ) : new() ;
-        List<PickUpModel> pickUpConnectors = productType is null or ProductType.Connector ? _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() : new() ;
-        List<PickUpModel> pickUpModels = new() ;
+        List<PickUpModel> pickUpConduitByNumbers = PickUpModelByNumber( ProductType.Conduit ) ;
+        List<PickUpModel> pickUpRackByNumbers = PickUpModelByNumber( ProductType.Cable ) ;
+        var pickUpModels = _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
         if ( pickUpConduitByNumbers.Any() ) pickUpModels.AddRange( pickUpConduitByNumbers ) ;
         if ( pickUpRackByNumbers.Any() ) pickUpModels.AddRange( pickUpRackByNumbers ) ;
-        if ( pickUpConnectors.Any() ) pickUpModels.AddRange( pickUpConnectors ) ;
         OriginPickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
       }
     }
@@ -185,27 +183,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #region Business Function
 
-    private List<PickUpModel> GetPickUpData()
+    private List<PickUpModel> GetPickUpData(ProductType? productType = null)
     {
       List<PickUpModel> pickUpModels = new() ;
-      List<double> quantities = new() ;
-      List<int> pickUpNumbers = new() ;
-      List<string> directionZ = new() ;
-      List<string> constructionItems = new() ;
-      List<string?> isEcoModes = new() ;
 
-      List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId || ( e is FamilyInstance f && f.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ).ToList() ;
-      foreach ( var connector in allConnector ) {
-        connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
-        connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
-        constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem! ) ;
-        isEcoModes.Add( isEcoMode ) ;
+      if ( productType is null or ProductType.Connector ) {
+        List<double> quantities = new() ;
+        List<int> pickUpNumbers = new() ;
+        List<string> directionZ = new() ;
+        List<string> constructionItems = new() ;
+        List<string?> isEcoModes = new() ;
+        
+        List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId || ( e is FamilyInstance f && f.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ).ToList() ;
+        foreach ( var connector in allConnector ) {
+          connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
+          connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+          constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem! ) ;
+          isEcoModes.Add( isEcoMode ) ;
+        }
+        
+        SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null ) ;
       }
-
-      SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null ) ;
+      
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
-      GetToConnectorsOfConduit( connectors, pickUpModels ) ;
-      GetToConnectorsOfCables( connectors, pickUpModels ) ;
+      if(productType is null or ProductType.Conduit)
+        GetToConnectorsOfConduit( connectors, pickUpModels ) ;
+      if(productType is null or ProductType.Cable)
+        GetToConnectorsOfCables( connectors, pickUpModels ) ;
       GetDataFromSymbolInformation( pickUpModels ) ;
       return pickUpModels ;
     }

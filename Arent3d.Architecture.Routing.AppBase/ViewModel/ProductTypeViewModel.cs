@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     #endregion
 
     #region Properties
-    private const string AllProductTypes = "All product types";
+    private const string AllProductTypes = "All";
 
     private Dictionary<string, PickUpViewModel.ProductType?>? _productTypes ;
     public Dictionary<string, PickUpViewModel.ProductType?> ProductTypes
@@ -31,9 +31,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       get => _productTypes ??= new Dictionary<string, PickUpViewModel.ProductType?>() ;
       set
       {
-        _productTypes = value ;
-        ProductTypes.TryAdd( AllProductTypes, null ) ;
-        SelectedProductType = _productTypes[AllProductTypes] ;
+        _productTypes = new() ;
+        _productTypes.TryAdd( AllProductTypes, null ) ;
+        _productTypes.AddRange( value ) ;
         OnPropertyChanged();
       }
     }
@@ -44,26 +44,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       get => _selectedProductType ??= ProductTypes[AllProductTypes] ;
       set { _selectedProductType = value ; OnPropertyChanged(); }
     }
-
-    public bool IsSelected { get ; set ; }
-
     #endregion
-
-    #region Commands
-
-    public ICommand FilterCommand
-    {
-      get
-      {
-        return new RelayCommand<Window>( wd => null != wd, wd =>
-        {
-          IsSelected = true ;
-          wd.Close();
-        } ) ;
-      }
-    }
-
-    #endregion
-
   }
 }
