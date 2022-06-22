@@ -1,7 +1,12 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands
 {
@@ -88,6 +93,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       }
 
       return null ;
+    }
+
+    public static IEnumerable<DetailTableModel> GetDetailTableModelsFromConduits(this IEnumerable<Element> allConduits,Document doc)
+    {
+      var csvStorable = doc.GetCsvStorable() ;
+      var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
+      var allConduitIds = allConduits.Select( p => p.UniqueId ).ToList() ;
+      var (detailTableModels, isMixConstructionItems, isExistDetailTableModelRow) =
+        CreateDetailTableCommandBase.CreateDetailTable( doc, csvStorable, detailSymbolStorable, allConduits.ToList(),
+          allConduitIds, false ) ;
+
+      return detailTableModels ;
     }
   }
 }
