@@ -302,9 +302,25 @@
                 <Button Content="データ削除"
                         Command="{Binding DeleteDbCommand}"
                         CommandParameter="{Binding ElementName=DataGrid}"/>
-                <Button Content="拾い表出力"
+            </StackPanel>
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Margin="25, 0">
+                <RadioButton
+                    GroupName="ExportType"
+                    Content="dat"
+                    IsChecked="True"
+                    Checked="ExportType_Checked"
+                    VerticalAlignment="Center"
+                    Margin="10 0 0 0"/>
+                <RadioButton
+                    GroupName="ExportType"
+                    Content="拾い書"
+                    Checked="ExportType_Checked"
+                    VerticalAlignment="Center"
+                    Margin="10 0 0 0"/>
+                <Button Content="出力"
                         Command="{Binding ExportFileCommand}"
-                        CommandParameter="{Binding ElementName=ThisWindow}"/>
+                        CommandParameter="{Binding ElementName=ThisWindow}"
+                        IsEnabled="{Binding }"/>
             </StackPanel>
             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" Margin="25, 0">
                 <Button Content="保存終了"

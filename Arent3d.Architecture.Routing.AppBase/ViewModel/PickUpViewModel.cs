@@ -50,6 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public RelayCommand<Window> ExportFileCommand => new(ExportFile) ;
     public RelayCommand<Window> SaveCommand => new(Save) ;
     public RelayCommand<Window> CancelCommand => new(Cancel) ;
+    public string ExportType { get ; set ; } = string.Empty;
     public ICommand SelectAllCommand
     {
       get
@@ -691,8 +692,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ExportFile( Window window )
     {
-      const string fileName = "file_name.dat" ;
-      SaveFileDialog saveFileDialog = new() { FileName = fileName, Filter = "CSV files (*.dat;*.csv)|*.dat;*.csv", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
+      string fileName = "file_name." + ExportType ;
+      string filterFile = "CSV files (*." + ExportType + ")|*." + ExportType ;
+      SaveFileDialog saveFileDialog = new() { FileName = fileName, Filter = filterFile, InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
 
       if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
       try {
