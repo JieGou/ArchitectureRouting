@@ -99,6 +99,9 @@ namespace Arent3d.Architecture.Routing
     
     [Family( "Symbol Star", BuiltInCategory.OST_GenericModel )]
     SymbolStar,
+    
+    [Family( "Symbol Circle", BuiltInCategory.OST_GenericModel )]
+    SymbolCircle,
 
     [Family( "Jbox To Connector", BuiltInCategory.OST_ElectricalFixtures )]
     ToJboxConnector,

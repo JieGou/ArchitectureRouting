@@ -6,15 +6,22 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
-using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class SymbolInformationCommandBase : IExternalCommand
-  { 
+  {
+    private const string SymbolInformationTextNoteTypeName10 = "1.0mm_SymbolInformationText" ;
+    private const string SymbolInformationTextNoteTypeName12 = "1.2mm_SymbolInformationText" ;
+    private const string SymbolInformationTextNoteTypeName15 = "1.5mm_SymbolInformationText" ;
+    private const string SymbolInformationTextNoteTypeName18 = "1.8mm_SymbolInformationText" ;
+    private const string SymbolInformationTextNoteTypeName20 = "2.0mm_SymbolInformationText" ;
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
@@ -28,100 +35,140 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         FamilyInstance? symbolInformationInstance = null ;
         var xyz = XYZ.Zero ;
 
-        return document.Transaction( "Electrical.App.Commands.Routing.SymbolInformationCommand", _ =>
-        {
-          
-          var selectedItemIsSymbolInformation = false ;
-          TextNote? textNote = null ;
-          Group? oldParentGroup = null ;
-          if ( uiDocument.Selection.GetElementIds().Count > 0 ) {
-            var groupId = uiDocument.Selection.GetElementIds().First() ;
-            if ( document.GetElement( groupId ) is Group parentGroup ) {
-              oldParentGroup = parentGroup ;
-              var elementId = GetElementIdOfSymbolInformationFromGroup( document, symbolInformationList, parentGroup, ref textNote ) ;
-              if ( elementId != null ) {
-                var symbolInformation = symbolInformationList.FirstOrDefault( x => x.Id == elementId.ToString() ) ;
-                //pickedObject is SymbolInformationModel
-                if ( null != symbolInformation ) {
-                  model = symbolInformation ;
-                  var symbolInformationSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ) ?? throw new InvalidOperationException() ;
-                  symbolInformationInstance = document.GetAllFamilyInstances( symbolInformationSymbols ).FirstOrDefault( x => x.Id.ToString() == symbolInformation.Id ) ;
-                  xyz = symbolInformationInstance!.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
-                  selectedItemIsSymbolInformation = true ;
-                }
-                //pickedObject ISN'T SymbolInformationModel
-                else {
-                  var element = document.GetElement( elementId ) ;
-                  if ( null != element.Location ) {
-                    xyz = element.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
-                  }
 
-                  symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
-                  model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
-                  symbolInformationList.Add( model ) ;
-                  selectedItemIsSymbolInformation = true ;
+        var selectedItemIsSymbolInformation = false ;
+        TextNote? textNote = null ;
+        Group? oldParentGroup = null ;
+        if ( uiDocument.Selection.GetElementIds().Count > 0 ) {
+          var groupId = uiDocument.Selection.GetElementIds().First() ;
+          if ( document.GetElement( groupId ) is Group parentGroup ) {
+            oldParentGroup = parentGroup ;
+            var elementId = GetElementIdOfSymbolInformationFromGroup( document, symbolInformationList, parentGroup, ref textNote ) ;
+            if ( elementId != null ) {
+              var symbolInformation = symbolInformationList.FirstOrDefault( x => x.Id == elementId.ToString() ) ;
+              //pickedObject is SymbolInformationModel
+              if ( null != symbolInformation ) {
+                model = symbolInformation ;
+                var symbolInformationSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ) ?? throw new InvalidOperationException() ;
+                if ( model.SymbolKind == SymbolKindEnum.丸.ToString() ) {
+                  symbolInformationSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolCircle ) ?? throw new InvalidOperationException() ;
                 }
+
+                symbolInformationInstance = document.GetAllFamilyInstances( symbolInformationSymbols ).FirstOrDefault( x => x.Id.ToString() == symbolInformation.Id ) ;
+                xyz = symbolInformationInstance!.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
+                selectedItemIsSymbolInformation = true ;
+              }
+              //pickedObject ISN'T SymbolInformationModel
+              else {
+                var element = document.GetElement( elementId ) ;
+                if ( null != element.Location ) {
+                  xyz = element.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
+                }
+
+                symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
+                model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
+                symbolInformationList.Add( model ) ;
+                selectedItemIsSymbolInformation = true ;
               }
             }
           }
+        }
 
-          if ( selectedItemIsSymbolInformation == false ) {
-            try {
-              xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
-              symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
-              model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString(), Floor = level.Name} ;
-              symbolInformationList.Add( model ) ;
-            }
-            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-              return Result.Cancelled ;
+        if ( selectedItemIsSymbolInformation == false ) {
+          using Transaction transaction = new(uiDocument.Document, "Electrical.App.Commands.Routing.SymbolInformationCommand") ;
+          transaction.Start() ;
+          try {
+            xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
+            symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
+            model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString(), Floor = level.Name } ;
+            symbolInformationList.Add( model ) ;
+            transaction.Commit() ;
+          }
+          catch ( OperationCanceledException ) {
+            transaction.RollBack() ;
+            return Result.Cancelled ;
+          }
+        }
+
+        var viewModel = new SymbolInformationViewModel( document, model, commandData ) ;
+        var dialog = new SymbolInformationDialog( viewModel ) ;
+        var ceedDetailStorable = document.GetCeedDetailStorable() ;
+
+        if ( dialog.ShowDialog() == true && model != null ) {
+          using Transaction transaction = new(document, "Electrical.App.Commands.Routing.SymbolInformationCommand") ;
+          transaction.Start() ;
+          //Create group symbol information 
+          oldParentGroup?.UngroupMembers() ;
+
+          //*****Save symbol setting*********** 
+          if ( GetSymbolKindName( symbolInformationInstance!.Symbol.Name ) != viewModel.SymbolInformation.SymbolKind ) {
+            var oldId = symbolInformationInstance.Id ;
+            var oldSymbolInformation = symbolInformationList.FirstOrDefault( x => x.Id == oldId.ToString() ) ;
+            document.Delete( oldId ) ;
+            symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), GetElectricalRoutingFamilyType( viewModel.SelectedSymbolKind ) ) ;
+
+            oldSymbolInformation!.Id = symbolInformationInstance!.Id.ToString() ;
+            //Update parentId in viewModel.CeedDetailList
+            foreach ( var ceedDetail in viewModel.CeedDetailList ) {
+              ceedDetail.ParentId = symbolInformationInstance.Id.ToString() ;
             }
           }
 
-          var viewModel = new SymbolInformationViewModel( document, model ) ;
-          var dialog = new SymbolInformationDialog( viewModel ) ;
-          var ceedDetailStorable = document.GetCeedDetailStorable() ;
+          var symbolHeightParameter = symbolInformationInstance?.LookupParameter( "Symbol Height" ) ;
+          symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() / 2 ) ; // シンボルのファミリは2倍のサイズで作成されてあるため、ここで　model.Height/2の高さを指定する。Symbol Height = 1の場合、シンボルの高さは200mmとなる。
+          symbolInformationStorable.Save() ;
 
-          if ( dialog.ShowDialog() == true && model != null ) {
-            //*****Save symbol setting***********
-            var symbolHeightParameter = symbolInformationInstance?.LookupParameter( "Symbol Height" ) ;
-            symbolHeightParameter?.Set( model.Height.MillimetersToRevitUnits() ) ;
-            symbolInformationStorable.Save() ;
+          //****Save ceedDetails******
+          //Delete old data
+          ceedDetailStorable.AllCeedDetailModelData.RemoveAll( x => x.ParentId == model.Id ) ;
+          //Add new data
+          ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
+          ceedDetailStorable.Save() ;
+          
+          CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
+          OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
+          ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
+          ogs.SetProjectionLineWeight( 5 ) ;
+          document.ActiveView.SetElementOverrides( symbolInformationInstance!.Id, ogs ) ;
 
-            //****Save ceedDetails******
-            //Delete old data
-            ceedDetailStorable.AllCeedDetailModelData.RemoveAll( x => x.ParentId == model.Id ) ;
-            //Add new data
-            ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
-            ceedDetailStorable.Save() ;
-
-            //Create group symbol information 
-            if ( oldParentGroup != null ) {
-              oldParentGroup.UngroupMembers() ;
-              if ( textNote != null )
-                document.Delete( textNote.Id ) ;
-            }
+          transaction.Commit() ;
+        }
+        else if ( selectedItemIsSymbolInformation == false ) {
+          using Transaction transaction = new(document, "Electrical.App.Commands.Routing.SymbolInformationCommand") ;
+          transaction.Start() ;
+          document.Delete( symbolInformationInstance?.Id ) ;
+          transaction.Commit() ;
+        }
 
 
-            CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), oldParentGroup ) ;
-            OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
-            ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
-            ogs.SetProjectionLineWeight( 5 ) ;
-            document.ActiveView.SetElementOverrides( symbolInformationInstance!.Id, ogs ) ;
-          }
-          else if ( selectedItemIsSymbolInformation == false ) {
-            document.Delete( symbolInformationInstance?.Id ) ;
-          }
-
-          return Result.Succeeded ;
-        } ) ;
+        return Result.Succeeded ;
       }
       catch ( Exception e ) {
         CommandUtils.DebugAlertException( e ) ;
         return Result.Cancelled ;
       }
     }
- 
-    private ElementId? GetElementIdOfSymbolInformationFromGroup( Document document, List<SymbolInformationModel> symbolInformations, Group group, ref TextNote? textNote )
+
+    private static string GetSymbolKindName( string symbolName )
+    {
+      return symbolName switch
+      {
+        "Symbol Circle" => SymbolKindEnum.丸.GetFieldName(),
+        _ => SymbolKindEnum.星.GetFieldName()
+      } ;
+    } 
+
+    private static ElectricalRoutingFamilyType GetElectricalRoutingFamilyType( SymbolKindEnum symbolKind )
+    {
+      return symbolKind switch
+      {
+        SymbolKindEnum.丸 => ElectricalRoutingFamilyType.SymbolCircle,
+        _ => ElectricalRoutingFamilyType.SymbolStar
+      } ;
+    }
+
+
+    private static ElementId? GetElementIdOfSymbolInformationFromGroup( Document document, List<SymbolInformationModel> symbolInformations, Group group, ref TextNote? textNote )
     {
       var memberIds = group.GetMemberIds() ;
       foreach ( var memberId in memberIds ) {
@@ -141,37 +188,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return null ;
     }
- 
-    private static FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz )
+
+    private static FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz, ElectricalRoutingFamilyType symbolKind = ElectricalRoutingFamilyType.SymbolStar )
     {
-      var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var symbol = uiDocument.Document.GetFamilySymbols( symbolKind ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       return symbol.Instantiate( xyz, level, StructuralType.NonStructural ) ;
     }
- 
-    private void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz, Group? oldParentGroup )
+
+    private static void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz )
     {
       ICollection<ElementId> groupIds = new List<ElementId>() ;
       groupIds.Add( symbolInformationInstanceId ) ;
 
       if ( model.IsShowText && ! string.IsNullOrEmpty( model.Description ) ) {
-        var noteWidth = .05 ;
-        var anchor = (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
-        XYZ txtPosition ;
-        switch ( anchor ) {
-          case SymbolCoordinateEnum.上 :
-            txtPosition = new XYZ( xyz.X - 1, xyz.Y + 1, xyz.Z ) ;
-            break ;
-          case SymbolCoordinateEnum.左 :
-            txtPosition = new XYZ( xyz.X - model.Height, xyz.Y + 0.1, xyz.Z ) ;
-            break ;
-          case SymbolCoordinateEnum.右 :
-            txtPosition = new XYZ( xyz.X + model.Height / 3, xyz.Y + 0.1, xyz.Z ) ;
-            break ;
-          default :
-            txtPosition = new XYZ( xyz.X - 1, xyz.Y - 1, xyz.Z ) ;
-            break ;
-        }
+        var noteWidth = model.Description.Length * model.CharacterHeight.MillimetersToRevitUnits() ;
+        const double delta = 1.0 ;
 
+        var anchor = (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
+
+        XYZ txtPosition = anchor switch
+        {
+          SymbolCoordinateEnum.上 => new XYZ( xyz.X, xyz.Y + noteWidth * delta * 50, xyz.Z ), //Up
+          SymbolCoordinateEnum.左 => new XYZ( xyz.X - noteWidth * 50 * delta, xyz.Y, xyz.Z ), //Left
+          SymbolCoordinateEnum.右 => new XYZ( xyz.X + noteWidth * 50 * delta, xyz.Y, xyz.Z ), //Right
+          SymbolCoordinateEnum.下 => new XYZ( xyz.X, xyz.Y - noteWidth * delta * 50, xyz.Z ), //Bottom
+          SymbolCoordinateEnum.中心 => xyz, //Center
+          _ => throw new ArgumentOutOfRangeException()
+        } ;
+
+        var horizontalAlignment = anchor switch
+        {
+          SymbolCoordinateEnum.左 => HorizontalTextAlignment.Right,
+          SymbolCoordinateEnum.右 => HorizontalTextAlignment.Left,
+          _ => HorizontalTextAlignment.Center
+        } ;
 
         var defaultTextTypeId = document.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
 
@@ -180,9 +230,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var maxWidth = TextElement.GetMaximumAllowedWidth( document, defaultTextTypeId ) ;
         noteWidth = noteWidth < minWidth ? minWidth : ( noteWidth > maxWidth ? maxWidth : noteWidth ) ;
 
-        TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
+        TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = horizontalAlignment, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
+
+        const double maxCharacterHeight = 200 ;
 
         var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, noteWidth, model.Description, opts ) ;
+        var textNodeTypeName = $"SymbolInformationText_{model.CharacterHeight}mm" ;
+        
+        var textNoteType = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( textNodeTypeName, tt.Name ) ) ;
+        if ( textNoteType == null ) {
+          var textNodeSize = model.CharacterHeight < maxCharacterHeight ? model.CharacterHeight : maxCharacterHeight ;
+          var elementType = textNote.TextNoteType.Duplicate( textNodeTypeName ) ;
+          textNoteType = elementType as TextNoteType ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( textNodeSize.MillimetersToRevitUnits() ) ;
+        }
+
+        if ( textNoteType != null ) textNote.ChangeTypeId( textNoteType.Id ) ;
+
         textNote.SetOverriddenColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
         groupIds.Add( textNote.Id ) ;
       }
