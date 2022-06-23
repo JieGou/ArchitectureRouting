@@ -204,9 +204,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               //In case conduit info has been changed, we get hiroiSetMasterModel base on detailTableStorable
               var detailTableModelList = _detailTableStorable.DetailTableModelData.Where( x => x.DetailSymbolId == connector.UniqueId ).ToList() ;
               if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 && null != hiroiSetMasterModel) {
-                foreach ( var hiroiMasterModel in from detailTableModel in detailTableModelList select detailTableModel.WireType +  detailTableModel.WireSize + "x" + detailTableModel.WireStrip into kikaku select _hiroiMasterModels.FirstOrDefault( x => string.Equals( x.Kikaku.Replace( " ","" ), kikaku, StringComparison.CurrentCultureIgnoreCase ) ) into hiroiMasterModel where null != hiroiMasterModel select hiroiMasterModel ) {
+                foreach ( var detailTableModel in detailTableModelList ) {
+                  var wireStrip = detailTableModel.WireStrip.Equals( "-" ) ? "0" : detailTableModel.WireStrip ;
+                  var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( x => x.Type.Equals(detailTableModel.WireType) && x.Size1.Equals(detailTableModel.WireSize) && x.Size2.Equals(wireStrip) ) ;
+                  if(null == hiroiMasterModel)
+                    continue;
+                  
                   var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel!, detailTableModelList ) ;
-                  hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Kikaku ) ) ;
+                  hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Buzaicd ) ) ;
                   if ( hiroiSetMasterModel == null ) 
                     continue ;
 

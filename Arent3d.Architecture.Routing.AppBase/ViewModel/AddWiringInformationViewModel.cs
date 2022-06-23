@@ -121,15 +121,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           //Get connector of route
           var wiringInfoChangedStoreable = _document.GetWiringInformationChangedStorable() ;
           var hiroiMasterModelData = _document.GetCsvStorable().HiroiMasterModelData ;
-          string kikaku = DetailTableModel.WireType +  DetailTableModel.WireSize + "x" + DetailTableModel.WireStrip ;
-          var hiroiMasterModel = hiroiMasterModelData.FirstOrDefault( x => String.Equals( x.Kikaku.Replace( " ","" ), kikaku, StringComparison.CurrentCultureIgnoreCase ) ) ;
+
+          var wireStrip = DetailTableModel.WireStrip.Equals( "-" ) ? "0" : DetailTableModel.WireStrip ;
+          var hiroiMasterModel = hiroiMasterModelData.FirstOrDefault( x => x.Type.Equals(DetailTableModel.WireType) && x.Size1.Equals(DetailTableModel.WireSize) && x.Size2.Equals(wireStrip) ) ;
           if ( null != hiroiMasterModel ) {
             //Save wiring info changed in store
             var toConnector = ConduitUtil.GetConnectorOfRoute( _document, DetailTableModel.RouteName, false ) ;
             if ( null != toConnector ) {
               var wiringInfoChangedModel = wiringInfoChangedStoreable.WiringInformationChangedData.FirstOrDefault( x => x.ConnectorUniqueId == toConnector.UniqueId ) ;
               if ( wiringInfoChangedModel != null ) {
-                wiringInfoChangedModel.MaterialCode = hiroiMasterModel.Kikaku ; 
+                wiringInfoChangedModel.MaterialCode = hiroiMasterModel.Buzaicd ; 
               }
               else {
                 wiringInfoChangedStoreable.WiringInformationChangedData.Add( new WiringInformationChangedModel( toConnector.UniqueId, hiroiMasterModel.Kikaku ) );

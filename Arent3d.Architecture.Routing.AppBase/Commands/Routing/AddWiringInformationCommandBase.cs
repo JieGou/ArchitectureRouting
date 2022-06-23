@@ -41,6 +41,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduits = new List<Element> { pickInfo.Element } ;
         var elementIds = new List<string> { pickInfo.Element.UniqueId } ;
         var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, conduits, elementIds, false ) ;
+
+        var hiroiMasterModels = csvStorable.HiroiMasterModelData.Where( x => x.Type == "LAN" && x.Size1 == "ケーブル" ) ;
         
         if ( IsExistSymBol( detailTableModels ) ) {
           MessageBox.Show(@"You must select route don't have symbol", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -158,7 +160,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var anotherLine = ( anotherLocation.Curve as Line ) ! ;
           var anotherOrigin = anotherLine.Origin ;
           var anotherDirection = anotherLine.Direction ;
-          if ( anotherOrigin.DistanceTo( origin ) == 0 && anotherDirection.DistanceTo( direction ) == 0 && ! routeNames.Contains( conduit.GetRouteName()! ) )
+          if ( anotherOrigin.DistanceTo( origin ) < GeometryHelper.Tolerance && 
+               anotherDirection.DistanceTo( direction ) < GeometryHelper.Tolerance && 
+               ! routeNames.Contains( conduit.GetRouteName()! ))
             routeNames.Add( conduit.GetRouteName()! ) ;
         }
       }
