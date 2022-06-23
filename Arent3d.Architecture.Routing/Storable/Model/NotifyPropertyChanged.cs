@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel ;
 using System.Runtime.CompilerServices ;
 
-namespace Arent3d.Architecture.Routing.AppBase.ViewModel
+namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class NotifyPropertyChanged : INotifyPropertyChanged
   {

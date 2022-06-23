@@ -1,7 +1,6 @@
 ﻿using System ;
 using System.Collections.Generic ;
-using System.Collections.ObjectModel ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using System.Collections.ObjectModel ; 
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
@@ -9,6 +8,7 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 {
