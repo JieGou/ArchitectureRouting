@@ -492,7 +492,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         const int plumbingCount = 1 ;
         var oldDetailTableRows = detailTableModelData.Where( d => d.DetailSymbolId == detailTableRow.DetailSymbolId && d.RouteName == detailTableRow.RouteName ).ToList() ;
         if ( ! oldDetailTableRows.Any() ) {
-          var conduitsModels = conduitsModelData.Where( c => c.PipingType == detailTableRow.PlumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+          var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
           if(!conduitsModels.Any())
             continue;
           
