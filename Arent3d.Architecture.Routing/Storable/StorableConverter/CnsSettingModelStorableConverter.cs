@@ -12,7 +12,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
         private enum SerializeField
         {
             Sequence,
-            CategoryName
+            CategoryName,
+            IsDefaultItemChecked,
         }
 
         protected override CnsSettingModel Deserialize(Element storedElement, IDeserializerObject deserializerObject)
@@ -20,9 +21,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
             var deserializer = deserializerObject.Of<SerializeField>();
 
             int sequence = Convert.ToInt32(deserializer.GetInt(SerializeField.Sequence));
+            var isDefaultItemChecked = deserializer.GetBool(SerializeField.IsDefaultItemChecked);
             string categoryName = deserializer.GetString(SerializeField.CategoryName)?.ToString() ?? string.Empty;
 
-            return new CnsSettingModel(sequence, categoryName);
+            return new CnsSettingModel(sequence, categoryName, isDefaultItemChecked ?? false);
         }
 
         protected override ISerializerObject Serialize(Element storedElement, CnsSettingModel customTypeValue)
@@ -30,6 +32,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
             var serializerObject = new SerializerObject<SerializeField>();
 
             serializerObject.Add(SerializeField.Sequence, customTypeValue.Sequence);
+            serializerObject.Add(SerializeField.IsDefaultItemChecked, customTypeValue.IsDefaultItemChecked);
             serializerObject.AddNonNull(SerializeField.CategoryName, customTypeValue.CategoryName);
             
             return serializerObject;
