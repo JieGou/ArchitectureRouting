@@ -21,7 +21,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      var connectorHeight = ( 15.0 ).MillimetersToRevitUnits() ;
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
@@ -44,19 +43,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       using Transaction t = new( document, "Create pull box" ) ;
       t.Start() ;
-      var pullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, originX, originY, heightConnector - connectorHeight, level, pickInfo.Route.Name ) ;
+      var pullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, originX, originY, heightConnector, level, pickInfo.Route.Name ) ;
       t.Commit() ;
       
       using Transaction t2 = new( document, "Create text note" ) ;
       t.Start() ;
       XYZ? position = null ;
       if ( pickInfo.RouteDirection.X is 1.0 or -1.0 ) {
-        position = new XYZ( originX, originY + 0.5, connectorHeight ) ;
+        position = new XYZ( originX, originY + 0.5, heightConnector ) ;
       } else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 ) {
-        position = new XYZ( originX + 0.2, originY + 0.2, connectorHeight ) ;
+        position = new XYZ( originX + 0.2, originY + 0.2, heightConnector ) ;
       }
       else {
-        position = new XYZ( originX, originY, connectorHeight ) ;
+        position = new XYZ( originX, originY, heightConnector ) ;
       }
 
       PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, position , pullBox, "PB" );
