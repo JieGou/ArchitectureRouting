@@ -201,7 +201,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceedModelNumber ) ) {
               var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
 
-              //In case conduit info has been changed, we get hiroiSetMasterModel base on detailTableStorable
               var detailTableModelList = _detailTableStorable.DetailTableModelData.Where( x => x.DetailSymbolId == connector.UniqueId ).ToList() ;
               if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 && null != hiroiSetMasterModel) {
                 foreach ( var detailTableModel in detailTableModelList ) {
@@ -209,12 +208,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                   if(null == hiroiMasterModel)
                     continue;
                   
-                  var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel!, detailTableModelList ) ;
+                  var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel!, detailTableModel ) ;
                   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Kikaku ) ) ;
                   if ( hiroiSetMasterModel == null ) 
                     continue ;
 
-                  foreach ( var materialCode in GetMaterialCodes( productType, hiroiSetMasterModel, detailTableModelList ) ) {
+                  foreach ( var materialCode in GetMaterialCodes( productType, hiroiSetMasterModel, detailTableModel ) ) {
                     if(!materialCodes.ContainsKey(materialCode.Key))
                       materialCodes.Add(materialCode.Key, materialCode.Value);
                   }
@@ -233,7 +232,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                   }
                 }
                 else {
-                  materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, detailTableModelList ) ;
+                  materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, null ) ;
                 }
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                   PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
@@ -271,7 +270,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if ( hiroiSetMasterModels.Any() ) {
             var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartName == pullBoxName ) ;
             if ( hiroiSetMasterModel != null ) {
-              var materialCodes = GetMaterialCodes(productType, hiroiSetMasterModel, new List<DetailTableModel>() ) ;
+              var materialCodes = GetMaterialCodes(productType, hiroiSetMasterModel, null ) ;
               if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                 PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
                   classification, pickUpNumber, direction ) ;
@@ -336,27 +335,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private Dictionary<string, string> GetMaterialCodes(ProductType productType, HiroiSetMasterModel hiroiSetMasterNormalModel, List<DetailTableModel> detailTableModels )
+    private Dictionary<string, string> GetMaterialCodes(ProductType productType, HiroiSetMasterModel hiroiSetMasterNormalModel, DetailTableModel? detailTableModel )
     {
       Dictionary<string, string> materialCodes = new() ;
 
-      if ( productType == ProductType.Conduit && detailTableModels.Any() ) {
-        foreach ( var detailTableModel in detailTableModels ) {
-          //Plumping
-          var hiroiSetMasterModel = _hiroiSetMasterNormalModels.FirstOrDefault( x => x.Name2.Replace( "mm", "" ).Contains( $"{detailTableModel.PlumbingType}{detailTableModel.PlumbingSize}" ) ) ;
-          if ( null != hiroiSetMasterModel ) {
-            for ( var i = 0 ; i < int.Parse(detailTableModel.NumberOfPlumbing) ; i++ ) {
-              materialCodes.Add(hiroiSetMasterModel.MaterialCode2 + $"-{materialCodes.Count + 1}", hiroiSetMasterModel.Name2);
-            }
+      if ( productType == ProductType.Conduit && null != detailTableModel) {
+        //Plumping
+        var hiroiSetMasterModel = _hiroiSetMasterNormalModels.FirstOrDefault( x => x.Name2.Replace( "mm", "" ).Contains( $"{detailTableModel.PlumbingType}{detailTableModel.PlumbingSize}" ) ) ;
+        if ( null != hiroiSetMasterModel ) {
+          for ( var i = 0 ; i < int.Parse(detailTableModel.NumberOfPlumbing) ; i++ ) {
+            materialCodes.Add(hiroiSetMasterModel.MaterialCode2 + $"-{materialCodes.Count + 1}", hiroiSetMasterModel.Name2);
           }
+        }
           
-          //Wiring
-          var wireStrip = Regex.IsMatch( detailTableModel.WireStrip, @"^\d" ) ? $"x{detailTableModel.WireStrip}" : "" ;
-          hiroiSetMasterModel = _hiroiSetMasterNormalModels.FirstOrDefault( x => x.Name1.Contains( $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ) ) ;
-          if ( null != hiroiSetMasterModel ) {
-            for ( var i = 0 ; i < int.Parse(detailTableModel.WireBook) ; i++ ) {
-              materialCodes.Add(hiroiSetMasterModel.MaterialCode1 + $"-{materialCodes.Count + 1}", hiroiSetMasterModel.Name1);
-            }
+        //Wiring
+        var wireStrip = Regex.IsMatch( detailTableModel.WireStrip, @"^\d" ) ? $"x{detailTableModel.WireStrip}" : "" ;
+        hiroiSetMasterModel = _hiroiSetMasterNormalModels.FirstOrDefault( x => x.Name1.Contains( $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ) ) ;
+        if ( null != hiroiSetMasterModel ) {
+          for ( var i = 0 ; i < int.Parse(detailTableModel.WireBook) ; i++ ) {
+            materialCodes.Add(hiroiSetMasterModel.MaterialCode1 + $"-{materialCodes.Count + 1}", hiroiSetMasterModel.Name1);
           }
         }
       }
@@ -616,9 +613,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             var sumQuantity = pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
             var pickUpModel = pickUpModelByConstructionItemsAndConstruction.FirstOrDefault() ;
             if ( pickUpModel == null ) continue ;
-            PickUpModel newPickUpModel = new( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification,
-              pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction,
-              pickUpModel.ProductCode ) ;
+            PickUpModel newPickUpModel = new(pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, $"{Math.Round( sumQuantity.RevitUnitsToMillimeters() / 1000, 2 )}", pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction, pickUpModel.ProductCode) ;
             pickUpModels.Add( newPickUpModel ) ;
           }
         }
