@@ -1,4 +1,5 @@
 ﻿using System ;
+using System.Collections ;
 using System.Collections.Generic ;
 using System.Globalization ;
 using System.IO ;
@@ -333,24 +334,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string> constructionClassifications = new() ;
       Dictionary<string, string> dictMaterialCode = new() ;
       List<string> plumbingInfos = new() ;
+      List<string> routes = new() ;
 
       var conduits = _document.GetAllElements<Conduit>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
       var pullBoxs = allConnectors.Where( c => c.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
+      
       foreach ( var conduit in conduits ) {
         conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
         var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
         conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
-        AddPickUpConduit( allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty,string.Empty ) ;
+        AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty,string.Empty) ;
       }
-
+      
       var conduitFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
       foreach ( var conduitFitting in conduitFittings ) {
         conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
         var quantity = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( _document, "電線管長さ" ) ).AsDouble() ;
         conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
-        AddPickUpConduit( allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty, string.Empty ) ;
+        AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty, string.Empty) ;
       }
       
       var changePlumbingInformationStorable = _document.GetChangePlumbingInformationStorable() ;
@@ -362,40 +365,76 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
           var constructionItem = changePlumbingInformationModel.ConstructionItems ;
           var plumbingInfo = string.Join( ":", changePlumbingInformationModel.PlumbingName, changePlumbingInformationModel.PlumbingType, changePlumbingInformationModel.PlumbingSize ) ;
-          AddPickUpConduit( allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, 
-            changePlumbingInformationModel.ClassificationOfPlumbing, plumbingInfo, changePlumbingInformationModel.ConnectorId ) ;
+          AddPickUpConduit(routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, 
+            changePlumbingInformationModel.ClassificationOfPlumbing, plumbingInfo, changePlumbingInformationModel.ConnectorId  ) ;
         }
       }
 
       SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, dictMaterialCode, constructionClassifications, plumbingInfos ) ;
     }
 
-    private double? GetLengthPullBox( IReadOnlyCollection<Element> pullBoxs, Element conduit )
+    private double? GetLengthPullBox( IReadOnlyCollection<Element> pullBoxs, Element conduit, List<string> routes, string routeName )
     {
-      var location = conduit.Location as LocationCurve ;
-      var line = location?.Curve as Line ;
-      var origin = line?.Origin ;
-      var conduitDirection = line?.Direction ;
-      foreach ( var pullBox in pullBoxs ) {
-        var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
-        var height = pullBox.LookupParameter( "Height" )?.AsDouble() ;
-        var minDistance = ( 15.0 ).MillimetersToRevitUnits() ;
-        if ( conduitDirection?.X is 1 or -1 && width != null ) {
-          minDistance = (double) width  ;
-        }
+      var routeRelatedConduit = _document.CollectRoutes( AddInType.Electrical).FirstOrDefault( r=>r.RouteName == routeName ) ;
+      var connectorPullBox = routeRelatedConduit?.GetAllConnectors().Where( x=> x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).FirstOrDefault(x=> ! string.IsNullOrEmpty( x.Description ) ) ;
 
-        if ( conduitDirection?.Y is 1 or -1 && height != null ) {
-          minDistance = (double) height  ;
-        }
-        var pullBoxLocation = pullBox.Location as LocationPoint ;
-        var pullBoxOrigin = pullBoxLocation?.Point ;
-        if ( pullBoxOrigin != null ) {
-          var distance = origin?.DistanceTo( pullBoxOrigin ) ;
-          if ( distance <= minDistance ) {
-            return minDistance ;
+      var directionConnector = connectorPullBox?.Description ;
+
+      if ( connectorPullBox != null ) {
+        var pullBox = _document.GetElement( connectorPullBox.Owner.Id ) ;
+        var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
+        var depth =  pullBox.LookupParameter( "Depth" )?.AsDouble() ;
+        var height =  pullBox.LookupParameter( "Height" )?.AsDouble() ;
+      
+        if ( directionConnector != null) {
+          if ( "Left" == directionConnector || "Right" == directionConnector ) {
+            routes.Add( routeName ) ;
+            if ( width != null ) return width / 2 ;
+          } else if (  "Front" == directionConnector || "Back" == directionConnector ) {
+            routes.Add( routeName ) ;
+            if ( depth != null ) return depth / 2 ;
+          }
+          else if ( "Top" == directionConnector || "Bottom" == directionConnector ) {
+            routes.Add( routeName ) ;
+            if ( height != null ) return height / 2 ;
+          }
+          else {
+            return null ;
           }
         }
       }
+      
+      
+      // var location = conduit.Location as LocationCurve ;
+      // var line = location?.Curve as Line ;
+      // var origin = line?.Origin ;
+      // var conduitDirection = line?.Direction ;
+      // foreach ( var pullBox in pullBoxs ) {
+      //   var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
+      //   var depth = pullBox.LookupParameter( "Depth" )?.AsDouble() ;
+      //   var height = pullBox.LookupParameter( "Height" )?.AsDouble() ;
+      //   double? length = null ;
+      //   if ( conduitDirection?.X is 1 or -1 && width != null ) {
+      //     length = (double) width  ;
+      //   }
+      //
+      //   if ( conduitDirection?.Y is 1 or -1 && depth != null ) {
+      //     length = (double) depth  ;
+      //   }
+      //   
+      //   if ( conduitDirection?.Z is 1 or -1 && height != null ) {
+      //     length = (double) height  ;
+      //   }
+      //   
+      //   var pullBoxLocation = pullBox.Location as LocationPoint ;
+      //   var pullBoxOrigin = pullBoxLocation?.Point ;
+      //   if ( pullBoxOrigin != null && length != null) {
+      //     var distance = origin?.DistanceTo( pullBoxOrigin ) ;
+      //     if ( distance <= length ) {
+      //       return length ;
+      //     }
+      //   }
+      // }
       
       return null ;
     }
@@ -423,8 +462,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null, null, null ) ;
     }
 
-    private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, IReadOnlyCollection<Element> pullBoxs, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, List<string> plumbingInfos, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems,
-      string constructionItem, Dictionary<string, string> dictMaterialCode, List<string?> isEcoModes, string? isEcoMode, List<string> constructionClassifications, string constructionClassification, string plumbingInfo, string? connectorId = null )
+    private void AddPickUpConduit( 
+      List<string> routes, IReadOnlyCollection<Element> allConnectors, IReadOnlyCollection<Element> pullBoxs, List<Element> pickUpConnectors, 
+      List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, List<string> plumbingInfos, Element conduit, 
+      double quantity, ConduitType conduitType, List<string> constructionItems, string constructionItem, Dictionary<string, string> dictMaterialCode, 
+      List<string?> isEcoModes, string? isEcoMode, List<string> constructionClassifications, string constructionClassification,
+      string plumbingInfo, string? connectorId = null )
     {
       var routeName = conduit.GetRouteName() ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
@@ -448,8 +491,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       isEcoModes.Add( string.IsNullOrEmpty( isEcoMode ) ? string.Empty : isEcoMode ) ;
       constructionClassifications.Add( constructionClassification ) ;
       plumbingInfos.Add( plumbingInfo ) ;
-      if ( pullBoxs.Any() ) {
-        var lengthPullBox = GetLengthPullBox( pullBoxs, conduit ) ;
+      if ( routeName != null && pullBoxs.Any() && ! routes.Contains( routeName )) {
+        var lengthPullBox = GetLengthPullBox( pullBoxs, conduit, routes, routeName ) ;
         if ( lengthPullBox != null ) {
           quantity += (double) lengthPullBox ;
         }
