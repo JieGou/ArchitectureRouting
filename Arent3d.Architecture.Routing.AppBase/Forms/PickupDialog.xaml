@@ -4,13 +4,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
-        xmlns:b="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:cvt="clr-namespace:Arent3d.Architecture.Routing.AppBase.Converters"
         mc:Ignorable="d"
         x:Name="ThisWindow"
         WindowStartupLocation="CenterScreen"
         Title="内容表示" Height="800" Width="1400"
         d:DataContext="{d:DesignInstance {x:Type local:DesignPickUpViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
+        <cvt:MultiValueOrConverter x:Key="MultiValueOrConverter"/>
+        <cvt:ValidValueConverter x:Key="ValidValueConverter"/>
         <Style TargetType="{x:Type Button}">
             <Setter Property="Width" Value="80"/>
             <Setter Property="Height" Value="30"/>
@@ -43,9 +45,9 @@
                 <Style TargetType="DataGridCell">
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="LightSkyBlue" />
+                            <Setter Property="Background" Value="LightGray" />
                             <Setter Property="Foreground" Value="Black" />
-                            <Setter Property="BorderBrush" Value="LightSkyBlue" />
+                            <Setter Property="BorderBrush" Value="LightGray" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>
@@ -54,8 +56,14 @@
                 <Style TargetType="DataGridRow">
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="BorderBrush" Value="LightSkyBlue" />
+                            <Setter Property="BorderBrush" Value="LightGray" />
                         </Trigger>
+                        <DataTrigger Binding="{Binding CeedSetCode, Converter={StaticResource ValidValueConverter}}" Value="True">
+                            <Setter Property="Background" Value="#D9E7FD" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ProductName, Converter={StaticResource MultiValueOrConverter}, ConverterParameter=漏水帯;導圧管;ポリエチレンチューブ}" Value="True">
+                            <Setter Property="Background" Value="#FEF2CD" />
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </DataGrid.RowStyle>
@@ -172,6 +180,22 @@
                     </DataGridTextColumn.HeaderTemplate>
                 </DataGridTextColumn>
                 
+                <DataGridTextColumn x:Name="ColumnClassification" Binding="{Binding Classification, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="80">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="区分" Name="TextBlock"/>
+                                <Button Style="{StaticResource FilterButton}"
+                                        Command="{Binding Path=DataContext.FilterCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                        CommandParameter="{Binding ElementName=ColumnClassification}">
+                                    <Image Source="../resources/Filter_32x32.png"/>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
                 <DataGridTextColumn x:Name="ColumnProductName" Binding="{Binding ProductName, ValidatesOnExceptions=True}"
                                     CanUserSort="False" IsReadOnly="True" MinWidth="150">
                     <DataGridTextColumn.HeaderTemplate>
@@ -205,7 +229,7 @@
                 </DataGridTextColumn>
                 
                 <DataGridTextColumn x:Name="ColumnQuantity" Binding="{Binding Quantity, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="80">
                     <DataGridTextColumn.HeaderTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
@@ -221,7 +245,7 @@
                 </DataGridTextColumn>
                 
                 <DataGridTextColumn x:Name="ColumnTani" Binding="{Binding Tani, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="80">
                     <DataGridTextColumn.HeaderTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">

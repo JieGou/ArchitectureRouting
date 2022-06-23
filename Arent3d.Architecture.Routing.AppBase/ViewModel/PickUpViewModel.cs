@@ -692,7 +692,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void ExportFile( Window window )
     {
       const string fileName = "file_name.dat" ;
-      SaveFileDialog saveFileDialog = new() { FileName = fileName, Filter = "CSV files (*.dat)|*.dat", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
+      SaveFileDialog saveFileDialog = new() { FileName = fileName, Filter = "CSV files (*.dat;*.csv)|*.dat;*.csv", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
 
       if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
       try {
