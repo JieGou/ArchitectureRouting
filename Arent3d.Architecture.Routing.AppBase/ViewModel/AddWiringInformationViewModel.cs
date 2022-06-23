@@ -122,8 +122,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var wiringInfoChangedStoreable = _document.GetWiringInformationChangedStorable() ;
           var hiroiMasterModelData = _document.GetCsvStorable().HiroiMasterModelData ;
 
-          var wireStrip = DetailTableModel.WireStrip.Equals( "-" ) ? "0" : DetailTableModel.WireStrip ;
-          var hiroiMasterModel = hiroiMasterModelData.FirstOrDefault( x => x.Type.Equals(DetailTableModel.WireType) && x.Size1.Equals(DetailTableModel.WireSize) && x.Size2.Equals(wireStrip) ) ;
+          var hiroiMasterModel = hiroiMasterModelData.FirstOrDefault( x => IsExistHiroiMasterModel(DetailTableModel, x) ) ;
           if ( null != hiroiMasterModel ) {
             //Save wiring info changed in store
             var toConnector = ConduitUtil.GetConnectorOfRoute( _document, DetailTableModel.RouteName, false ) ;
@@ -154,6 +153,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         MessageBox.Show( "Save wiring information changed failed.", "Error Message" ) ;
         window.DialogResult = false ;
       }
+    }
+    
+    private bool IsExistHiroiMasterModel( DetailTableModel detailTableModel, HiroiMasterModel hiroiMasterModel )
+    {
+      var isExistWireType = hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireType ) ;
+      if ( ! isExistWireType )
+        return false ;
+      
+      var isExistWireSize = hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireSize ) ;
+      if ( ! isExistWireSize )
+        return false ;
+      
+      return detailTableModel.WireStrip.Contains( "-" ) || hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireStrip ) ;
     }
     
     private void Cancel(Window window)

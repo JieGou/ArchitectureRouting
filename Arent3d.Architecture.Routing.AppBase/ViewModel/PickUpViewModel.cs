@@ -205,13 +205,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               var detailTableModelList = _detailTableStorable.DetailTableModelData.Where( x => x.DetailSymbolId == connector.UniqueId ).ToList() ;
               if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 && null != hiroiSetMasterModel) {
                 foreach ( var detailTableModel in detailTableModelList ) {
-                  var wireStrip = detailTableModel.WireStrip.Equals( "-" ) ? "0" : detailTableModel.WireStrip ;
-                  var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( x => x.Type.Equals(detailTableModel.WireType) && x.Size1.Equals(detailTableModel.WireSize) && x.Size2.Equals(wireStrip) ) ;
+                  var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( x => IsExistHiroiMasterModel(detailTableModel, x) ) ;
                   if(null == hiroiMasterModel)
                     continue;
                   
                   var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel!, detailTableModelList ) ;
-                  hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Buzaicd ) ) ;
+                  hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Kikaku ) ) ;
                   if ( hiroiSetMasterModel == null ) 
                     continue ;
 
@@ -283,6 +282,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         index++ ;
       }
+    }
+
+    private bool IsExistHiroiMasterModel( DetailTableModel detailTableModel, HiroiMasterModel hiroiMasterModel )
+    {
+      var isExistWireType = hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireType ) ;
+      if ( ! isExistWireType )
+        return false ;
+      
+      var isExistWireSize = hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireSize ) ;
+      if ( ! isExistWireSize )
+        return false ;
+      
+      return detailTableModel.WireStrip.Contains( "-" ) || hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireStrip ) ;
     }
 
     private bool CompareMaterialCodeAndProducParentNumber( string materialCode, string productParentNumber )

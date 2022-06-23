@@ -41,9 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduits = new List<Element> { pickInfo.Element } ;
         var elementIds = new List<string> { pickInfo.Element.UniqueId } ;
         var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, conduits, elementIds, false ) ;
-
-        var hiroiMasterModels = csvStorable.HiroiMasterModelData.Where( x => x.Type == "LAN" && x.Size1 == "ケーブル" ) ;
-        
+       
         if ( IsExistSymBol( detailTableModels ) ) {
           MessageBox.Show(@"You must select route don't have symbol", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
           return Result.Cancelled ;
