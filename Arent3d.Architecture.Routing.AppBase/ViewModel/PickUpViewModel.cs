@@ -387,14 +387,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var height =  pullBox.LookupParameter( "Height" )?.AsDouble() ;
       
         if ( directionConnector != null) {
-          if ( "Left" == directionConnector || "Right" == directionConnector ) {
+          if ( RoutingElementExtensions.ConnectorPosition.Left.EnumToString() == directionConnector || RoutingElementExtensions.ConnectorPosition.Right.EnumToString() == directionConnector ) {
             routes.Add( routeName ) ;
             if ( width != null ) return width / 2 ;
-          } else if (  "Front" == directionConnector || "Back" == directionConnector ) {
+          } else if ( RoutingElementExtensions.ConnectorPosition.Front.EnumToString() == directionConnector || RoutingElementExtensions.ConnectorPosition.Back.EnumToString() == directionConnector ) {
             routes.Add( routeName ) ;
             if ( depth != null ) return depth / 2 ;
           }
-          else if ( "Top" == directionConnector || "Bottom" == directionConnector ) {
+          else if ( RoutingElementExtensions.ConnectorPosition.Top.EnumToString() == directionConnector || RoutingElementExtensions.ConnectorPosition.Bottom.EnumToString() == directionConnector ) {
             routes.Add( routeName ) ;
             if ( height != null ) return height / 2 ;
           }
@@ -403,38 +403,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
         }
       }
-      
-      
-      // var location = conduit.Location as LocationCurve ;
-      // var line = location?.Curve as Line ;
-      // var origin = line?.Origin ;
-      // var conduitDirection = line?.Direction ;
-      // foreach ( var pullBox in pullBoxs ) {
-      //   var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
-      //   var depth = pullBox.LookupParameter( "Depth" )?.AsDouble() ;
-      //   var height = pullBox.LookupParameter( "Height" )?.AsDouble() ;
-      //   double? length = null ;
-      //   if ( conduitDirection?.X is 1 or -1 && width != null ) {
-      //     length = (double) width  ;
-      //   }
-      //
-      //   if ( conduitDirection?.Y is 1 or -1 && depth != null ) {
-      //     length = (double) depth  ;
-      //   }
-      //   
-      //   if ( conduitDirection?.Z is 1 or -1 && height != null ) {
-      //     length = (double) height  ;
-      //   }
-      //   
-      //   var pullBoxLocation = pullBox.Location as LocationPoint ;
-      //   var pullBoxOrigin = pullBoxLocation?.Point ;
-      //   if ( pullBoxOrigin != null && length != null) {
-      //     var distance = origin?.DistanceTo( pullBoxOrigin ) ;
-      //     if ( distance <= length ) {
-      //       return length ;
-      //     }
-      //   }
-      // }
       
       return null ;
     }
