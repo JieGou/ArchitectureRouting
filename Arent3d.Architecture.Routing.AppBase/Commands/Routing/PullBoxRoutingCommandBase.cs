@@ -50,13 +50,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       using Transaction t2 = new( document, "Create text note" ) ;
       t.Start() ;
       XYZ? position = null ;
-      if ( pickInfo.RouteDirection.X is 1.0 or -1.0 ) {
-        position = new XYZ( originX, originY + 0.5, connectorHeight ) ;
+      if (( pickInfo.Element is FamilyInstance instance) && instance.FacingOrientation != null) {
+        position = new XYZ( originX + 0.2, originY + 0.5, heightConnector ) ;
+      } else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 ) {
+        position = new XYZ( originX, originY + 0.5, heightConnector ) ;
       } else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 ) {
-        position = new XYZ( originX + 0.2, originY + 0.2, connectorHeight ) ;
+        position = new XYZ( originX + 0.2, originY + 0.2, heightConnector ) ;
       }
       else {
-        position = new XYZ( originX, originY, connectorHeight ) ;
+        position = new XYZ( originX, originY, heightConnector ) ;
       }
 
       PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, position , pullBox, "PB" );
