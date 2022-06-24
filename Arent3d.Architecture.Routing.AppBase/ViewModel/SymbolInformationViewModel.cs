@@ -243,7 +243,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       ElectricalCategoryViewModel electricalCategoryViewModel =
-        new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, _dictElectricalCategoriesEcoKey, _dictElectricalCategoriesNormalKey, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, QuantityDefault, UnitDefault, TrajectoryDefault, SymbolInformation.Id) ;
+        new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, _dictElectricalCategoriesEcoKey, _dictElectricalCategoriesNormalKey, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, QuantityDefault, TrajectoryDefault, SymbolInformation.Id) ;
       ElectricalCategoryDialog dialog = new(electricalCategoryViewModel) ;
       if ( true != dialog.ShowDialog() ) return ;
       if ( null == electricalCategoryViewModel.CeedDetailSelected ) return ;

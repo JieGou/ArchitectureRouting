@@ -128,6 +128,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand PlumbingSummaryCommand => new RelayCommand( PlumbingSummary ) ;
     
     public ICommand PlumbingSummaryMixConstructionItemsCommand => new RelayCommand( PlumbingSummaryMixConstructionItems ) ;
+
+    public ICommand LoadedCommand => new RelayCommand( Loaded ) ;
     
     public ICommand ReferenceSelectAllCommand => new RelayCommand( ReferenceSelectAll ) ;
     
@@ -140,6 +142,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand AddReferenceCommand => new RelayCommand<Window>( AddReference ) ;
     
     public ICommand AddReferenceRowsCommand => new RelayCommand( AddReferenceRows ) ;
+
+    private void Loaded()
+    {
+      DtGrid.SelectAll();
+      PlumbingSummaryMixConstructionItems() ;
+    }
 
     private void SelectionChangedReference()
     {
@@ -1068,14 +1076,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
         var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage * wireBook ;
         if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
-          var plumbing = conduitsModels.Last() ;
+          var plumbing = conduitsModels.LastOrDefault() ;
           detailTableRow.PlumbingType = plumbingType ;
-          detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+          if ( null != plumbing ) {
+            detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+          }
         }
         else {
           var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
+          if ( null != plumbing ) {
+            detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+          }
           detailTableRow.PlumbingType = plumbingType ;
-          detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
         }
 
         detailTableRow.Remark = GetRemark( detailTableRow.Remark, wireBook ) ;

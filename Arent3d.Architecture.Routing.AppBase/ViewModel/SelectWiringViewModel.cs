@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ChangeWiringInfo( Window window )
     {
-      ElectricalCategoryViewModel electricalCategoryViewModel = new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, _dictElectricalCategoriesEcoKey, _dictElectricalCategoriesNormalKey, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, 100, "m", "m", "") ;
+      ElectricalCategoryViewModel electricalCategoryViewModel = new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, _dictElectricalCategoriesEcoKey, _dictElectricalCategoriesNormalKey, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, 100, "m", "") ;
       ElectricalCategoryDialog dialog = new(electricalCategoryViewModel) ;
       if ( true != dialog.ShowDialog() ) return ;
       if ( null == electricalCategoryViewModel.CeedDetailSelected ) return ;

@@ -15,7 +15,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<HiroiSetMasterModel>? HiroiSetMasterNormalModels ;
     private List<HiroiSetMasterModel>? HiroiSetMasterEcoModels ;
     private double? _quantityDefault ;
-    private string? _unitDefault ;
     private string? _trajectoryDefault ;
     private string? _symbolInformationId ;
     public List<ElectricalCategoryModel> ElectricalCategoriesEco { get ; set ; }
@@ -25,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public Dictionary<string, string> DictElectricalCategoriesNormalKey { get ; set ; }
     public CeedDetailModel? CeedDetailSelected { get ; set ; }
 
-    public ElectricalCategoryViewModel( Document? document, List<ElectricalCategoryModel> electricalCategoriesEco, List<ElectricalCategoryModel> electricalCategoriesNormal, Dictionary<string, string> dictElectricalCategoriesEcoKey, Dictionary<string, string> dictElectricalCategoriesNormalKey, List<HiroiMasterModel> hiroiMasterModels, List<HiroiSetMasterModel>? hiroiSetMasterNormalModels, List<HiroiSetMasterModel>? hiroiSetMasterEcoModels, double? quantityDefault, string? unitDefault, string? trajectoryDefault, string? symbolInformationId )
+    public ElectricalCategoryViewModel( Document? document, List<ElectricalCategoryModel> electricalCategoriesEco, List<ElectricalCategoryModel> electricalCategoriesNormal, Dictionary<string, string> dictElectricalCategoriesEcoKey, Dictionary<string, string> dictElectricalCategoriesNormalKey, List<HiroiMasterModel> hiroiMasterModels, List<HiroiSetMasterModel>? hiroiSetMasterNormalModels, List<HiroiSetMasterModel>? hiroiSetMasterEcoModels, double? quantityDefault, string? trajectoryDefault, string? symbolInformationId )
     {
       _document = document ;
       ElectricalCategoriesEco = electricalCategoriesEco ;
@@ -38,7 +37,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       HiroiSetMasterNormalModels = hiroiSetMasterNormalModels ;
       _quantityDefault = quantityDefault ;
       _trajectoryDefault = trajectoryDefault ;
-      _unitDefault = unitDefault ;
       _symbolInformationId = symbolInformationId ;
     }
 

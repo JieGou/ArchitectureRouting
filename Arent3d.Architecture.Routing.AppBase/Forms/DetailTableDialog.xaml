@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:view="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
         x:Name="DetailTableWindow"
@@ -24,6 +25,12 @@
             <Setter Property="CanUserSort" Value="False"/>
         </Style>
     </Window.Resources>
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction
+                Command="{Binding Path=LoadedCommand}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <Grid>
         <Grid VerticalAlignment="Top" HorizontalAlignment="Right">
             <Grid.RowDefinitions>

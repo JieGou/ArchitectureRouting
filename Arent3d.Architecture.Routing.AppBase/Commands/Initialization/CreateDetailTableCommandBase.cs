@@ -627,7 +627,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea / percentage * wireBook ;
               if ( currentDetailTableRow != detailTableRows.Last( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
               if ( wireBook > 1 && currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
-                plumbing = conduitsModels.Last() ;
+                plumbing = conduitsModels.LastOrDefault() ;
                 var wireCountInPlumbing = (int) ( maxInnerCrossSectionalArea / ( currentDetailTableRow.WireCrossSectionalArea / percentage ) ) ;
                 plumbingCount += (int) Math.Ceiling( (double) wireBook / wireCountInPlumbing ) ;
               }
@@ -648,7 +648,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               }
               
               currentDetailTableRow.PlumbingSizes = plumbingSizes ;
-              currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+              if ( null != plumbing ) {
+                currentDetailTableRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
+              }
               currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, isMixConstructionItems ) ;
               currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, wireBook ) ;
               currentDetailTableRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
@@ -670,7 +672,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 }
                 
                 parentDetailRow.PlumbingSizes = plumbingSizes ;
-                parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+                if ( null != plumbing ) {
+                  parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
+                }
                 parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
                 parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, wireBook ) ;
                 parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
