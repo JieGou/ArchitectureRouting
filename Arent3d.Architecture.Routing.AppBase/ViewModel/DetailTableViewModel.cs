@@ -21,6 +21,7 @@ using ComboBox = System.Windows.Controls.ComboBox ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Revit ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using TextBox = System.Windows.Controls.TextBox ;
 
@@ -84,6 +85,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public bool IsCreateDetailTableOnFloorPlanView { get ; set ; }
 
     public bool IsAddReference { get ; set ; }
+
+    private bool _isShowSymbol = false ;
+
+    public bool IsShowSymbol
+    {
+      get => _isShowSymbol ;
+      set
+      {
+        _isShowSymbol = value ;
+        OnPropertyChanged();
+      }
+    }
+    
+    public PointOnRoutePicker.PickInfo? PickInfo { get ; set ; }
     
     public List<DetailTableModel.ComboboxItemType> ConduitTypes { get ;}
 
@@ -544,8 +559,51 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       SaveData( _document, _detailTableModelsOrigin ) ;
       SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
+      ShowDetailSymbol() ;
       window.DialogResult = true ;
       window.Close() ;
+    }
+
+    private void ShowDetailSymbol()
+    {
+      if(!_isCallFromAddWiringInformationCommand && null == PickInfo)
+        return;
+
+      var detailSymbolStorable = _document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? _document.GetDetailSymbolStorable() ;
+      var conduit = PickInfo!.Element ;
+      if ( IsShowSymbol ) {
+        using var transaction = new Transaction( _document ) ;
+        transaction.Start( "Create Detail Symbol" ) ;
+
+        var (symbols, angle, defaultSymbol) = CreateDetailSymbolCommandBase.CreateValueForCombobox( detailSymbolStorable.DetailSymbolModelData, conduit ) ;
+        var detailSymbolSettingDialog = new DetailSymbolSettingDialog( symbols, angle, defaultSymbol ) ;
+        detailSymbolSettingDialog.GetValues();
+        detailSymbolSettingDialog.DetailSymbol = AddWiringInformationCommandBase.SpecialSymbol ;
+        
+        var isParentSymbol = CreateDetailSymbolCommandBase.CheckDetailSymbolOfConduitDifferentCode( _document, conduit, detailSymbolStorable.DetailSymbolModelData, detailSymbolSettingDialog.DetailSymbol ) ;
+        var firstPoint = PickInfo.Position ;
+        var (textNote, lineIds) = CreateDetailSymbolCommandBase.CreateDetailSymbol( _document, detailSymbolSettingDialog, firstPoint, detailSymbolSettingDialog.Angle, isParentSymbol ) ;
+        var detailSymbolModel = new DetailSymbolModel( textNote.UniqueId, AddWiringInformationCommandBase.SpecialSymbol, conduit.UniqueId, null, null, lineIds, null, null, null, null ) ;
+        detailSymbolStorable.TempDetailSymbolModelData.Add(detailSymbolModel);
+        detailSymbolStorable.Save();
+        
+        transaction.Commit() ;
+      }
+      else {
+        using var transaction = new Transaction( _document ) ;
+        transaction.Start( "Remove Detail Symbol" ) ;
+
+        var removeDetailSymbols = detailSymbolStorable.TempDetailSymbolModelData.Where( x => x.ConduitId == conduit.UniqueId ).EnumerateAll() ;
+        foreach ( var removeDetailSymbol in removeDetailSymbols ) {
+          detailSymbolStorable.TempDetailSymbolModelData.Remove( removeDetailSymbol ) ;
+          CreateDetailSymbolCommandBase.DeleteDetailSymbol(_document, removeDetailSymbol.DetailSymbolId, removeDetailSymbol.LineIds);
+        }
+        
+        if(removeDetailSymbols.Any())
+          detailSymbolStorable.Save();
+        
+        transaction.Commit() ;
+      }
     }
 
     private void UpdatePlumbingItemsAfterChangeConstructionItems( ObservableCollection<DetailTableModel> detailTableModels, string routeName, string constructionItems )

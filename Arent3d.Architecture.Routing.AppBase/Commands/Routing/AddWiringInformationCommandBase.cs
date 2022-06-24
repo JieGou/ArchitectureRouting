@@ -76,7 +76,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var signalTypes = ( from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
 
-        var viewModel = new DetailTableViewModel( document, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, conduitsModelData, wiresAndCablesModelData, false, true ) ;
+        var viewModel = new DetailTableViewModel( document, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, conduitsModelData, wiresAndCablesModelData, false, true )
+        {
+          PickInfo = pickInfo
+        } ;
         var dialog = new DetailTableDialog(  viewModel ) ;
         dialog.ShowDialog() ;
         
@@ -98,11 +101,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable )
     {
-      using var t = new Transaction( document ) ;
-      t.Start( "Delete" ) ;
-      detailSymbolStorable.DetailSymbolModelData = new List<DetailSymbolModel>() ;
-      t.Commit() ;
-      
       var allConduit = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
       var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
       var routeNameSamePosition = GetRouteNameSamePosition( document, representativeRouteName!, pickConduit ) ;
