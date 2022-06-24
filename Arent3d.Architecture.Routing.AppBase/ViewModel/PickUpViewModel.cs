@@ -5,6 +5,7 @@ using System.IO ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using System.Windows ;
+using System.Windows.Documents ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
@@ -335,25 +336,64 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
+    private (bool IsValid, string? MaterialCode, string? Name) GetCode( List<HiroiSetMasterModel> hiroiSetMasterModels, DetailTableModel detailTableModel, string key )
+    {
+      var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name1.Contains( key ) ) ;
+      if ( null != hiroiSetMasterModel ) 
+        return (true, hiroiSetMasterModel.MaterialCode1, hiroiSetMasterModel.Name1) ;
+      
+      hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name2.Contains( key ) ) ;
+      if ( null != hiroiSetMasterModel ) 
+        return (true, hiroiSetMasterModel.MaterialCode2, hiroiSetMasterModel.Name2) ;
+      
+      hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name3.Contains( key ) ) ;
+      if ( null != hiroiSetMasterModel ) 
+        return (true, hiroiSetMasterModel.MaterialCode3, hiroiSetMasterModel.Name3) ;
+      
+      hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name4.Contains( key ) ) ;
+      if ( null != hiroiSetMasterModel ) 
+        return (true, hiroiSetMasterModel.MaterialCode4, hiroiSetMasterModel.Name4) ;
+      
+      hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name5.Contains( key ) ) ;
+      if ( null != hiroiSetMasterModel ) 
+        return (true, hiroiSetMasterModel.MaterialCode5, hiroiSetMasterModel.Name5) ;
+      
+      hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name6.Contains( key ) ) ;
+      if ( null != hiroiSetMasterModel ) 
+        return (true, hiroiSetMasterModel.MaterialCode6, hiroiSetMasterModel.Name6) ;
+      
+      hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name7.Contains( key ) ) ;
+      if ( null != hiroiSetMasterModel ) 
+        return (true, hiroiSetMasterModel.MaterialCode7, hiroiSetMasterModel.Name7) ;
+      
+      hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name8.Contains( key ) ) ;
+      if ( null != hiroiSetMasterModel ) 
+        return (true, hiroiSetMasterModel.MaterialCode8, hiroiSetMasterModel.Name8) ;
+
+      return (false, null, null) ;
+    }
+
     private Dictionary<string, string> GetMaterialCodes(ProductType productType, HiroiSetMasterModel hiroiSetMasterNormalModel, DetailTableModel? detailTableModel )
     {
       Dictionary<string, string> materialCodes = new() ;
 
       if ( productType == ProductType.Conduit && null != detailTableModel) {
         //Plumping
-        var hiroiSetMasterModel = _hiroiSetMasterNormalModels.FirstOrDefault( x => x.Name2.Replace( "mm", "" ).Contains( $"{detailTableModel.PlumbingType}{detailTableModel.PlumbingSize}" ) ) ;
-        if ( null != hiroiSetMasterModel ) {
+        var plumbingKey = $"{detailTableModel.PlumbingType}{detailTableModel.PlumbingSize}" ;
+        var codePlumbing = GetCode(_hiroiSetMasterNormalModels, detailTableModel, plumbingKey) ;
+        if ( codePlumbing.IsValid ) {
           for ( var i = 0 ; i < int.Parse(detailTableModel.NumberOfPlumbing) ; i++ ) {
-            materialCodes.Add(hiroiSetMasterModel.MaterialCode2 + $"-{materialCodes.Count + 1}", hiroiSetMasterModel.Name2);
+            materialCodes.Add(codePlumbing.MaterialCode + $"-{materialCodes.Count + 1}", codePlumbing.Name!);
           }
         }
           
         //Wiring
         var wireStrip = Regex.IsMatch( detailTableModel.WireStrip, @"^\d" ) ? $"x{detailTableModel.WireStrip}" : "" ;
-        hiroiSetMasterModel = _hiroiSetMasterNormalModels.FirstOrDefault( x => x.Name1.Contains( $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ) ) ;
-        if ( null != hiroiSetMasterModel ) {
+        var wiringKey = $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ;
+        var codeWiring = GetCode( _hiroiSetMasterNormalModels, detailTableModel, wiringKey ) ;
+        if ( codeWiring.IsValid ) {
           for ( var i = 0 ; i < int.Parse(detailTableModel.WireBook) ; i++ ) {
-            materialCodes.Add(hiroiSetMasterModel.MaterialCode1 + $"-{materialCodes.Count + 1}", hiroiSetMasterModel.Name1);
+            materialCodes.Add(codeWiring.MaterialCode + $"-{materialCodes.Count + 1}", codeWiring.Name!);
           }
         }
       }

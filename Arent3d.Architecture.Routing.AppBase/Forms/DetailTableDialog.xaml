@@ -691,7 +691,7 @@
                 </Grid.ColumnDefinitions>
                 <Label Grid.Row="0" FontWeight="Bold">明細記号表示状態</Label>
                 <RadioButton Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"  Margin = "5,5,30,0" GroupName = "Status">表示</RadioButton>
-                <RadioButton Grid.Row="1" Grid.Column="1" Margin = "5,5,0,0"  GroupName = "Status">非表示</RadioButton>
+                <RadioButton Grid.Row="1" Grid.Column="1" Margin = "5,5,0,0"  GroupName = "Status" IsChecked="True">非表示</RadioButton>
             </Grid>
             <Grid Grid.Column="1" DockPanel.Dock="Right" Width="400" HorizontalAlignment="Right">
                 <Grid.ColumnDefinitions>

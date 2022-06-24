@@ -8,7 +8,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "62c3c670-d3b0-4dcc-bc27-871c90bf174e" )]
+  [Guid( "62c3c670-d3b0-4dcc-bc27-871c90bf174f" )]
   [StorableVisibility( AppInfo.VendorId )]
   public class DetailSymbolStorable : StorableBase
   {

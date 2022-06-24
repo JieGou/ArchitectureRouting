@@ -11,6 +11,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
+using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
@@ -97,6 +98,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable )
     {
+      using var t = new Transaction( document ) ;
+      t.Start( "Delete" ) ;
+      detailSymbolStorable.DetailSymbolModelData = new List<DetailSymbolModel>() ;
+      t.Commit() ;
+      
       var allConduit = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
       var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
       var routeNameSamePosition = GetRouteNameSamePosition( document, representativeRouteName!, pickConduit ) ;
