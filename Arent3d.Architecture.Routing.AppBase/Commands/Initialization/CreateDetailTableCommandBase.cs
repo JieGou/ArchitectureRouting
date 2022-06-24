@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -169,7 +170,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailSymbolModels = new List<DetailSymbolModel>() ;
       foreach ( var detailSymbol in detailSymbolStorable.DetailSymbolModelData ) {
         if ( isFromCreateDetailTable) {
-          if ( detailSymbol.DetailSymbol != "*" ) {
+          if ( detailSymbol.DetailSymbol != AddWiringInformationCommandBase.SpecialSymbol ) {
             detailSymbolModels.Add(detailSymbol);
           }
         }

@@ -21,6 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     private const string NoPlumping = "配管なし" ;
     private const string DefaultConstructionItems = "未設定" ;
+    public const string SpecialSymbol = "※" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -91,7 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     private bool IsExistSymBol(IEnumerable<DetailTableModel> detailTableModels)
     {
-      return detailTableModels.Any( x => x.DetailSymbol != "*" ) ;
+      return detailTableModels.Any( x => x.DetailSymbol != SpecialSymbol ) ;
     }
 
     public void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable )
@@ -125,7 +126,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var plumbingType = GetPlumpingType( hiroiSetMasterModel, csvStorable.ConduitsModelData ) ;
         
         foreach ( var conduitOfRoute in conduitOfRoutes ) {
-          var detailSymbolModel = new DetailSymbolModel( toConnector.UniqueId, "*", conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, plumbingType ) ;
+          var detailSymbolModel = new DetailSymbolModel( toConnector.UniqueId, SpecialSymbol, conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, plumbingType ) ;
           if(null == detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.DetailSymbolId == detailSymbolModel.DetailSymbolId && x.ConduitId == detailSymbolModel.ConduitId )) 
             detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel );
         } 
