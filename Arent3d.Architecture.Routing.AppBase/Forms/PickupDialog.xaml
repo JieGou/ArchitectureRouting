@@ -45,9 +45,9 @@
                 <Style TargetType="DataGridCell">
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="LightGray" />
+                            <Setter Property="Background" Value="LightBlue" />
                             <Setter Property="Foreground" Value="Black" />
-                            <Setter Property="BorderBrush" Value="LightGray" />
+                            <Setter Property="BorderBrush" Value="LightBlue" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>
@@ -56,14 +56,14 @@
                 <Style TargetType="DataGridRow">
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="BorderBrush" Value="LightGray" />
+                            <Setter Property="BorderBrush" Value="LightBlue" />
                         </Trigger>
-                        <DataTrigger Binding="{Binding CeedSetCode, Converter={StaticResource ValidValueConverter}}" Value="True">
-                            <Setter Property="Background" Value="#D9E7FD" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding ProductName, Converter={StaticResource MultiValueOrConverter}, ConverterParameter=漏水帯;導圧管;ポリエチレンチューブ}" Value="True">
-                            <Setter Property="Background" Value="#FEF2CD" />
-                        </DataTrigger>
+                        <!-- <DataTrigger Binding="{Binding CeedSetCode, Converter={StaticResource ValidValueConverter}}" Value="True"> -->
+                        <!--     <Setter Property="Background" Value="#D9E7FD" /> -->
+                        <!-- </DataTrigger> -->
+                        <!-- <DataTrigger Binding="{Binding ProductName, Converter={StaticResource MultiValueOrConverter}, ConverterParameter=漏水帯;導圧管;ポリエチレンチューブ}" Value="True"> -->
+                        <!--     <Setter Property="Background" Value="#FEF2CD" /> -->
+                        <!-- </DataTrigger> -->
                     </Style.Triggers>
                 </Style>
             </DataGrid.RowStyle>
