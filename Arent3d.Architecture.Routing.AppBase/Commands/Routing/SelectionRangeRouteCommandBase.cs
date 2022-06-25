@@ -102,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var newState = new SelectState( powerConnectors, powerToConnectors, powerToDirection, routeProperty, classificationInfo, pipeSpec ) ;
           result.AddRange( CreateRouteSegments( document, newState, powerConnector, ref nextIndex, fixedHeight) );
           nextIndex++ ;
-          fixedHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, fixedHeight?.Height + 100.0.MillimetersToRevitUnits()) ;
+          fixedHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, fixedHeight?.Height + 10.0.MillimetersToRevitUnits()) ;
         }
 
         return result ;
@@ -117,16 +117,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var result = new Dictionary<FamilyInstance, List<FamilyInstance>>() ;
       
       foreach ( var element in powerConnectors ) {
-          element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfConnector ) ;
-          if ( string.IsNullOrEmpty( ceedCodeOfConnector ) || listDictionaryBoard.All( x => x.Key != ceedCodeOfConnector )) continue ;
-          var dictionaryBoard = listDictionaryBoard.FirstOrDefault( x => x.Key == ceedCodeOfConnector ) ;
+          element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfFromConnector ) ;
+          if ( !string.IsNullOrEmpty( ceedCodeOfFromConnector ) && listDictionaryBoard.TryGetValue( ceedCodeOfFromConnector!, out var dictionaryBoard ) ) {
+            var toConnectors = powerConnectors.Where( x 
+              => x.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) 
+                 && dictionaryBoard.Any(b=>b.SignalDestination == ceedCodeOfToConnector) ).ToList() ;
           
-          var toConnectors = powerConnectors.Where( x 
-            => x.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) 
-               && dictionaryBoard.Value.Any(b=>b.SignalDestination == ceedCode) ).ToList() ;
-          
-          if(toConnectors.Count() > 1)
-            result.Add(element, toConnectors );
+            if(toConnectors.Any())
+              result.Add(element, toConnectors );
+          }
       }
 
       return result ;
@@ -178,17 +177,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         } ) ) ;
       }
 
-      var nextIndexSubRoute = ++nextIndex ;
+      var nextIndexSubRoute = nextIndex ;
       // branch routes
       result.AddRange( passPoints.Zip( sensorConnectors.Take( passPoints.Count ), ( pp, sensor ) =>
       {
-        var subRouteName = nameBase + "_" + ( nextIndexSubRoute ) ;
+        var subRouteName = nameBase + "_" + ( ++nextIndexSubRoute ) ;
         var branchEndPoint = new PassPointBranchEndPoint( document, pp.UniqueId, radius, powerConnectorEndPointKey ) ;
         var connectorEndPoint = new ConnectorEndPoint( sensor.GetTopConnectorOfConnectorFamily(), radius ) ;
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
         return ( subRouteName, segment ) ;
       } ) ) ;
-
+      nextIndex = nextIndexSubRoute ;
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;

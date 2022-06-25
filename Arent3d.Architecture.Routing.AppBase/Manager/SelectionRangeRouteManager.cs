@@ -86,8 +86,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         boardConnectors.Add( element ) ;
       }
 
-      powerConnectors.RemoveAll( p => boardConnectors.Any( b=> b.Id == p.Id ) ) ;
-     
       if ( boardConnectors.Count() > 1 ) {
         return ( boardConnectors, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, null ) ;
       }
