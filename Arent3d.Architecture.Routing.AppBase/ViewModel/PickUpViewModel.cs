@@ -109,7 +109,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       set
       {
         _originPickUpModels = value ;
-        FilterPickUpModels = new List<PickUpModel>( _originPickUpModels ) ;
+        FilterPickUpModels = MergePickUpModels( _originPickUpModels ) ;
         OnPropertyChanged();
       }
     }
@@ -699,23 +699,46 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
       try {
         using ( StreamWriter sw = new( saveFileDialog.FileName ) ) {
-          foreach ( var p in _pickUpModels ) {
+          //Create header
+          List<string> header = new()
+          {
+            "フロア",
+            "工事項目",
+            "セットコード",
+            "型番",
+            "条件",
+            "機器記号",
+            "施工区分",
+            "区分",
+            "品名",
+            "仕様",
+            "数量",
+            "単位",
+            "レイヤ",
+            "補足説明"
+          } ;
+          string line = "\"" + string.Join( "\",\"", header ) + "\"" ;
+          sw.WriteLine( line ) ;
+          //Create records
+          foreach ( var p in MergePickUpModels( OriginPickUpModels ) ) {
             List<string> param = new()
             {
               p.Floor,
               p.ConstructionItems,
-              p.EquipmentType,
-              p.ProductName,
-              p.Use,
-              p.Construction,
+              p.CeedSetCode,
               p.ModelNumber,
+              p.Condition,
+              p.DeviceSymbol,
+              p.Construction,
+              p.Classification,
+              p.ProductName,
               p.Specification,
-              p.Specification2,
-              p.Size,
               p.Quantity,
-              p.Tani
+              p.Tani,
+              p.Layer,
+              p.Supplement
             } ;
-            string line = "\"" + string.Join( "\",\"", param ) + "\"" ;
+            line = "\"" + string.Join( "\",\"", param ) + "\"" ;
             sw.WriteLine( line ) ;
           }
 
@@ -806,7 +829,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if(null == dlg)
             return;
 
-          FilterPickUpModels = new List<PickUpModel>(OriginPickUpModels.Where( dlg )) ;
+          FilterPickUpModels = MergePickUpModels(OriginPickUpModels.Where( dlg )) ;
         } ) ;
       }
     }
@@ -863,6 +886,24 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
     }
-    
+
+    private List<PickUpModel> MergePickUpModels( IEnumerable<PickUpModel> pickUpModels )
+    {
+      return pickUpModels.GroupBy( p => new
+      {
+        p.Item, p.Classification, p.Condition, p.Construction,
+        p.Direction, p.Floor, p.Group, p.Layer,
+        p.Size, p.Specification, p.Specification2, p.Standard,
+        p.Supplement, p.Supplement2, p.Tani, p.Use,
+        p.ConstructionItems, p.DeviceSymbol, p.EquipmentType, p.ModelNumber,
+        p.ProductCode, p.ProductName, p.UsageName, p.CeedSetCode
+      } ).Select( p =>
+      {
+        PickUpModel newModel = p.First() ;
+        newModel.Quantity = p.Sum( p => Convert.ToDouble( p.Quantity ) ).ToString() ;
+        newModel.PickUpNumber = string.Empty ;
+        return newModel ;
+      } ).OrderBy( p => p.Floor ).ToList() ;
+    }
   }
 }
