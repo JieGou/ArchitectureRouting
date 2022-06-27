@@ -25,7 +25,6 @@ using MessageBox = System.Windows.MessageBox ;
 using Expression = System.Linq.Expressions.Expression;
 using System.Linq.Expressions;
 using System.Windows.Media ;
-using MoreLinq ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
