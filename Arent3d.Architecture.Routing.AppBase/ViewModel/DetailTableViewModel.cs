@@ -969,7 +969,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var plumbingType = detailSymbolIdsWithPlumbingTypeHasChanged.SingleOrDefault( d => d.Key == detailSymbolId ).Value ;
         if ( string.IsNullOrEmpty( plumbingType ) ) {
           if ( selectedDetailTableRows.Any() ) {
-            plumbingType = selectedDetailTableRows.FirstOrDefault( s => s.DetailSymbolId == detailSymbolId )?.PlumbingType ?? DefaultParentPlumbingType ;
+            plumbingType = selectedDetailTableRows.FirstOrDefault( s => s.DetailSymbolId == detailSymbolId && s.PlumbingType != DefaultChildPlumbingSymbol )?.PlumbingType ?? DefaultParentPlumbingType ;
           }
           else {
             plumbingType = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.DetailSymbolId == detailSymbolId )?.PlumbingType ?? DefaultParentPlumbingType ;
