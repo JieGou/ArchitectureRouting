@@ -376,32 +376,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private double? GetLengthPullBox( ICollection<string> routes, string routeName )
     {
       var routeRelatedConduit = _document.CollectRoutes( AddInType.Electrical).FirstOrDefault( r=>r.RouteName == routeName ) ;
-      var connectorOfPullBox = routeRelatedConduit?.GetAllConnectors().Where( x=> x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).FirstOrDefault(x=> ! string.IsNullOrEmpty( x.Description ) ) ;
-
-      if ( connectorOfPullBox == null ) return null ;
-      var pullBox = _document.GetElement( connectorOfPullBox.Owner.Id ) ;
-      var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
-      var depth =  pullBox.LookupParameter( "Depth" )?.AsDouble() ;
-      var height =  pullBox.LookupParameter( "Height" )?.AsDouble() ;
+      var connectorsOfPullBox = routeRelatedConduit?.GetAllConnectors().Where( x => x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) ;
+      double? length = 0 ;
+      if ( connectorsOfPullBox != null ) {
+        foreach ( var connectorOfPullBox in connectorsOfPullBox ) {
+          if ( connectorOfPullBox == null ) continue ;
+          var pullBox = _document.GetElement( connectorOfPullBox.Owner.Id ) ;
+          var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
+          var depth =  pullBox.LookupParameter( "Depth" )?.AsDouble() ;
+          var height =  pullBox.LookupParameter( "Height" )?.AsDouble() ;
       
-      var directionOfConnector = connectorOfPullBox.Description ;
-      if ( directionOfConnector == null ) return null ;
-      if ( RoutingElementExtensions.ConnectorPosition.Left.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Right.EnumToString() == directionOfConnector ) {
-        routes.Add( routeName ) ;
-        if ( width != null ) return width / 2 ;
-      } else if ( RoutingElementExtensions.ConnectorPosition.Front.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Back.EnumToString() == directionOfConnector ) {
-        routes.Add( routeName ) ;
-        if ( depth != null ) return depth / 2 ;
-      }
-      else if ( RoutingElementExtensions.ConnectorPosition.Top.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Bottom.EnumToString() == directionOfConnector ) {
-        routes.Add( routeName ) ;
-        if ( height != null ) return height / 2 ;
-      }
-      else {
-        return null ;
+          var directionOfConnector = connectorOfPullBox.Description ;
+          if ( directionOfConnector == null ) return null ;
+          if ( RoutingElementExtensions.ConnectorPosition.Left.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Right.EnumToString() == directionOfConnector ) {
+            routes.Add( routeName ) ;
+            if ( width != null ) length += width / 2 ;
+          } else if ( RoutingElementExtensions.ConnectorPosition.Front.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Back.EnumToString() == directionOfConnector ) {
+            routes.Add( routeName ) ;
+            if ( depth != null ) length += depth / 2 ;
+          }
+          else if ( RoutingElementExtensions.ConnectorPosition.Top.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Bottom.EnumToString() == directionOfConnector ) {
+            routes.Add( routeName ) ;
+            if ( height != null ) length += height / 2 ;
+          }
+        }
       }
 
-      return null ;
+      return length == 0 ? null : length;
     }
 
     private void GetToConnectorsOfCables( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
