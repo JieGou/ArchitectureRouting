@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
     }
     
-    private List<ComboboxItemType> _plumbingItems = new() ;
+    private List<ComboboxItemType> _plumbingItems = new List<ComboboxItemType>(){new ComboboxItemType("未設定","未設定")} ;
     public List<ComboboxItemType> PlumbingItemTypes
     {
       get => _plumbingItems ;

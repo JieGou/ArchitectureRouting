@@ -278,6 +278,26 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new PressureGuidingTubeStorable( document ) ;
       }
     }
+
+    public static WiringInformationChangedStorable GetWiringInformationChangedStorable( this Document document )
+    {
+      try {
+        return WiringInformationChangedStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WiringInformationChangedStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WiringInformationChangedStorable( document ) ;
+      }
+    }
+    
+    public static WiringStorable GetWiringStorable( this Document document )
+    {
+      try {
+        return WiringStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WiringStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WiringStorable( document ) ;
+      }
+    }
     
     
     public static ChangePlumbingInformationStorable GetChangePlumbingInformationStorable( this Document document )

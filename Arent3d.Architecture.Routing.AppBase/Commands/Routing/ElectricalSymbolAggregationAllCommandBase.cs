@@ -20,8 +20,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var uiDocument = commandData.Application.ActiveUIDocument ;
         Document document = uiDocument.Document ;
         
-        var selectedConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
-         
+        List<Element> selectedConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId || ( e is FamilyInstance f && f.GetConnectorFamilyType() != null ) ).ToList() ;
+
         var ceedStoreable = document.GetCeedStorable() ;
         var listCeedModel = ceedStoreable.CeedModelData ;
         List<ElectricalSymbolAggregationModel> listElectricalSymbolAggregation = new() ;
@@ -68,6 +68,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         CommandUtils.DebugAlertException( exception ) ;
         return Result.Cancelled ;
       }
-    }
+    } 
   }
 }

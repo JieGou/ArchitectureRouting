@@ -237,6 +237,9 @@
         
         <key>Electrical.App.Commands.Routing.ChangePlumbingInformationCommand</key>
         <string>立配管情報追加</string>
+        
+        <key>Electrical.App.Commands.Routing.AddWiringInformation</key>
+        <string>配線情報追加</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
