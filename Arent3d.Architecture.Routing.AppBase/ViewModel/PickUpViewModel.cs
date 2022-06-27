@@ -380,13 +380,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( productType == ProductType.Conduit && null != detailTableModel) {
         //Plumping
         var plumbingKey = $"{detailTableModel.PlumbingType}{detailTableModel.PlumbingSize}" ;
-        var codePlumbing = GetCode(_hiroiSetMasterNormalModels, detailTableModel, plumbingKey) ;
-        if ( codePlumbing.IsValid ) {
-          for ( var i = 0 ; i < int.Parse(detailTableModel.NumberOfPlumbing) ; i++ ) {
-            materialCodes.Add(codePlumbing.MaterialCode + $"-{materialCodes.Count + 1}", codePlumbing.Name!);
+        plumbingKey = plumbingKey.Replace( DetailTableViewModel.DefaultChildPlumbingSymbol, string.Empty ) ;
+        if ( ! string.IsNullOrEmpty( plumbingKey ) ) {
+          var codePlumbing = GetCode(_hiroiSetMasterNormalModels, detailTableModel, plumbingKey) ;
+          if ( codePlumbing.IsValid ) {
+            for ( var i = 0 ; i < int.Parse(detailTableModel.NumberOfPlumbing) ; i++ ) {
+              materialCodes.Add(codePlumbing.MaterialCode + $"-{materialCodes.Count + 1}", codePlumbing.Name!);
+            }
           }
         }
-          
+
         //Wiring
         var wireStrip = Regex.IsMatch( detailTableModel.WireStrip, @"^\d" ) ? $"x{detailTableModel.WireStrip}" : "" ;
         var wiringKey = $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ;

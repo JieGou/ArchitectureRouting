@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string NoPlumping = "配管なし" ;
     private const string NoPlumbingSize = "（なし）" ;
     private static string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage = "Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?" ;
-    private const string DefaultChildPlumbingSymbol = "↑" ;
+    public const string DefaultChildPlumbingSymbol = "↑" ;
     private const string IncorrectDataErrorMessage = "Incorrect data." ;
     private const string CaptionErrorMessage = "Error" ;
     
