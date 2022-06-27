@@ -630,8 +630,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             var sumQuantity = pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
             var pickUpModel = pickUpModelByConstructionItemsAndConstruction.FirstOrDefault() ;
             if ( pickUpModel == null ) continue ;
+            var strSumQuantity = $"{Math.Round( sumQuantity.RevitUnitsToMillimeters() / 1000, 2 )}" ;
             PickUpModel newPickUpModel = new( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification,
-              pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction,
+              pickUpModel.Specification2, pickUpModel.Size, strSumQuantity, pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction,
               pickUpModel.ProductCode, pickUpModel.CeedSetCode, pickUpModel.DeviceSymbol, pickUpModel.Condition ) ;
             pickUpModels.Add( newPickUpModel ) ;
           }
