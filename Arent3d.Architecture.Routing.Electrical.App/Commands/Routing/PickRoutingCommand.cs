@@ -57,6 +57,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
+        var failureOptions = transaction.GetFailureHandlingOptions() ;
+        failureOptions.SetFailuresPreprocessor( new PullBoxRouteManager.FailurePreprocessor() ) ;
+        transaction.SetFailureHandlingOptions( failureOptions ) ;
         try {
           var newRouteNames = segments.Select( s => s.RouteName ).Distinct().ToHashSet() ;
           var oldRoutes = executeResultValue.Where( r => ! newRouteNames.Contains( r.RouteName ) ) ;
@@ -70,7 +73,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           break ;
         }
 
-        transaction.Commit() ;
+        transaction.Commit( failureOptions ) ;
       }
 
       return executeResultValue ;

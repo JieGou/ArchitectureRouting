@@ -808,5 +808,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         Level = level ;
       }
     }
+    
+    public class FailurePreprocessor : IFailuresPreprocessor
+    {
+      public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
+      {
+        var failureMessages = failuresAccessor.GetFailureMessages() ;
+        foreach ( var message in failureMessages ) {
+          if ( message.GetSeverity() == FailureSeverity.Warning )
+            failuresAccessor.DeleteWarning( message ) ;
+        }
+
+        return FailureProcessingResult.Continue ;
+      }
+    }
   }
 }
