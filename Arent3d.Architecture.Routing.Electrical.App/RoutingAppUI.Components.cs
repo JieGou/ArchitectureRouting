@@ -381,6 +381,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
+          [Button( typeof( EraseSelectedPullBoxCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedPullBoxCommandButton
+          {
+          }
+          
           [Button( typeof( PressureGuidingTubeCommand ), OnlyInitialized = true )]
           private static class PressureGuidingTubeButton { }
         }
