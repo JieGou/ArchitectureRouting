@@ -160,8 +160,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Loaded()
     {
+      if ( DetailTableData.Instance.FirstLoaded ) 
+        return ;
+      
       DtGrid.SelectAll();
       PlumbingSummaryMixConstructionItems() ;
+      DetailTableData.Instance.FirstLoaded = true ;
     }
 
     private void SelectionChangedReference()
@@ -2023,5 +2027,37 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return newDetailTableModels ;
     }
+  }
+
+  public class DetailTableData
+  {
+    
+    #region Fields
+    private static readonly object Padlock = new();
+    private static DetailTableData? _instance;
+    #endregion
+
+    private DetailTableData()
+    {
+      
+    }
+    
+    public static DetailTableData Instance
+    {
+      get
+      {
+        if ( null != _instance ) 
+          return _instance ;
+        
+        lock (Padlock) {
+          _instance ??= new DetailTableData() ;
+        }
+        
+        return _instance;
+      }
+    }
+
+    public bool FirstLoaded { get ; set ; }
+
   }
 }
