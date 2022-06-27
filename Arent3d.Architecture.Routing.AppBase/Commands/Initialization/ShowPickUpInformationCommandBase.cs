@@ -20,7 +20,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var vm = new EquipmentCategoryViewModel() ;
       var view = new EquipmentCategoryDialog() { DataContext = vm } ;
       view.ShowDialog() ;
-
+      if ( !(view.DialogResult ?? false) ) {
+        return Result.Cancelled ;
+      }
+      
       PickUpViewModel pickUpViewModel = new PickUpViewModel( document, vm.SelectedEquipmentCategory ) ;
       var pickUpDialog = new PickupDialog( pickUpViewModel ) ;
       if(!pickUpViewModel.OriginPickUpModels.Any())
