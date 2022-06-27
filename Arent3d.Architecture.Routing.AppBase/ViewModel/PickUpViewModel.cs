@@ -373,37 +373,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, dictMaterialCode, constructionClassifications, plumbingInfos ) ;
     }
 
-    private double? GetLengthPullBox( IReadOnlyCollection<Element> pullBoxs, Element conduit, List<string> routes, string routeName )
+    private double? GetLengthPullBox( ICollection<string> routes, string routeName )
     {
       var routeRelatedConduit = _document.CollectRoutes( AddInType.Electrical).FirstOrDefault( r=>r.RouteName == routeName ) ;
-      var connectorPullBox = routeRelatedConduit?.GetAllConnectors().Where( x=> x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).FirstOrDefault(x=> ! string.IsNullOrEmpty( x.Description ) ) ;
+      var connectorOfPullBox = routeRelatedConduit?.GetAllConnectors().Where( x=> x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).Single(x=> ! string.IsNullOrEmpty( x.Description ) ) ;
 
-      var directionConnector = connectorPullBox?.Description ;
-
-      if ( connectorPullBox != null ) {
-        var pullBox = _document.GetElement( connectorPullBox.Owner.Id ) ;
-        var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
-        var depth =  pullBox.LookupParameter( "Depth" )?.AsDouble() ;
-        var height =  pullBox.LookupParameter( "Height" )?.AsDouble() ;
+      if ( connectorOfPullBox == null ) return null ;
+      var pullBox = _document.GetElement( connectorOfPullBox.Owner.Id ) ;
+      var width = pullBox.LookupParameter( "Width" )?.AsDouble() ;
+      var depth =  pullBox.LookupParameter( "Depth" )?.AsDouble() ;
+      var height =  pullBox.LookupParameter( "Height" )?.AsDouble() ;
       
-        if ( directionConnector != null) {
-          if ( RoutingElementExtensions.ConnectorPosition.Left.EnumToString() == directionConnector || RoutingElementExtensions.ConnectorPosition.Right.EnumToString() == directionConnector ) {
-            routes.Add( routeName ) ;
-            if ( width != null ) return width / 2 ;
-          } else if ( RoutingElementExtensions.ConnectorPosition.Front.EnumToString() == directionConnector || RoutingElementExtensions.ConnectorPosition.Back.EnumToString() == directionConnector ) {
-            routes.Add( routeName ) ;
-            if ( depth != null ) return depth / 2 ;
-          }
-          else if ( RoutingElementExtensions.ConnectorPosition.Top.EnumToString() == directionConnector || RoutingElementExtensions.ConnectorPosition.Bottom.EnumToString() == directionConnector ) {
-            routes.Add( routeName ) ;
-            if ( height != null ) return height / 2 ;
-          }
-          else {
-            return null ;
-          }
-        }
+      var directionOfConnector = connectorOfPullBox.Description ;
+      if ( directionOfConnector == null ) return null ;
+      if ( RoutingElementExtensions.ConnectorPosition.Left.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Right.EnumToString() == directionOfConnector ) {
+        routes.Add( routeName ) ;
+        if ( width != null ) return width / 2 ;
+      } else if ( RoutingElementExtensions.ConnectorPosition.Front.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Back.EnumToString() == directionOfConnector ) {
+        routes.Add( routeName ) ;
+        if ( depth != null ) return depth / 2 ;
       }
-      
+      else if ( RoutingElementExtensions.ConnectorPosition.Top.EnumToString() == directionOfConnector || RoutingElementExtensions.ConnectorPosition.Bottom.EnumToString() == directionOfConnector ) {
+        routes.Add( routeName ) ;
+        if ( height != null ) return height / 2 ;
+      }
+      else {
+        return null ;
+      }
+
       return null ;
     }
 
@@ -460,7 +457,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       constructionClassifications.Add( constructionClassification ) ;
       plumbingInfos.Add( plumbingInfo ) ;
       if ( routeName != null && pullBoxs.Any() && ! routes.Contains( routeName )) {
-        var lengthPullBox = GetLengthPullBox( pullBoxs, conduit, routes, routeName ) ;
+        var lengthPullBox = GetLengthPullBox( routes, routeName ) ;
         if ( lengthPullBox != null ) {
           quantity += (double) lengthPullBox ;
         }
