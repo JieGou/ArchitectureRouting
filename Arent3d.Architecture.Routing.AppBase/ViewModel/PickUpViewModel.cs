@@ -384,9 +384,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! string.IsNullOrEmpty( plumbingKey ) ) {
           var codePlumbing = GetCode(_hiroiSetMasterNormalModels, detailTableModel, plumbingKey) ;
           if ( codePlumbing.IsValid ) {
-            for ( var i = 0 ; i < int.Parse(detailTableModel.NumberOfPlumbing) ; i++ ) {
-              materialCodes.Add(codePlumbing.MaterialCode + $"-{materialCodes.Count + 1}", codePlumbing.Name!);
-            }
+            materialCodes.Add(codePlumbing.MaterialCode + $"-{materialCodes.Count + 1}", codePlumbing.Name!);
           }
         }
 
