@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Size2,
       Specification,
       Order,
+      Type,
       ModeNumber,
       CeedCode,
       ConstructionClassification,
@@ -49,6 +50,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var size1 = deserializer.GetString( SerializeField.Size1 ) ; 
       var size2 = deserializer.GetString( SerializeField.Size2 ) ; 
       var specification = deserializer.GetString( SerializeField.Specification ) ; 
+      var type = deserializer.GetString( SerializeField.Type ) ; 
       var order = deserializer.GetInt( SerializeField.Order ) ; 
       var ceedCode = deserializer.GetString( SerializeField.CeedCode ) ; 
       var constructionClassification = deserializer.GetString( SerializeField.ConstructionClassification ) ; 
@@ -61,7 +63,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var supplement = deserializer.GetString( SerializeField.Supplement ) ; 
       var isConduit = deserializer.GetBool( SerializeField.IsConduit ) ?? false ;
 
-      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, modeNumber, ceedCode, constructionClassification, quantityCalculate, quantitySet, total, description, allowInputQuantity, supplement, isConduit ) ;
+      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification, order, type, string.Empty, modeNumber, ceedCode, constructionClassification, quantityCalculate, quantitySet, total, description, allowInputQuantity, supplement, isConduit ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedDetailModel customTypeValue )
@@ -79,6 +81,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Size1, customTypeValue.Size1 ) ;
       serializerObject.AddNonNull( SerializeField.Size2, customTypeValue.Size2 ) ;
       serializerObject.AddNonNull( SerializeField.Specification, customTypeValue.Specification ) ;
+      serializerObject.AddNonNull( SerializeField.Type, customTypeValue.Type ) ;
       serializerObject.AddNonNull( SerializeField.ModeNumber, customTypeValue.ModeNumber ) ;
       serializerObject.Add( SerializeField.Order, customTypeValue.Order ) ;
       serializerObject.AddNonNull( SerializeField.ConstructionClassification, customTypeValue.ConstructionClassification ) ;
