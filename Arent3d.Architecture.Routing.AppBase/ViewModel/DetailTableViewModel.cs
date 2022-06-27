@@ -97,8 +97,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged();
       }
     }
-    
-    public PointOnRoutePicker.PickInfo? PickInfo { get ; set ; }
+
+    private PointOnRoutePicker.PickInfo? _pickInfo ;
+
+    public PointOnRoutePicker.PickInfo? PickInfo
+    {
+      get => _pickInfo ;
+      set
+      {
+        _pickInfo = value ;
+        var conduit = _pickInfo?.Element ;
+        var detailSymbolStorable = _document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? _document.GetDetailSymbolStorable() ;
+        var detailSymbolModels = detailSymbolStorable.TempDetailSymbolModelData.Where( x => x.ConduitId == conduit?.UniqueId ).EnumerateAll() ;
+        IsShowSymbol = detailSymbolModels.Any() ;
+      }
+    }
     
     public List<DetailTableModel.ComboboxItemType> ConduitTypes { get ;}
 
