@@ -68,8 +68,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( element.GetConnectorFamilyType() is not { } connectorFamilyType ) continue ;
 
         if ( connectorFamilyType == ConnectorFamilyType.Power ) {
-          //if ( null != powerConnector ) return ( null!, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageTwoOrMorePowerConnector ) ;
-          //powerConnector = element ;
           powerConnectors.Add( element );
         }
         else if ( connectorFamilyType == ConnectorFamilyType.Sensor ) {

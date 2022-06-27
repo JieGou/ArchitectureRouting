@@ -143,7 +143,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var diameter = routeProperty.GetDiameter() ;
       var radius = diameter * 0.5 ;
       var nameBase = GetNameBase( systemType, curveType ) ;
-      //var nextIndex = index ;
       var routeName = nameBase + "_" + nextIndex ;
 
       var (footPassPoint, passPoints) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, pipeSpec, powerConnector.GetTopConnectorOfConnectorFamily().Origin, fixedHeight: toFixedHeight ) ;
