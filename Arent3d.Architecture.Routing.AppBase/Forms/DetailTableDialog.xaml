@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:view="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
         x:Name="DetailTableWindow"
@@ -24,6 +25,12 @@
             <Setter Property="CanUserSort" Value="False"/>
         </Style>
     </Window.Resources>
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction
+                Command="{Binding Path=LoadedCommand}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <Grid>
         <Grid VerticalAlignment="Top" HorizontalAlignment="Right">
             <Grid.RowDefinitions>
@@ -169,22 +176,39 @@
                 <DataGridTemplateColumn Header="電線種類" Width="45" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding WireType, Mode=OneWay}" />
+                            <TextBlock Text="{Binding WireType, Mode=OneWay}">
+                                <!-- <i:Interaction.Triggers> -->
+                                <!--     <i:EventTrigger EventName="MouseLeftButtonUp"> -->
+                                <!--         <i:InvokeCommandAction -->
+                                <!--             Command="{Binding SelectedItemCommand}" -->
+                                <!--             CommandParameter="{Binding ElementName = FolderTreeView}"> -->
+                                <!--         </i:InvokeCommandAction> -->
+                                <!--     </i:EventTrigger> -->
+                                <!-- </i:Interaction.Triggers> -->
+                            </TextBlock>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
                         <DataTemplate>
                             <ComboBox SelectedValue="{Binding WireType}"
                                       Text="{Binding WireType, Mode=OneWay}"
-                                      DisplayMemberPath="Type" 
+                                      DisplayMemberPath="Type"
                                       SelectedValuePath="Name"
                                       ItemsSource="{Binding Path=DataContext.WireTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                      SelectionChanged="WireTypeSelectionChanged" 
+                                      SelectionChanged="WireTypeSelectionChanged"
                                       IsEditable="True"
                                       IsReadOnly="{Binding IsReadOnlyParameters}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
+                
+                <!-- <DataGridTemplateColumn Header="電線サイズ" Width="45" CanUserSort="False"> -->
+                <!--     <DataGridTemplateColumn.CellTemplate> -->
+                <!--         <DataTemplate> -->
+                <!--             <TextBlock Text="{Binding WireSize, Mode=OneWay}" /> -->
+                <!--         </DataTemplate> -->
+                <!--     </DataGridTemplateColumn.CellTemplate> -->
+                <!-- </DataGridTemplateColumn> -->
 
                 <DataGridComboBoxColumn Header="電線サイズ" Width="45"
                                         SelectedValueBinding="{Binding WireSize}"
@@ -224,6 +248,14 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
+                
+                <!-- <DataGridTemplateColumn Header="電線条数" Width="45" CanUserSort="False"> -->
+                <!--     <DataGridTemplateColumn.CellTemplate> -->
+                <!--         <DataTemplate> -->
+                <!--             <TextBlock Text="{Binding WireStrip, Mode=OneWay}" /> -->
+                <!--         </DataTemplate> -->
+                <!--     </DataGridTemplateColumn.CellTemplate> -->
+                <!-- </DataGridTemplateColumn> -->
 
                 <DataGridComboBoxColumn Header="電線条数" Width="45"
                                         SelectedValueBinding="{Binding WireStrip}"
@@ -683,8 +715,9 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Label Grid.Row="0" FontWeight="Bold">明細記号表示状態</Label>
-                <RadioButton Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"  Margin = "5,5,30,0" GroupName = "Status">表示</RadioButton>
-                <RadioButton Grid.Row="1" Grid.Column="1" Margin = "5,5,0,0"  GroupName = "Status">非表示</RadioButton>
+                <RadioButton Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"  Margin = "5,5,30,0" GroupName = "Status"
+                             IsChecked="{Binding Path=IsShowSymbol, UpdateSourceTrigger=PropertyChanged}">表示</RadioButton>
+                <RadioButton Grid.Row="1" Grid.Column="1" Margin = "5,5,0,0"  GroupName = "Status" IsChecked="True">非表示</RadioButton>
             </Grid>
             <Grid Grid.Column="1" DockPanel.Dock="Right" Width="400" HorizontalAlignment="Right">
                 <Grid.ColumnDefinitions>

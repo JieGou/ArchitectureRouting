@@ -194,6 +194,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class ExportDWGCommandButton
           {
           }
+          
+          [Button( typeof( AddWiringInformationCommand ), OnlyInitialized = true )]
+          private static class AddWiringInformationCommandButton { }
 
           [Button( typeof( ChangePlumbingInformationCommand ), OnlyInitialized = true )]
           private static class ChangePlumbingInformationCommandButton
