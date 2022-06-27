@@ -376,7 +376,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private double? GetLengthPullBox( ICollection<string> routes, string routeName )
     {
       var routeRelatedConduit = _document.CollectRoutes( AddInType.Electrical).FirstOrDefault( r=>r.RouteName == routeName ) ;
-      var connectorOfPullBox = routeRelatedConduit?.GetAllConnectors().Where( x=> x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).Single(x=> ! string.IsNullOrEmpty( x.Description ) ) ;
+      var connectorOfPullBox = routeRelatedConduit?.GetAllConnectors().Where( x=> x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).FirstOrDefault(x=> ! string.IsNullOrEmpty( x.Description ) ) ;
 
       if ( connectorOfPullBox == null ) return null ;
       var pullBox = _document.GetElement( connectorOfPullBox.Owner.Id ) ;
