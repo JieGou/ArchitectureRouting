@@ -15,7 +15,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<HiroiSetMasterModel>? HiroiSetMasterNormalModels ;
     private List<HiroiSetMasterModel>? HiroiSetMasterEcoModels ;
     private double? _quantityDefault ;
-    private string? _unitDefault ;
     private string? _trajectoryDefault ;
     private string? _symbolInformationId ;
     public List<ElectricalCategoryModel> ElectricalCategoriesEco { get ; set ; }
@@ -25,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public Dictionary<string, string> DictElectricalCategoriesNormalKey { get ; set ; }
     public CeedDetailModel? CeedDetailSelected { get ; set ; }
 
-    public ElectricalCategoryViewModel( Document? document, List<ElectricalCategoryModel> electricalCategoriesEco, List<ElectricalCategoryModel> electricalCategoriesNormal, Dictionary<string, string> dictElectricalCategoriesEcoKey, Dictionary<string, string> dictElectricalCategoriesNormalKey, List<HiroiMasterModel> hiroiMasterModels, List<HiroiSetMasterModel>? hiroiSetMasterNormalModels, List<HiroiSetMasterModel>? hiroiSetMasterEcoModels, double? quantityDefault, string? unitDefault, string? trajectoryDefault, string? symbolInformationId )
+    public ElectricalCategoryViewModel( Document? document, List<ElectricalCategoryModel> electricalCategoriesEco, List<ElectricalCategoryModel> electricalCategoriesNormal, Dictionary<string, string> dictElectricalCategoriesEcoKey, Dictionary<string, string> dictElectricalCategoriesNormalKey, List<HiroiMasterModel> hiroiMasterModels, List<HiroiSetMasterModel>? hiroiSetMasterNormalModels, List<HiroiSetMasterModel>? hiroiSetMasterEcoModels, double? quantityDefault, string? trajectoryDefault, string? symbolInformationId )
     {
       _document = document ;
       ElectricalCategoriesEco = electricalCategoriesEco ;
@@ -38,7 +37,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       HiroiSetMasterNormalModels = hiroiSetMasterNormalModels ;
       _quantityDefault = quantityDefault ;
       _trajectoryDefault = trajectoryDefault ;
-      _unitDefault = unitDefault ;
       _symbolInformationId = symbolInformationId ;
     }
 
@@ -52,14 +50,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var productName = hiroiMasterViewModel.HiroiMasterSelected?.Syurui == SymbolInformationViewModel.LenghtMaterialType ? hiroiMasterViewModel.HiroiMasterSelected?.Kikaku : hiroiMasterViewModel.HiroiMasterSelected?.Hinmei ;
         CeedDetailSelected = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, productName, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", 
               _quantityDefault.ToString(), hiroiMasterViewModel.HiroiMasterSelected?.Tani, _symbolInformationId, _trajectoryDefault, hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, 
-              1, string.Empty, string.Empty, string.Empty, 0, 1, _quantityDefault, string.Empty, true, string.Empty ) ;
+              1, hiroiMasterViewModel.HiroiMasterSelected?.Type, string.Empty, string.Empty, string.Empty, string.Empty, 0, 1, _quantityDefault, string.Empty, true, string.Empty ) ;
       }
 
       if ( _document == null || CeedDetailSelected == null ) return CeedDetailSelected ;
       var csvStorable = _document!.GetCsvStorable() ;
       var conduit = csvStorable.ConduitsModelData.FirstOrDefault( x => x.PipingType + x.Size == CeedDetailSelected?.ProductName ) ;
       CeedDetailSelected.IsConduit = conduit != null ;
-
       return CeedDetailSelected ;
     }
   }

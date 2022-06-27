@@ -503,5 +503,9 @@
   
         <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
         <string>Pull Box</string>
+        
+        <key>Electrical.App.Commands.Routing.EraseSelectedPullBoxCommand</key>
+        <string>Delete Pull Box</string>
+        
     </dict>
 </plist>

@@ -56,6 +56,8 @@
 
     public string Specification { get ; set ; }
     public int Order { get ; set ; }
+    public string Type { get ; set ; }
+    public string ParentPartModel { get ; set ; }
     public string CeedCode { get ; set ; }
 
     private string _constructionClassification = string.Empty ;
@@ -162,7 +164,7 @@
     public bool IsConduit { get ; set ; }
     public string Supplement { get ; set ; }
 
-    public CeedDetailModel( string? productCode, string? productName, string? standard, string? classification, string? quantity, string? unit, string? parentId, string? trajectory, string? size1, string? size2, string? specification, int? order, string? modeNumber, string? ceedCode, string? constructionClassification, double? quantityCalculate, double? quantitySet, double? total, string? description, bool? allowInputQuantity, string? supplement, bool isConduit = false )
+    public CeedDetailModel( string? productCode, string? productName, string? standard, string? classification, string? quantity, string? unit, string? parentId, string? trajectory, string? size1, string? size2, string? specification, int? order, string? type, string? parentPartModel, string? modeNumber, string? ceedCode, string? constructionClassification, double? quantityCalculate, double? quantitySet, double? total, string? description, bool? allowInputQuantity, string? supplement, bool isConduit = false )
     {
       IsConduit = isConduit ;
       ProductCode = productCode ?? string.Empty ;
@@ -177,6 +179,8 @@
       Size2 = size2 ?? string.Empty ;
       Specification = specification ?? string.Empty ;
       Order = order ?? 1 ;
+      Type = type ?? string.Empty ;
+      ParentPartModel = parentPartModel ?? string.Empty ;
       ModeNumber = modeNumber ?? string.Empty ;
       CeedCode = ceedCode ?? string.Empty ;
       ConstructionClassification = constructionClassification ?? string.Empty ;
