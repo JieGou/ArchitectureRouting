@@ -1107,7 +1107,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           && ! string.IsNullOrEmpty( d.WireBook ) 
           && ! string.IsNullOrEmpty( d.SignalType ) 
           && ! string.IsNullOrEmpty( d.ConstructionItems ) 
-          && ! string.IsNullOrEmpty( d.Remark ) ) ;
+          && ! string.IsNullOrEmpty( d.Remark ) ).EnumerateAll() ;
+      
+      if(!detailTableModels.Any())
+        return;
+
+      if ( ! DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
+        if ( ! DetailSymbolIdsWithPlumbingTypeHasChanged.ContainsKey( detailTableModels.First().DetailSymbolId ) ) {
+          DetailSymbolIdsWithPlumbingTypeHasChanged.Add( detailTableModels.First().DetailSymbolId, detailTableModels.First().PlumbingType ) ;
+        }
+        else {
+          DetailSymbolIdsWithPlumbingTypeHasChanged[ detailTableModels.First().DetailSymbolId ] = detailTableModels.First().PlumbingType ;
+        }
+      }
+
       foreach ( var detailTableRow in detailTableModels ) {
         SetPlumbingDataForEachWiring( conduitsModelData, detailSymbolStorable, detailTableRow, detailSymbolIdsWithPlumbingTypeHasChanged ) ;
       }
