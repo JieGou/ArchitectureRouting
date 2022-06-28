@@ -227,7 +227,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       GetDataFromSymbolInformation( pickUpModels ) ;
       
       foreach ( var pickUpModel in pickUpModels ) {
-        pickUpModel.Quantity = $"{Math.Round( double.Parse( pickUpModel.Quantity ).RevitUnitsToMillimeters() / 1000, 2 )}" ;
+        if(pickUpModel.EquipmentType == $"{ProductType.Cable}" || pickUpModel.EquipmentType == $"{ProductType.Conduit}")
+          pickUpModel.Quantity = $"{Math.Round( double.Parse( pickUpModel.Quantity ).RevitUnitsToMillimeters() / 1000, 2 )}" ;
       }
       
       return pickUpModels ;
