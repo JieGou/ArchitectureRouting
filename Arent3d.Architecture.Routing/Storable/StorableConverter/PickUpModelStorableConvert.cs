@@ -32,7 +32,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Standard,
       PickUpNumber,
       Direction,
-      ProductCode
+      ProductCode,
+      CeedSetCode,
+      DeviceSymbol,
+      Condition
     }
 
     protected override PickUpModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -62,8 +65,12 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var pickUpNumber = deserializer.GetString( SerializeField.PickUpNumber ) ;
       var direction = deserializer.GetString( SerializeField.Direction ) ;
       var productCode = deserializer.GetString( SerializeField.ProductCode ) ;
-
-      return new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction, productCode ) ;
+      var ceedSetCode = deserializer.GetString( SerializeField.CeedSetCode ) ;
+      var deviceSymbol = deserializer.GetString( SerializeField.DeviceSymbol ) ;
+      var condition = deserializer.GetString( SerializeField.Condition ) ;
+      
+      return new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction, productCode,
+        ceedSetCode, deviceSymbol, condition) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, PickUpModel customTypeValue )
@@ -92,6 +99,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.PickUpNumber, customTypeValue.PickUpNumber ) ;
       serializerObject.AddNonNull( SerializeField.Direction, customTypeValue.Direction ) ;
       serializerObject.AddNonNull( SerializeField.ProductCode, customTypeValue.ProductCode ) ;
+      serializerObject.AddNonNull( SerializeField.CeedSetCode, customTypeValue.CeedSetCode ) ;
+      serializerObject.AddNonNull( SerializeField.DeviceSymbol, customTypeValue.DeviceSymbol ) ;
+      serializerObject.AddNonNull( SerializeField.Condition, customTypeValue.Condition ) ;
 
       return serializerObject ;
     }
