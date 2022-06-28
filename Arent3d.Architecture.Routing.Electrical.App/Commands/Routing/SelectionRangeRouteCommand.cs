@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -53,6 +56,39 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, SelectState selectState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
+    }
+    
+    protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue )
+    {
+      using var progress = ShowProgressBar( "Routing...", false ) ;
+      List<string> boards = new() ;
+      List<XYZ> pullBoxPositions = new() ;
+      List<string> withoutRouteNames = new() ;
+      while ( true ) {
+        var segments = PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue, boards, pullBoxPositions, withoutRouteNames ) ;
+        if ( ! segments.Any() ) break ;
+        using Transaction transaction = new( document ) ;
+        transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
+        var failureOptions = transaction.GetFailureHandlingOptions() ;
+        failureOptions.SetFailuresPreprocessor( new PullBoxRouteManager.FailurePreprocessor() ) ;
+        transaction.SetFailureHandlingOptions( failureOptions ) ;
+        try {
+          var newRouteNames = segments.Select( s => s.RouteName ).Distinct().ToHashSet() ;
+          var oldRoutes = executeResultValue.Where( r => ! newRouteNames.Contains( r.RouteName ) ) ;
+          var result = executor.Run( segments, progress ) ;
+          executeResultValue = result.Value ;
+          foreach ( var oldRoute in oldRoutes ) {
+            executeResultValue.ToList().Add( oldRoute ) ;
+          }
+        }
+        catch {
+          break ;
+        }
+
+        transaction.Commit( failureOptions ) ;
+      }
+
+      return executeResultValue ;
     }
   }
 }
