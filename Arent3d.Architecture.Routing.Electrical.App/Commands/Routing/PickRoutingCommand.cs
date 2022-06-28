@@ -53,7 +53,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       List<XYZ> pullBoxPositions = new() ;
       List<string> withoutRouteNames = new() ;
       while ( true ) {
-        var segments = PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue, boards, pullBoxPositions, withoutRouteNames ) ;
+        var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, withoutRouteNames ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue, boards, pullBoxPositions, withoutRouteNames ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
@@ -74,6 +75,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         transaction.Commit( failureOptions ) ;
+        if ( isPassedShaft ) break ;
       }
 
       return executeResultValue ;
