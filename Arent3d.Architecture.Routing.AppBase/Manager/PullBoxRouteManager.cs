@@ -549,8 +549,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var passedShaftRoute = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) ;
         var shaftId = passedShaftRoute?.UniqueShaftElementUniqueId ;
         var fromHeight = passedShaftRoute?.UniqueFromFixedHeight ;
-        var beforeResult = executeResultValue.ToList().Where( r => ! withoutRouteNames.Contains( r.RouteName ) ) ;
-        foreach ( var route in beforeResult ) {
+        foreach ( var route in executeResultValue ) {
           var conduitFittingsOfRoute = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
 
           var curveType = route.UniqueCurveType ;
@@ -574,7 +573,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           var fromDirection = pullBoxInfo.FromDirection ;
           var toDirection = pullBoxInfo.ToDirection ;
           var height = originZ - pullBoxInfo.Level.Elevation ;
-          result = CreatePullBoxAndGetSegments( document, route, conduitFittingBottomShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, withoutRouteNames, fromDirection, toDirection, fromHeight ).ToList() ;
+          result = CreatePullBoxAndGetSegments( document, route, conduitFittingBottomShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, fromDirection, toDirection, fromHeight ).ToList() ;
           pullBoxPositions.Add( pullBoxInfo.Position ) ;
           return result ;
         }
@@ -632,7 +631,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreatePullBoxAndGetSegments( Document document, Route route, Element element, double originX, double originY, double originZ,
-      Level? level, XYZ? direction, string nameBase, List<string> withoutRouteNames, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null )
+      Level? level, XYZ? direction, string nameBase, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
       try {
