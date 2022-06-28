@@ -553,6 +553,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         t1.Start() ;
         result.AddRange( GetRouteSegments( document, route, element, pullBox, originZ, originZ, direction!, true, nameBase, fromDirection, toDirection ) ) ;
         t1.Commit() ;
+        
+        using Transaction t2 = new( document, "Create label of pull box" ) ;
+        t2.Start() ;
+        CreateTextNoteAndGroupWithPullBox( document, pullBox, "PB", element, originX, originY, originZ, direction! ) ;
+        t2.Commit() ;
       }
       catch {
         //
@@ -560,8 +565,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static void CreateTextNoteAndGroupWithPullBox(Document doc, XYZ point, Element pullBox, string text)
+    public static void CreateTextNoteAndGroupWithPullBox(Document doc, Element pullBox, string text, Element conduit, double originX, double originY, double heightConnector, XYZ routeDirection )
     {
+      XYZ point ;
+      if ( conduit is FamilyInstance { FacingOrientation: { } } ) {
+        point = new XYZ( originX + 0.2, originY + 0.5, heightConnector ) ;
+      } else if ( routeDirection.X is 1.0 or -1.0 ) {
+        point = new XYZ( originX, originY + 0.5, heightConnector ) ;
+      } else if ( routeDirection.Y is 1.0 or -1.0 ) {
+        point = new XYZ( originX + 0.2, originY + 0.2, heightConnector ) ;
+      }
+      else {
+        point = new XYZ( originX, originY, heightConnector ) ;
+      }
+      
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       
