@@ -46,8 +46,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // Avoid Revit bugs about reducer insertion.
       FixReducers( document, executor, executionResult.Value ) ;
 
+      var executionResultValue = CreatePullBoxAfterRouteGenerated( document, executor, executionResult.Value ) ;
+      
       // execute after route command
-      AfterRouteGenerated( document, executionResult.Value, result ) ;
+      AfterRouteGenerated( document, executionResultValue, result ) ;
 
       return ExecutionResult.Succeeded ;
     }
@@ -175,6 +177,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
     {
+    }
+    
+    protected virtual IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue )
+    {
+      return executeResultValue ;
     }
   }
 

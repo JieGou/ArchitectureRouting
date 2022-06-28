@@ -1,220 +1,84 @@
 ﻿using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using System ;
-using System.Linq ;
-using System.Text.RegularExpressions ;
-using Arent3d.Architecture.Routing.AppBase.UI ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Architecture.Routing.StorableCaches ;
-using Autodesk.Revit.DB.Structure ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PullBoxRoutingCommandBase : RoutingCommandBase<PullBoxRoutingCommandBase.PickState>
   {
-    private readonly double _defaultDistanceHeight = ( 200.0 ).MillimetersToRevitUnits() ;
-
-    public record PickState( PointOnRoutePicker.PickInfo PickInfo, IEndPoint FromEndPoint, IEndPoint ToEndPoint, FamilyInstance PullBox, double HeightConnector, double HeightWire, bool IsCreatePullBoxWithoutSettingHeight ) ;
-
+    public record PickState( PointOnRoutePicker.PickInfo PickInfo, FamilyInstance PullBox, double HeightConnector, double HeightWire, XYZ RouteDirection, bool IsCreatePullBoxWithoutSettingHeight, XYZ? FromDirection, XYZ? ToDirection ) ;
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
-
-    private const string DefaultConstructionItem = "未設定" ;
     protected virtual ConnectorFamilyType? ConnectorType => null ;
     protected abstract AddInType GetAddInType() ;
     private bool UseConnectorDiameter() => ( AddInType.Electrical != GetAddInType() ) ;
-
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      var connectorHeight = ( 15.0 ).MillimetersToRevitUnits() ;
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType() ) ;
-      var pullBoxViewModel = new PullBoxViewModel() ;
+
+      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      var pullBoxViewModel = new PullBoxViewModel(document) ;
+      
       var sv = new PullBoxDialog { DataContext = pullBoxViewModel } ;
       sv.ShowDialog() ;
       if ( true != sv.DialogResult ) return OperationResult<PickState>.Cancelled ;
       var (originX, originY, originZ) = pickInfo.Position ;
+      XYZ? fromDirection = null ;
+      XYZ? toDirection = null ;
+      if ( pickInfo.Element is FamilyInstance conduitFitting ) {
+        var pullBoxInfo = PullBoxRouteManager.GetPullBoxInfo( document, pickInfo.Route.RouteName, conduitFitting ) ;
+        ( originX, originY, originZ ) = pullBoxInfo.Position ;
+        fromDirection = pullBoxInfo.FromDirection ;
+        toDirection = pullBoxInfo.ToDirection ;
+      }
       var level = uiDocument.ActiveView.GenLevel ;
       var heightConnector = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightConnector.MillimetersToRevitUnits() ;
       var heightWire = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightWire.MillimetersToRevitUnits() ;
 
-      using Transaction t = new Transaction( document, "Create connector" ) ;
+      using Transaction t = new( document, "Create pull box" ) ;
       t.Start() ;
-      var connector = GenerateConnector( document, originX, originY, heightConnector - connectorHeight, level, pickInfo.Route.Name ) ;
+      var pullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, originX, originY, heightConnector, level, pickInfo.Route.Name ) ;
       t.Commit() ;
-      var (fromEndPoint, toEndPoint) = GetChangingEndPoint( uiDocument, pickInfo.Route ) ;
+      
+      using Transaction t2 = new( document, "Create text note" ) ;
+      t.Start() ;
+      XYZ? position = null ;
+      if (( pickInfo.Element is FamilyInstance instance) && instance.FacingOrientation != null) {
+        position = new XYZ( originX + 0.2, originY + 0.5, heightConnector ) ;
+      } else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 ) {
+        position = new XYZ( originX, originY + 0.5, heightConnector ) ;
+      } else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 ) {
+        position = new XYZ( originX + 0.2, originY + 0.2, heightConnector ) ;
+      }
+      else {
+        position = new XYZ( originX, originY, heightConnector ) ;
+      }
 
-      return new OperationResult<PickState>( new PickState( pickInfo, fromEndPoint, toEndPoint, connector, heightConnector, heightWire, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ) ) ;
+      PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, position , pullBox, "PB" );
+      t.Commit() ;
+
+      return new OperationResult<PickState>( new PickState( pickInfo, pullBox, heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, fromDirection, toDirection ) ) ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (pickInfo, fromEndPoint, toEndPoint, pullBox, heightConnector, heightWire, isCreatePullBoxWithoutSettingHeight ) = pickState ;
-      var route = pickInfo.Route ;
-      var routeDirection = pickInfo.RouteDirection ;
-      var allRouteSegment = pickInfo.Route.RouteSegments ;
-      var selectedRoute = pickInfo.SubRoute ;
-      var selectedFromEndPoint = selectedRoute.FromEndPoints.First() ;
-      var selectedToEndPoint =  selectedRoute.ToEndPoints.First()  ;
-
-      List<string> listNameRoute = new() { route.Name } ;
-      RouteGenerator.EraseRoutes( document, listNameRoute, false ) ;
-
-      var diameter = route.UniqueDiameter ;
-      var classificationInfo = route.GetSystemClassificationInfo() ;
+      var (pickInfo, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, fromDirection, toDirection ) = pickState ;
+      var route = pickInfo.SubRoute.Route ;
       var systemType = route.GetMEPSystemType() ;
       var curveType = route.UniqueCurveType ;
-      var radius = diameter * 0.5 ;
-      var isRoutingOnPipeSpace = route.UniqueIsRoutingOnPipeSpace ?? false ;
-      var toFixedHeight = route.UniqueToFixedHeight ;
-      var avoidType = route.UniqueAvoidType ?? AvoidType.Whichever ;
-      var shaftElementUniqueId = route.UniqueShaftElementUniqueId ;
-      var fromFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, isCreatePullBoxWithoutSettingHeight ? heightConnector : heightConnector + _defaultDistanceHeight ) ;
-      var fromFixedHeightSecond = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightWire ) ;
-
-      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
-      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
-      var name = nameBase + "_" + nextIndex ;
-      routes.FindOrCreate( name ) ;
-
-      ConnectorEndPoint pullBoxFromEndPoint ;
-      ConnectorEndPoint pullBoxToEndPoint ;
-      if ( isCreatePullBoxWithoutSettingHeight ) {
-        if ( Math.Abs( routeDirection.X - 1 ) == 0 ) {
-          pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Left ), radius ) ;
-          pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Right ), radius ) ;
-        }
-        else if ( Math.Abs( routeDirection.X + 1 ) == 0 ) {
-          pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Right ), radius ) ;
-          pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Left ), radius ) ;
-        }
-        else if ( Math.Abs( routeDirection.Y - 1 ) == 0 ) {
-          pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Front ), radius ) ;
-          pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
-        }
-        else {
-          pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
-          pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Front ), radius ) ;
-        }
-      }
-      else {
-        pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetTopConnectorOfConnectorFamily(), radius ) ;
-        pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily(), radius ) ;
-      }
-
-      var result = new List<(string RouteName, RouteSegment Segment)>() ;
-
-      int index = nextIndex ;
-      foreach ( var routeSegment  in allRouteSegment ) {
-        if ( routeSegment.FromEndPoint.Key.GetElementUniqueId() == selectedFromEndPoint.Key.GetElementUniqueId() &&
-             routeSegment.ToEndPoint.Key.GetElementUniqueId() == selectedToEndPoint.Key.GetElementUniqueId() ) {
-          var segment = new RouteSegment( classificationInfo, systemType, curveType, selectedFromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ;
-          result.Add( ( nameBase + "_" + index, segment ) ) ;
-
-          var segment2 = new RouteSegment( classificationInfo, systemType, curveType, pullBoxToEndPoint, selectedToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ;
-          result.Add( ( nameBase + "_" + ( ++index ), segment2 ) ) ;
-        }
-        else {
-          result.Add((nameBase + "_" + index, routeSegment));
-        }
-      }
+      List<string> withoutRouteNames = new() ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, withoutRouteNames, fromDirection, toDirection ) ;
 
       return result ;
-    }
-    
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( Document document, IEnumerable<Route> pickedRoutes )
-    {
-      var selectedRoutes = Route.CollectAllDescendantBranches( pickedRoutes ) ;
-
-      var recreatedRoutes = Route.GetAllRelatedBranches( selectedRoutes ) ;
-      recreatedRoutes.ExceptWith( selectedRoutes ) ;
-      RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), true ) ;
-
-      // Returns affected but not deleted routes to recreate them.
-      return recreatedRoutes.ToSegmentsWithName().EnumerateAll() ;
-    }
-
-    private static (IEndPoint fromEndPoint, IEndPoint toEndPoint) GetChangingEndPoint( UIDocument uiDocument, Route route )
-    {
-      using var _ = new TempZoomToFit( uiDocument ) ;
-
-      var array = route.RouteSegments.SelectMany( GetReplaceableEndPoints ).ToArray() ;
-
-      return ( array[ 0 ], array[ 1 ] ) ;
-    }
-
-    private static IEnumerable<IEndPoint> GetReplaceableEndPoints( RouteSegment segment )
-    {
-      if ( segment.FromEndPoint.IsReplaceable ) yield return segment.FromEndPoint ;
-      if ( segment.ToEndPoint.IsReplaceable ) yield return segment.ToEndPoint ;
-    }
-
-    private FamilyInstance GenerateConnector( Document document, double originX, double originY, double originZ, Level level, string routeName )
-    {
-      var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-      var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
-      var toConnectorOfRoute = GetToConnectorOfRoute( document, routeName ) ;
-      var constructionItem = toConnectorOfRoute != null && toConnectorOfRoute.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItemOfToConnector ) && ! string.IsNullOrEmpty( constructionItemOfToConnector ) 
-        ? constructionItemOfToConnector !
-        : DefaultConstructionItem ;
-      var isEcoMode = toConnectorOfRoute != null && toConnectorOfRoute.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoModeOfToConnector ) && ! string.IsNullOrEmpty( isEcoModeOfToConnector ) 
-        ? isEcoModeOfToConnector !
-        : document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
-      var ceedCode = toConnectorOfRoute != null && toConnectorOfRoute.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) && ! string.IsNullOrEmpty( ceedCodeOfToConnector ) 
-        ? ceedCodeOfToConnector !
-        : string.Empty ;
-      
-      if ( instance.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) )
-        instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem ) ;
-      
-      if ( instance.HasParameter( ElectricalRoutingElementParameter.IsEcoMode ) )
-        instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode ) ;
-      
-      if ( instance.HasParameter( ElectricalRoutingElementParameter.CeedCode ) )
-        instance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
-
-      instance.SetConnectorFamilyType( ConnectorType ?? ConnectorFamilyType.Sensor ) ;
-
-      return instance ;
-    }
-    
-    private Element? GetToConnectorOfRoute( Document document, string routeName )
-    {
-      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
-      var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
-      foreach ( var conduit in conduitsOfRoute ) {
-        var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
-        if ( ! toEndPoint.Any() ) continue ;
-        var toEndPointKey = toEndPoint.First().Key ;
-        var toElementId = toEndPointKey.GetElementUniqueId() ;
-        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
-        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
-        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
-        return toConnector ;
-      }
-
-      return null ;
-    }
-
-    private static int GetRouteNameIndex( RouteCache routes, string? targetName )
-    {
-      string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
-      var regex = new Regex( pattern ) ;
-
-      var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
-
-      return lastIndex + 1 ;
     }
   }
 }

@@ -28,6 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     #region Variants
 
     private const string DefaultConstructionItem = "未設定" ;
+    public const string MaterialCodeParameter = "Material Code" ;
     private readonly Document _document ;
     private List<PickUpModel> _pickUpModels ;
     private PickUpStorable _pickUpStorable ;
@@ -267,17 +268,29 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         if ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) {
-          const string pullBoxName = "プルボックス一式" ;
-          var hiroiSetMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? _hiroiSetMasterEcoModels : _hiroiSetMasterNormalModels ;
-          if ( hiroiSetMasterModels.Any() ) {
-            var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartName == pullBoxName ) ;
-            if ( hiroiSetMasterModel != null ) {
-              var materialCodes = GetMaterialCodes(productType, hiroiSetMasterModel, null ) ;
-              if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
-                PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
-                  classification, pickUpNumber, direction ) ;
+          var materialCodes = new Dictionary<string, string>() ;
+          var materialCodePullBox = element.ParametersMap.get_Item( MaterialCodeParameter ).AsString() ;
+          
+          if ( ! string.IsNullOrEmpty( materialCodePullBox ) ) {
+            var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => h.Buzaicd == materialCodePullBox ) ;
+            if ( hiroiMasterModel != null ) {
+              materialCodes.Add( hiroiMasterModel.Buzaicd, hiroiMasterModel.Ryakumeicd );
+            }
+          }
+          else {
+            const string pullBoxName = "プルボックス一式" ;
+            var hiroiSetMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? _hiroiSetMasterEcoModels : _hiroiSetMasterNormalModels ;
+            if ( hiroiSetMasterModels.Any() ) {
+              var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartName == pullBoxName ) ;
+              if ( hiroiSetMasterModel != null ) {
+                materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, null ) ;
               }
             }
+          }
+          
+          if ( materialCodes.Any() ) {
+            PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
+              classification, pickUpNumber, direction ) ;
           }
         }
 
