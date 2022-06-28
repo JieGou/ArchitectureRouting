@@ -51,9 +51,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       using var progress = ShowProgressBar( "Routing...", false ) ;
       List<string> boards = new() ;
       List<XYZ> pullBoxPositions = new() ;
-      List<string> withoutRouteNames = new() ;
       while ( true ) {
-        var segments = PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue, boards, pullBoxPositions, withoutRouteNames ) ;
+        var segments = PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue, boards, pullBoxPositions ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
