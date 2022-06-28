@@ -561,6 +561,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       doc.Create.NewGroup( groupIds ) ;
     }
 
+    public static string GetPullBoxTextBox( int depth, int width, string text)
+    {
+      Dictionary<int, (int, int)> defaultDepths = new() ;
+      defaultDepths.Add(1, (150, 100));
+      defaultDepths.Add(2, ( 200, 200 ));
+      defaultDepths.Add(3, (300, 300));
+      defaultDepths.Add(4, (400, 300));
+      defaultDepths.Add(5, (500, 400));
+      defaultDepths.Add(6, (600, 400));
+      defaultDepths.Add(8, (800, 400));
+      defaultDepths.Add(10, (1000, 400));
+      foreach ( var defaultDepth in defaultDepths ) {
+        var (d, w) = defaultDepth .Value;
+        if ( d >= depth && w >= width )
+          return text + defaultDepth.Key ;
+      }
+
+      return text ;
+    }
+
     private static bool ComparePullBoxPosition( IEnumerable<XYZ> pullBoxPositions, XYZ newPullBoxPosition )
     {
       var minDistance = ( 300.0 ).MillimetersToRevitUnits() ;

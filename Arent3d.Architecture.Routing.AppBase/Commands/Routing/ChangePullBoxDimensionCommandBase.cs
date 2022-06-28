@@ -12,6 +12,7 @@ using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
+using Group = Autodesk.Revit.DB.Group ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -19,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class ChangePullBoxDimensionCommandBase : IExternalCommand
   {
     private const string HinmeiPullBox = "プルボックス" ;
+    private const string DefaultPullBoxLabel = "PB" ;
     private const string TaniPullBox = "個" ;
     private const string PullBoxNotFound = "No satisfied pull box dimension" ;
     private const string ChangePullBoxDimensionSuccesfully = "Change pull box dimension succesfully" ;
@@ -43,7 +45,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var conduitsToPullBox = PullBoxRouteManager.GetFromConnectorOfPullBox( document, pullBoxElement ) ;
           var directionFrom = PullBoxRouteManager.GetDirectionOfConduit( pullBoxElement, conduitsFromPullBox ) ;
           var directionTo = PullBoxRouteManager.GetDirectionOfConduit( pullBoxElement, conduitsToPullBox ) ;
-          var isStraightDirection = PullBoxRouteManager.IsStraightDirection( directionFrom!, directionTo! ) ;
+          
+          var isStraightDirection = directionFrom != null && directionTo != null && PullBoxRouteManager.IsStraightDirection( directionFrom!, directionTo! ) ;
           
           conduitsFromPullBox = conduitsFromPullBox.Where( c => c is Conduit ).ToList() ;
           var groupConduits =
@@ -91,9 +94,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           using var transaction = new Transaction( document ) ;
           transaction.Start( "Change pull box dimension" ) ;
           changeResult = pullBoxElement.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )?.Set( pullBoxModel.Buzaicd ) ;
-          // var parentGroup = document.GetElement( pullBoxElement.GroupId ) as Autodesk.Revit.DB.Group ;
-          // var groupPullBox = document.GetAllElements<Autodesk.Revit.DB.Group>().Where( g => g.Id == pullBoxElement.GroupId ) ;
           transaction.Commit() ;
+          using var transaction2 = new Transaction( document ) ;
+          transaction2.Start( "Change pull box label" ) ;
+          Dictionary<ElementId, List<ElementId>> pullBoxGroup = new Dictionary<ElementId, List<ElementId>>() ;
+          ElectricalCommandUtil.UnGroupConnector( document, pullBoxElement, ref pullBoxGroup ) ;
+          if ( pullBoxGroup.Count > 0 ) {
+            var listTextNoteIds = pullBoxGroup[ pullBoxElement.Id ] ;
+            TextNote? textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => listTextNoteIds.Contains( t.Id ) ) ;
+            if ( textNote != null ) { 
+              textNote.Text = PullBoxRouteManager.GetPullBoxTextBox( depthPullBox, widthPullBox, DefaultPullBoxLabel ) ;
+            }
+          }
+          transaction2.Commit() ;
+          if(pullBoxGroup.Count > 0)
+            ElectricalCommandUtil.GroupConnector( document, pullBoxGroup ) ;
+          
           if ( ! ( changeResult ?? false ) )
             break ;
         }
