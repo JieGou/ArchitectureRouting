@@ -23,8 +23,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+
       var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
-      var pullBoxViewModel = new PullBoxViewModel() ;
+      var pullBoxViewModel = new PullBoxViewModel(document) ;
+      
       var sv = new PullBoxDialog { DataContext = pullBoxViewModel } ;
       sv.ShowDialog() ;
       if ( true != sv.DialogResult ) return OperationResult<PickState>.Cancelled ;

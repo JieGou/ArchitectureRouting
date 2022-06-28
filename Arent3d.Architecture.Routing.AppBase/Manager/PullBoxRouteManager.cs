@@ -4,6 +4,7 @@ using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -293,7 +294,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfConnector ) ;
       if ( ! string.IsNullOrEmpty( ceedCodeOfConnector ) ) ceedCodes.Add( ceedCodeOfConnector! ) ;
     }
+
+    public static (int depth, int width, int height) CalculatePullBoxDimension(int[] plumbingSizes, bool isStraightDirection)
+    {
+      int depth, width ;
+      int maxPlumbingSize = plumbingSizes.Max() ;
+      if ( isStraightDirection ) {
+        depth = plumbingSizes.Sum( x => x + 30 ) + ( 30 * 2 ) ;
+        width = maxPlumbingSize * 8 ;
+      }
+      else {
+        depth = width = plumbingSizes.Sum( x => x + 30 ) + 30 + 8 * maxPlumbingSize ;
+      }
+      var height = GetHeightByPlumbingSize( maxPlumbingSize ) ;
+      return ( depth, width, height ) ;
+    }
     
+    private static int GetHeightByPlumbingSize( int plumbingSize )
+    {
+      switch ( plumbingSize ) {
+        case 19: case 16: case 25: case 22: case 31: case 28: return 200 ;
+        case 39: case 36: case 51: case 42: return 300 ;
+        case 63: case 54: case 75: case 70: case 82: case 92: case 104: return 400 ;
+        default: return 0 ;
+      }
+    }
+
     private static Element? GetToConnectorOfRoute( Document document, string routeName )
     {
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
@@ -310,6 +336,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       return null ;
+    }
+    
+    public static List<Element> GetFromConnectorOfPullBox( Document document, Element element, bool isFrom = false)
+    {
+      List<Element> result = new List<Element>() ;
+      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+      var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ) ;
+      foreach ( var conduit in conduitsOfRoute ) {
+        var toEndPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.First().Key ;
+        var toElementId = toEndPointKey.GetElementUniqueId() ;
+        var pullBoxElementId = element.UniqueId ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        if ( pullBoxElementId.Equals( toElementId ) ) {
+          var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
+          if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
+            result.Add( conduit );
+        }
+      }
+
+      return result ;
     }
 
     private static int GetRouteNameIndex( RouteCache routes, string? targetName )
@@ -724,6 +772,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       return routeDirection ;
+    }
+    
+    public static XYZ? GetDirectionOfConduit( Element pullBox, List<Element> conduits)
+    {
+      var pullBoxLocation = ( pullBox.Location as LocationPoint ) ! ;
+      var pullBoxPoint = pullBoxLocation.Point ;
+      XYZ? routeDirection = null ;
+      var minDistance = double.MaxValue ;
+      
+      foreach ( var conduit in conduits ) {
+        if ( conduit is Conduit ) {
+          var fromConduitLocation = ( conduit.Location as LocationCurve ) ! ;
+          var fromConduitLine = (  fromConduitLocation.Curve as Line ) ! ;
+          var fromConduitPoint = fromConduitLine.GetEndPoint( 0 ) ;
+          var direction = fromConduitLine.Direction ;
+          if ( (  direction.X is 1 or -1 && Math.Abs( pullBoxPoint.Y - fromConduitPoint.Y ) < 0.01 ) 
+               || ( direction.Y is 1 or -1 && Math.Abs( pullBoxPoint.X - fromConduitPoint.X ) < 0.01 ) ) {
+            var distance = pullBoxPoint.DistanceTo( fromConduitPoint ) ;
+            if ( ! ( distance < minDistance ) ) continue ;
+            minDistance = distance ;
+            routeDirection = direction ;
+          }
+        }
+        else if(conduit is FamilyInstance conduitFitting){
+          var location = ( conduitFitting.Location as LocationPoint )! ;
+          var origin = location.Point ;
+          var direction = conduitFitting.FacingOrientation ;
+          if ( (  direction.X is 1 or -1 && Math.Abs( pullBoxPoint.Y - origin.Y ) < 0.01 ) 
+               || ( direction.Y is 1 or -1 && Math.Abs( pullBoxPoint.X - origin.X ) < 0.01 ) ) {
+            var distance = pullBoxPoint.DistanceTo( origin ) ;
+            if ( ! ( distance < minDistance ) ) continue ;
+            minDistance = distance ;
+            routeDirection = direction ;
+          }
+        }
+      }
+
+      return routeDirection ;
+    }
+
+    public static bool IsStraightDirection( XYZ direction1, XYZ direction2 )
+    {
+      return ( direction1.X is 1 && direction2.X is -1 )
+             || ( direction1.X is -1 && direction2.X is 1 ) 
+             || ( direction1.Y is 1 && direction2.Y is -1 ) 
+             || ( direction1.Y is -1 && direction2.Y is 1 ) 
+             || ( direction1.Z is 1 && direction2.Z is -1 )
+             || ( direction1.Z is -1 && direction2.Z is 1 ) ;
     }
 
     private static ConduitInfo? GetConduitOfBoard( Document document, string routeName, Element board )
