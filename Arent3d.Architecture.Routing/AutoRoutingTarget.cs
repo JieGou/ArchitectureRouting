@@ -208,7 +208,7 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly SubRoute _subRoute ;
 
-      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, double? forcedFixedHeight, List<List<Box3d>> priorityBoxes )
+      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, double? forcedFixedHeight, IList<IList<Box3d>> priorityBoxes )
       {
         var documentData = DocumentMapper.Get( document ) ;
 
@@ -232,7 +232,7 @@ namespace Arent3d.Architecture.Routing
       public bool AllowHorizontalBranches { get ; }
       public double? FixedBopHeight { get ; set ; }
       
-      public List<List<Box3d>> PriorityBoxes { get ; }
+      public IList<IList<Box3d>> PriorityBoxes { get ; }
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints
