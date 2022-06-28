@@ -224,6 +224,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         GetToConnectorsOfCables( connectors, pickUpModels ) ;
       }
       GetDataFromSymbolInformation( pickUpModels ) ;
+      
+      foreach ( var pickUpModel in pickUpModels ) {
+        pickUpModel.Quantity = $"{Math.Round( double.Parse( pickUpModel.Quantity ).RevitUnitsToMillimeters() / 1000, 2 )}" ;
+      }
+      
       return pickUpModels ;
     }
 
@@ -733,11 +738,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         .Select( g => g.ToList() ) ;
       
       foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
-
         var pickUpModelByProductCodes = PickUpModelByProductCode( pickUpModelByNumber ) ;
-        foreach ( var pickUpModelByProductCode in pickUpModelByProductCodes ) {
-          pickUpModelByProductCode.Quantity = $"{Math.Round( double.Parse( pickUpModelByProductCode.Quantity ).RevitUnitsToMillimeters() / 1000, 2 )}" ;
-        }
         pickUpModels.AddRange(pickUpModelByProductCodes);
       }
 
@@ -892,7 +893,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         using Transaction t = new Transaction( _document, "Save data" ) ;
         t.Start() ;
-        _pickUpStorable.AllPickUpModelData = OriginPickUpModels ;
+        _pickUpStorable.AllPickUpModelData = _pickUpModels ;
         _pickUpStorable.Save() ;
         t.Commit() ;
         window.DialogResult = true ;
