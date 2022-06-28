@@ -113,7 +113,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       set
       {
         _originPickUpModels = value ;
-        FilterPickUpModels = MergePickUpModels( _originPickUpModels ) ;
+        FilterPickUpModels = MergePickUpModels( PickUpModelByProductCode( _originPickUpModels ) ) ;
         OnPropertyChanged();
       }
     }
@@ -643,20 +643,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
       if ( toConnector == null || (_detailTableStorable.DetailTableModelData.FirstOrDefault(x=>x.DetailSymbolId == toConnector.UniqueId) == null
            &&  toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
-
-      //Case connector haven't setCode and detailTableStore contain connector's uniqueId
-      //Điền thông tin vào materialcode
-      // var detailTableModelList = _detailTableStorable.DetailTableModelData.Where( x => x.DetailSymbolId == toConnector.UniqueId ).ToList() ;
-      // if(detailTableModelList.Count > 0)
-      // foreach ( var hiroiMasterModel in from detailTableModel in detailTableModelList select detailTableModel.WireType +  detailTableModel.WireSize + "x" + detailTableModel.WireStrip into kikaku select _hiroiMasterModels.FirstOrDefault( x => string.Equals( x.Kikaku.Replace( " ","" ), kikaku, StringComparison.CurrentCultureIgnoreCase ) ) into hiroiMasterModel where null != hiroiMasterModel select hiroiMasterModel ) {
-      //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Kikaku ) ) ;
-      //   if ( hiroiSetMasterModel == null ) continue ;
-      //   var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
-      //   if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
-      //     PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, @group, layer,
-      //       classification, pickUpNumber, direction ) ;
-      //   }
-      // }
+      
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
@@ -739,33 +726,50 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<PickUpModel> PickUpModelByNumber( ProductType productType )
     {
       List<PickUpModel> pickUpModels = new() ;
+      
       var equipmentType = productType.GetFieldName() ;
-      var pickUpModelsByNumber = _pickUpModels
-        .Where( p => p.EquipmentType == equipmentType )
+      var pickUpModelsByNumber = _pickUpModels.Where( p => p.EquipmentType == equipmentType )
         .GroupBy( x => x.PickUpNumber )
         .Select( g => g.ToList() ) ;
+      
       foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
-        var pickUpModelsByProductCode = pickUpModelByNumber
-          .GroupBy( x => x.ProductCode.Split('-').First())
-          .Select( g => g.ToList() ) ;
-        foreach ( var pickUpModelByProductCode in pickUpModelsByProductCode ) {
-          var pickUpModelsByConstructionItemsAndConstruction = pickUpModelByProductCode
-            .GroupBy( x => ( x.ConstructionItems, x.Construction ) )
-            .Select( g => g.ToList() ) ;
-          foreach ( var pickUpModelByConstructionItemsAndConstruction in pickUpModelsByConstructionItemsAndConstruction ) {
-            var sumQuantity = pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
-            var pickUpModel = pickUpModelByConstructionItemsAndConstruction.FirstOrDefault() ;
-            if ( pickUpModel == null ) continue ;
-            var strSumQuantity = $"{Math.Round( sumQuantity.RevitUnitsToMillimeters() / 1000, 2 )}" ;
-            PickUpModel newPickUpModel = new( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification,
-              pickUpModel.Specification2, pickUpModel.Size, strSumQuantity, pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction,
-              pickUpModel.ProductCode, pickUpModel.CeedSetCode, pickUpModel.DeviceSymbol, pickUpModel.Condition ) ;
-            pickUpModels.Add( newPickUpModel ) ;
-          }
+
+        var pickUpModelByProductCodes = PickUpModelByProductCode( pickUpModelByNumber ) ;
+        foreach ( var pickUpModelByProductCode in pickUpModelByProductCodes ) {
+          pickUpModelByProductCode.Quantity = $"{Math.Round( double.Parse( pickUpModelByProductCode.Quantity ).RevitUnitsToMillimeters() / 1000, 2 )}" ;
         }
+        pickUpModels.AddRange(pickUpModelByProductCodes);
       }
 
       return pickUpModels ;
+    }
+
+    private List<PickUpModel> PickUpModelByProductCode( List<PickUpModel> pickUpModels )
+    {
+      List<PickUpModel> pickUpModelByProductCodes = new() ;
+      
+      var pickUpModelsByProductCode = pickUpModels.GroupBy( x => x.ProductCode.Split( '-' ).First() )
+        .Select( g => g.ToList() ) ;
+        
+      foreach ( var pickUpModelByProductCode in pickUpModelsByProductCode ) {
+          
+        var pickUpModelsByConstructionItemsAndConstruction = pickUpModelByProductCode.GroupBy( x => ( x.ConstructionItems, x.Construction ) )
+          .Select( g => g.ToList() ) ;
+          
+        foreach ( var pickUpModelByConstructionItemsAndConstruction in pickUpModelsByConstructionItemsAndConstruction ) {
+          var sumQuantity = pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
+            
+          var pickUpModel = pickUpModelByConstructionItemsAndConstruction.FirstOrDefault() ;
+          if ( pickUpModel == null ) 
+            continue ;
+            
+          PickUpModel newPickUpModel = new(pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, $"{sumQuantity}", pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction, pickUpModel.ProductCode, pickUpModel.CeedSetCode, pickUpModel.DeviceSymbol, pickUpModel.Condition) ;
+          
+          pickUpModelByProductCodes.Add( newPickUpModel ) ;
+        }
+      }
+
+      return pickUpModelByProductCodes ;
     }
 
     private Element? GetConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName, bool isFrom )
@@ -888,7 +892,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         using Transaction t = new Transaction( _document, "Save data" ) ;
         t.Start() ;
-        _pickUpStorable.AllPickUpModelData = _pickUpModels ;
+        _pickUpStorable.AllPickUpModelData = OriginPickUpModels ;
         _pickUpStorable.Save() ;
         t.Commit() ;
         window.DialogResult = true ;
@@ -956,7 +960,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if(null == dlg)
             return;
 
-          FilterPickUpModels = MergePickUpModels(OriginPickUpModels.Where( dlg )) ;
+          FilterPickUpModels = MergePickUpModels( PickUpModelByProductCode( OriginPickUpModels.Where( dlg ).ToList() ) ) ;
         } ) ;
       }
     }
