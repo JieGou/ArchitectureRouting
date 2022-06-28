@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         fromDirection = pullBoxInfo.FromDirection ;
         toDirection = pullBoxInfo.ToDirection ;
       }
-      var level = uiDocument.ActiveView.GenLevel ;
+      var level = ( document.GetElement( pickInfo.Element.GetLevelId() ) as Level ) ! ;
       var heightConnector = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightConnector.MillimetersToRevitUnits() ;
       var heightWire = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightWire.MillimetersToRevitUnits() ;
 
@@ -50,8 +50,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       using Transaction t2 = new( document, "Create text note" ) ;
       t.Start() ;
-      XYZ? position = null ;
-      if (( pickInfo.Element is FamilyInstance instance) && instance.FacingOrientation != null) {
+      XYZ? position ;
+      if ( pickInfo.Element is FamilyInstance { FacingOrientation: { } } ) {
         position = new XYZ( originX + 0.2, originY + 0.5, heightConnector ) ;
       } else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 ) {
         position = new XYZ( originX, originY + 0.5, heightConnector ) ;
@@ -75,8 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var systemType = route.GetMEPSystemType() ;
       var curveType = route.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
-      List<string> withoutRouteNames = new() ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, withoutRouteNames, fromDirection, toDirection ) ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, fromDirection, toDirection ) ;
 
       return result ;
     }
