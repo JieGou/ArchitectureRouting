@@ -234,6 +234,9 @@
 
         <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
         <string>Create Pullbox</string>
+
+        <key> Electrical.App.Commands.Routing.ChangePullBoxDimensionCommand</key>
+        <string>Change Pullbox Dimension</string>
       
         <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
         <string>Electrical Symbol&#xA;Aggregation</string>
@@ -503,6 +506,9 @@
   
         <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
         <string>Pull Box</string>
+
+        <key> Electrical.App.Commands.Initialization.ChangePullBoxDimensionCommand</key>
+        <string>Change Pullbox Dimension</string>
         
         <key>Electrical.App.Commands.Routing.EraseSelectedPullBoxCommand</key>
         <string>Delete Pull Box</string>

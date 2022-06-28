@@ -384,6 +384,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
+          [Button( typeof( ChangePullBoxDimensionCommand ), OnlyInitialized = true )]
+          private static class ChangePullBoxDimensionCommandButton
+          {
+          }
+          
           [Button( typeof( EraseSelectedPullBoxCommand ), OnlyInitialized = true )]
           private static class EraseSelectedPullBoxCommandButton
           {
