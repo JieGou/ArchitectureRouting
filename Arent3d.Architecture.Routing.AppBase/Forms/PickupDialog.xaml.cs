@@ -17,19 +17,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       e.Row.Header = ( e.Row.GetIndex() + 1 ).ToString() ;
     }
-
-    private void ExportType_Checked( object sender, RoutedEventArgs e )
-    {
-      PickUpViewModel vm = (PickUpViewModel)DataContext ;
-      var radioButton = sender as RadioButton ;
-      string exportType = radioButton!.Content?.ToString() ?? string.Empty ;
-      vm.ExportType = exportType switch
-      {
-        "dat" => "dat", 
-        "拾い書" => "csv", 
-        _ => string.Empty
-      } ;
-    }
   }
  
   public abstract class DesignPickUpViewModel : PickUpViewModel

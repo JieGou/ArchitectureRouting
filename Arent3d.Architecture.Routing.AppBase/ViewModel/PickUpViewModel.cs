@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public RelayCommand<Window> ExportFileCommand => new(ExportFile) ;
     public RelayCommand<Window> SaveCommand => new(Save) ;
     public RelayCommand<Window> CancelCommand => new(Cancel) ;
-    public string ExportType { get ; set ; } = string.Empty;
+    public bool IsExportCsv { get ; set ; } = true ;
     public ICommand SelectAllCommand
     {
       get
@@ -824,61 +824,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ExportFile( Window window )
     {
-      string fileName = "file_name." + ExportType ;
-      string filterFile = "CSV files (*." + ExportType + ")|*." + ExportType ;
-      SaveFileDialog saveFileDialog = new() { FileName = fileName, Filter = filterFile, InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
-
-      if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
       try {
-        using ( StreamWriter sw = new( saveFileDialog.FileName ) ) {
-          //Create header
-          List<string> header = new()
-          {
-            "フロア",
-            "工事項目",
-            "セットコード",
-            "型番",
-            "条件",
-            "機器記号",
-            "施工区分",
-            "区分",
-            "品名",
-            "仕様",
-            "数量",
-            "単位",
-            "レイヤ",
-            "補足説明"
-          } ;
-          string line = "\"" + string.Join( "\",\"", header ) + "\"" ;
-          sw.WriteLine( line ) ;
-          //Create records
-          foreach ( var p in MergePickUpModels( OriginPickUpModels ) ) {
-            List<string> param = new()
-            {
-              p.Floor,
-              p.ConstructionItems,
-              p.CeedSetCode,
-              p.ModelNumber,
-              p.Condition,
-              p.DeviceSymbol,
-              p.Construction,
-              p.Classification,
-              p.ProductName,
-              p.Specification,
-              p.Quantity,
-              p.Tani,
-              p.Layer,
-              p.Supplement
-            } ;
-            line = "\"" + string.Join( "\",\"", param ) + "\"" ;
-            sw.WriteLine( line ) ;
-          }
-
-          sw.Flush() ;
-          sw.Close() ;
+        if ( IsExportCsv ) {
+          using var t = new Transaction( _document, "Save data" ) ;
+          t.Start() ;
+          _pickUpStorable.AllPickUpModelData = _pickUpModels ;
+          _pickUpStorable.Save() ;
+          t.Commit() ;
+        
+          var dialog = new PickUpReportDialog( _document ) ;
+          dialog.ShowDialog() ;
         }
-
-        MessageBox.Show( "Export data successfully.", "Result Message" ) ;
       }
       catch ( Exception ex ) {
         MessageBox.Show( "Export data failed because " + ex, "Error Message" ) ;
