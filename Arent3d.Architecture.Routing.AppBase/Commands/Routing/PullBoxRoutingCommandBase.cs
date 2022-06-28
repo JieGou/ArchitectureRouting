@@ -46,6 +46,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       using Transaction t = new( document, "Create pull box" ) ;
       t.Start() ;
       var pullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, originX, originY, heightConnector, level, pickInfo.Route.Name ) ;
+      if(pullBoxViewModel.SelectedPullBox != null)
+        pullBox.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )?.Set( pullBoxViewModel.SelectedPullBox.Buzaicd ) ;
       t.Commit() ;
       
       using Transaction t2 = new( document, "Create text note" ) ;
