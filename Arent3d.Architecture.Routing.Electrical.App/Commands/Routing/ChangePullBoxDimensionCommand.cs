@@ -6,7 +6,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Routing.ChangePullBoxDimensionCommand",
-    DefaultString = "Change Pullbox Dimension" )]
+    DefaultString = "Calculate Pullbox\nDimension" )]
   [Image( "resources/PickFrom-To.png" )]
   public class ChangePullBoxDimensionCommand : ChangePullBoxDimensionCommandBase
   {
