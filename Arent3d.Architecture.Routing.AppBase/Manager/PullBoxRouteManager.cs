@@ -768,12 +768,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     public static bool IsStraightDirection( XYZ direction1, XYZ direction2 )
     {
-      return ( direction1.X is 1 && direction2.X is -1 )
-             || ( direction1.X is -1 && direction2.X is 1 ) 
-             || ( direction1.Y is 1 && direction2.Y is -1 ) 
-             || ( direction1.Y is -1 && direction2.Y is 1 ) 
-             || ( direction1.Z is 1 && direction2.Z is -1 )
-             || ( direction1.Z is -1 && direction2.Z is 1 ) ;
+      return ( direction1.X is 1 && direction2.X is 1 )
+             || ( direction1.X is -1 && direction2.X is -1 ) 
+             || ( direction1.Y is 1 && direction2.Y is 1 ) 
+             || ( direction1.Y is -1 && direction2.Y is -1 ) 
+             || ( direction1.Z is 1 && direction2.Z is 1 )
+             || ( direction1.Z is -1 && direction2.Z is -1 ) ;
     }
 
     private static ConduitInfo? GetConduitOfBoard( Document document, string routeName, Element board )

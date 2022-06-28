@@ -94,6 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           using var transaction = new Transaction( document ) ;
           transaction.Start( "Change pull box dimension" ) ;
           changeResult = pullBoxElement.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )?.Set( pullBoxModel.Buzaicd ) ;
+          detailSymbolStorable.DetailSymbolModelData.RemoveAll( _ => true) ;
           transaction.Commit() ;
           using var transaction2 = new Transaction( document ) ;
           transaction2.Start( "Change pull box label" ) ;
@@ -109,7 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           transaction2.Commit() ;
           if(pullBoxGroup.Count > 0)
             ElectricalCommandUtil.GroupConnector( document, pullBoxGroup ) ;
-          
+
           if ( ! ( changeResult ?? false ) )
             break ;
         }
