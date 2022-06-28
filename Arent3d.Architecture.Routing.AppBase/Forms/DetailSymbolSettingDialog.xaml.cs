@@ -37,6 +37,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_OK( object sender, RoutedEventArgs e )
     {
+      GetValues() ;
+      DialogResult = true ;
+      Close() ;
+    }
+
+    public void GetValues()
+    {
       DetailSymbol = CmbDetailSymbols.SelectedValue.ToString() ;
       Angle = CmbAngle.SelectedValue.ToString() ;
       HeightCharacter = Convert.ToDouble( CmbHeight.SelectedValue.ToString() ) ;
@@ -45,8 +52,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SymbolStyle = CmbStyle.SelectedValue.ToString() ;
       Offset = Convert.ToInt32( CmbOffset.SelectedValue.ToString() ) ;
       BackGround = CmbHideTextBackground.SelectedValue.ToString() == "ON" ? 0 : 1 ;
-      DialogResult = true ;
-      Close() ;
     }
 
     private void LoadComboboxValue()

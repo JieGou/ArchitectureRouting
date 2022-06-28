@@ -14,13 +14,13 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class CnsSettingDialog : Window
+  public partial class CnsSettingDialog
   {
     private int _editingRowIndex = -1 ;
     private readonly CnsSettingViewModel _cnsSettingViewModel ;
     private readonly Document _document ;
     private readonly ObservableCollection<CnsSettingModel> _currentCnsSettingData ;
-
+    private bool _isEditModel = false ;
     public CnsSettingDialog( CnsSettingViewModel viewModel, Document document)
     {
       InitializeComponent() ;
@@ -38,8 +38,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( selectedItem.CategoryName == "未設定" ) return ;
       if ( CheckDuplicateName( e ) ) return ;
       grdCategories.IsReadOnly = false ;
-      grdCategories.CurrentCell = new DataGridCellInfo( grdCategories.SelectedItem, grdCategories.Columns[ 1 ] ) ;
-      grdCategories.BeginEdit() ;
+      _isEditModel = true ;
+      grdCategories.CurrentCell = new DataGridCellInfo( grdCategories.SelectedItem, grdCategories.Columns[ 1 ] ) ; 
+      grdCategories.BeginEdit() ; 
     }
 
     private void Close_Dialog()
@@ -56,17 +57,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void GrdCategories_OnCellEditEnding( object sender, DataGridCellEditEndingEventArgs e )
     {
-      if ( DialogResult != false ) {
+      if ( DialogResult != false ) { 
         var isDuplicateName = grdCategories.ItemsSource.Cast<CnsSettingModel>().Where( x => ! string.IsNullOrEmpty( x.CategoryName ) ).GroupBy( x => x.CategoryName ).Any( g => g.Count() > 1 ) ;
         if ( isDuplicateName ) {
           MessageBox.Show( "工事項目名称がすでに存在しています。再度工事項目名称を入力してください。" ) ;
           _editingRowIndex = e.Row.GetIndex() ;
+          _isEditModel = false ;
           e.Cancel = true ;
           return ;
         }
       }
-      _editingRowIndex = -1 ;
-      grdCategories.IsReadOnly = true ;
+
+      _isEditModel = false ;
+      _editingRowIndex = -1 ; 
     }
 
     private void AddNewRow_Click( object sender, RoutedEventArgs e )
@@ -75,6 +78,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _cnsSettingViewModel.AddRowCommand.CanExecute( null ) )
         _cnsSettingViewModel.AddRowCommand.Execute( null ) ;
       grdCategories.IsReadOnly = false ;
+      _isEditModel = true ;
+      grdCategories.SelectedIndex = grdCategories.Items.Count - 1 ;
+      grdCategories.SelectedItem = grdCategories.Items.IndexOf( grdCategories.SelectedIndex ) ;
+      grdCategories.CurrentCell = new DataGridCellInfo( grdCategories.SelectedItem, grdCategories.Columns[ 1 ] ) ; 
+      grdCategories.BeginEdit() ; 
     }
 
     private void Delete_Click( object sender, RoutedEventArgs e )
@@ -275,6 +283,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T>? listCnsSettingData ) where T : ICloneable
     {
       return listCnsSettingData != null ? new ObservableCollection<T>( listCnsSettingData.Select( x => x.Clone() ).Cast<T>() ) : null! ;
+    }
+
+    private void ApplyRangSelection_Click( object sender, RoutedEventArgs e )
+    {
+      if ( CheckDuplicateName( e ) ) return ;
+      Close_Dialog() ;
+      if ( _cnsSettingViewModel.ApplyRangSelectionCommand.CanExecute( grdCategories.SelectedIndex ) )
+        _cnsSettingViewModel.ApplyRangSelectionCommand.Execute( grdCategories.SelectedIndex ) ;
+    }
+
+    private void GrdCategories_OnCellBeforeEdit( object sender, DataGridPreparingCellForEditEventArgs e )
+    { 
+      if ( e.EditingElement is not TextBox ) return ; 
+      if ( ((TextBox)e.EditingElement).Text == "未設定" || !_isEditModel)
+        grdCategories.CancelEdit( DataGridEditingUnit.Cell ) ;
+
     }
   }
 }
