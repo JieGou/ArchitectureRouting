@@ -2,8 +2,12 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
@@ -21,6 +25,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const string DefaultConstructionItem = "未設定" ;
     private static readonly double PullBoxWidth = ( 20.0 ).MillimetersToRevitUnits() * 4 ;
     private static readonly double PullBoxLenght = ( 15.0 ).MillimetersToRevitUnits() * 4 ;
+    private const string HinmeiPullBox = "プルボックス" ;
+    public const string DefaultPullBoxLabel = "PB" ;
+    private const string TaniPullBox = "個" ;
 
     public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, Route route, Element element, FamilyInstance pullBox, double heightConnector, 
       double heightWire, XYZ routeDirection, bool isCreatePullBoxWithoutSettingHeight, string nameBase, XYZ? fromDirection = null, XYZ? toDirection = null )
@@ -388,7 +395,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return lastIndex + 1 ;
     }
 
-    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBox ( Document document, IReadOnlyCollection<Route> executeResultValue, List<string> boardUniqueIds, List<XYZ> pullBoxPositions )
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBox ( Document document, IReadOnlyCollection<Route> executeResultValue, List<string> boardUniqueIds, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ)> pullBoxElements)
     {
       const string angleParameter = "角度" ;
       const double maxAngle = 270 ;
@@ -456,7 +463,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var conduitInfo = GetConduitOfBoard( document, route.RouteName, board ) ;
             if ( conduitInfo == null ) continue ;
             var (originX, originY, originZ) = conduitInfo.ConduitOrigin ;
-            result = CreatePullBoxAndGetSegments( document, route, conduitInfo.Conduit, originX, originY, originZ, conduitInfo.Level, conduitInfo.ConduitDirection, nameBase! ).ToList() ;
+            result = CreatePullBoxAndGetSegments( document, route, conduitInfo.Conduit, originX, originY, originZ, conduitInfo.Level, conduitInfo.ConduitDirection, nameBase!, out FamilyInstance? pullBoxElement ).ToList() ;
+            if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, conduitInfo.ConduitOrigin) ) ;
             boardUniqueIds.Add( board.UniqueId ) ;
             return result ;
           }
@@ -471,7 +479,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var fromDirection = pullBoxInfo.FromDirection ;
             var toDirection = pullBoxInfo.ToDirection ;
             var height = originZ - pullBoxInfo.Level.Elevation ;
-            result = CreatePullBoxAndGetSegments( document, route, conduitFitting, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, fromDirection, toDirection ).ToList() ;
+            result = CreatePullBoxAndGetSegments( document, route, conduitFitting, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out FamilyInstance? pullBoxElement, fromDirection, toDirection ).ToList() ;
+            if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxInfo.Position) ) ;
             pullBoxPositions.Add( pullBoxInfo.Position ) ;
             return result ;
           }
@@ -485,7 +494,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var fromDirection = pullBoxInfo.FromDirection ;
             var toDirection = pullBoxInfo.ToDirection ;
             var height = originZ - pullBoxInfo.Level.Elevation ;
-            result = CreatePullBoxAndGetSegments( document, route, selectedConduitFitting, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, fromDirection, toDirection ).ToList() ;
+            result = CreatePullBoxAndGetSegments( document, route, selectedConduitFitting, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out FamilyInstance? pullBoxElement, fromDirection, toDirection ).ToList() ;
+            if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxInfo.Position) ) ;
             pullBoxPositions.Add( pullBoxInfo.Position ) ;
             return result ;
           }
@@ -529,8 +539,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               toDirection = pullBoxInfo.ToDirection ;
             }
             
-            result = CreatePullBoxAndGetSegments( document, route, selectedConduit, originX, originY, height, level, direction, nameBase!, fromDirection, toDirection ).ToList() ;
-            pullBoxPositions.Add( new XYZ( originX, originY, originZ ) ) ;
+            result = CreatePullBoxAndGetSegments( document, route, selectedConduit, originX, originY, height, level, direction, nameBase!, out FamilyInstance? pullBoxElement, fromDirection, toDirection ).ToList() ;
+            var pullBoxPosition = new XYZ( originX, originY, originZ ) ;
+            if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxPosition) ) ;
+            pullBoxPositions.Add( pullBoxPosition ) ;
             return result ;
           }
         }
@@ -540,13 +552,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreatePullBoxAndGetSegments( Document document, Route route, Element element, double originX, double originY, double originZ, 
-      Level? level, XYZ? direction, string nameBase, XYZ? fromDirection = null, XYZ? toDirection = null )
+      Level? level, XYZ? direction, string nameBase, out FamilyInstance? pullBox, XYZ? fromDirection = null, XYZ? toDirection = null )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
+      pullBox = null ;
       try {
         using Transaction t = new( document, "Create pull box" ) ;
         t.Start() ;
-        var pullBox = GenerateConnector( document, ElectricalRoutingFamilyType.PullBox, ConnectorFamilyType.PullBox, originX, originY, originZ , level!, route.RouteName ) ;
+        pullBox = GenerateConnector( document, ElectricalRoutingFamilyType.PullBox, ConnectorFamilyType.PullBox, originX, originY, originZ , level!, route.RouteName ) ;
         t.Commit() ;
 
         using Transaction t1 = new( document, "Get segments" ) ;
@@ -864,6 +877,70 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var pullBoxPosition = new XYZ( x, y, height) ;
         return new ConduitInfo( fromConduit, pullBoxPosition, fromConduitDirection, level! ) ;
       }
+    }
+    
+    public static HiroiMasterModel? GetPullBoxWithAutoCalculatedDimension( Document document, Element pullBoxElement, CsvStorable csvStorable,
+      DetailSymbolStorable detailSymbolStorable, List<ConduitsModel> conduitsModelData, List<HiroiMasterModel> hiroiMasterModels )
+    {
+      var conduitsFromPullBox = GetFromConnectorOfPullBox( document, pullBoxElement, true ) ;
+      var conduitsToPullBox = GetFromConnectorOfPullBox( document, pullBoxElement ) ;
+      var directionFrom = GetDirectionOfConduit( pullBoxElement, conduitsFromPullBox ) ;
+      var directionTo = GetDirectionOfConduit( pullBoxElement, conduitsToPullBox ) ;
+
+      var isStraightDirection = directionFrom != null && directionTo != null &&
+                                IsStraightDirection( directionFrom!, directionTo! ) ;
+
+      conduitsFromPullBox = conduitsFromPullBox.Where( c => c is Conduit ).ToList() ;
+      var groupConduits = conduitsFromPullBox.GroupBy( c => c.GetRepresentativeRouteName() ).Select( c => c.First() ) ;
+      foreach ( var conduit in groupConduits )
+        AddWiringInformationCommandBase.CreateDetailSymbolModel( document, conduit, csvStorable, detailSymbolStorable,
+          pullBoxElement.UniqueId ) ;
+
+      var elementIds = conduitsFromPullBox.Select( c => c.UniqueId ).ToList() ;
+      var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable,
+        detailSymbolStorable, conduitsFromPullBox, elementIds, false ) ;
+
+      var newDetailTableModels = DetailTableViewModel.SummarizePlumbing( detailTableModels, conduitsModelData,
+        detailSymbolStorable, new List<DetailTableModel>(), false, new Dictionary<string, string>() ) ;
+
+      var plumbingSizes = newDetailTableModels.Where( p => int.TryParse( p.PlumbingSize, out _ ) )
+        .Select( p => Convert.ToInt32( p.PlumbingSize ) ).ToArray() ;
+      var (depth, width, height) = CalculatePullBoxDimension( plumbingSizes, isStraightDirection ) ;
+
+      var minPullBoxModelDepth = hiroiMasterModels.Where( p => p.Tani == TaniPullBox && p.Hinmei.Contains( HinmeiPullBox ) )
+        .Where( p =>
+        {
+          var (d, w, h) = ParseKikaku( p.Kikaku ) ;
+          return d >= depth && w >= width && h >= height ;
+        } ).Min( x =>
+        {
+          var (d, w, _) = ParseKikaku( x.Kikaku ) ;
+          return d ;
+        } ) ;
+
+      var pullBoxModel = hiroiMasterModels.FirstOrDefault( p =>
+      {
+        var (d, w, h) = ParseKikaku( p.Kikaku ) ;
+        return h == height && d == minPullBoxModelDepth ;
+      } ) ;
+      return pullBoxModel ;
+    }
+    
+    public static (int depth, int width, int height) ParseKikaku( string kikaku )
+    {
+      var kikakuRegex = new Regex( "(?!\\d)*(?<kikaku>((\\d+(x)){2}(\\d+)))(?!\\d)*" ) ;
+      var m = kikakuRegex.Match( kikaku ) ;
+      if ( m.Success ) {
+        var strKikaku = m.Groups[ "kikaku" ].Value.Split( 'x' ) ;
+        if ( strKikaku.Length == 3 ) {
+          var depth = Convert.ToInt32( strKikaku[ 0 ] ) ;
+          var width = Convert.ToInt32( strKikaku[ 1 ] ) ;
+          var height = Convert.ToInt32( strKikaku[ 2 ] ) ;
+          return ( depth, width, height ) ;
+        }
+      }
+
+      return ( 0, 0, 0 ) ;
     }
 
     public static PullBoxInfo GetPullBoxInfo( Document document, string routeName, FamilyInstance conduitFitting )
