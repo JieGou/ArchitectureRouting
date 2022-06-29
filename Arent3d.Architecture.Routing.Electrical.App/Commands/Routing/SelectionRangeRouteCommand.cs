@@ -101,26 +101,27 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var csvStorable = document.GetCsvStorable() ;
         var conduitsModelData = csvStorable.ConduitsModelData ;
         var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
+        var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
         var pullBoxModel = PullBoxRouteManager.GetPullBoxWithAutoCalculatedDimension( document, pullBox, csvStorable,
           detailSymbolStorable, conduitsModelData, hiroiMasterModels ) ;
         if ( pullBoxModel != null ) {
           buzaiCd = pullBoxModel.Buzaicd ;
-          var (depth, width, _) = PullBoxRouteManager.ParseKikaku( pullBoxModel.Kikaku ) ;
-          textLabel = PullBoxRouteManager.GetPullBoxTextBox( depth, width, PullBoxRouteManager.DefaultPullBoxLabel ) ;
+          var (depth, _, height) = PullBoxRouteManager.ParseKikaku( pullBoxModel.Kikaku ) ;
+          textLabel = PullBoxRouteManager.GetPullBoxTextBox( depth, height, PullBoxRouteManager.DefaultPullBoxLabel ) ;
         }
 
         if ( ! string.IsNullOrEmpty( buzaiCd ) ) {
           using Transaction t1 = new(document, "Update dimension of pull box") ;
           t1.Start() ;
           pullBox.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )?.Set( buzaiCd ) ;
-          detailSymbolStorable.DetailSymbolModelData.RemoveAll( _ => true ) ;
+          detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId) ;
           t1.Commit() ;
 
           using Transaction t2 = new(document, "Create text note") ;
           t2.Start() ;
           var positionLabel = new XYZ( position.X + 0.2, position.Y + 0.5, position.Z ) ;
 
-          PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, positionLabel, pullBox, textLabel ) ;
+          PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel ) ;
           t2.Commit() ;
         }
       }

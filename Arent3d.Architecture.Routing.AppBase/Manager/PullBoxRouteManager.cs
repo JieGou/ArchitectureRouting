@@ -573,7 +573,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static void CreateTextNoteAndGroupWithPullBox(Document doc, XYZ point, Element pullBox, string text)
+    public static void CreateTextNoteAndGroupWithPullBox(Document doc, PullBoxInfoStorable pullBoxInfoStorable, XYZ point, Element pullBox, string text)
     {
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
@@ -587,27 +587,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
       textNote.ChangeTypeId( textNoteType.Id ) ;
       
-      ICollection<ElementId> groupIds = new List<ElementId>() ;
-      groupIds.Add( pullBox.Id ) ;
-      groupIds.Add( textNote.Id ) ;
-      doc.Create.NewGroup( groupIds ) ;
+      pullBoxInfoStorable.PullBoxInfoModelData.Add( new PullBoxInfoModel( pullBox.UniqueId, textNote.UniqueId ) );
+      pullBoxInfoStorable.Save() ;
     }
 
-    public static string GetPullBoxTextBox( int depth, int width, string text)
+    public static string GetPullBoxTextBox( int depth, int height, string text)
     {
-      Dictionary<int, (int, int)> defaultDepths = new() ;
-      defaultDepths.Add(1, (150, 100));
-      defaultDepths.Add(2, ( 200, 200 ));
-      defaultDepths.Add(3, (300, 300));
-      defaultDepths.Add(4, (400, 300));
-      defaultDepths.Add(5, (500, 400));
-      defaultDepths.Add(6, (600, 400));
-      defaultDepths.Add(8, (800, 400));
-      defaultDepths.Add(10, (1000, 400));
-      foreach ( var defaultDepth in defaultDepths ) {
-        var (d, w) = defaultDepth .Value;
-        if ( d >= depth && w >= width )
-          return text + defaultDepth.Key ;
+      Dictionary<int, (int, int)> defaultDimensions = new() ;
+      defaultDimensions.Add(1, (150, 100));
+      defaultDimensions.Add(2, ( 200, 200 ));
+      defaultDimensions.Add(3, (300, 300));
+      defaultDimensions.Add(4, (400, 300));
+      defaultDimensions.Add(5, (500, 400));
+      defaultDimensions.Add(6, (600, 400));
+      defaultDimensions.Add(8, (800, 400));
+      defaultDimensions.Add(10, (1000, 400));
+      foreach ( var defaultDimension in defaultDimensions ) {
+        var (d, h) = defaultDimension .Value;
+        if ( d >= depth && h >= height )
+          return text + defaultDimension.Key ;
       }
 
       return text ;

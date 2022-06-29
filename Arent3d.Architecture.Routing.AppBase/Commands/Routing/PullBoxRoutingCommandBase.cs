@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
 
       var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
       var pullBoxViewModel = new PullBoxViewModel(document) ;
@@ -64,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         position = new XYZ( originX, originY, heightConnector ) ;
       }
 
-      PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, position , pullBox, "PB" );
+      PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, position , pullBox, PullBoxRouteManager.DefaultPullBoxLabel );
       t.Commit() ;
 
       return new OperationResult<PickState>( new PickState( pickInfo, pullBox, heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, pullBoxViewModel.IsAutoCalculatePullBoxSize, pullBoxViewModel.SelectedPullBox, fromDirection, toDirection ) ) ;
@@ -90,6 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       #region Change dimension of pullbox and set new label
       var detailSymbolStorable = document.GetDetailSymbolStorable() ;
+      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
       
       string buzaiCd = string.Empty ;
       string textLabel = PullBoxRouteManager.DefaultPullBoxLabel ;
@@ -100,23 +102,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var pullBoxModel = PullBoxRouteManager.GetPullBoxWithAutoCalculatedDimension( document, pullBox, csvStorable, detailSymbolStorable, conduitsModelData, hiroiMasterModels ) ;
         if ( pullBoxModel != null ) {
           buzaiCd = pullBoxModel.Buzaicd;
-          var (depth, width, _) =  PullBoxRouteManager.ParseKikaku( pullBoxModel.Kikaku );
-          textLabel = PullBoxRouteManager.GetPullBoxTextBox( depth, width, PullBoxRouteManager.DefaultPullBoxLabel ) ;
+          var (depth, _, height) =  PullBoxRouteManager.ParseKikaku( pullBoxModel.Kikaku );
+          textLabel = PullBoxRouteManager.GetPullBoxTextBox( depth, height, PullBoxRouteManager.DefaultPullBoxLabel ) ;
         }
       }
       else {
-        if(selectedPullBox != null)
-          buzaiCd = selectedPullBox.Buzaicd ;   
+        if ( selectedPullBox != null ) {
+          buzaiCd = selectedPullBox.Buzaicd ;
+          var (depth, _, height) =  PullBoxRouteManager.ParseKikaku( selectedPullBox.Kikaku );
+          textLabel = PullBoxRouteManager.GetPullBoxTextBox( depth, height, PullBoxRouteManager.DefaultPullBoxLabel ) ;
+        }   
       }
       
       if ( ! string.IsNullOrEmpty( buzaiCd ) ) {
         using Transaction t1 = new(document, "Update dimension of pull box") ;
         t1.Start() ;
         pullBox.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )?.Set( buzaiCd ) ;
-        detailSymbolStorable.DetailSymbolModelData.RemoveAll( _ => true) ;
+        detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId) ;
         t1.Commit() ;
         
-        ChangePullBoxDimensionCommandBase.ChangeLabelOfPullBox( document, pullBox, textLabel ) ;
+        ChangePullBoxDimensionCommandBase.ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBox, textLabel ) ;
       }
       #endregion
     }

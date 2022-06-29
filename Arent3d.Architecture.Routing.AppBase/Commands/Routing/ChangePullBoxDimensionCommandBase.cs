@@ -5,6 +5,7 @@ using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -28,10 +29,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduitsModelData = csvStorable.ConduitsModelData ;
         var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
         var detailSymbolStorable = document.GetDetailSymbolStorable() ;
+        var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
 
         var pullBoxElements = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
           .Where( e => e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() && e is FamilyInstance )
-          .Where( e => !CheckDefaultLabelPullBox( document, e ) ).ToList() ;
+          .Where( e => !CheckDefaultLabelPullBox( document, pullBoxInfoStorable, e ) ).ToList() ;
 
         foreach ( var pullBoxElement in pullBoxElements ) {
           var pullBoxModel = PullBoxRouteManager.GetPullBoxWithAutoCalculatedDimension( document, pullBoxElement,
@@ -51,11 +53,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           transaction.Start( "Change pull box dimension" ) ;
           changeResult = pullBoxElement.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )
             ?.Set( pullBoxModel.Buzaicd ) ;
-          detailSymbolStorable.DetailSymbolModelData.RemoveAll( _ => true ) ;
+          detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBoxElement.UniqueId) ;
           transaction.Commit() ;
 
-          var textLabel = PullBoxRouteManager.GetPullBoxTextBox( depthPullBox, widthPullBox, PullBoxRouteManager.DefaultPullBoxLabel ) ;
-          ChangeLabelOfPullBox( document, pullBoxElement, textLabel ) ;
+          var textLabel = PullBoxRouteManager.GetPullBoxTextBox( depthPullBox, heightPullBox, PullBoxRouteManager.DefaultPullBoxLabel ) ;
+          ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBoxElement, textLabel ) ;
 
           if ( ! ( changeResult ?? false ) )
             break ;
@@ -78,36 +80,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public static void ChangeLabelOfPullBox( Document document, Element pullBoxElement, string textLabel )
+    public static void ChangeLabelOfPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement, string textLabel )
     {
-      using var transaction2 = new Transaction( document ) ;
-      transaction2.Start( "Change pull box label" ) ;
-      var pullBoxGroup = new Dictionary<ElementId, List<ElementId>>() ;
-      ElectricalCommandUtil.UnGroupConnector( document, pullBoxElement, ref pullBoxGroup ) ;
-      if ( pullBoxGroup.Count > 0 ) {
-        var listTextNoteIds = pullBoxGroup[ pullBoxElement.Id ] ;
-        var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => listTextNoteIds.Contains( t.Id ) ) ;
-        if ( textNote != null ) textNote.Text = textLabel ;
+      var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
+      var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel?.TextNoteUniqueId == t.UniqueId ) ;
+      if ( textNote != null ) {
+        using var transaction2 = new Transaction( document ) ;
+        transaction2.Start( "Change pull box label" ) ;
+        textNote.Text = textLabel ;
+        transaction2.Commit() ;
       }
-
-      transaction2.Commit() ;
-      if ( pullBoxGroup.Count > 0 )
-        ElectricalCommandUtil.GroupConnector( document, pullBoxGroup ) ;
     }
 
-    private bool CheckDefaultLabelPullBox( Document document, Element pullBoxElement )
+    private bool CheckDefaultLabelPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement )
     {
-      var parentGroup = document.GetElement( pullBoxElement.GroupId ) as Group ;
-      if ( parentGroup == null ) return false ;
-
-      var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-      var listTextNoteIds = new List<ElementId>() ;
-      foreach ( var group in attachedGroup ) {
-        var ids = group.GetMemberIds() ;
-        listTextNoteIds.AddRange( ids ) ;
-      }
-
-      var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => listTextNoteIds.Contains( t.Id ) ) ;
+      var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
+      if ( pullBoxInfoModel == null ) return false ;
+      var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel.TextNoteUniqueId == t.UniqueId ) ;
       var textLabel = textNote?.Text ?? string.Empty ;
       return textLabel.Trim() == PullBoxRouteManager.DefaultPullBoxLabel ;
     }
