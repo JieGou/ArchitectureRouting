@@ -175,13 +175,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return sv ;
     }
 
-    public static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemPipeSpec pipeSpec, XYZ powerPosition , XYZ? lastSensorPosition = null, FixedHeight? fixedHeight = null )
+    public static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemPipeSpec pipeSpec, XYZ powerPosition , XYZ? lastSensorPosition = null )
     {
       var document = powerConnector.Document ;
       var levelId = powerConnector.LevelId ;
       var diameter = routeProperty.GetDiameter() ;
       var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
-      var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, fixedHeight ?? routeProperty.GetFromFixedHeight(), levelId ) ;
+      var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, routeProperty.GetFromFixedHeight(), levelId ) ;
       var sensorConnectorsWithoutLast = 
         sensorConnectors.Count > 1 && lastSensorPosition == null
           ? sensorConnectors.Take( sensorConnectors.Count - 1 ).ToReadOnlyCollection( sensorConnectors.Count - 1 ) 
@@ -228,6 +228,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       return ( footPassPoint, passPoints ) ;
+    }
 
       static bool AreTooClose( XYZ lastPos, XYZ nextPos, double shortCurveLength )
       {
@@ -266,7 +267,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         return document.AddPassPoint( routeName, passPointPos, passPointDir, radius, levelId ) ;
       }
 
-      static IReadOnlyList<XYZ> GetPassPointPositions( XYZ powerPosition, IReadOnlyCollection<FamilyInstance> sensorConnectors, XYZ lastSensorPosition, SensorArrayDirection sensorDirection, double? forcedFixedHeight, double bendingRadius )
+      public static IReadOnlyList<XYZ> GetPassPointPositions( XYZ powerPosition, IReadOnlyCollection<FamilyInstance> sensorConnectors, XYZ lastSensorPosition, SensorArrayDirection sensorDirection, double? forcedFixedHeight, double bendingRadius )
       {
         var sensorPositions = sensorConnectors.ConvertAll( sensorConnector => sensorConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
 
@@ -391,8 +392,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           }
         }
       }
-    }
-
+    
     public static int GetRouteNameIndex( RouteCache routes, string? targetName )
     {
       string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
@@ -426,6 +426,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
       else {
         return sensorHeight + bendingRadius ;
+      }
+    }
+    
+    public class FailurePreprocessor : IFailuresPreprocessor
+    {
+      public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
+      {
+        var failureMessages = failuresAccessor.GetFailureMessages() ;
+        foreach ( var message in failureMessages ) {
+          if ( message.GetSeverity() == FailureSeverity.Warning )
+            failuresAccessor.DeleteWarning( message ) ;
+        }
+
+        return FailureProcessingResult.Continue ;
       }
     }
   }

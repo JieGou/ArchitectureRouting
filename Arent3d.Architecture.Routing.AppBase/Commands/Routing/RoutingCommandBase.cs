@@ -1,4 +1,5 @@
 using System ;
+using System.CodeDom.Compiler ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
@@ -48,7 +49,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // execute after route command
       AfterRouteGenerated( document, executionResult.Value, result ) ;
-
+      
+      // execute after route command
+      AfterRouteGenerated( document, executionResult.Value, result, executor ) ;
+      
       return ExecutionResult.Succeeded ;
     }
 
@@ -173,6 +177,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <returns>Routing from-to records.</returns>
     protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, TUIResult state ) ;
 
+    protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result, RoutingExecutor executor )
+    {
+    }
+    
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
     {
     }
