@@ -1,19 +1,13 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Text.RegularExpressions ;
 using System.Windows.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
-using Group = Autodesk.Revit.DB.Group ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -34,12 +28,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduitsModelData = csvStorable.ConduitsModelData ;
         var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
         var detailSymbolStorable = document.GetDetailSymbolStorable() ;
-        
+
         var pullBoxElements = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-          .Where( e => e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() && e is FamilyInstance ).ToList() ;
-        
+          .Where( e => e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() && e is FamilyInstance )
+          .Where( e => !CheckDefaultLabelPullBox( document, e ) ).ToList() ;
+
         foreach ( var pullBoxElement in pullBoxElements ) {
-          var pullBoxModel = PullBoxRouteManager.GetPullBoxWithAutoCalculatedDimension( document, pullBoxElement, csvStorable, detailSymbolStorable, conduitsModelData, hiroiMasterModels ) ;
+          var pullBoxModel = PullBoxRouteManager.GetPullBoxWithAutoCalculatedDimension( document, pullBoxElement,
+            csvStorable, detailSymbolStorable, conduitsModelData, hiroiMasterModels ) ;
 
           if ( pullBoxModel == null ) {
             MessageBox.Show( PullBoxNotFound ) ;
@@ -50,14 +46,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           // pullBoxElement.ParametersMap.get_Item( PullBoxDimensions.Depth )?.Set( depthPullBox ) ;
           // pullBoxElement.ParametersMap.get_Item( PullBoxDimensions.Width )?.Set( widthPullBox ) ;
           // pullBoxElement.ParametersMap.get_Item( PullBoxDimensions.Height )?.Set( heightPullBox ) ;
-          
+
           using var transaction = new Transaction( document ) ;
           transaction.Start( "Change pull box dimension" ) ;
-          changeResult = pullBoxElement.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )?.Set( pullBoxModel.Buzaicd ) ;
-          detailSymbolStorable.DetailSymbolModelData.RemoveAll( _ => true) ;
+          changeResult = pullBoxElement.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )
+            ?.Set( pullBoxModel.Buzaicd ) ;
+          detailSymbolStorable.DetailSymbolModelData.RemoveAll( _ => true ) ;
           transaction.Commit() ;
-          
-          string textLabel = PullBoxRouteManager.GetPullBoxTextBox( depthPullBox, widthPullBox, PullBoxRouteManager.DefaultPullBoxLabel ) ;
+
+          var textLabel = PullBoxRouteManager.GetPullBoxTextBox( depthPullBox, widthPullBox, PullBoxRouteManager.DefaultPullBoxLabel ) ;
           ChangeLabelOfPullBox( document, pullBoxElement, textLabel ) ;
 
           if ( ! ( changeResult ?? false ) )
@@ -68,6 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           MessageBox.Show( ChangePullBoxDimensionSuccesfully ) ;
           return Result.Succeeded ;
         }
+
         MessageBox.Show( ChangePullBoxDimensionFailed ) ;
         return Result.Failed ;
       }
@@ -84,19 +82,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       using var transaction2 = new Transaction( document ) ;
       transaction2.Start( "Change pull box label" ) ;
-      Dictionary<ElementId, List<ElementId>> pullBoxGroup = new Dictionary<ElementId, List<ElementId>>() ;
+      var pullBoxGroup = new Dictionary<ElementId, List<ElementId>>() ;
       ElectricalCommandUtil.UnGroupConnector( document, pullBoxElement, ref pullBoxGroup ) ;
       if ( pullBoxGroup.Count > 0 ) {
         var listTextNoteIds = pullBoxGroup[ pullBoxElement.Id ] ;
-        TextNote? textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => listTextNoteIds.Contains( t.Id ) ) ;
-        if ( textNote != null ) {
-          textNote.Text = textLabel ;
-        }
+        var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => listTextNoteIds.Contains( t.Id ) ) ;
+        if ( textNote != null ) textNote.Text = textLabel ;
       }
 
       transaction2.Commit() ;
       if ( pullBoxGroup.Count > 0 )
         ElectricalCommandUtil.GroupConnector( document, pullBoxGroup ) ;
+    }
+
+    private bool CheckDefaultLabelPullBox( Document document, Element pullBoxElement )
+    {
+      var parentGroup = document.GetElement( pullBoxElement.GroupId ) as Group ;
+      if ( parentGroup == null ) return false ;
+
+      var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
+      var listTextNoteIds = new List<ElementId>() ;
+      foreach ( var group in attachedGroup ) {
+        var ids = group.GetMemberIds() ;
+        listTextNoteIds.AddRange( ids ) ;
+      }
+
+      var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => listTextNoteIds.Contains( t.Id ) ) ;
+      var textLabel = textNote?.Text ?? string.Empty ;
+      return textLabel.Trim() == PullBoxRouteManager.DefaultPullBoxLabel ;
     }
 
     protected abstract AddInType GetAddInType() ;
