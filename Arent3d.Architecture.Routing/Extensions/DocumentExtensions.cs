@@ -1,8 +1,10 @@
-﻿using Arent3d.Architecture.Routing.Storable ;
+﻿using System ;
+using System.Linq ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.StorableConverter ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.Exceptions ;
+using InvalidOperationException = Autodesk.Revit.Exceptions.InvalidOperationException ;
 
 namespace Arent3d.Architecture.Routing.Extensions
 {
@@ -250,6 +252,18 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
     }
 
+    public static string GetDefaultConstructionItem( this Document document )
+    {
+      try {
+        var cnsSettingStorable = GetCnsSettingStorable( document ) ;
+        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault(x=>x.IsDefaultItemChecked) ;
+        return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : String.Empty ;
+      }
+      catch ( Exception ) {
+        return String.Empty;
+      }
+    }
+
     /// <summary>
     /// Get PressureGuidingTubeStorable data from DB
     /// </summary>
@@ -264,6 +278,36 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new PressureGuidingTubeStorable( document ) ;
       }
     }
+
+    public static WiringInformationChangedStorable GetWiringInformationChangedStorable( this Document document )
+    {
+      try {
+        return WiringInformationChangedStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WiringInformationChangedStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WiringInformationChangedStorable( document ) ;
+      }
+    }
     
+    public static WiringStorable GetWiringStorable( this Document document )
+    {
+      try {
+        return WiringStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WiringStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WiringStorable( document ) ;
+      }
+    }
+    
+    
+    public static ChangePlumbingInformationStorable GetChangePlumbingInformationStorable( this Document document )
+    {
+      try {
+        return ChangePlumbingInformationStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ChangePlumbingInformationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new ChangePlumbingInformationStorable( document ) ;
+      }
+    }
   }
 }

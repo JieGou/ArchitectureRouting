@@ -3,13 +3,27 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms" 
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:converter="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         Title="Symbol Information" Height="700" Width="1100"
         d:DataContext="{d:DesignInstance {x:Type local:DesignSymbolInformationViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
-        <CollectionViewSource x:Key="ClassificationList" Source="{Binding ConstructionClassificationTypeList}" />
+        <converter:StringColorConverter x:Key="StringColorConverter" />
+        <CollectionViewSource x:Key="ClassificationList" Source="{Binding ClassificationTypeList}" />
+        <CollectionViewSource x:Key="ConstructionClassificationList" Source="{Binding ConstructionClassificationTypeList}" />
+        <Style x:Key="BodyContentDataGridCentering" TargetType="{x:Type DataGridCell}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type DataGridCell}">
+                        <Grid Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -17,49 +31,68 @@
             <ColumnDefinition Width="90" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"></RowDefinition>
-            <RowDefinition Height="*"></RowDefinition>
-            <RowDefinition Height="170"></RowDefinition>
-            <RowDefinition Height="60"></RowDefinition>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="170" />
+            <RowDefinition Height="60" />
         </Grid.RowDefinitions>
-        
+
         <!--Filter-->
         <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10 0">
-            <Button Content="セットコード選択" Height="22" Width="100" Margin="5, 2 10, 2" />
-            <Button Content="スピードメニュー" Height="22" Width="100" Margin="20, 2" Command="{Binding ShowElectricalCategoryCommand}" /> 
-            <ComboBox IsEditable="True" IsTextSearchEnabled="False" ItemsSource="{Binding BuzaiCDListDisplay}"  VerticalContentAlignment="Center" PreviewKeyUp="OnComboboxBuzaiCDEnter"
+            <Button Content="セットコード選択" Height="22" Width="100" Margin="5, 2 10, 2" Command="{Binding ShowCeedCodeDialogCommand}" />
+            <Button Content="スピードメニュー" Height="22" Width="100" Margin="20, 2" Command="{Binding ShowElectricalCategoryCommand}" />
+            <ComboBox IsEditable="True" IsTextSearchEnabled="False" ItemsSource="{Binding BuzaiCDListDisplay}" VerticalContentAlignment="Center" PreviewKeyUp="OnComboboxBuzaiCDEnter"
                       SelectionChanged="OnComboSelectionChanged" Text="{Binding BuzaiCDSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="22" Width="150" Margin="10,2" />
         </StackPanel>
         <!--Data Grid Result-->
-        <DataGrid Grid.Row="1" Grid.Column="0" Margin="10 10" ItemsSource="{Binding CeedDetailList}"
-                  SelectedItem="{Binding CeedDetailSelected}" CanUserAddRows="False" AutoGenerateColumns="False">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="品名コード" Width="100" CanUserSort="False" IsReadOnly="True"
-                                    Binding="{Binding ProductCode, ValidatesOnExceptions=True}" />
-                <DataGridTextColumn Header="品名" Width="150" Binding="{Binding ProductName, ValidatesOnExceptions=True}"
-                                    CanUserSort="True" IsReadOnly="True" />
-                <DataGridTextColumn Header="規格" Width="150" Binding="{Binding Standard, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" />
-                <DataGridComboBoxColumn Header="施工区分" Width="150"
-                                        ItemsSource="{Binding Source={StaticResource ClassificationList}}"
-                                        SelectedItemBinding="{Binding Classification}" />
-                <DataGridTextColumn Header="単位" Width="100" Binding="{Binding Unit, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="False" />
-                <DataGridTextColumn Header="数量" Width="100" Binding="{Binding Quantity, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" />
-                <DataGridTextColumn Header="軌跡" Width="100" Binding="{Binding Trajectory, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" />
-            </DataGrid.Columns>
-            <DataGrid.RowStyle>
+        <DataGrid Grid.Row="1" Grid.Column="0" RowHeight="25" Margin="10 10" ItemsSource="{Binding CeedDetailList}"
+                  SelectionUnit="FullRow" SelectionMode="Single" SelectedItem="{Binding CeedDetailSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserAddRows="False" AutoGenerateColumns="False"
+                  CellStyle="{StaticResource BodyContentDataGridCentering}">
+            <DataGrid.Resources>
                 <Style TargetType="DataGridRow">
+                    <Style.Resources>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7" />
+                    </Style.Resources>
+                </Style>
+                <Style TargetType="DataGridCell">
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="BorderBrush" Value="Blue" />
-                            <Setter Property="BorderThickness" Value="1" />
+                            <Setter Property="BorderBrush" Value="#0078D7" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>
-            </DataGrid.RowStyle>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="セットコード" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding CeedCode, ValidatesOnExceptions=True}" />
+                <local:CustomComboBoxColumn Header="施工区分" Width="150"
+                                            ItemsSource="{Binding Source={StaticResource ConstructionClassificationList}}"
+                                            SelectedItemBinding="{Binding ConstructionClassification, UpdateSourceTrigger=PropertyChanged}" />
+                <local:CustomComboBoxColumn Header="区分" Width="100"
+                                            ItemsSource="{Binding Source={StaticResource ClassificationList}}"
+                                            SelectedItemBinding="{Binding Classification, UpdateSourceTrigger=PropertyChanged}">
+                    <local:CustomComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="IsEnabled" Value="{Binding Path=AllowChangeClassification}" />
+                        </Style>
+                    </local:CustomComboBoxColumn.CellStyle>
+                </local:CustomComboBoxColumn>
+                <DataGridTextColumn Header="品名コード" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding ProductCode, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="品名" Width="100" CanUserSort="True" IsReadOnly="True" Binding="{Binding ProductName, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="数量（手入力）" Width="100" CanUserSort="False" Binding="{Binding Quantity, ValidatesOnExceptions=True}">
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="IsEnabled" Value="{Binding Path=AllowInputQuantity}" />
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="数量（自動算出）" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding QuantityCalculate, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="Set数" Width="100" CanUserSort="False" Binding="{Binding QuantitySet, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="総数量" Width="100" CanUserSort="False" IsReadOnly="True" Binding="{Binding Total, ValidatesOnExceptions=True}" />
+                <DataGridTextColumn Header="備考" Width="*" CanUserSort="False" IsReadOnly="True" Binding="{Binding Description, ValidatesOnExceptions=True}" />
+            </DataGrid.Columns>
         </DataGrid>
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10">
             <Button Content="削除" Margin="0 10 " Command="{Binding DeleteCeedDetailCommand}" />
@@ -88,33 +121,41 @@
                         </Grid.RowDefinitions>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Label Content="種類" />
-                            <ComboBox Width="70" Height="22" VerticalContentAlignment="Center" Name="CbSymbolKind"
+                            <ComboBox Width="70" Height="22" VerticalContentAlignment="Center" Name="CbSymbolKind" SelectionChanged="OnSymbolKindChange"
                                       SelectedItem="{Binding SelectedSymbolKind}" />
                             <Label Content="高さ" />
-                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Height}" VerticalContentAlignment="Center" />
+                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Height}" PreviewTextInput="OnSymbolHeightInput" PreviewKeyUp="OnSymbolHightKeyUp" VerticalContentAlignment="Center" />
                             <Label Content="mm幅" />
-                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Percent}" VerticalContentAlignment="Center"/>
+                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Percent}" VerticalContentAlignment="Center" />
                             <Label Content="%  色" />
                             <ComboBox Width="70" Height="22" Name="CbSymbolColor" VerticalContentAlignment="Center"
                                       SelectedItem="{Binding SymbolInformation.Color}" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <CheckBox Content="文字付け" Margin="10 0 10 0" Width="100"
+                            <CheckBox Content="文字付け" Margin="10 0 10 0" Width="100" Click="OnCheckedDescriptionChanged"
                                       IsChecked="{Binding SymbolInformation.IsShowText}" VerticalContentAlignment="Center" />
                             <TextBox Width="325" Height="20" Text="{Binding SymbolInformation.Description}" VerticalContentAlignment="Center" />
                         </StackPanel>
                         <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center">
                             <Label Content="付加位置" />
-                            <ComboBox Width="70" Height="22" Name="CbSymbolCoordinate"
+                            <ComboBox Width="70" Height="22" Name="CbSymbolCoordinate" SelectionChanged="OnSymbolCoordinateChange"
                                       SelectedItem="{Binding SelectedSymbolCoordinate}" VerticalContentAlignment="Center" />
                             <Label Content="文字高さ" Margin="20 0 5 0" />
-                            <TextBox Width="100" Height="22" Text="{Binding SymbolInformation.CharacterHeight}" VerticalContentAlignment="Center" />
+                            <TextBox Width="100" Height="22" Text="{Binding SymbolInformation.CharacterHeight}" VerticalContentAlignment="Center" PreviewTextInput="OnSymbolHeightInput" PreviewKeyUp="OnSymbolTextHeightInput" />
+                            <Label Content="mm" Margin="0 0 0 0" />
                         </StackPanel>
                     </Grid>
                     <!--Preview-->
                     <StackPanel Grid.Column="1">
                         <Label Content="プレビュー" VerticalAlignment="Top" />
-                        <Image Height="120" Width="120" />
+                        <Canvas Width="120" Height="120">
+                            <Canvas x:Name="CanvasStar" Canvas.Left="0" Canvas.Top="0" >
+                                <Path x:Name="PathStar" StrokeThickness="3" Stroke="{Binding SymbolInformation.Color, Converter={StaticResource  StringColorConverter}}" />
+                            </Canvas>
+                            <Canvas x:Name="CanvasText" Canvas.Left="0" Canvas.Top="0" Width="120">
+                                <Label x:Name="LabelDescription" Width="120" Content="{Binding SymbolInformation.Description}" FontSize="10" FontWeight="Bold" Foreground="{Binding SymbolInformation.Color, Converter={StaticResource  StringColorConverter}}" />
+                            </Canvas>
+                        </Canvas>
                     </StackPanel>
                 </Grid>
             </GroupBox>

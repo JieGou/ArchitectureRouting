@@ -194,6 +194,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class ExportDWGCommandButton
           {
           }
+          
+          [Button( typeof( AddWiringInformationCommand ), OnlyInitialized = true )]
+          private static class AddWiringInformationCommandButton { }
+
+          [Button( typeof( ChangePlumbingInformationCommand ), OnlyInitialized = true )]
+          private static class ChangePlumbingInformationCommandButton
+          {
+            
+          }
         }
 
         [SplitButton( "arent3d.architecture.routing.drawing.rack", TitleKey = "Electrical.App.Panels.Routing.Drawing.Rack" )]
@@ -372,6 +381,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( PullBoxRoutingCommand ), OnlyInitialized = true )]
           private static class PullBoxRoutingCommandButton
+          {
+          }
+          
+          [Button( typeof( EraseSelectedPullBoxCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedPullBoxCommandButton
           {
           }
           

@@ -19,8 +19,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public abstract class ShowCeedModelsCommandBase : IExternalCommand
   {
     public const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
-    private const string ConditionTextNoteTypeName = "1.5mm_ConditionText" ;
-    private const string DefaultConstructionItem = "未設定" ;
+    private const string ConditionTextNoteTypeName = "1.5mm_ConditionText" ; 
+    
 
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
 
@@ -32,6 +32,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
+
+      var defaultConstructionItem = doc.GetDefaultConstructionItem() ;
       
       var viewModel = new CeedViewModel( commandData ) ;
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
@@ -85,13 +87,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
         
+        if ( !viewModel.OriginCeedModels.Any(cmd=>cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == viewModel.SelectedDeviceSymbol) ) {
+          TaskDialog.Show( "Arent", $"We can not find any ceedmodel \"{viewModel.SelectedDeviceSymbol}\" match with this room \"{condition}\"。" ) ;
+          return Result.Cancelled ;
+        }
+
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         element = GenerateConnector( uiDoc, point.X, point.Y, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
         var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
         if ( element is FamilyInstance familyInstance ) {
           element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
-          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 

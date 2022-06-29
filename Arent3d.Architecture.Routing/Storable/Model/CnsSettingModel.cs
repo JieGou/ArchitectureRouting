@@ -4,8 +4,20 @@ using System.Runtime.CompilerServices ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  public class CnsSettingModel : INotifyPropertyChanged, ICloneable
+  public class CnsSettingModel : NotifyPropertyChanged, ICloneable
   {
+    private bool _isDefaultItemChecked ;
+
+    public bool IsDefaultItemChecked
+    {
+      get => _isDefaultItemChecked ;
+      set
+      {
+        _isDefaultItemChecked = value ;
+        OnPropertyChanged() ;
+      }
+    }
+    
     private int _sequence ;
 
     public int Sequence
@@ -32,25 +44,19 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public string CategoryName { get ; set ; }
 
-    public CnsSettingModel( int sequence, string categoryName )
+    public CnsSettingModel( int sequence, string categoryName, bool isDefaultItemChecked = false )
     {
-      _sequence = sequence ;
+      Sequence = sequence ;
       CategoryName = categoryName ;
-      _position = sequence ;
+      Position = sequence ;
+      IsDefaultItemChecked = isDefaultItemChecked ;
     }
 
     public bool Equals( CnsSettingModel other )
     {
-      return other != null && Sequence == other.Sequence && CategoryName == other.CategoryName ;
+      return Sequence == other.Sequence && CategoryName == other.CategoryName ;
     }
-
-    public event PropertyChangedEventHandler? PropertyChanged ;
-
-    protected virtual void OnPropertyChanged( [CallerMemberName] string propertyName = "" )
-    {
-      PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
-    }
-
+ 
     public object Clone()
     {
       return this.MemberwiseClone() ;

@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
     }
     
-    private List<ComboboxItemType> _plumbingItems = new() ;
+    private List<ComboboxItemType> _plumbingItems = new List<ComboboxItemType>(){new ComboboxItemType("未設定","未設定")} ;
     public List<ComboboxItemType> PlumbingItemTypes
     {
       get => _plumbingItems ;
@@ -214,11 +214,11 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       bool? isReadOnlyParameters,
       bool? isReadOnlyWireSizeAndWireStrip,
       bool? isReadOnlyPlumbingSize,
-      List<ComboboxItemType> wireSizes,
-      List<ComboboxItemType> wireStrips,
-      List<ComboboxItemType> earthSizes,
-      List<ComboboxItemType> plumbingSizes,
-      List<ComboboxItemType> plumbingItemTypes )
+      List<ComboboxItemType>? wireSizes,
+      List<ComboboxItemType>? wireStrips,
+      List<ComboboxItemType>? earthSizes,
+      List<ComboboxItemType>? plumbingSizes,
+      List<ComboboxItemType>? plumbingItemTypes )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -254,11 +254,11 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsReadOnlyParameters = isReadOnlyParameters ?? false ;
       IsReadOnlyWireSizeAndWireStrip = isReadOnlyWireSizeAndWireStrip ?? false ;
       IsReadOnlyPlumbingSize = isReadOnlyPlumbingSize ?? false ;
-      WireSizes = wireSizes ;
-      WireStrips = wireStrips ;
-      EarthSizes = earthSizes ;
-      PlumbingSizes = plumbingSizes ;
-      PlumbingItemTypes = plumbingItemTypes ;
+      WireSizes = wireSizes??new() ;
+      WireStrips = wireStrips??new() ; ;
+      EarthSizes = earthSizes??new() ; ;
+      PlumbingSizes = plumbingSizes??new() ; ;
+      PlumbingItemTypes = plumbingItemTypes??new() ; ;
     }
     
     public DetailTableModel( string? detailSymbol, string? detailSymbolId)
