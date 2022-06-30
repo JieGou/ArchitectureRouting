@@ -1,14 +1,10 @@
 ﻿using System ;
-using System.Collections ;
 using System.Collections.Generic ;
 using System.Globalization ;
-using System.IO ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Controls ;
-using System.Windows.Documents ;
-using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -21,11 +17,11 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
-using MoreLinq ;
 using MessageBox = System.Windows.MessageBox ;
 using Expression = System.Linq.Expressions.Expression;
 using System.Linq.Expressions;
 using System.Windows.Media ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -35,7 +31,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     #region Variants
 
     private const string DefaultConstructionItem = "未設定" ;
-    public const string MaterialCodeParameter = "Material Code" ;
     private readonly Document _document ;
     private List<PickUpModel> _pickUpModels ;
     private PickUpStorable _pickUpStorable ;
@@ -344,7 +339,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           modelNumber = string.Empty ;
           element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
           specification2 = ceedCodeOfToConnector ?? string.Empty ;
-          PickUpModelBaseOnMaterialCode( dictMaterialCode!, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
+          PickUpModelBaseOnMaterialCode( dictMaterialCode, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
             classification, pickUpNumber, direction, ceedSetCode, deviceSymbol, condition ) ;
         }
         
@@ -374,7 +369,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         if ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) {
           var materialCodes = new Dictionary<string, string>() ;
-          var materialCodePullBox = element.ParametersMap.get_Item( MaterialCodeParameter ).AsString() ;
+          var materialCodePullBox = element.ParametersMap.get_Item( PullBoxRouteManager.MaterialCodeParameter ).AsString() ;
           
           if ( ! string.IsNullOrEmpty( materialCodePullBox ) ) {
             var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => h.Buzaicd == materialCodePullBox ) ;
@@ -1048,7 +1043,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       } ).Select( p =>
       {
         PickUpModel newModel = p.First() ;
-        newModel.Quantity = p.Sum( p => Convert.ToDouble( p.Quantity ) ).ToString() ;
+        newModel.Quantity = p.Sum( x => Convert.ToDouble( x.Quantity ) ).ToString() ;
         newModel.PickUpNumber = string.Empty ;
         return newModel ;
       } ).OrderBy( p => p.Floor ).ToList() ;

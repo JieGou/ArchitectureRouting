@@ -23,10 +23,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   {
     private static readonly double DefaultDistanceHeight = ( 200.0 ).MillimetersToRevitUnits() ;
     private const string DefaultConstructionItem = "未設定" ;
-    private static readonly double PullBoxWidth = ( 20.0 ).MillimetersToRevitUnits() * 4 ;
-    private static readonly double PullBoxLenght = ( 15.0 ).MillimetersToRevitUnits() * 4 ;
+    private static readonly double PullBoxWidth = ( 100.0 ).MillimetersToRevitUnits() ;
+    private static readonly double PullBoxLenght = ( 100.0 ).MillimetersToRevitUnits() ;
     private const string HinmeiPullBox = "プルボックス" ;
     public const string DefaultPullBoxLabel = "PB" ;
+    public const string MaterialCodeParameter = "Material Code" ;
+    public const string IsAutoCalculatePullBoxSizeParameter = "IsAutoCalculatePullBoxSize" ;
     private const string TaniPullBox = "個" ;
 
     public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, Route route, Element element, FamilyInstance pullBox, double heightConnector, 
@@ -324,18 +326,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( ! string.IsNullOrEmpty( ceedCodeOfConnector ) ) ceedCodes.Add( ceedCodeOfConnector! ) ;
     }
 
-    public static (int depth, int width, int height) CalculatePullBoxDimension(int[] plumbingSizes, bool isStraightDirection)
+    private static (int depth, int width, int height) CalculatePullBoxDimension(int[] plumbingSizes, bool isStraightDirection)
     {
-      int depth, width ;
-      int maxPlumbingSize = plumbingSizes.Max() ;
-      if ( isStraightDirection ) {
-        depth = plumbingSizes.Sum( x => x + 30 ) + ( 30 * 2 ) ;
-        width = maxPlumbingSize * 8 ;
+      int depth = 0, width = 0, height = 0 ;
+      if ( plumbingSizes.Any() ) {
+        int maxPlumbingSize = plumbingSizes.Max() ;
+        if ( isStraightDirection ) {
+          depth = plumbingSizes.Sum( x => x + 30 ) + ( 30 * 2 ) ;
+          width = maxPlumbingSize * 8 ;
+        }
+        else {
+          depth = width = plumbingSizes.Sum( x => x + 30 ) + 30 + 8 * maxPlumbingSize ;
+        }
+        height = GetHeightByPlumbingSize( maxPlumbingSize ) ;
       }
-      else {
-        depth = width = plumbingSizes.Sum( x => x + 30 ) + 30 + 8 * maxPlumbingSize ;
-      }
-      var height = GetHeightByPlumbingSize( maxPlumbingSize ) ;
       return ( depth, width, height ) ;
     }
     
@@ -366,8 +370,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       return null ;
     }
-    
-    public static List<Element> GetFromConnectorOfPullBox( Document document, Element element, bool isFrom = false)
+
+    private static List<Element> GetFromConnectorOfPullBox( Document document, Element element, bool isFrom = false)
     {
       List<Element> result = new() ;
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
@@ -578,7 +582,70 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static void CreateTextNoteAndGroupWithPullBox(Document doc, PullBoxInfoStorable pullBoxInfoStorable, XYZ point, Element pullBox, string text)
+    public static void ChangeDimensionOfPullBoxAndSetLabel( Document document, FamilyInstance pullBox,
+      CsvStorable? csvStorable, DetailSymbolStorable detailSymbolStorable, PullBoxInfoStorable pullBoxInfoStorable,
+      List<ConduitsModel>? conduitsModelData, List<HiroiMasterModel>? hiroiMasterModels, double scale, string textLabel,
+      XYZ? positionLabel, bool isAutoCalculatePullBoxSize, PullBoxModel? selectedPullBoxModel = null )
+    {
+      var defaultLabel = textLabel ;
+      var buzaiCd = string.Empty ;
+      int depth = 0, width = 0, height = 0 ;
+      var baseLengthOfLine = scale / 100d ;
+
+      //Case 1: Automatically calculate dimension of pull box
+      if ( isAutoCalculatePullBoxSize && csvStorable != null && conduitsModelData != null &&
+           hiroiMasterModels != null ) {
+        var pullBoxModel = GetPullBoxWithAutoCalculatedDimension( document, pullBox, csvStorable, detailSymbolStorable,
+          conduitsModelData, hiroiMasterModels ) ;
+        if ( pullBoxModel != null ) {
+          buzaiCd = pullBoxModel.Buzaicd ;
+          ( depth, width, height ) = ParseKikaku( pullBoxModel.Kikaku ) ;
+        }
+      }
+      //Case 2: Use dimension of selected pull box
+      else {
+        if ( selectedPullBoxModel != null ) {
+          buzaiCd = selectedPullBoxModel.Buzaicd ;
+          ( depth, width, height ) = ParseKikaku( selectedPullBoxModel.Kikaku ) ;
+        }
+      }
+      
+      textLabel = GetPullBoxTextBox( depth, height, defaultLabel ) ;
+
+      using Transaction t1 = new(document, "Update dimension of pull box") ;
+      t1.Start() ;
+      if (!string.IsNullOrEmpty( buzaiCd ))
+        pullBox.ParametersMap.get_Item( MaterialCodeParameter )?.Set( buzaiCd ) ;
+      pullBox.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
+      var depthParam = pullBox.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Depth ) ;
+      depthParam?.Set( depthParam.AsDouble() * baseLengthOfLine ) ;
+      var widthParam =  pullBox.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Width ) ;
+      widthParam?.Set( widthParam.AsDouble() * baseLengthOfLine ) ;
+      var heightParam = pullBox.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Height ) ;
+      heightParam?.Set( heightParam.AsDouble() * baseLengthOfLine ) ;
+      detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId ) ;
+      t1.Commit() ;
+
+      using Transaction t2 = new(document, "Create text note") ;
+      t2.Start() ;
+      if(positionLabel != null)
+        CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+      else 
+        ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBox, textLabel ) ;
+      t2.Commit() ;
+    }
+
+    private static void ChangeLabelOfPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement, string textLabel )
+    {
+      var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
+      var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel?.TextNoteUniqueId == t.UniqueId ) ;
+      if ( textNote != null ) {
+        using var transaction2 = new Transaction( document ) ;
+        textNote.Text = textLabel ;
+      }
+    }
+
+    private static void CreateTextNoteAndGroupWithPullBox(Document doc, PullBoxInfoStorable pullBoxInfoStorable, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
     {
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
@@ -591,13 +658,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       double newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
       textNote.ChangeTypeId( textNoteType.Id ) ;
-      
+
+      if ( isAutoCalculatePullBoxSize ) {
+        var color = new Color( 255, 0, 0 ) ;
+        ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
+      }
+
       pullBoxInfoStorable.PullBoxInfoModelData.Add( new PullBoxInfoModel( pullBox.UniqueId, textNote.UniqueId ) );
       pullBoxInfoStorable.Save() ;
     }
 
-    public static string GetPullBoxTextBox( int depth, int height, string text)
+    private static string GetPullBoxTextBox( int depth, int height, string text)
     {
+      if ( depth == 0 || height == 0 ) return text ;
       Dictionary<int, (int, int)> defaultDimensions = new() ;
       defaultDimensions.Add(1, (150, 100));
       defaultDimensions.Add(2, ( 200, 200 ));
@@ -782,7 +855,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return routeDirection ;
     }
 
-    public static bool IsStraightDirection( XYZ direction1, XYZ direction2 )
+    private static bool IsStraightDirection( XYZ direction1, XYZ direction2 )
     {
       return ( direction1.X is 1 && direction2.X is 1 )
              || ( direction1.X is -1 && direction2.X is -1 ) 
@@ -794,6 +867,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     private static ConduitInfo? GetConduitOfBoard( Document document, string routeName, Element board )
     {
+      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
       Element? conduit = null ;
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => e.GetRouteName() == routeName ).ToList() ;
       var boardLocation = ( board.Location as LocationPoint ) ! ;
@@ -826,14 +901,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var ( originX, originY, originZ) = origin ;
       var height = originZ - level!.Elevation ;
       if ( direction.X is 1 or -1 ) {
-        originX += distanceOrigin < distanceEnd ? direction.X * PullBoxWidth : - direction.X * PullBoxWidth ;
+        originX += distanceOrigin < distanceEnd ? direction.X * PullBoxWidth * baseLengthOfLine : - direction.X * PullBoxWidth * baseLengthOfLine ;
       }
       else if ( direction.Y is 1 or -1 ) {
-        originY += distanceOrigin < distanceEnd ? direction.Y * PullBoxLenght : - direction.Y * PullBoxLenght ;
+        originY += distanceOrigin < distanceEnd ? direction.Y * PullBoxLenght * baseLengthOfLine : - direction.Y * PullBoxLenght * baseLengthOfLine ;
       }
 
       origin = new XYZ( originX, originY, height ) ;
-      var conduitInfo = new ConduitInfo( conduit, origin, direction, level! ) ;
+      var conduitInfo = new ConduitInfo( conduit, origin, direction, level ) ;
       return conduitInfo ;
     }
 
@@ -876,8 +951,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       conduits = sortConduits ;
     }
-    
-    public static HiroiMasterModel? GetPullBoxWithAutoCalculatedDimension( Document document, Element pullBoxElement, CsvStorable csvStorable,
+
+    private static HiroiMasterModel? GetPullBoxWithAutoCalculatedDimension( Document document, Element pullBoxElement, CsvStorable csvStorable,
       DetailSymbolStorable detailSymbolStorable, List<ConduitsModel> conduitsModelData, List<HiroiMasterModel> hiroiMasterModels )
     {
       var conduitsFromPullBox = GetFromConnectorOfPullBox( document, pullBoxElement, true ) ;
@@ -886,7 +961,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var directionTo = GetDirectionOfConduit( pullBoxElement, conduitsToPullBox ) ;
 
       var isStraightDirection = directionFrom != null && directionTo != null &&
-                                IsStraightDirection( directionFrom!, directionTo! ) ;
+                                IsStraightDirection( directionFrom, directionTo ) ;
 
       conduitsFromPullBox = conduitsFromPullBox.Where( c => c is Conduit ).ToList() ;
       var groupConduits = conduitsFromPullBox.GroupBy( c => c.GetRepresentativeRouteName() ).Select( c => c.First() ) ;
@@ -905,6 +980,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         .Select( p => Convert.ToInt32( p.PlumbingSize ) ).ToArray() ;
       var (depth, width, height) = CalculatePullBoxDimension( plumbingSizes, isStraightDirection ) ;
 
+      if ( depth == 0 || width == 0 || height == 0 )
+        return null ;
       var minPullBoxModelDepth = hiroiMasterModels.Where( p => p.Tani == TaniPullBox && p.Hinmei.Contains( HinmeiPullBox ) )
         .Where( p =>
         {
@@ -912,19 +989,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           return d >= depth && w >= width && h >= height ;
         } ).Min( x =>
         {
-          var (d, w, _) = ParseKikaku( x.Kikaku ) ;
+          var (d, _, _) = ParseKikaku( x.Kikaku ) ;
           return d ;
         } ) ;
 
       var pullBoxModel = hiroiMasterModels.FirstOrDefault( p =>
       {
-        var (d, w, h) = ParseKikaku( p.Kikaku ) ;
+        var (d, _, h) = ParseKikaku( p.Kikaku ) ;
         return h == height && d == minPullBoxModelDepth ;
       } ) ;
       return pullBoxModel ;
     }
-    
-    public static (int depth, int width, int height) ParseKikaku( string kikaku )
+
+    private static (int depth, int width, int height) ParseKikaku( string kikaku )
     {
       var kikakuRegex = new Regex( "(?!\\d)*(?<kikaku>((\\d+(x)){2}(\\d+)))(?!\\d)*" ) ;
       var m = kikakuRegex.Match( kikaku ) ;
