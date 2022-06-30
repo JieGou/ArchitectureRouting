@@ -16,6 +16,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using MathLib ;
 using Arent3d.Architecture.Routing.AppBase.Extensions ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Utility ;
 using Line = Autodesk.Revit.DB.Line ;
 
@@ -90,7 +91,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
-      var fixedHeight = routeProperty.GetFromFixedHeight() ;
       var nameBase = GetNameBase( systemType, curveType ) ;
       var nextIndex = SelectionRangeRouteManager.GetRouteNameIndex( RouteCache.Get( DocumentKey.Get( document ) ), nameBase ) ;
 
@@ -118,37 +118,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return result ;
     }
-
-    private bool IsIntersect( XYZ powerFrom1, XYZ powerTo1, XYZ powerFrom2, XYZ powerTo2 )
-    {
-      var positionFrom1 = powerFrom1 ;  // A
-      var positionTo1 = powerTo1;       // B
-      var positionFrom2 = powerFrom2 ;  // C
-      var positionTo2 = powerTo2 ;      // D
-
-      if ( ThreePointOrientation( positionFrom2!, positionTo2!, positionFrom1! ) != ThreePointOrientation( positionFrom2!, positionTo2!, positionTo1! ) &&
-           ThreePointOrientation( positionFrom1!, positionTo1!, positionFrom2! ) != ThreePointOrientation( positionFrom1!, positionTo1!, positionTo2! ) ) return true ;
-      return false ;
-    }
-
-    private string ThreePointOrientation( XYZ a, XYZ b, XYZ c )
-    {
-      double check = ( b.Y - a.Y ) * ( c.X - b.X ) - ( c.Y - b.Y ) * ( b.X - a.X ) ;
-      return check > 0 ? "clockwise" : "counterclockwise" ;
-    }
-
+    
     private Dictionary<FamilyInstance, List<FamilyInstance>> GetListDictionaryFromToOfBoard( IReadOnlyCollection<FamilyInstance> powerConnectors, Document document )
     {
       var registrationOfBoardDataModels = document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
       var listDictionaryBoard = registrationOfBoardDataModels.GroupBy( x => x.AutoControlPanel ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       var result = new Dictionary<FamilyInstance, List<FamilyInstance>>() ;
 
-      foreach ( var element in powerConnectors ) {
-        element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfFromConnector ) ;
+      foreach ( var powerConnector in powerConnectors ) {
+        powerConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfFromConnector ) ;
         if ( ! string.IsNullOrEmpty( ceedCodeOfFromConnector ) && listDictionaryBoard.TryGetValue( ceedCodeOfFromConnector!, out var dictionaryBoard ) ) {
           var toConnectors = powerConnectors.Where( x => x.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) && dictionaryBoard.Any( b => b.SignalDestination == ceedCodeOfToConnector ) ).ToList() ;
-          if ( toConnectors.Any() )
-            result.Add( element, toConnectors ) ;
+          if ( toConnectors.Any() ) result.Add( powerConnector, toConnectors ) ;
         }
       }
 
@@ -257,35 +238,44 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return false ;
     }
     
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, SelectState selectState, RoutingExecutor executor )
+    private static void SetupFailureHandlingOptions( Transaction transaction, RoutingExecutor executor )
     {
-      var ( powerConnectors, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec, isPowersBoard) = selectState ;
-      if ( isPowersBoard ) {
+      if ( executor.CreateFailuresPreprocessor() is not { } failuresPreprocessor ) return ;
+      
+      transaction.SetFailureHandlingOptions( ModifyFailureHandlingOptions( transaction.GetFailureHandlingOptions(), failuresPreprocessor ) ) ;
+    }
+
+    private static FailureHandlingOptions ModifyFailureHandlingOptions( FailureHandlingOptions handlingOptions, IFailuresPreprocessor failuresPreprocessor )
+    {
+      return handlingOptions.SetFailuresPreprocessor( failuresPreprocessor ) ;
+    }
+    
+    protected override OperationResult<IReadOnlyCollection<Route>> ChangePriorityConduit( Document document, IReadOnlyCollection<Route> executeResultValue, SelectState selectState, RoutingExecutor executor )
+    {
+      var ( powerConnectors, _, _, routeProperty, _, pipeSpec, _) = selectState ;
+      return document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
+      {
+        using var _ = FromToTreeManager.SuppressUpdate() ;
+
+        SetupFailureHandlingOptions( transaction, executor ) ;
+        
         var listRoute = executeResultValue.ToList() ;
         var listGroupRoute = new List<List<Route>>() ;
 
         foreach ( var route in listRoute ) {
-          //ar routesRelated = new List<Route>() ;
-          if ( route.RouteSegments.First().FromEndPoint is ConnectorEndPoint ) {
-            var routesRelated = route.GetAllRelatedBranches().ToList() ;
-            listGroupRoute.Add( routesRelated);
+          if ( route.RouteSegments.First().FromEndPoint is not ConnectorEndPoint ) continue ;
+          var routesRelated = route.GetAllRelatedBranches().ToList() ;
+          listGroupRoute.Add( routesRelated ) ;
+        }
+
+        for ( var i = 0 ; i < listGroupRoute.Count ; i++ ) {
+          for ( var j = i + 1 ; j < listGroupRoute.Count ; j++ ) {
+            if ( ! IsNeedSwap( document, listGroupRoute[ i ], listGroupRoute[ j ] ) ) continue ;
+            listGroupRoute.Swap( i, j ) ;
           }
         }
-        
-        for ( int i = 0 ; i < listGroupRoute.Count() ; i++ ) {
-          for ( int j = i + 1 ; j < listGroupRoute.Count() ; j++ ) {
-            if ( IsSwap( document, listGroupRoute[ i ], listGroupRoute[ j ] ) ) {
-              listGroupRoute.Swap( i, j );
-            }
-          }
-        }
-        
+
         using var progress = ShowProgressBar( "Routing...", false ) ;
-        using Transaction transaction = new( document ) ;
-        transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
-        var failureOptions = transaction.GetFailureHandlingOptions() ;
-        failureOptions.SetFailuresPreprocessor( new SelectionRangeRouteManager.FailurePreprocessor() ) ;
-        transaction.SetFailureHandlingOptions( failureOptions ) ;
         try {
           var heightDifference = 10.0.MillimetersToRevitUnits() ; // 各配線の高さの差
           var segments = new List<(string RouteName, RouteSegment Segment)>() ;
@@ -293,51 +283,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var fixedHeight = routeProperty.GetFromFixedHeight() ;
           var diameter = routeProperty.GetDiameter() ;
           var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
-          
+
           foreach ( var routes in listGroupRoute ) {
             var keyPowerConnector = routes.First().RouteSegments.First().FromEndPoint.Key.GetElementUniqueId() ;
             var powerConnector = document.GetElementById<FamilyInstance>( keyPowerConnector ) ;
-            var powersToConnector = listDictionaryFromToOfBoard.FirstOrDefault( x => x.Key.Id == powerConnector?.Id ).Value ;
-            var powersToDirection = SelectionRangeRouteManager.SortSensorConnectors( powerConnector!.GetTopConnectorOfConnectorFamily().Origin, ref powersToConnector ) ;
+            if ( powerConnector == null ) continue;
+            var powerToConnectors = listDictionaryFromToOfBoard.SingleOrDefault( x => x.Key.Id == powerConnector.Id ).Value ;
+            var powerToDirections = SelectionRangeRouteManager.SortSensorConnectors( powerConnector.GetTopConnectorOfConnectorFamily().Origin, ref powerToConnectors ) ;
 
-            var levelId = powerConnector!.LevelId ;
+            var levelId = powerConnector.LevelId ;
             XYZ? lastSensorPosition = null ;
             var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, fixedHeight, levelId ) ;
-            var sensorConnectorsWithoutLast = 
-              powersToConnector.Count > 1 && lastSensorPosition == null
-                ? powersToConnector.Take( powersToConnector.Count - 1 ).ToReadOnlyCollection( powersToConnector.Count - 1 ) 
-                : powersToConnector ;
-            lastSensorPosition ??= powersToConnector.Last().GetTopConnectorOfConnectorFamily().Origin ;
-            var passPointPositions = SelectionRangeRouteManager.GetPassPointPositions( powerConnector!.GetTopConnectorOfConnectorFamily().Origin, sensorConnectorsWithoutLast, lastSensorPosition, powersToDirection, forcedFixedHeight, bendingRadius ) ;
-            
+            var sensorConnectorsWithoutLast = powerToConnectors.Count > 1
+              ? powerToConnectors.Take( powerToConnectors.Count - 1 ).ToReadOnlyCollection( powerToConnectors.Count - 1 )
+              : powerToConnectors ;
+            lastSensorPosition ??= powerToConnectors.Last().GetTopConnectorOfConnectorFamily().Origin ;
+            var passPointPositions = SelectionRangeRouteManager.GetPassPointPositions( powerConnector.GetTopConnectorOfConnectorFamily().Origin, sensorConnectorsWithoutLast,
+              lastSensorPosition, powerToDirections, forcedFixedHeight, bendingRadius ) ;
+
             foreach ( var route in routes ) {
               var passPointEndPoints = route.SubRoutes.SelectMany( x => x.FromEndPoints.OfType<PassPointEndPoint>() ).ToList() ;
               if ( passPointEndPoints.Any() ) {
                 foreach ( var passPointEndPoint in passPointEndPoints ) {
-                  if ( passPointEndPoint != null ) {
-                    var passPointPosition = passPointEndPoint.GetPassPoint()?.Location as LocationPoint ;
-                    passPointPosition!.Point = ( new XYZ( passPointEndPoint!.RoutingStartPosition.X, passPointEndPoint!.RoutingStartPosition.Y, passPointPositions.First().Z )) ;
-                    
-                  }
+                  var passPointPosition = passPointEndPoint.GetPassPoint()?.Location as LocationPoint ;
+                  if(passPointPosition == null) continue;
+                  passPointPosition.Point = ( new XYZ( passPointEndPoint.RoutingStartPosition.X, passPointEndPoint.RoutingStartPosition.Y, passPointPositions.First().Z ) ) ;
                 }
               }
-              
+
               foreach ( var routeSegment in route.RouteSegments ) {
-                var segment = new RouteSegment(routeSegment.SystemClassificationInfo, routeSegment.SystemType, routeSegment.CurveType, routeSegment.FromEndPoint, routeSegment.ToEndPoint, routeSegment.PreferredNominalDiameter, routeSegment.IsRoutingOnPipeSpace, fixedHeight, fixedHeight, routeSegment.AvoidType, routeSegment.ShaftElementUniqueId )  ;
-                segments.Add( ( route.RouteName, segment ) );
+                var segment = new RouteSegment( routeSegment.SystemClassificationInfo, routeSegment.SystemType, routeSegment.CurveType, routeSegment.FromEndPoint,
+                  routeSegment.ToEndPoint, routeSegment.PreferredNominalDiameter, routeSegment.IsRoutingOnPipeSpace, fixedHeight, fixedHeight, routeSegment.AvoidType,
+                  routeSegment.ShaftElementUniqueId ) ;
+                segments.Add( ( route.RouteName, segment ) ) ;
               }
             }
+
             fixedHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, fixedHeight?.Height + heightDifference ) ;
           }
-          var result = executor.Run( segments, progress ) ;
+          
+          return executor.Run( segments, progress ) ;
         }
-        catch (Autodesk.Revit.Exceptions.OperationCanceledException) {
+        catch ( OperationCanceledException ) {
+          return OperationResult<IReadOnlyCollection<Route>>.Cancelled ;
         }
-        transaction.Commit( failureOptions ) ;
-      }
+      } ) ;
     }
     
-    private bool IsSwap(Document document, List<Route> groupRoutes, List<Route> nextGroupRoutes )
+    private bool IsNeedSwap(Document document, List<Route> groupRoutes, List<Route> nextGroupRoutes )
     {
       var listConduit = new List<Element>() ;
       var listConduitNext = new List<Element>() ;
@@ -350,27 +343,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduitsOfRoutes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
         listConduitNext.AddRange( conduitsOfRoutes ) ;
       }
-
-      listConduit = listConduit.Distinct().ToList() ;
-      listConduitNext = listConduitNext.Distinct().ToList() ;
-
+      
       foreach ( var conduit in listConduit ) {
-        var fromConduitLocation = ( conduit?.Location as LocationCurve ) ! ;
-        var fromConduitLine = ( fromConduitLocation.Curve as Line ) ! ;
+        var fromConduitLocation = ( conduit.Location as LocationCurve )  ;
+        if( fromConduitLocation == null ) continue;
+        var fromConduitLine = ( fromConduitLocation.Curve as Line )  ;
+        if( fromConduitLine == null ) continue;
         var fromConduitPoint = fromConduitLine.GetEndPoint( 0 ) ;
         var toConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
         var direction = fromConduitLine.Direction ;
         foreach ( var conduitNext in listConduitNext ) {
-          var fromConduitLocationNext = ( conduitNext?.Location as LocationCurve ) ! ;
-          var fromConduitLineNext = ( fromConduitLocationNext.Curve as Line ) ! ;
+          var fromConduitLocationNext = ( conduitNext.Location as LocationCurve )  ;
+          if( fromConduitLocationNext == null ) continue;
+          var fromConduitLineNext = ( fromConduitLocationNext.Curve as Line )  ;
+          if( fromConduitLineNext == null ) continue;
           var fromConduitPointNext = fromConduitLineNext.GetEndPoint( 0 ) ;
           var toConduitPointNext = fromConduitLineNext.GetEndPoint( 1 ) ;
           var directionNext = fromConduitLineNext.Direction ;
           
-          var condition1 = direction.Y is 1 or -1 ;
-          var condition2 = directionNext.X is 1 or -1 ;
-          var condition3 = IsIntersect( fromConduitPoint, toConduitPoint, fromConduitPointNext, toConduitPointNext ) ;
-          if ( condition1 && condition2 && condition3 ) {
+          var isDirectionY = direction.Y is 1 or -1 ;
+          var isDirectionNextX = directionNext.X is 1 or -1 ;
+          var isIntersect = XyzUtil.IsIntersect( fromConduitPoint, toConduitPoint, fromConduitPointNext, toConduitPointNext ) ;
+          if ( isDirectionY && isDirectionNextX && isIntersect ) {
             return true ;
           }
         }

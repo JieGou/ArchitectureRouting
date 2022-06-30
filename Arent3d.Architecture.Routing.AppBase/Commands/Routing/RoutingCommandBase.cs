@@ -43,16 +43,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var executionResult = GenerateRoutes( document, executor, result ) ;
       if ( Result.Cancelled == executionResult.Result ) return ExecutionResult.Cancelled ;
       if ( Result.Failed == executionResult.Result ) return ExecutionResult.Failed ;
-
+      
+      if(result is SelectionRangeRouteCommandBase.SelectState uiResult &&  uiResult.IsPowersBoard) {
+        var executionResultChangePriorityConduit = ChangePriorityConduit( document, executionResult.Value, result, executor ) ;
+        if ( Result.Cancelled == executionResultChangePriorityConduit.Result ) return ExecutionResult.Cancelled ;
+        if ( Result.Failed == executionResultChangePriorityConduit.Result ) return ExecutionResult.Failed ;
+        executionResult = executionResultChangePriorityConduit ;
+      }
+      
       // Avoid Revit bugs about reducer insertion.
       FixReducers( document, executor, executionResult.Value ) ;
-
+      
       // execute after route command
       AfterRouteGenerated( document, executionResult.Value, result ) ;
-      
-      // execute after route command
-      AfterRouteGenerated( document, executionResult.Value, result, executor ) ;
-      
+
       return ExecutionResult.Succeeded ;
     }
 
@@ -177,8 +181,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <returns>Routing from-to records.</returns>
     protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, TUIResult state ) ;
 
-    protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result, RoutingExecutor executor )
+    protected virtual OperationResult<IReadOnlyCollection<Route>> ChangePriorityConduit( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result, RoutingExecutor executor )
     {
+      return OperationResult<IReadOnlyCollection<Route>>.Cancelled ;
     }
     
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
