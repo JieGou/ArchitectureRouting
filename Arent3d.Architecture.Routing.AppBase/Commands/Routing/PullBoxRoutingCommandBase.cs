@@ -78,8 +78,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var systemType = route.GetMEPSystemType() ;
       var curveType = route.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, fromDirection, toDirection ) ;
-      
+      var parentIndex = 1 ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, fromDirection, toDirection ) ;
+
       return result ;
     }
 

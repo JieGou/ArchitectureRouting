@@ -79,7 +79,7 @@ namespace Arent3d.Architecture.Routing
       EraseRoutes( _document, RoutingTargetGroups.SelectMany( group => group ).SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ;
     }
 
-    public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints )
+    public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints, bool isEraseAllRoutes = false, bool isEraseSelectedRoutes = false )
     {
       var hashSet = ( routeNames as ISet<string> ) ?? routeNames.ToHashSet() ;
 
@@ -89,6 +89,8 @@ namespace Arent3d.Architecture.Routing
         list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
       }
 
+      ErasePullBoxes( document, hashSet, list.ToList(), isEraseAllRoutes, isEraseSelectedRoutes ) ;
+        
       List<string> elementIds = list.Select( elm => elm.UniqueId ).Distinct().ToList() ;
       RemoveRouteDetailSymbol( document, elementIds ) ;
 
@@ -98,6 +100,69 @@ namespace Arent3d.Architecture.Routing
         // erase routes, too.
         RouteCache.Get( DocumentKey.Get( document ) ).Drop( hashSet ) ;
       }
+    }
+
+    private static void ErasePullBoxes( Document document, ISet<string> routeNames, List<Element> conduits, bool isEraseAllRoutes, bool isEraseSelectedRoutes )
+    {
+      List<string> pullBoxIds = new() ;
+      var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
+      if ( isEraseAllRoutes ) {
+        pullBoxIds.AddRange( pullBoxes.Select( p => p.UniqueId ) ) ;
+      }
+      else if ( isEraseSelectedRoutes ) {
+        pullBoxes = GetPullBoxes( pullBoxes, conduits ) ;
+        if ( pullBoxes.Any() ) {
+          var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => e.GetRouteName() is { } routeName && ! routeNames.Contains( routeName ) ).ToList() ;
+          pullBoxes = GetPullBoxIsNotConnected( pullBoxes, allConduits ).Distinct().ToList() ;
+        }
+
+        if( pullBoxes.Any() ) pullBoxIds.AddRange( pullBoxes.Select( p => p.UniqueId ) ) ;
+      }
+
+      if ( ! pullBoxIds.Any() ) return ;
+      {
+        var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
+        var textNoteIds = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
+        if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
+        document.Delete( pullBoxIds ) ;
+      }
+    }
+    
+    private static List<Element> GetPullBoxIsNotConnected( List<Element> pullBoxes, List<Element> allConduits )
+    {
+      var pullBoxIsNotConnected = new List<Element>() ;
+      foreach ( var pullBox in pullBoxes ) {
+        if ( GetPullBoxesOfRoute( new List<Element>{ pullBox }, allConduits, true ) == null && GetPullBoxesOfRoute( new List<Element>{ pullBox }, allConduits, false ) == null )  
+          pullBoxIsNotConnected.Add( pullBox ) ;
+      }
+      
+      return pullBoxIsNotConnected ;
+    }
+
+    private static List<Element> GetPullBoxes( List<Element> allPullBox, List<Element> conduitsOfRoute )
+    {
+      List<Element> pullBoxes = new() ;
+      var pullBox = GetPullBoxesOfRoute( allPullBox, conduitsOfRoute, true ) ;
+      if ( pullBox != null ) pullBoxes.Add( pullBox ) ;
+      pullBox = GetPullBoxesOfRoute( allPullBox, conduitsOfRoute, false ) ;
+      if ( pullBox != null ) pullBoxes.Add( pullBox ) ;
+      return pullBoxes ;
+    }
+    
+    private static Element? GetPullBoxesOfRoute( List<Element> allPullBox, List<Element> conduitsOfRoute, bool isFrom )
+    {
+      foreach ( var conduit in conduitsOfRoute ) {
+        var endPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
+        if ( ! endPoint.Any() ) continue ;
+        var endPointKey = endPoint.First().Key ;
+        var elementId = endPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( elementId ) ) continue ;
+        var pullBox = allPullBox.FirstOrDefault( c => c.UniqueId == elementId ) ;
+        if ( pullBox == null || pullBox.IsTerminatePoint() || pullBox.IsPassPoint() ) continue ;
+        return pullBox ;
+      }
+
+      return null ;
     }
 
     protected override void OnGenerationStarted()
