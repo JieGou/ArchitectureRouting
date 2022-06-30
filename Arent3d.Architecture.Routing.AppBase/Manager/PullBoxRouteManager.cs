@@ -557,7 +557,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions )
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ)> pullBoxElements, ref int parentIndex )
     {
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
       var grade = defaultSettingStorable.GradeSettingData.GradeMode ;
@@ -590,7 +590,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           var fromDirection = pullBoxInfo.FromDirection ;
           var toDirection = pullBoxInfo.ToDirection ;
           var height = originZ - pullBoxInfo.Level.Elevation ;
-          result = CreatePullBoxAndGetSegments( document, route, conduitFittingBottomShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, fromDirection, toDirection, fromHeight ).ToList() ;
+          result = CreatePullBoxAndGetSegments( document, route, conduitFittingBottomShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out FamilyInstance? pullBoxElement, ref parentIndex, fromDirection, toDirection, fromHeight ).ToList() ;
+          if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxInfo.Position) ) ;          
           pullBoxPositions.Add( pullBoxInfo.Position ) ;
           return result ;
         }
@@ -1015,7 +1016,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       } ) ;
       return pullBoxModel ;
     }
-    
+
     public static (int depth, int width, int height) ParseKikaku( string kikaku )
     {
       var kikakuRegex = new Regex( "(?!\\d)*(?<kikaku>((\\d+(x)){2}(\\d+)))(?!\\d)*" ) ;

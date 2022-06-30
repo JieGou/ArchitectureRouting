@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var parentIndex = 1 ;
       while ( true ) {
         var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
-        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, executeResultValue, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
