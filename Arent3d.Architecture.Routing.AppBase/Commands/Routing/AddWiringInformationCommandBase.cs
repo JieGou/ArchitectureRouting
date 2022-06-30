@@ -1,7 +1,9 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
+using System.IO ;
 using System.Linq ;
+using System.Runtime.Serialization.Formatters.Binary ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -15,6 +17,7 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
+using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -81,8 +84,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           PickInfo = pickInfo
         } ;
         var dialog = new DetailTableDialog(  viewModel ) ;
-        dialog.ShowDialog() ;
+        var result = dialog.ShowDialog() ;
         
+        while ( result is false && viewModel.IsAddReference ) {
+          WiringDetailSymbolFilter detailSymbolFilter = new() ;
+          List<string> detailSymbolIds = new() ;
+          var pickedDetailSymbols = uiDocument.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
+          foreach ( var pickedDetailSymbol in pickedDetailSymbols ) {
+            var detailSymbol = document.GetAllElements<TextNote>().ToList().FirstOrDefault( x => x.Id == pickedDetailSymbol.ElementId ) ;
+            if ( detailSymbol != null && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
+              detailSymbolIds.Add( detailSymbol.UniqueId ) ;
+            }
+          }
+        
+          var ( referenceDetailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, new List<Element>(), detailSymbolIds, true ) ;
+          foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
+            viewModel.ReferenceDetailTableModelsOrigin.Add( referenceDetailTableModelRow ) ;
+          }
+          
+          dialog = new DetailTableDialog( viewModel ) ;
+          dialog.ShowDialog() ;
+        }
+
         return Result.Succeeded ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -93,7 +116,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return Result.Failed ;
       }
     }
-    
+
     private bool IsExistSymBol(IEnumerable<DetailTableModel> detailTableModels)
     {
       return detailTableModels.Any( x => x.DetailSymbol != SpecialSymbol ) ;
@@ -101,6 +124,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable )
     {
+      if(detailSymbolStorable.DetailSymbolModelData.Any(x => x.ConduitId.Equals(pickConduit.UniqueId)))
+        return;
+      
       var allConduit = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
       var representativeRouteName = ( (Conduit) pickConduit ).GetRepresentativeRouteName() ;
       var routeNameSamePosition = GetRouteNameSamePosition( document, representativeRouteName!, pickConduit ) ;
@@ -130,9 +156,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var plumbingType = GetPlumpingType( hiroiSetMasterModel, csvStorable.ConduitsModelData ) ;
         
         foreach ( var conduitOfRoute in conduitOfRoutes ) {
-          var detailSymbolModel = new DetailSymbolModel( toConnector.UniqueId, SpecialSymbol, conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, plumbingType ) ;
-          if(null == detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.DetailSymbolId == detailSymbolModel.DetailSymbolId && x.ConduitId == detailSymbolModel.ConduitId )) 
-            detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel );
+          var detailSymbolModel = new DetailSymbolModel( string.Empty, SpecialSymbol, conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, plumbingType ) ;
+          detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel );
         } 
       } 
     }
@@ -187,6 +212,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return routeNames ;
+    }
+  }
+  public class WiringDetailSymbolFilter : ISelectionFilter
+  {
+    private const string DetailSymbolType = "DetailSymbol-TNT" ;
+    public bool AllowElement( Element element )
+    {
+      if ( element.GetBuiltInCategory() != BuiltInCategory.OST_TextNotes )
+        return false ;
+
+      if ( element.GroupId != ElementId.InvalidElementId )
+        return false ;
+
+      if ( ! element.Name.StartsWith( DetailSymbolType ) )
+        return false ;
+
+      return ( (TextNote) element ).Text.Trim() == AddWiringInformationCommandBase.SpecialSymbol ;
+    }
+
+    public bool AllowReference( Reference r, XYZ p )
+    {
+      return false ;
     }
   }
 }

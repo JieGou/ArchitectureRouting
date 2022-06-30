@@ -156,7 +156,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    public static ( ObservableCollection<DetailTableModel>, bool, bool ) CreateDetailTable( Document doc, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, List<Element> conduits, IEnumerable<string> elementIds, bool isReferenceDetailTableModels, bool isFromCreateDetailTable = false )
+    public static ( ObservableCollection<DetailTableModel>, bool, bool ) CreateDetailTable( Document doc, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, List<Element> conduits, IEnumerable<string> elementUniqueIds, bool isReferenceDetailTableModels, bool isFromCreateDetailTable = false )
     {
       var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
       var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
@@ -181,11 +181,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var allDetailSymbolIdsOnDetailTableModels = detailTableModelsData.Select( d => d.DetailSymbolId ).Distinct().ToHashSet() ;
       var detailSymbolIdsOnDetailTableModels = detailSymbolModels
-          .Where( x => elementIds.Contains( isReferenceDetailTableModels ? x.DetailSymbolId : x.ConduitId ) && allDetailSymbolIdsOnDetailTableModels.Contains( x.DetailSymbolId ) )
+          .Where( x => elementUniqueIds.Contains( isReferenceDetailTableModels ? x.DetailSymbolId : x.ConduitId ) && allDetailSymbolIdsOnDetailTableModels.Contains( x.DetailSymbolId ) )
           .Select( d => d.DetailSymbolId ).Distinct().ToList() ;
       var isMixConstructionItems = detailSymbolIdsOnDetailTableModels.Any() && CheckMixConstructionItems( detailTableModelsData, detailSymbolIdsOnDetailTableModels ) ;
       var detailSymbolModelsByDetailSymbolId = detailSymbolModels
-            .Where( x => elementIds.Contains( isReferenceDetailTableModels ? x.DetailSymbolId : x.ConduitId ) && ! allDetailSymbolIdsOnDetailTableModels.Contains( x.DetailSymbolId ) )
+            .Where( x => elementUniqueIds.Contains( isReferenceDetailTableModels ? x.DetailSymbolId : x.ConduitId ) && ! allDetailSymbolIdsOnDetailTableModels.Contains( x.DetailSymbolId ) )
             .OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId )
             .ThenByDescending( x => x.IsParentSymbol )
             .GroupBy( x => x.DetailSymbolId, ( key, p ) => new { DetailSymbolId = key, DetailSymbolModels = p.ToList() } ) ;
