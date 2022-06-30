@@ -104,10 +104,10 @@ namespace Arent3d.Architecture.Routing
 
     private static void ErasePullBoxes( Document document, ISet<string> routeNames, List<Element> conduits, bool isEraseAllRoutes, bool isEraseSelectedRoutes )
     {
-      List<ElementId> pullBoxIds = new() ;
+      List<string> pullBoxIds = new() ;
       var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
       if ( isEraseAllRoutes ) {
-        pullBoxIds.AddRange( pullBoxes.Select( p => p.Id ) ) ;
+        pullBoxIds.AddRange( pullBoxes.Select( p => p.UniqueId ) ) ;
       }
       else if ( isEraseSelectedRoutes ) {
         pullBoxes = GetPullBoxes( pullBoxes, conduits ) ;
@@ -116,25 +116,16 @@ namespace Arent3d.Architecture.Routing
           pullBoxes = GetPullBoxIsNotConnected( pullBoxes, allConduits ).Distinct().ToList() ;
         }
 
-        if( pullBoxes.Any() ) pullBoxIds.AddRange( pullBoxes.Select( p => p.Id ) ) ;
+        if( pullBoxes.Any() ) pullBoxIds.AddRange( pullBoxes.Select( p => p.UniqueId ) ) ;
       }
-      
-      foreach ( var pullBox in pullBoxes ) {
-        var parentGroup = document.GetElement( pullBox.GroupId ) as Group ;
-        if ( parentGroup == null ) continue ;
-        // ungroup before set property
-        var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-        // ungroup textNote before ungroup connector
-        foreach ( var group in attachedGroup ) {
-          var ids = group.GetMemberIds() ;
-          pullBoxIds.AddRange( ids ) ;
-          group.UngroupMembers() ;
-        }
-          
-        parentGroup.UngroupMembers() ;
+
+      if ( ! pullBoxIds.Any() ) return ;
+      {
+        var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
+        var textNoteIds = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
+        if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
+        document.Delete( pullBoxIds ) ;
       }
-        
-      if ( pullBoxIds.Any() ) document.Delete( pullBoxIds ) ;
     }
     
     private static List<Element> GetPullBoxIsNotConnected( List<Element> pullBoxes, List<Element> allConduits )
