@@ -2,6 +2,7 @@
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -124,6 +125,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else {
           result.Add( ( routeName, segment ) ) ;
         }
+      }
+
+      //Delete label of pull box
+      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
+      var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == elementPullBox.UniqueId ) ;
+      if ( pullBoxInfoModel != null ) {
+        var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel.TextNoteUniqueId == t.UniqueId ) ;
+        if( textNote != null )
+          document.Delete( textNote.Id ) ;
+        pullBoxInfoStorable.PullBoxInfoModelData.Remove( pullBoxInfoModel ) ;
       }
 
       //Delete pull box

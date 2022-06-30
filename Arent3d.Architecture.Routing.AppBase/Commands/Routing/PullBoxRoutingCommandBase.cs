@@ -6,13 +6,15 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PullBoxRoutingCommandBase : RoutingCommandBase<PullBoxRoutingCommandBase.PickState>
   {
-    public record PickState( PointOnRoutePicker.PickInfo PickInfo, FamilyInstance PullBox, double HeightConnector, double HeightWire, XYZ RouteDirection, bool IsCreatePullBoxWithoutSettingHeight, XYZ? FromDirection, XYZ? ToDirection ) ;
+    public record PickState( PointOnRoutePicker.PickInfo PickInfo, FamilyInstance PullBox, double HeightConnector, double HeightWire, XYZ RouteDirection, bool IsCreatePullBoxWithoutSettingHeight, bool IsAutoCalculatePullBoxSize, PullBoxModel? SelectedPullBox, XYZ? FromDirection, XYZ? ToDirection ) ;
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
     protected virtual ConnectorFamilyType? ConnectorType => null ;
     protected abstract AddInType GetAddInType() ;
@@ -23,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
 
       var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
       var pullBoxViewModel = new PullBoxViewModel(document) ;
@@ -42,12 +45,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var level = ( document.GetElement( pickInfo.Element.GetLevelId() ) as Level ) ! ;
       var heightConnector = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightConnector.MillimetersToRevitUnits() ;
       var heightWire = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightWire.MillimetersToRevitUnits() ;
-
+      
       using Transaction t = new( document, "Create pull box" ) ;
       t.Start() ;
       var pullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, originX, originY, heightConnector, level, pickInfo.Route.Name ) ;
       t.Commit() ;
-      
+
       using Transaction t2 = new( document, "Create text note" ) ;
       t.Start() ;
       XYZ? position ;
@@ -62,22 +65,66 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         position = new XYZ( originX, originY, heightConnector ) ;
       }
 
-      PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, position , pullBox, "PB" );
+      PullBoxRouteManager.CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, position , pullBox, PullBoxRouteManager.DefaultPullBoxLabel );
       t.Commit() ;
 
-      return new OperationResult<PickState>( new PickState( pickInfo, pullBox, heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, fromDirection, toDirection ) ) ;
+      return new OperationResult<PickState>( new PickState( pickInfo, pullBox, heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, pullBoxViewModel.IsAutoCalculatePullBoxSize, pullBoxViewModel.SelectedPullBox, fromDirection, toDirection ) ) ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (pickInfo, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, fromDirection, toDirection ) = pickState ;
+      var (pickInfo, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, isAutoCalculatePullBoxSize, selectedPullBox, fromDirection, toDirection ) = pickState ;
       var route = pickInfo.SubRoute.Route ;
       var systemType = route.GetMEPSystemType() ;
       var curveType = route.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, fromDirection, toDirection ) ;
+      var parentIndex = 1 ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, fromDirection, toDirection ) ;
 
       return result ;
+    }
+
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, PickState result )
+    {
+      base.AfterRouteGenerated( document, executeResultValue, result ) ;
+      
+      var (_, pullBox, _, _, _, _, isAutoCalculatePullBoxSize, selectedPullBox, _, _ ) = result ;
+      
+      #region Change dimension of pullbox and set new label
+      var detailSymbolStorable = document.GetDetailSymbolStorable() ;
+      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
+      
+      string buzaiCd = string.Empty ;
+      string textLabel = PullBoxRouteManager.DefaultPullBoxLabel ;
+      if ( isAutoCalculatePullBoxSize ) {
+        var csvStorable = document.GetCsvStorable() ;
+        var conduitsModelData = csvStorable.ConduitsModelData ;
+        var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
+        var pullBoxModel = PullBoxRouteManager.GetPullBoxWithAutoCalculatedDimension( document, pullBox, csvStorable, detailSymbolStorable, conduitsModelData, hiroiMasterModels ) ;
+        if ( pullBoxModel != null ) {
+          buzaiCd = pullBoxModel.Buzaicd;
+          var (depth, _, height) =  PullBoxRouteManager.ParseKikaku( pullBoxModel.Kikaku );
+          textLabel = PullBoxRouteManager.GetPullBoxTextBox( depth, height, PullBoxRouteManager.DefaultPullBoxLabel ) ;
+        }
+      }
+      else {
+        if ( selectedPullBox != null ) {
+          buzaiCd = selectedPullBox.Buzaicd ;
+          var (depth, _, height) =  PullBoxRouteManager.ParseKikaku( selectedPullBox.Kikaku );
+          textLabel = PullBoxRouteManager.GetPullBoxTextBox( depth, height, PullBoxRouteManager.DefaultPullBoxLabel ) ;
+        }   
+      }
+      
+      if ( ! string.IsNullOrEmpty( buzaiCd ) ) {
+        using Transaction t1 = new(document, "Update dimension of pull box") ;
+        t1.Start() ;
+        pullBox.ParametersMap.get_Item( PickUpViewModel.MaterialCodeParameter )?.Set( buzaiCd ) ;
+        detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId) ;
+        t1.Commit() ;
+        
+        ChangePullBoxDimensionCommandBase.ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBox, textLabel ) ;
+      }
+      #endregion
     }
   }
 }
