@@ -58,12 +58,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( detector.IsPassingThrough( segment ) ) {
             isBeforeSegment = false ;
             var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ;
-            result.Add( ( name, newSegment ) ) ;
+            result.Add( ( parentRoute.RouteName, newSegment ) ) ;
             beforeSegments.Add( newSegment ) ;
-            result.Add( ( parentRoute.RouteName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
           }
           else {
-            if ( isBeforeSegment ) {
+            if ( ! isBeforeSegment ) {
               if ( segment.FromEndPoint.TypeName == PassPointEndPoint.Type ) {
                 var passPoint = document.GetElement( segment.FromEndPoint.Key.GetElementUniqueId() ) ;
                 passPoint.TrySetProperty( RoutingParameter.RouteName, name ) ;
@@ -78,7 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var newSegment = isBeforeSegment ? 
               new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId )
               : new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ;
-            result.Add( isBeforeSegment ? ( name, newSegment ) : ( parentRoute.RouteName, newSegment ) ) ;
+            result.Add( isBeforeSegment ? ( parentRoute.RouteName, newSegment ) : ( name, newSegment ) ) ;
             if ( isBeforeSegment ) beforeSegments.Add( newSegment ) ;
           }
         }
@@ -95,8 +95,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               var branchEndPoint = new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
               if ( fromEndPointKey == pullBoxToEndPoint.Key ) {
                 name = routeName + "_" + index ;
-                result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
                 result.AddRange( from branchSegment in beforeSegments select ( routeName, branchSegment ) ) ;
+                result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
                 connectorUniqueId = segment.ToEndPoint.Key.GetElementUniqueId() ;
                 GetPullBoxCeedCodes( document, ceedCodes, connectorUniqueId ) ;
               }
@@ -226,8 +226,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var branchRouteDirection = GetDirectionOfConduitThroughPullBox( document, pullBox, routeName, routeDirection ) ;
             if ( branchRouteDirection == null ) {
               if ( fromEndPointKey == mainPullBoxToEndPoint.Key ) {
-                result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
                 result.AddRange( from branchSegment in beforeSegments select ( routeName, branchSegment ) ) ;
+                result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
               }
               else {
                 result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
@@ -362,7 +362,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     
     public static List<Element> GetFromConnectorOfPullBox( Document document, Element element, bool isFrom = false)
     {
-      List<Element> result = new List<Element>() ;
+      List<Element> result = new() ;
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ) ;
       foreach ( var conduit in conduitsOfRoute ) {
@@ -406,37 +406,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         string conduitLengthParam = "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ;
         var registrationOfBoardDataModels = document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
         foreach ( var route in executeResultValue ) {
-          var allConduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).OrderBy( e => e.Id.IntegerValue ).ToList() ;
-          var conduitFittingsOfRoute = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).OrderBy( e => e.Id.IntegerValue ).ToList() ;
+          var allConduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
+          SortConduitFitting( ref allConduitsOfRoute, route ) ;
+          var conduitFittingsOfRoute = allConduitsOfRoute.OfType<FamilyInstance>().ToList() ;
 
           double sumLength = 0 ;
           double sumAngle = 0 ;
           FamilyInstance? selectedConduitFitting = null ;
-          for ( var i = conduitFittingsOfRoute.Count - 1 ; i > -1 ; i-- ) {
-            if ( conduitFittingsOfRoute[ i ].HasParameter( angleParameter ) ) {
-              var angle = conduitFittingsOfRoute[ i ].ParametersMap.get_Item( angleParameter ).AsDouble() ;
+          foreach ( var conduitFitting in conduitFittingsOfRoute ) {
+            if ( conduitFitting.HasParameter( angleParameter ) ) {
+              var angle = conduitFitting.ParametersMap.get_Item( angleParameter ).AsDouble() ;
               sumAngle += angle ;
             }
 
             if ( sumAngle < maxAngle ) continue ;
-            selectedConduitFitting = conduitFittingsOfRoute[ i ] ;
+            selectedConduitFitting = conduitFitting ;
             break ;
           }
 
           Element? selectedConduit = null ;
-          for ( var i = allConduitsOfRoute.Count - 1 ; i > -1 ; i-- ) {
-            if ( allConduitsOfRoute[ i ].HasParameter( conduitLengthParam ) ) {
-              var length = allConduitsOfRoute[ i ].ParametersMap.get_Item( conduitLengthParam ).AsDouble() ;
+          foreach ( var conduit in allConduitsOfRoute ) {
+            if ( conduit.HasParameter( conduitLengthParam ) ) {
+              var length = conduit.ParametersMap.get_Item( conduitLengthParam ).AsDouble() ;
               sumLength += length ;
             }
 
-            if ( allConduitsOfRoute[ i ].HasParameter( conduitFittingLengthParam ) ) {
-              var length = allConduitsOfRoute[ i ].ParametersMap.get_Item( conduitFittingLengthParam ).AsDouble() ;
+            if ( conduit.HasParameter( conduitFittingLengthParam ) ) {
+              var length = conduit.ParametersMap.get_Item( conduitFittingLengthParam ).AsDouble() ;
               sumLength += length ;
             }
 
             if ( sumLength < maxLength ) continue ;
-            selectedConduit = allConduitsOfRoute[ i ] ;
+            selectedConduit = conduit ;
             break ;
           }
 
@@ -466,7 +467,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           }
           
           if ( conduitFittingsOfRoute.Count >= 4 ) {
-            var conduitFitting = conduitFittingsOfRoute.ElementAt( conduitFittingsOfRoute.Count - 4 ) ;
+            var conduitFitting = conduitFittingsOfRoute.ElementAt( 3 ) ;
             var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFitting ) ;
             var isSamePullBoxPositions = ComparePullBoxPosition( pullBoxPositions, pullBoxInfo.Position ) ;
             if ( isSamePullBoxPositions ) continue ;
@@ -569,25 +570,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static void CreateTextNoteAndGroupWithPullBox(Document doc, Element pullBox, string text, Element conduit, double originX, double originY, double heightConnector, XYZ routeDirection )
+    public static void CreateTextNoteAndGroupWithPullBox(Document doc, Element pullBox, string text, Element conduit, double originX, double originY, double originZ, XYZ routeDirection )
     {
-      XYZ point ;
+      XYZ txtPosition ;
       if ( conduit is FamilyInstance { FacingOrientation: { } } ) {
-        point = new XYZ( originX + 0.2, originY + 0.5, heightConnector ) ;
+        txtPosition = new XYZ( originX + 0.2, originY + 0.5, originZ ) ;
       } else if ( routeDirection.X is 1.0 or -1.0 ) {
-        point = new XYZ( originX, originY + 0.5, heightConnector ) ;
+        txtPosition = new XYZ( originX, originY + 0.5, originZ ) ;
       } else if ( routeDirection.Y is 1.0 or -1.0 ) {
-        point = new XYZ( originX + 0.2, originY + 0.2, heightConnector ) ;
+        txtPosition = new XYZ( originX + 0.2, originY + 0.2, originZ ) ;
       }
       else {
-        point = new XYZ( originX, originY, heightConnector ) ;
+        txtPosition = new XYZ( originX, originY, originZ ) ;
       }
       
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
-      
-      var txtPosition = new XYZ( point.X, point.Y, point.Z ) ;
-      
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
 
       var textNoteType = textNote.TextNoteType ;
@@ -822,49 +820,44 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return conduitInfo ;
     }
 
-    private static ConduitInfo? GetConduitInfo( Document document, List<Element> allConduits, Element conduitFitting )
+    private static void SortConduitFitting( ref List<Element> conduits, Route route )
     {
-      string conduitLengthParam = "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ;
-      var defaultMinLenght = ( 100.0 ).MillimetersToRevitUnits() ;
-      var conduitFittingLocation = ( conduitFitting.Location as LocationPoint ) ! ;
-      var conduitFittingPoint = conduitFittingLocation.Point ;
-      var conduits = allConduits.Where( c => c.GetBuiltInCategory() == BuiltInCategory.OST_Conduit ).ToList() ;
-      var minDistance = double.MaxValue ;
-      var fromConduit = conduits.First() ;
-      foreach ( var conduit in conduits ) {
-        var fromConduitLocation = ( conduit.Location as LocationCurve ) ! ;
-        var fromConduitLine = ( fromConduitLocation.Curve as Line ) ! ;
-        var fromConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
-        var distance = fromConduitPoint.DistanceTo( conduitFittingPoint ) ;
-        var length = conduit.ParametersMap.get_Item( conduitLengthParam ).AsDouble() ;
-        if ( distance > minDistance || length < defaultMinLenght ) continue ;
-        minDistance = distance ;
-        fromConduit = conduit ;
-      }
+      var sortConduits = new List<Element>() ;
+      var toEndPoint = route.FirstToConnector()?.RoutingStartPosition ;
+      while ( sortConduits.Count != conduits.Count ) {
+        var minDistance = double.MaxValue ;
+        var nearestConduit = conduits.First() ;
+        XYZ nearestPoint = new() ; 
+        foreach ( var conduit in conduits ) {
+          if ( sortConduits.Any() && conduit == sortConduits.Last() ) continue ;
+          if ( conduit is Conduit ) {
+            var fromConduitLocation = ( conduit.Location as LocationCurve ) ! ;
+            var fromConduitLine = (  fromConduitLocation.Curve as Line ) ! ;
+            var fromConduitPoint = fromConduitLine.GetEndPoint( 0 ) ;
+            var toConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
 
-      if ( fromConduit == null ) return null ;
-      {
-        var fromConduitLocation = ( fromConduit.Location as LocationCurve ) ! ;
-        var fromConduitLine = ( fromConduitLocation.Curve as Line ) ! ;
-        var fromConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
-        var fromConduitDirection = fromConduitLine.Direction ;
-
-        double x = 0 ;
-        double y = 0 ;
-        if ( fromConduitDirection.X is 1 or -1 ) {
-          x = fromConduitPoint.X - fromConduitDirection.X * PullBoxWidth ;
-          y = fromConduitPoint.Y ;
-        }
-        else if ( fromConduitDirection.Y is 1 or -1 ) {
-          x = fromConduitPoint.X ;
-          y = fromConduitPoint.Y - fromConduitDirection.Y * PullBoxLenght ;
+            var distance = toConduitPoint.DistanceTo( toEndPoint ) ;
+            if ( distance >= minDistance ) continue ;
+            minDistance = distance ;
+            nearestConduit = conduit ;
+            nearestPoint = fromConduitPoint ;
+          }
+          else if ( conduit is FamilyInstance conduitFitting ) {
+            var location = ( conduitFitting.Location as LocationPoint )! ;
+            var origin = location.Point ;
+            var distance = origin.DistanceTo( toEndPoint ) ;
+            if ( distance >= minDistance ) continue ;
+            minDistance = distance ;
+            nearestConduit = conduit ;
+            nearestPoint = origin ;
+          }
         }
 
-        var level = document.GetAllElements<Level>().SingleOrDefault( l => l.Id == fromConduit.GetLevelId() ) ;
-        var height = fromConduitPoint.Z - level!.Elevation ;
-        var pullBoxPosition = new XYZ( x, y, height) ;
-        return new ConduitInfo( fromConduit, pullBoxPosition, fromConduitDirection, level! ) ;
+        toEndPoint = nearestPoint ;
+        sortConduits.Add( nearestConduit ) ;
       }
+
+      conduits = sortConduits ;
     }
 
     public static PullBoxInfo GetPullBoxInfo( Document document, string routeName, FamilyInstance conduitFitting )
