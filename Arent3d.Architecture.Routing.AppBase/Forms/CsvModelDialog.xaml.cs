@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<HiroiSetCdMasterModel> _allHiroiSetCdMasterEcoModels ;
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceedModelData ;
+    private List<RegistrationOfBoardDataModel> _registrationOfBoardDataModelData ;
 
     private const string CompressionFileName = "Csv File.zip" ;
 
@@ -46,6 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
       _allHiroiMasterModels = new List<HiroiMasterModel>() ;
       _ceedModelData = new List<CeedModel>() ;
+      _registrationOfBoardDataModelData = new List<RegistrationOfBoardDataModel>() ;
     }
 
     private void Button_Save( object sender, RoutedEventArgs e )
@@ -73,7 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
       progress.Message = "Saving data..." ;
-      using ( var progressData = progress?.Reserve( 0.5 ) ) {
+      using ( var progressData = progress.Reserve( 0.5 ) ) {
         CsvStorable csvStorable = _document.GetCsvStorable() ;
         {
           if ( _allWiresAndCablesModels.Any() )
@@ -102,10 +104,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             DialogResult = false ;
           }
         }
-        progressData?.ThrowIfCanceled() ;
+        progressData.ThrowIfCanceled() ;
       }
 
-      using ( var progressData = progress?.Reserve( 0.9 ) ) {
+      using ( var progressData = progress.Reserve( 0.9 ) ) {
         CeedStorable ceedStorable = _document.GetCeedStorable() ;
         {
           if ( _ceedModelData.Any() ) {
@@ -122,7 +124,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             }
           }
         }
-        progressData?.ThrowIfCanceled() ;
+
+        var registrationOfBoardDataStorable = _document.GetRegistrationOfBoardDataStorable() ;
+        if ( ! _registrationOfBoardDataModelData.Any() ) return ;
+        {
+          try {
+            using Transaction t = new( _document, "Save registration of board data" ) ;
+            t.Start() ;
+            registrationOfBoardDataStorable.RegistrationOfBoardData = _registrationOfBoardDataModelData ;
+            registrationOfBoardDataStorable.Save() ;
+            t.Commit() ;
+          }
+          catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+          }
+        }
+        
+        progressData.ThrowIfCanceled() ;
       }
     }
     
@@ -421,6 +438,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       bool isLoadedCeedFile = false ;
       var ceedCodeFile = "【CeeD】セットコード一覧表" ;
       string equipmentSymbolsFile = "機器記号一覧表" ;
+      var boardFile = "盤間配線確認表" ;
       StringBuilder correctMessage = new StringBuilder() ;
       StringBuilder errorMessage = new StringBuilder() ;
       string defaultCorrectMessage = "指定されたフォルダから以下のデータを正常にロードできました。" ;
@@ -517,6 +535,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       if ( File.Exists( ceedCodeXlsFilePath ) && ! isLoadedCeedFile ) {
         isLoadedCeedFile = LoadCeedCodeFile( correctMessage, errorMessage, ceedCodeFile, equipmentSymbolsFile, ceedCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath ) ;
+      }
+      
+      // load 盤間配線確認表 file
+      var boardXlsxFilePath = Path.Combine( folderPath, boardFile + ".xlsx" ) ;
+      var boardXlsFilePath = Path.Combine( folderPath, boardFile + ".xls" ) ;
+      if ( File.Exists( boardXlsxFilePath ) || File.Exists( boardXlsFilePath ) ) {
+        var filePath = File.Exists( boardXlsxFilePath ) ? boardXlsxFilePath : boardXlsFilePath ;
+        _registrationOfBoardDataModelData = ExcelToModelConverter.GetAllRegistrationOfBoardDataModel( filePath ) ;
+        if ( _registrationOfBoardDataModelData.Any() ) {
+          correctMessage.AppendLine( $"\u2022 {boardFile}" ) ;
+        }
+        else {
+          errorMessage.AppendLine( $"\u2022 {Path.GetFileName( filePath )}" ) ;
+        }
       }
 
       string resultMessage = string.Empty ;
