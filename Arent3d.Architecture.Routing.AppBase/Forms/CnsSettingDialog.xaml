@@ -17,7 +17,10 @@
                           ItemsSource="{Binding CnsSettingModels}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
-                          Margin="2,0,2,40" CellEditEnding="GrdCategories_OnCellEditEnding" PreparingCellForEdit="GrdCategories_OnCellBeforeEdit">
+                          Margin="2,0,2,40"
+                          CellEditEnding="GrdCategories_OnCellEditEnding"
+                          PreparingCellForEdit="GrdCategories_OnCellBeforeEdit"
+                          SelectionMode="Single">
                     <DataGrid.Resources>
                         <Style x:Key="errorStyle" TargetType="{x:Type TextBox}">
                             <Setter Property="Padding" Value="-2" />
@@ -55,8 +58,8 @@
             </Grid>
         </StackPanel>
         <StackPanel DockPanel.Dock="Right" Width="100">
-            <Button Content="行追加" Height="32" Margin="0,10,0,0" Click="AddNewRow_Click" />
-            <Button Content="行削除" Height="32" Margin="0,10,0,0" Click="Delete_Click"
+            <Button Content="行追加" ToolTip="Add New Row" Height="32" Margin="0,10,0,0" Click="AddNewRow_Click" />
+            <Button Content="行削除" ToolTip="Delete Item" Height="32" Margin="0,10,0,0" Click="Delete_Click"
                     CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}">
                 <Button.Style>
                     <Style TargetType="Button">
@@ -68,7 +71,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="編集" Height="32" Click="Update_Click" Margin="0,10,0,0">
+            <Button Content="編集" ToolTip="Update" Height="32" Click="Update_Click" Margin="0,10,0,0">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>
@@ -79,10 +82,20 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="ハイライト" IsEnabled="False" Height="32" Margin="0,10,0,0" />
-            <Button Content="読込み" Height="32" Margin="0,10,0,0" Click="Import_Click" />
-            <Button Content="書出し" Height="32" Margin="0,10,0,0" Click="Export_Click" />
-            <Button Content="シンボルに適用" CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Click="SymbolApply_Click"
+            <Button Content="ハイライト" ToolTip="HighLight Selected Construction Item" Height="32" Margin="0,10,0,0" Click="HighLightConstructionItems_Click" >
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                                <Setter Property="IsEnabled" Value="False" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="読込み" ToolTip="Import" Height="32" Margin="0,10,0,0" Click="Import_Click" />
+            <Button Content="書出し" ToolTip="Export"  Height="32" Margin="0,10,0,0" Click="Export_Click" />
+            <Button Content="シンボルに適用" ToolTip="Apply To Selected Connectors"  CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Click="SymbolApply_Click"
                     Height="32" Margin="0,10,0,0">
                 <Button.Style>
                     <Style TargetType="Button">
@@ -94,7 +107,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="配線に適用" Click="ConduitsApply_Click" Height="32" Margin="0,10,0,0">
+            <Button Content="配線に適用"  ToolTip="Apply To Selection Conduits" Click="ConduitsApply_Click" Height="32" Margin="0,10,0,0">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>
@@ -105,7 +118,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="ラックに適用" Click="RacksApply_Click" Height="32" Margin="0,10,0,0">
+            <Button Content="ラックに適用" ToolTip="Apply To Selected Racks" Click="RacksApply_Click" Height="32" Margin="0,10,0,0">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>
@@ -116,7 +129,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="範囲適用" Click="AllElementsApply_Click" Height="32" Margin="0,10,0,0">
+            <Button Content="範囲適用" ToolTip="Apply To All Selected Elements" Click="AllElementsApply_Click" Height="32" Margin="0,10,0,0">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>
@@ -127,8 +140,8 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="変更" Click="ApplyRangSelection_Click" Height="32" Margin="0,10,0,0" />
-            <Button Content="保存" Click="Save_Click" Height="32" Margin="0,10,0,0" />
+            <Button Content="変更" ToolTip=" Apply To Selection Range" Click="ApplyRangSelection_Click" Height="32" Margin="0,10,0,0" />
+            <Button Content="保存" ToolTip="Save" Click="Save_Click" Height="32" Margin="0,10,0,0" />
         </StackPanel>
     </DockPanel>
 </Window>
