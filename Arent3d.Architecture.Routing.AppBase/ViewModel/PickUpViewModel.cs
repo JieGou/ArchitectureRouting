@@ -832,8 +832,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           _pickUpStorable.AllPickUpModelData = _pickUpModels ;
           _pickUpStorable.Save() ;
           t.Commit() ;
-        
-          var dialog = new PickUpReportDialog( _document ) ;
+          var pickUpReportViewModel = new PickUpReportViewModel( _document ) ;
+          var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
           dialog.ShowDialog() ;
         }
       }
