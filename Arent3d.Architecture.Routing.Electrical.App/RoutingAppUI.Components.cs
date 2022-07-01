@@ -112,6 +112,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [SplitButton( "arent3d.architecture.routing.confirmation.all", TitleKey = "Electrical.App.Panels.Routing.Confirmation.All" )]
         private static class AllConfirmationButton
         {
+          [Button( typeof( BulkHighlightOffCommand ), OnlyInitialized = true )]
+          private static class BulkHighlightOffCommandButton
+          {
+          }
+          
           [Button( typeof( ConfirmUnsetCommand ), OnlyInitialized = true )]
           private static class ConfirmUnsetCommandButton
           {

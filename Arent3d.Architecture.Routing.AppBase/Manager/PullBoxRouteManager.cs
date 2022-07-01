@@ -1076,6 +1076,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var level = document.GetAllElements<Level>().SingleOrDefault( l => l.Id == conduits.First().GetLevelId() ) ;
       return new PullBoxInfo( position, fromConduitDirection, toConduitDirection, level! ) ;
     }
+
+    public static IEnumerable<TextNote> GetTextNotesOfAutomaticCalculatedDimensionPullBox( Document document )
+    {
+      var pullBoxUniqueIds = document.GetAllElements<FamilyInstance>()
+        .OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
+        .Where( e => Convert.ToBoolean( e.ParametersMap.get_Item( PullBoxRouteManager.IsAutoCalculatePullBoxSizeParameter ).AsString() ) )
+        .Select( e => e.UniqueId )
+        .ToList() ;
+      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
+      var pullBoxInfoModels = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxUniqueIds.Contains(p.PullBoxUniqueId) ) ;
+      var textNote = document.GetAllElements<TextNote>().Where( t => pullBoxInfoModels.Any(p => p.TextNoteUniqueId == t.UniqueId) ) ;
+      return textNote ;
+    }
     
     private class ConduitInfo
     {
