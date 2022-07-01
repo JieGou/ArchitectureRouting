@@ -414,7 +414,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return lastIndex + 1 ;
     }
 
-    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBox ( Document document, IReadOnlyCollection<Route> executeResultValue, List<string> boardUniqueIds, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ)> pullBoxElements, ref int parentIndex)
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBox ( Document document, IReadOnlyCollection<Route> executeResultValue, List<string> boardUniqueIds, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex)
     {
       const string angleParameter = "角度" ;
       const double maxAngle = 270 ;
@@ -570,7 +570,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ)> pullBoxElements, ref int parentIndex )
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex )
     {
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
       var grade = defaultSettingStorable.GradeSettingData.GradeMode ;
@@ -604,7 +604,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           var toDirection = pullBoxInfo.ToDirection ;
           var height = originZ - pullBoxInfo.Level.Elevation ;
           result = CreatePullBoxAndGetSegments( document, route, conduitFittingBottomShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out FamilyInstance? pullBoxElement, ref parentIndex, fromDirection, toDirection, fromHeight ).ToList() ;
-          if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxInfo.Position) ) ;          
+          if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, null) ) ;          
           pullBoxPositions.Add( pullBoxInfo.Position ) ;
           return result ;
         }
@@ -691,8 +691,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     {
       var defaultLabel = textLabel ;
       var buzaiCd = string.Empty ;
-      int depth = 0, width = 0, height = 0 ;
-      var baseLengthOfLine = scale / 100d ;
+      int depth = 0, height = 0 ;
 
       //Case 1: Automatically calculate dimension of pull box
       if ( isAutoCalculatePullBoxSize && csvStorable != null && conduitsModelData != null &&
@@ -701,14 +700,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           conduitsModelData, hiroiMasterModels ) ;
         if ( pullBoxModel != null ) {
           buzaiCd = pullBoxModel.Buzaicd ;
-          ( depth, width, height ) = ParseKikaku( pullBoxModel.Kikaku ) ;
+          ( depth, _, height ) = ParseKikaku( pullBoxModel.Kikaku ) ;
         }
       }
       //Case 2: Use dimension of selected pull box
       else {
         if ( selectedPullBoxModel != null ) {
           buzaiCd = selectedPullBoxModel.Buzaicd ;
-          ( depth, width, height ) = ParseKikaku( selectedPullBoxModel.Kikaku ) ;
+          ( depth, _, height ) = ParseKikaku( selectedPullBoxModel.Kikaku ) ;
         }
       }
       
@@ -733,10 +732,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     private static void ChangeLabelOfPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement, string textLabel )
     {
+      // Find text note compatible with pull box, change label if exists
       var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
       var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel?.TextNoteUniqueId == t.UniqueId ) ;
       if ( textNote != null ) {
-        using var transaction2 = new Transaction( document ) ;
         textNote.Text = textLabel ;
       }
     }

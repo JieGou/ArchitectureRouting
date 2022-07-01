@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       using var progress = ShowProgressBar( "Routing...", false ) ;
       List<string> boards = new() ;
       List<XYZ> pullBoxPositions = new() ;
-      List<(FamilyInstance, XYZ)> pullBoxElements = new() ;
+      List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
       while ( true ) {
@@ -93,7 +93,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       foreach ( var pullBoxElement in pullBoxElements ) {
         var (pullBox, position) = pullBoxElement ;
-        var positionLabel = new XYZ( position.X + 0.2, position.Y + 0.5, position.Z ) ;
+        var positionLabel = position != null ? new XYZ( position.X + 0.2, position.Y + 0.5, position.Z ) : null ;
         PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, detailSymbolStorable, pullBoxInfoStorable,
           conduitsModelData, hiroiMasterModels, scale, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
       }
