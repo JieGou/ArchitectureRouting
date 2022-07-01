@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private static readonly double DefaultDistanceHeight = ( 200.0 ).MillimetersToRevitUnits() ;
     private const string DefaultConstructionItem = "未設定" ;
     private const double NearShaftTolerance = 0.01 ;
-    private static readonly double PullBoxWidth = ( 250.0 ).MillimetersToRevitUnits() ;
+    private static readonly double PullBoxWidth = ( 300.0 ).MillimetersToRevitUnits() ;
     private static readonly double PullBoxLenght = ( 250.0 ).MillimetersToRevitUnits() ;
     private const string HinmeiPullBox = "プルボックス" ;
     public const string DefaultPullBoxLabel = "PB" ;
@@ -484,6 +484,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             if ( conduitInfo == null ) continue ;
             var (originX, originY, originZ) = conduitInfo.ConduitOrigin ;
             result = CreatePullBoxAndGetSegments( document, route, conduitInfo.Conduit, originX, originY, originZ, conduitInfo.Level, conduitInfo.ConduitDirection, nameBase!, out FamilyInstance? pullBoxElement, ref parentIndex ).ToList() ;
+            pullBoxPositions.Add( conduitInfo.ConduitOrigin ) ;
             if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, conduitInfo.ConduitOrigin) ) ;
             boardUniqueIds.Add( board.UniqueId ) ;
             return result ;
@@ -492,30 +493,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( conduitFittingsOfRoute.Count >= 4 ) {
             var conduitFitting = conduitFittingsOfRoute.ElementAt( 3 ) ;
             var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFitting ) ;
-            var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxInfo.Position ) ;
-            if ( isSamePullBoxPositions ) continue ;
-            
             var ( originX, originY, originZ)  = pullBoxInfo.Position ;
             var fromDirection = pullBoxInfo.FromDirection ;
             var toDirection = pullBoxInfo.ToDirection ;
             var height = originZ - pullBoxInfo.Level.Elevation ;
+            var pullBoxPosition = new XYZ( originX, originY, height ) ;
+            var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxPosition ) ;
+            if ( isSamePullBoxPositions ) continue ;
             result = CreatePullBoxAndGetSegments( document, route, conduitFitting, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out FamilyInstance? pullBoxElement, ref parentIndex, fromDirection, toDirection ).ToList() ;
-            if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxInfo.Position) ) ;
-            pullBoxPositions.Add( pullBoxInfo.Position ) ;
+            if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxPosition) ) ;
+            pullBoxPositions.Add( pullBoxPosition ) ;
             return result ;
           }
 
           if ( sumAngle > maxAngle && selectedConduitFitting != null ) {
             var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, selectedConduitFitting ) ;
-            var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxInfo.Position ) ;
-            if ( isSamePullBoxPositions ) continue ;
-            var (originX, originY, originZ) = pullBoxInfo.Position ;
+            var ( originX, originY, originZ)  = pullBoxInfo.Position ;
             var fromDirection = pullBoxInfo.FromDirection ;
             var toDirection = pullBoxInfo.ToDirection ;
             var height = originZ - pullBoxInfo.Level.Elevation ;
+            var pullBoxPosition = new XYZ( originX, originY, height ) ;
+            var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxPosition ) ;
+            if ( isSamePullBoxPositions ) continue ;
             result = CreatePullBoxAndGetSegments( document, route, selectedConduitFitting, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out FamilyInstance? pullBoxElement, ref parentIndex, fromDirection, toDirection ).ToList() ;
-            if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxInfo.Position) ) ;
-            pullBoxPositions.Add( pullBoxInfo.Position ) ;
+            if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxPosition) ) ;
+            pullBoxPositions.Add( pullBoxPosition ) ;
             return result ;
           }
 
@@ -542,12 +544,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                 originZ += direction.Z * length ;
               }
               height = originZ - level!.Elevation ;
-              var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, new XYZ( originX, originY, originZ ) ) ;
+              var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, new XYZ( originX, originY, height ) ) ;
               if ( isSamePullBoxPositions ) continue ;
             }
             else if ( selectedConduit is FamilyInstance conduitFitting ) {
               var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFitting ) ;
-              var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxInfo.Position ) ;
+              var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, new XYZ( originX, originY, height ) ) ;
               if ( isSamePullBoxPositions ) continue ;
             
               ( originX, originY, originZ ) = pullBoxInfo.Position ;
@@ -559,9 +561,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             }
             
             result = CreatePullBoxAndGetSegments( document, route, selectedConduit, originX, originY, height, level, direction, nameBase!, out FamilyInstance? pullBoxElement, ref parentIndex, fromDirection, toDirection ).ToList() ;
-            var pullBoxPosition = new XYZ( originX, originY, originZ ) ;
+            var pullBoxPosition = new XYZ( originX, originY, height ) ;
             if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxPosition) ) ;
-            pullBoxPositions.Add( pullBoxPosition ) ;
+            pullBoxPositions.Add( pullBoxPosition) ;
             return result ;
           }
         }
@@ -726,17 +728,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if(positionLabel != null)
         CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       else 
-        ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBox, textLabel ) ;
+        ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       t2.Commit() ;
     }
 
-    private static void ChangeLabelOfPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement, string textLabel )
+    private static void ChangeLabelOfPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement, string textLabel, bool isAutoCalculatePullBoxSize )
     {
       // Find text note compatible with pull box, change label if exists
       var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
       var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel?.TextNoteUniqueId == t.UniqueId ) ;
       if ( textNote != null ) {
         textNote.Text = textLabel ;
+        if ( ! isAutoCalculatePullBoxSize ) return ;
+        var color = new Color( 255, 0, 0 ) ;
+        ConfirmUnsetCommandBase.ChangeElementColor( document, new []{ textNote }, color ) ;
       }
     }
 
@@ -1001,7 +1006,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         originX += distanceOrigin < distanceEnd ? direction.X * PullBoxWidth * baseLengthOfLine : - direction.X * PullBoxWidth * baseLengthOfLine ;
       }
       else if ( direction.Y is 1 or -1 ) {
-        originY += distanceOrigin < distanceEnd ? direction.Y * PullBoxLenght * baseLengthOfLine : - direction.Y * PullBoxLenght * baseLengthOfLine ;
+        originY += distanceOrigin < distanceEnd ? - direction.Y * PullBoxLenght * baseLengthOfLine : direction.Y * PullBoxLenght * baseLengthOfLine ;
       }
 
       origin = new XYZ( originX, originY, height ) ;

@@ -99,10 +99,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var conduitsModelData = csvStorable.ConduitsModelData ;
       var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       var scale = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
       
       foreach ( var pullBoxElement in pullBoxElements ) {
         var (pullBox, position) = pullBoxElement ;
-        var positionLabel = position != null ? new XYZ( position.X + 0.2, position.Y + 0.5, position.Z ) : null ;
+        var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
         PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, detailSymbolStorable, pullBoxInfoStorable,
           conduitsModelData, hiroiMasterModels, scale, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
       }

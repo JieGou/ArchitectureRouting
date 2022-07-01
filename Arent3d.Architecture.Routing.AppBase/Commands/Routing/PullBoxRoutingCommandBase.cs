@@ -55,12 +55,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       t.Commit() ;
       
       XYZ? position ;
+      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
       if ( pickInfo.Element is FamilyInstance { FacingOrientation: { } } ) {
-        position = new XYZ( originX + 0.2, originY + 0.5, heightConnector ) ;
+        position = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
       } else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 ) {
-        position = new XYZ( originX, originY + 0.5, heightConnector ) ;
+        position = new XYZ( originX, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
       } else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 ) {
-        position = new XYZ( originX + 0.2, originY + 0.2, heightConnector ) ;
+        position = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
       }
       else {
         position = new XYZ( originX, originY, heightConnector ) ;
