@@ -108,37 +108,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       using ( var progressData = progress.Reserve( 0.9 ) ) {
-        CeedStorable ceedStorable = _document.GetCeedStorable() ;
-        {
-          if ( _ceedModelData.Any() ) {
-            ceedStorable.CeedModelData = _ceedModelData ;
-            ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-            try {
-              using Transaction t = new Transaction( _document, "Save CeeD data" ) ;
-              t.Start() ;
-              ceedStorable.Save() ;
-              _document.MakeCertainAllConnectorFamilies() ;
-              t.Commit() ;
-            }
-            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-            }
-          }
+        var ceedStorable = _document.GetCeedStorable() ;
+        if ( _ceedModelData.Any() ) {
+          ceedStorable.CeedModelData = _ceedModelData ;
+          ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
         }
 
         var registrationOfBoardDataStorable = _document.GetRegistrationOfBoardDataStorable() ;
-        if ( ! _registrationOfBoardDataModelData.Any() ) return ;
-        {
+        if ( _registrationOfBoardDataModelData.Any() ) {
+          registrationOfBoardDataStorable.RegistrationOfBoardData = _registrationOfBoardDataModelData ;
+        }
+
+        if ( _ceedModelData.Any() || _registrationOfBoardDataModelData.Any() ) {
           try {
-            using Transaction t = new( _document, "Save registration of board data" ) ;
+            using Transaction t = new Transaction( _document, "Save Ceed and Board data" ) ;
             t.Start() ;
-            registrationOfBoardDataStorable.RegistrationOfBoardData = _registrationOfBoardDataModelData ;
-            registrationOfBoardDataStorable.Save() ;
+            if ( _ceedModelData.Any() ) {
+              ceedStorable.Save() ;
+              _document.MakeCertainAllConnectorFamilies() ;
+            }
+
+            if ( _registrationOfBoardDataModelData.Any() ) {
+              registrationOfBoardDataStorable.Save() ;
+            }
+
             t.Commit() ;
           }
           catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
           }
         }
-        
+
         progressData.ThrowIfCanceled() ;
       }
     }
