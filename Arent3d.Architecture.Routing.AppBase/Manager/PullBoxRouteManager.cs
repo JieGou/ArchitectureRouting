@@ -596,7 +596,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
           if ( conduitFittingBottomShaft == null ) continue ;
           var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFittingBottomShaft ) ;
-          var isSamePullBoxPositions = ComparePullBoxPosition( pullBoxPositions, pullBoxInfo.Position ) ;
+          var isSamePullBoxPositions = ComparePullBoxPosition( document, pullBoxPositions, pullBoxInfo.Position ) ;
           if ( isSamePullBoxPositions ) continue ;
 
           var (originX, originY, originZ) = pullBoxInfo.Position ;
@@ -1100,6 +1100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     public static (int depth, int width, int height) ParseKikaku( string kikaku )
+    {
       var kikakuRegex = new Regex( "(?!\\d)*(?<kikaku>((\\d+(x)){2}(\\d+)))(?!\\d)*" ) ;
       var m = kikakuRegex.Match( kikaku ) ;
       if ( m.Success ) {
