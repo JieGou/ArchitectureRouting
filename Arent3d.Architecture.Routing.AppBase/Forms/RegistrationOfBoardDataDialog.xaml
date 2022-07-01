@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
-        Title="Registration Of Board Data" Height="800" Width="900" MinHeight="200" MinWidth="900"
+        Title="Registration Of Board Data" Height="800" Width="800" MinHeight="200" MinWidth="800"
         d:DataContext="{d:DesignInstance {x:Type local:DesignRegistrationOfBoardDataViewModel}, IsDesignTimeCreatable=True}">
     <Grid>
         <Grid.RowDefinitions>
