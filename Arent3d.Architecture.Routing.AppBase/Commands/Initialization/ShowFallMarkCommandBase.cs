@@ -170,5 +170,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       return fallMarkTextNoteType ?? throw new InvalidOperationException() ;
     }
+
+    public static void RemoveDisplayingFallMark(Document document)
+    {
+      var fallMarkInstances = GetExistedFallMarkInstances( document ) ;
+      var fallMarkInstanceIds = fallMarkInstances.Select( instance => instance.Id ).ToList() ;
+      if ( fallMarkInstanceIds.Any() ) {
+        var fallMarkTextNoteInstanceIds = GetExistedFallMarkTextNoteInstancesIds( document, fallMarkInstances ) ;
+        document.Delete( fallMarkInstanceIds ) ; // remove marks are displaying
+        document.Delete( fallMarkTextNoteInstanceIds ) ;
+      }
+    }
   }
 }

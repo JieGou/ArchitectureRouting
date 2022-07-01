@@ -122,9 +122,13 @@ namespace Arent3d.Architecture.Routing
       if ( ! pullBoxIds.Any() ) return ;
       {
         var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
-        var textNoteIds = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
+        var pullBoxInfoModels = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).ToList() ;
+        var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
         if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
         document.Delete( pullBoxIds ) ;
+        foreach ( var pullBoxInfoModel in pullBoxInfoModels ) {
+          pullBoxInfoStorable.PullBoxInfoModelData.Remove( pullBoxInfoModel ) ;
+        }
       }
     }
     
