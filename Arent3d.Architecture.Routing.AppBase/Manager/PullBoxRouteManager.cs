@@ -23,8 +23,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   {
     private static readonly double DefaultDistanceHeight = ( 200.0 ).MillimetersToRevitUnits() ;
     private const string DefaultConstructionItem = "未設定" ;
-    private static readonly double PullBoxWidth = ( 100.0 ).MillimetersToRevitUnits() ;
-    private static readonly double PullBoxLenght = ( 100.0 ).MillimetersToRevitUnits() ;
+    private static readonly double PullBoxWidth = ( 250.0 ).MillimetersToRevitUnits() ;
+    private static readonly double PullBoxLenght = ( 250.0 ).MillimetersToRevitUnits() ;
     private const string HinmeiPullBox = "プルボックス" ;
     public const string DefaultPullBoxLabel = "PB" ;
     public const string MaterialCodeParameter = "Material Code" ;
@@ -291,6 +291,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     public static FamilyInstance GenerateConnector( Document document, ElectricalRoutingFamilyType electricalRoutingFamilyType, ConnectorFamilyType? connectorType, double originX, double originY, double originZ, Level level, string routeName )
     {
+      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
       var symbol = document.GetFamilySymbols( electricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
       var toConnectorOfRoute = GetToConnectorOfRoute( document, routeName ) ;
@@ -314,6 +316,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         instance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
 
       instance.SetConnectorFamilyType( connectorType ?? ConnectorFamilyType.PullBox ) ;
+      
+      var depthParam = instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Depth ) ;
+      depthParam?.Set( depthParam.AsDouble() * baseLengthOfLine ) ;
+      var widthParam =  instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Width ) ;
+      widthParam?.Set( widthParam.AsDouble() * baseLengthOfLine ) ;
+      var heightParam = instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Height ) ;
+      heightParam?.Set( heightParam.AsDouble() * baseLengthOfLine ) ;
 
       return instance ;
     }
@@ -481,7 +490,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( conduitFittingsOfRoute.Count >= 4 ) {
             var conduitFitting = conduitFittingsOfRoute.ElementAt( 3 ) ;
             var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFitting ) ;
-            var isSamePullBoxPositions = ComparePullBoxPosition( pullBoxPositions, pullBoxInfo.Position ) ;
+            var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxInfo.Position ) ;
             if ( isSamePullBoxPositions ) continue ;
             
             var ( originX, originY, originZ)  = pullBoxInfo.Position ;
@@ -496,7 +505,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
           if ( sumAngle > maxAngle && selectedConduitFitting != null ) {
             var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, selectedConduitFitting ) ;
-            var isSamePullBoxPositions = ComparePullBoxPosition( pullBoxPositions, pullBoxInfo.Position ) ;
+            var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxInfo.Position ) ;
             if ( isSamePullBoxPositions ) continue ;
             
             var ( originX, originY, originZ)  = pullBoxInfo.Position ;
@@ -532,12 +541,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                 originZ += direction.Z * length ;
               }
               height = originZ - level!.Elevation ;
-              var isSamePullBoxPositions = ComparePullBoxPosition( pullBoxPositions, new XYZ( originX, originY, originZ ) ) ;
+              var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, new XYZ( originX, originY, originZ ) ) ;
               if ( isSamePullBoxPositions ) continue ;
             }
             else if ( selectedConduit is FamilyInstance conduitFitting ) {
               var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFitting ) ;
-              var isSamePullBoxPositions = ComparePullBoxPosition( pullBoxPositions, pullBoxInfo.Position ) ;
+              var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxInfo.Position ) ;
               if ( isSamePullBoxPositions ) continue ;
             
               ( originX, originY, originZ ) = pullBoxInfo.Position ;
@@ -617,12 +626,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if (!string.IsNullOrEmpty( buzaiCd ))
         pullBox.ParametersMap.get_Item( MaterialCodeParameter )?.Set( buzaiCd ) ;
       pullBox.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
-      var depthParam = pullBox.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Depth ) ;
-      depthParam?.Set( depthParam.AsDouble() * baseLengthOfLine ) ;
-      var widthParam =  pullBox.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Width ) ;
-      widthParam?.Set( widthParam.AsDouble() * baseLengthOfLine ) ;
-      var heightParam = pullBox.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Height ) ;
-      heightParam?.Set( heightParam.AsDouble() * baseLengthOfLine ) ;
       detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId ) ;
       t1.Commit() ;
 
@@ -689,9 +692,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return text ;
     }
 
-    private static bool ComparePullBoxPosition( IEnumerable<XYZ> pullBoxPositions, XYZ newPullBoxPosition )
+    private static bool ComparePullBoxPosition(Document document, IEnumerable<XYZ> pullBoxPositions, XYZ newPullBoxPosition )
     {
-      var minDistance = ( 300.0 ).MillimetersToRevitUnits() ;
+      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
+      var minDistance = ( 250.0 ).MillimetersToRevitUnits() * baseLengthOfLine;
       foreach ( var pullBoxPosition in pullBoxPositions ) {
         if ( newPullBoxPosition.DistanceTo( pullBoxPosition ) < minDistance ) {
           return true ;

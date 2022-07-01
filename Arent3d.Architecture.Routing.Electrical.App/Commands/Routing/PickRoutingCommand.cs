@@ -98,7 +98,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       #endregion
       
-      executeResultValue = PullBoxRoutingCommandBase.ExecuteReRoute( document, executor, progress, resultRoute ) ;
+      // Reroute after calculate new dimension for pull box
+      // executeResultValue = PullBoxRoutingCommandBase.ExecuteReRoute( document, executor, progress, resultRoute ) ;
 
       return executeResultValue ;
     }

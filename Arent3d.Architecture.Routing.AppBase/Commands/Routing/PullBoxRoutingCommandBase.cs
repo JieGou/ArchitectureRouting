@@ -105,8 +105,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       #endregion
 
-      using var progress = ShowProgressBar( "Routing...", false ) ;
-      executeResultValue = ExecuteReRoute( document, executor, progress, executeResultValue ) ;
+      // Reroute after calculate new dimension for pull box
+      // using var progress = ShowProgressBar( "Routing...", false ) ;
+      // executeResultValue = ExecuteReRoute( document, executor, progress, executeResultValue ) ;
 
       return executeResultValue ;
     }
