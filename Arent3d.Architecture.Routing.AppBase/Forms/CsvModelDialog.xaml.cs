@@ -66,7 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var folderPath = GetFolderCsvPath() ;
       if(null == folderPath)
         return;
-      LoadData( folderPath ) ;
+      LoadData( folderPath, true ) ;
       Directory.Delete(folderPath, true);
       SaveData() ;
     }
@@ -422,7 +422,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
     
-    private void LoadData(string folderPath)
+    private void LoadData(string folderPath, bool isLoadFromSource = false )
     {
       string[] fileNames = new[]
       {
@@ -560,7 +560,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( string.IsNullOrEmpty( resultMessage.Trim() ) ) {
         resultMessage = "指定されたフォルダに条件に一致するファイルが存在しません。" ;
       }
-      MessageBox.Show( resultMessage,"Result Message" ) ;
+      
+      if ( ! isLoadFromSource ) MessageBox.Show( resultMessage,"Result Message" ) ;
     }
 
     private bool LoadCeedCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceedCodeFile, string equipmentSymbolsFile, string ceedCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath )
