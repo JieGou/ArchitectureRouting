@@ -1,9 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
-using System.IO ;
 using System.Linq ;
-using System.Runtime.Serialization.Formatters.Binary ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -13,7 +11,6 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
-using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
@@ -225,10 +222,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( element.GroupId != ElementId.InvalidElementId )
         return false ;
 
-      if ( ! element.Name.StartsWith( DetailSymbolType ) )
-        return false ;
-
-      return ( (TextNote) element ).Text.Trim() == AddWiringInformationCommandBase.SpecialSymbol ;
+      return element.Name.StartsWith( DetailSymbolType ) ;
     }
 
     public bool AllowReference( Reference r, XYZ p )

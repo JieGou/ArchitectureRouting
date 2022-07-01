@@ -614,7 +614,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var detailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.ConduitId == conduit.UniqueId && x.DetailSymbol == AddWiringInformationCommandBase.SpecialSymbol ) ;
         if ( null == detailSymbolModel )
           return ;
-
+        
         using var transaction = new Transaction( _document ) ;
         transaction.Start( "Remove Detail Symbol" ) ;
 
@@ -633,6 +633,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         if ( removeDetailSymbols.Any() )
           detailSymbolStorable.Save() ;
+        
+        var detailTableStorable = _document.GetDetailTableStorable();
+        foreach ( var detailTableModel in detailTableStorable.DetailTableModelData ) {
+          if ( detailSymbolModel.DetailSymbolId == detailTableModel.DetailSymbolId ) {
+            detailTableModel.DetailSymbolId = "" ;
+          }
+        }
+        detailTableStorable.Save();
 
         transaction.Commit() ;
       }
@@ -808,18 +816,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void SaveData( Document document, IReadOnlyCollection<DetailTableModel> detailTableRowsBySelectedDetailSymbols )
     {
       try {
-        DetailTableStorable detailTableStorable = document.GetDetailTableStorable() ;
-        {
-          if ( ! detailTableRowsBySelectedDetailSymbols.Any() ) return ;
-          var selectedDetailSymbolIds = Enumerable.ToHashSet( detailTableRowsBySelectedDetailSymbols
-              .Select( d => d.DetailSymbolId )
-              .Distinct() ) ;
-          var detailTableRowsByOtherDetailSymbols = detailTableStorable.DetailTableModelData
-            .Where( d => ! selectedDetailSymbolIds.Contains( d.DetailSymbolId ) )
-            .ToList() ;
-          detailTableStorable.DetailTableModelData = detailTableRowsBySelectedDetailSymbols.ToList() ;
-          if ( detailTableRowsByOtherDetailSymbols.Any() ) detailTableStorable.DetailTableModelData.AddRange( detailTableRowsByOtherDetailSymbols ) ;
-        }
+        var detailTableStorable = document.GetDetailTableStorable() ;
+        if ( ! detailTableRowsBySelectedDetailSymbols.Any() )
+          return ;
+          
+        var selectedDetailSymbolIds = Enumerable.ToHashSet( detailTableRowsBySelectedDetailSymbols
+            .Select( d => d.DetailSymbolId )
+            .Distinct() ) ;
+        
+        var detailTableRowsByOtherDetailSymbols = detailTableStorable.DetailTableModelData
+          .Where( d => ! selectedDetailSymbolIds.Contains( d.DetailSymbolId ) )
+          .ToList() ;
+          
+        detailTableStorable.DetailTableModelData = detailTableRowsBySelectedDetailSymbols.ToList() ;
+        if ( detailTableRowsByOtherDetailSymbols.Any() ) 
+          detailTableStorable.DetailTableModelData.AddRange( detailTableRowsByOtherDetailSymbols ) ;
+        
         using Transaction t = new( document, "Save data" ) ;
         t.Start() ;
         detailTableStorable.Save() ;
@@ -1889,6 +1901,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void AddReferenceDetailTableRows(List<DetailTableModel> selectedDetailTableModels )
     {
+      var detailSymbolIds = _detailTableModelsOrigin.Select( x => x.DetailSymbolId ).Distinct().ToList() ;
+      if(detailSymbolIds.Count != 1)
+        return;
+      
       var index = DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
       foreach ( var detailTableRow in selectedDetailTableModels ) {
         var groupId = string.IsNullOrEmpty( detailTableRow.GroupId ) ? string.Empty : detailTableRow.GroupId + "-" + index ;
@@ -1896,8 +1912,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           detailTableRow.CalculationExclusion, 
           detailTableRow.Floor, 
           detailTableRow.CeedCode, 
-          detailTableRow.DetailSymbol, 
-          detailTableRow.DetailSymbolId, 
+          _isCallFromAddWiringInformationCommand ? AddWiringInformationCommandBase.SpecialSymbol : detailTableRow.DetailSymbol, 
+          detailSymbolIds[0], 
           detailTableRow.WireType, 
           detailTableRow.WireSize,
           detailTableRow.WireStrip, 
@@ -1939,8 +1955,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               detailTableRowOfGroup.CalculationExclusion, 
               detailTableRowOfGroup.Floor, 
               detailTableRowOfGroup.CeedCode, 
-              detailTableRowOfGroup.DetailSymbol, 
-              detailTableRowOfGroup.DetailSymbolId,
+              _isCallFromAddWiringInformationCommand ? AddWiringInformationCommandBase.SpecialSymbol : detailTableRowOfGroup.DetailSymbol, 
+              detailSymbolIds[0],
               detailTableRowOfGroup.WireType, 
               detailTableRowOfGroup.WireSize, 
               detailTableRowOfGroup.WireStrip,
