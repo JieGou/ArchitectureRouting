@@ -44,8 +44,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
             }
 
-            if ( string.IsNullOrEmpty( constructionItem ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
-            if ( string.IsNullOrEmpty( isEcoMode ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
+            if ( fromConnector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) && string.IsNullOrEmpty( constructionItem ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            if ( fromConnector.HasParameter( ElectricalRoutingElementParameter.IsEcoMode ) && string.IsNullOrEmpty( isEcoMode ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
           }
         }
 
@@ -69,12 +69,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             UnGroupConnector( document, toConnector, ref connectorGroups ) ;
           }
 
-          if ( string.IsNullOrEmpty( constructionItem ) ) {
+          if ( toConnector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) && string.IsNullOrEmpty( constructionItem ) ) {
             toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             constructionItem = DefaultConstructionItem ;
           }
 
-          if ( string.IsNullOrEmpty( isEcoMode ) ) {
+          if ( toConnector.HasParameter( ElectricalRoutingElementParameter.IsEcoMode ) && string.IsNullOrEmpty( isEcoMode ) ) {
             toConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
             isEcoMode = defaultIsEcoModeValue ;
           }
