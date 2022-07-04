@@ -1,11 +1,10 @@
+using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -18,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PickRoutingCommandBase : RoutingCommandBase<PickRoutingCommandBase.PickState>
   {
-    public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, bool IsRouteBetweenPowerConnectors = true ) ;
+    public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
@@ -49,12 +48,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
 
       if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
-      
-      var registrationOfBoardDataModels = uiDocument.Document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
-      var listConnectors = new List<Element>() { fromPickResult.PickedElement, toPickResult.PickedElement } ;
-      var isRouteBetweenPowerConnectors = IsRouteBetweenPowerConnectors( listConnectors, registrationOfBoardDataModels ) ;
 
-      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, isRouteBetweenPowerConnectors ) ) ;
+      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo ) ) ;
     }
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, MEPSystemType? systemType )
@@ -117,7 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (fromPickResult, toPickResult, routeProperty, classificationInfo, _) = pickState ;
+      var (fromPickResult, toPickResult, routeProperty, classificationInfo) = pickState ;
 
       RouteGenerator.CorrectEnvelopes( document ) ;
       ChangeFromConnectorAndToConnectorColor( document, fromPickResult, toPickResult ) ;
@@ -325,32 +320,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       if ( ! connectors.Any() ) return ;
       ConfirmUnsetCommandBase.ResetElementColor( document, connectors ) ;
-    }
-    
-    private static bool IsRouteBetweenPowerConnectors( IEnumerable<Element> listConnectors, IReadOnlyCollection<RegistrationOfBoardDataModel> registrationOfBoardDataModels )
-    {
-      var powerConnectors = listConnectors.Where( IsPowerConnector ).ToList() ;
-
-      if ( powerConnectors.Count <= 1 ) return false ;
-      
-      var boardConnectors = new List<Element>() ;
-      foreach ( var element in powerConnectors ) {
-        element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfConnector ) ;
-        if ( string.IsNullOrEmpty( ceedCodeOfConnector ) ) continue ;
-        var registrationOfBoardDataModel = registrationOfBoardDataModels.FirstOrDefault( x =>
-          x.AutoControlPanel == ceedCodeOfConnector || x.SignalDestination == ceedCodeOfConnector ) ;
-        if ( registrationOfBoardDataModel == null ) continue ;
-        boardConnectors.Add( element ) ;
-      }
-
-      return boardConnectors.Count > 1 ;
-    }
-
-    private static bool IsPowerConnector( Element element )
-    {
-      if ( element is not FamilyInstance familyInstance ) return false ;
-      if ( familyInstance.GetConnectorFamilyType() is not { } connectorFamilyType ) return false ;
-      return connectorFamilyType == ConnectorFamilyType.Power ;
     }
   }
 }
