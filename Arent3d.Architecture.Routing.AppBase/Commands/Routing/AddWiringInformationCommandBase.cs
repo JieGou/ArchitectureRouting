@@ -43,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduits = new List<Element> { pickInfo.Element } ;
         var elementIds = new List<string> { pickInfo.Element.UniqueId } ;
         var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, conduits, elementIds, false ) ;
-       
+        
         if ( IsExistSymBol( detailTableModels ) ) {
           MessageBox.Show(@"You must select route don't have symbol", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
           return Result.Cancelled ;
@@ -52,30 +52,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
         var conduitTypes = ( from conduitTypeName in conduitTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
         conduitTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
-
+        
         var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
         var constructionItems = constructionItemNames.Any()
           ? ( from constructionItemName in constructionItemNames select new DetailTableModel.ComboboxItemType( constructionItemName, constructionItemName ) ).ToList()
           : new List<DetailTableModel.ComboboxItemType>() { new(DefaultConstructionItems, DefaultConstructionItems) } ;
-
+        
         var levelNames = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).Select( l => l.Name ).ToList() ;
         var levels = ( from levelName in levelNames select new DetailTableModel.ComboboxItemType( levelName, levelName ) ).ToList() ;
-
+        
         var wireTypeNames = wiresAndCablesModelData.Select( w => w.WireType ).Distinct().ToList() ;
         var wireTypes = ( from wireType in wireTypeNames select new DetailTableModel.ComboboxItemType( wireType, wireType ) ).ToList() ;
-
+        
         var earthTypes = new List<DetailTableModel.ComboboxItemType>() { new("IV", "IV"), new("EM-IE", "EM-IE") } ;
-
+        
         var numbers = new List<DetailTableModel.ComboboxItemType>() ;
         for ( var i = 1 ; i <= 10 ; i++ ) {
           numbers.Add( new DetailTableModel.ComboboxItemType( i.ToString(), i.ToString() ) ) ;
         }
-
+        
         var constructionClassificationTypeNames = hiroiSetCdMasterNormalModelData.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
         var constructionClassificationTypes = ( from constructionClassification in constructionClassificationTypeNames select new DetailTableModel.ComboboxItemType( constructionClassification, constructionClassification ) ).ToList() ;
-
+        
         var signalTypes = ( from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
-
+        
         var viewModel = new DetailTableViewModel( document, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, conduitsModelData, wiresAndCablesModelData, false, true )
         {
           PickInfo = pickInfo
