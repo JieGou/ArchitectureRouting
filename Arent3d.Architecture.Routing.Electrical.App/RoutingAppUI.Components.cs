@@ -112,6 +112,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [SplitButton( "arent3d.architecture.routing.confirmation.all", TitleKey = "Electrical.App.Panels.Routing.Confirmation.All" )]
         private static class AllConfirmationButton
         {
+          [Button( typeof( BulkHighlightOffCommand ), OnlyInitialized = true )]
+          private static class BulkHighlightOffCommandButton
+          {
+          }
+          
           [Button( typeof( ConfirmUnsetCommand ), OnlyInitialized = true )]
           private static class ConfirmUnsetCommandButton
           {
@@ -194,6 +199,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class ExportDWGCommandButton
           {
           }
+          
+          [Button( typeof( AddWiringInformationCommand ), OnlyInitialized = true )]
+          private static class AddWiringInformationCommandButton { }
 
           [Button( typeof( ChangePlumbingInformationCommand ), OnlyInitialized = true )]
           private static class ChangePlumbingInformationCommandButton
@@ -378,6 +386,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( PullBoxRoutingCommand ), OnlyInitialized = true )]
           private static class PullBoxRoutingCommandButton
+          {
+          }
+          
+          [Button( typeof( ChangePullBoxDimensionCommand ), OnlyInitialized = true )]
+          private static class ChangePullBoxDimensionCommandButton
+          {
+          }
+          
+          [Button( typeof( EraseSelectedPullBoxCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedPullBoxCommandButton
           {
           }
           

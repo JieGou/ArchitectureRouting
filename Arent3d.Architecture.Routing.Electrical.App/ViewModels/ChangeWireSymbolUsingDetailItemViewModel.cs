@@ -7,7 +7,6 @@ using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Extensions ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -15,7 +14,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using MoreLinq ;
+using MoreLinq ; 
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {

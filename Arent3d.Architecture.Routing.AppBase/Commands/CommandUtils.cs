@@ -1,6 +1,10 @@
 using System ;
 using System.Collections.Generic ;
+using System.IO ;
 using System.Linq ;
+using System.Reflection ;
+using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
@@ -45,6 +49,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
         DisplayUnit.METRIC => $"({pos.X.RevitUnitsToMeters()}, {pos.Y.RevitUnitsToMeters()}, {pos.Z.RevitUnitsToMeters()})",
         _ => $"({pos.X.RevitUnitsToFeet()}, {pos.Y.RevitUnitsToFeet()}, {pos.Z.RevitUnitsToFeet()})",
       } ;
+    }
+    
+    public static List<ElectricalCategoryModel> LoadElectricalCategories(string sheetName, ref Dictionary<string, string> dictData)
+    {
+      const string ElectricalCategoryFileName = "ElectricalCategory.xlsx";
+      const string ResourceFolderName = "resources";
+      //Load ElectricalCategory from excel file resource
+      string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, ResourceFolderName )  ;
+      var filePath = Path.Combine( resourcesPath, ElectricalCategoryFileName ) ;
+      return ExcelToModelConverter.GetElectricalCategories( filePath, ref dictData, sheetName ) ;  
     }
   }
 }

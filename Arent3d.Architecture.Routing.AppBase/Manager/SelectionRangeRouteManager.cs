@@ -6,6 +6,7 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -54,37 +55,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return document.GuessLevel( origin! ).Id ;
     }
 
-    public static ( FamilyInstance? PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SensorArrayDirection SensorDirection, string? ErrorMessage ) SelectionRangeRoute( UIDocument iuDocument )
+    public static ( IReadOnlyList<FamilyInstance> PowerConnectors, IReadOnlyList<FamilyInstance> SensorConnectors, SensorArrayDirection SensorDirection, string? ErrorMessage ) SelectionRangeRoute( UIDocument uiDocument )
     {
-      var selectedElements = iuDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コネクタを選択して下さい。" ).OfType<FamilyInstance>() ;
-
+      var selectedElements = uiDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コネクタを選択して下さい。" ).OfType<FamilyInstance>() ;
+      var registrationOfBoardDataModels = uiDocument.Document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ; 
+        
       FamilyInstance? powerConnector = null ;
       var sensorConnectors = new List<FamilyInstance>() ;
+      var powerConnectors = new List<FamilyInstance>() ;
+      
       foreach ( var element in selectedElements ) {
         if ( element.GetConnectorFamilyType() is not { } connectorFamilyType ) continue ;
 
         if ( connectorFamilyType == ConnectorFamilyType.Power ) {
-          if ( null != powerConnector ) return ( null!, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageTwoOrMorePowerConnector ) ;
-          powerConnector = element ;
+          powerConnectors.Add( element );
         }
         else if ( connectorFamilyType == ConnectorFamilyType.Sensor ) {
           sensorConnectors.Add( element ) ;
         }
       }
+      
+      var boardConnectors = new List<FamilyInstance>() ;
+      foreach ( var element in powerConnectors ) {
+        element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfConnector ) ;
+        if ( string.IsNullOrEmpty( ceedCodeOfConnector ) ) continue ;
+        var registrationOfBoardDataModel = registrationOfBoardDataModels.FirstOrDefault( x => x.AutoControlPanel == ceedCodeOfConnector || x.SignalDestination == ceedCodeOfConnector ) ;
+        if ( registrationOfBoardDataModel == null ) continue ;
+        boardConnectors.Add( element ) ;
+      }
 
-      if ( powerConnector == null && 0 == sensorConnectors.Count ) return ( null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndSensorConnector ) ;
-      if ( powerConnector == null ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageNoPowerConnector ) ;
+      if ( boardConnectors.Count() > 1 ) {
+        return ( boardConnectors, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, null ) ;
+      }
+
+      powerConnector = powerConnectors.FirstOrDefault() ;
+      if ( powerConnectors.Count() > 1 ) return ( null!, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageTwoOrMorePowerConnector ) ;
+      if ( powerConnector == null && 0 == sensorConnectors.Count ) return ( Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndSensorConnector ) ;
+      if ( powerConnector == null ) return ( Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageNoPowerConnector ) ;
 
       var powerLevel = powerConnector.LevelId ;
       sensorConnectors.RemoveAll( fi => fi.LevelId != powerLevel ) ;
 
-      if ( 0 == sensorConnectors.Count ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageNoSensorConnector ) ;
-      if ( 1 == sensorConnectors.Count ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
+      if ( 0 == sensorConnectors.Count ) return ( Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageNoSensorConnector ) ;
+      if ( 1 == sensorConnectors.Count ) return ( Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
 
       var sensorDirection = SortSensorConnectors( powerConnector.GetTopConnectorOfConnectorFamily().Origin, ref sensorConnectors ) ;
-      if ( SensorArrayDirection.Invalid == sensorDirection ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
+      if ( SensorArrayDirection.Invalid == sensorDirection ) return ( Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
 
-      return ( powerConnector, sensorConnectors, sensorDirection, null ) ;
+      return ( powerConnectors, sensorConnectors, sensorDirection, null ) ;
     }
 
     public static SensorArrayDirection SortSensorConnectors( XYZ powerPoint, ref List<FamilyInstance> sensorConnectors )
@@ -157,7 +175,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return sv ;
     }
 
-    public static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemPipeSpec pipeSpec, XYZ powerPosition, XYZ? lastSensorPosition = null )
+    public static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemPipeSpec pipeSpec, XYZ powerPosition , XYZ? lastSensorPosition = null )
     {
       var document = powerConnector.Document ;
       var levelId = powerConnector.LevelId ;
@@ -210,6 +228,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       return ( footPassPoint, passPoints ) ;
+    }
 
       static bool AreTooClose( XYZ lastPos, XYZ nextPos, double shortCurveLength )
       {
@@ -248,7 +267,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         return document.AddPassPoint( routeName, passPointPos, passPointDir, radius, levelId ) ;
       }
 
-      static IReadOnlyList<XYZ> GetPassPointPositions( XYZ powerPosition, IReadOnlyCollection<FamilyInstance> sensorConnectors, XYZ lastSensorPosition, SensorArrayDirection sensorDirection, double? forcedFixedHeight, double bendingRadius )
+      public static IReadOnlyList<XYZ> GetPassPointPositions( XYZ powerPosition, IReadOnlyCollection<FamilyInstance> sensorConnectors, XYZ lastSensorPosition, SensorArrayDirection sensorDirection, double? forcedFixedHeight, double bendingRadius )
       {
         var sensorPositions = sensorConnectors.ConvertAll( sensorConnector => sensorConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
 
@@ -373,8 +392,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           }
         }
       }
-    }
-
+    
     public static int GetRouteNameIndex( RouteCache routes, string? targetName )
     {
       string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
@@ -408,6 +426,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
       else {
         return sensorHeight + bendingRadius ;
+      }
+    }
+    
+    public class FailurePreprocessor : IFailuresPreprocessor
+    {
+      public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
+      {
+        var failureMessages = failuresAccessor.GetFailureMessages() ;
+        foreach ( var message in failureMessages ) {
+          if ( message.GetSeverity() == FailureSeverity.Warning )
+            failuresAccessor.DeleteWarning( message ) ;
+        }
+
+        return FailureProcessingResult.Continue ;
       }
     }
   }

@@ -1,6 +1,5 @@
 ﻿using System ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -14,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
   public abstract class NewConnectorCommandBase : IExternalCommand
   {
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
-    private const string DefaultConstructionItem = "未設定" ;
+    private string _defaultConstructionItem = "未設定" ;
     private const string DefaultConnectorWidth = "100" ;
     private const string DefaultConnectorLength = "150" ;
     protected virtual ConnectorFamilyType? ConnectorType => null ;
@@ -51,8 +50,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
 
-      if ( false == instance.TryGetProperty( "W", out string? connectorWidthString,true ) && string.IsNullOrEmpty( connectorWidthString ) ) connectorWidthString = DefaultConnectorWidth;
-      if  ( false == instance.TryGetProperty( "D",out string? connectorLengthString,true ) && string.IsNullOrEmpty( connectorLengthString )) connectorLengthString = DefaultConnectorLength;
+      if ( false == instance.TryGetProperty( "W", out string? connectorWidthString ) && string.IsNullOrEmpty( connectorWidthString ) ) connectorWidthString = DefaultConnectorWidth;
+      if  ( false == instance.TryGetProperty( "D",out string? connectorLengthString) && string.IsNullOrEmpty( connectorLengthString )) connectorLengthString = DefaultConnectorLength;
 
       if ( false == int.TryParse( connectorLengthString, out var connectorWidth ) ) return ;
       if ( false == int.TryParse( connectorWidthString,out var connectorLength )) return;
@@ -63,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
       instance.TrySetProperty( "D", (connectorLength * scaleRatio ).MillimetersToRevitUnits()) ;
 
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? _ ) ) return ;
-      instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+      instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, _defaultConstructionItem ) ;
        
       //Set value for isEcoMode property from default value in DB
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
