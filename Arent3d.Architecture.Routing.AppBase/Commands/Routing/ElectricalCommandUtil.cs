@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       GroupConnector( document, connectorGroups ) ;
     }
 
-    private static void UnGroupConnector( Document document, Element connector, ref Dictionary<ElementId, List<ElementId>> connectorGroups )
+    public static void UnGroupConnector( Document document, Element connector, ref Dictionary<ElementId, List<ElementId>> connectorGroups )
     {
       var parentGroup = document.GetElement( connector.GroupId ) as Group ;
       if ( parentGroup == null ) return ;
@@ -109,7 +109,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       parentGroup.UngroupMembers() ;
     }
 
-    private static void GroupConnector( Document document, Dictionary<ElementId, List<ElementId>> connectorGroups )
+    public static void GroupConnector( Document document, Dictionary<ElementId, List<ElementId>> connectorGroups )
     {
       using Transaction t = new Transaction( document ) ;
       t.Start( "Group connector" ) ;

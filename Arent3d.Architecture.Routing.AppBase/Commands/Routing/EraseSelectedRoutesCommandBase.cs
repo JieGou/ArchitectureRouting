@@ -41,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var recreatedRoutes = Route.GetAllRelatedBranches( selectedRoutes ) ;
       recreatedRoutes.ExceptWith( selectedRoutes ) ;
-      RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), true ) ;
+      RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), true, false, true ) ;
 
       // Returns affected but not deleted routes to recreate them.
       return recreatedRoutes.ToSegmentsWithName().EnumerateAll() ;
