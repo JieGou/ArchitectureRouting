@@ -48,6 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<HiroiSetCdMasterModel> _allHiroiSetCdMasterEcoModels ;
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceedModelData ;
+    private List<RegistrationOfBoardDataModel> _registrationOfBoardDataModelData ;
 
     public enum EcoNormalMode
     {
@@ -139,6 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
       _allHiroiMasterModels = new List<HiroiMasterModel>() ;
       _ceedModelData = new List<CeedModel>() ;
+      _registrationOfBoardDataModelData = new List<RegistrationOfBoardDataModel>() ;
       GetCsvFiles( defaultSettingStorable ) ;
     }
     
@@ -328,7 +330,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
        var document = _uiDocument.Document ;
        using var progress = ProgressBar.ShowWithNewThread( _uiDocument.Application ) ;
        progress.Message = "Saving data..." ;
-       using ( var progressData = progress?.Reserve( 0.5 ) ) {
+       using ( var progressData = progress?.Reserve( 0.3 ) ) {
          CsvStorable csvStorable = document.GetCsvStorable() ;
          {
            if ( _allWiresAndCablesModels.Any() )
@@ -360,27 +362,41 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
          progressData?.ThrowIfCanceled() ;
        }
 
-      using ( var progressData = progress?.Reserve( 0.9 ) ) {
-        CeedStorable ceedStorable = document.GetCeedStorable() ;
-        {
-          if ( _ceedModelData.Any() ) {
-            ceedStorable.CeedModelData = _ceedModelData ;
-            ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-            try {
-              using Transaction t = new Transaction( document, "Save CeeD data" ) ;
-              t.Start() ;
-              ceedStorable.Save() ;
-              document.MakeCertainAllConnectorFamilies() ;
-              t.Commit() ;
-            }
-            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-            }
-          }
-        }
-        progressData?.ThrowIfCanceled() ;
-      }
-      
-      using ( var progressData = progress?.Reserve( 0.9 ) ) {
+       using ( var progressData = progress?.Reserve( 0.6 ) ) {
+         var ceedStorable = document.GetCeedStorable() ;
+         if ( _ceedModelData.Any() ) {
+           ceedStorable.CeedModelData = _ceedModelData ;
+           ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+         }
+
+         var registrationOfBoardDataStorable = document.GetRegistrationOfBoardDataStorable() ;
+         if ( _registrationOfBoardDataModelData.Any() ) {
+           registrationOfBoardDataStorable.RegistrationOfBoardData = _registrationOfBoardDataModelData ;
+         }
+
+         if ( _ceedModelData.Any() || _registrationOfBoardDataModelData.Any() ) {
+           try {
+             using Transaction t = new Transaction( document, "Save Ceed and Board data" ) ;
+             t.Start() ;
+             if ( _ceedModelData.Any() ) {
+               ceedStorable.Save() ;
+               document.MakeCertainAllConnectorFamilies() ;
+             }
+
+             if ( _registrationOfBoardDataModelData.Any() ) {
+               registrationOfBoardDataStorable.Save() ;
+             }
+
+             t.Commit() ;
+           }
+           catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+           }
+         }
+
+         progressData?.ThrowIfCanceled() ;
+       }
+
+       using ( var progressData = progress?.Reserve( 0.9 ) ) {
         DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
         {
           if ( _csvFileModels.Any() ) {
@@ -460,12 +476,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       bool isLoadedCeedFile = false ;
       var ceedCodeFile = "【CeeD】セットコード一覧表" ;
       string equipmentSymbolsFile = "機器記号一覧表" ;
-      StringBuilder correctMessage = new StringBuilder() ;
-      StringBuilder errorMessage = new StringBuilder() ;
-      string defaultCorrectMessage = "指定されたフォルダから以下のデータを正常にロードできました。" ;
-      string defaultErrorMessage = "以下のファイルの読み込みが失敗しました。" ;
-      correctMessage.AppendLine( defaultCorrectMessage ) ;
-      errorMessage.AppendLine( defaultErrorMessage ) ;
+      var boardFile = "盤間配線確認表" ;
       foreach ( var fileName in fileNames ) {
         var path = Path.Combine( folderPath, fileName ) ;
         if ( File.Exists( path ) ) {
@@ -476,11 +487,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiMaster, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Master" ;
-                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
                 listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
-              }
-              else {
-                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
 
               break ;
@@ -489,11 +496,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterNormal, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Set CD Master Normal" ;
-                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
                 listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
-              }
-              else {
-                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
 
               break ;
@@ -502,11 +505,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterEco, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Set CD Master ECO" ;
-                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
                 listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
-              }
-              else {
-                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
 
               break ;
@@ -515,11 +514,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterEco, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Set Master ECO" ;
-                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
                 listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
-              }
-              else {
-                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
 
               break ;
@@ -528,11 +523,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterNormal, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Set Master Normal" ;
-                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
                 listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
-              }
-              else {
-                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
 
               break ;
@@ -541,11 +532,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 2, ModelName.Conduits, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " 電線管一覧" ;
-                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
                 listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
-              }
-              else {
-                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
 
               break ;
@@ -554,11 +541,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 2, ModelName.WiresAndCables, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " 電線・ケーブル一覧" ;
-                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
                 listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
-              }
-              else {
-                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
 
               break ;
@@ -572,38 +555,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var equipmentSymbolsXlsxFilePath = Path.Combine( folderPath, equipmentSymbolsFile + ".xlsx" ) ;
       var equipmentSymbolsXlsFilePath = Path.Combine( folderPath, equipmentSymbolsFile + ".xls" ) ;
       if ( File.Exists( ceedCodeXlsxFilePath ) ) {
-        isLoadedCeedFile = LoadCeedCodeFile( correctMessage, errorMessage, ceedCodeFile, equipmentSymbolsFile, ceedCodeXlsxFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel) ;
+        isLoadedCeedFile = LoadCeedCodeFile( equipmentSymbolsFile, ceedCodeXlsxFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel) ;
         listCsvFileModel.Add( new CsvFileModel(ceedCodeFile, renamePathToRelative( ceedCodeXlsxFilePath ), ceedCodeFile + ".xlsx") );
       }
 
       if ( File.Exists( ceedCodeXlsFilePath ) && ! isLoadedCeedFile ) {
-        isLoadedCeedFile = LoadCeedCodeFile( correctMessage, errorMessage, ceedCodeFile, equipmentSymbolsFile, ceedCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel ) ;
-        listCsvFileModel.Add( new CsvFileModel(ceedCodeFile, renamePathToRelative(ceedCodeXlsFilePath), ceedCodeFile + ".xls") );
+        isLoadedCeedFile = LoadCeedCodeFile( equipmentSymbolsFile, ceedCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel ) ;
+        listCsvFileModel.Add( new CsvFileModel( ceedCodeFile, renamePathToRelative( ceedCodeXlsFilePath ), ceedCodeFile + ".xls" ) ) ;
       }
 
-      string resultMessage = string.Empty ;
-      if ( !correctMessage.ToString().Trim().Equals( defaultCorrectMessage ) ) {
-        resultMessage += correctMessage +"\r";
+      // load 盤間配線確認表 file
+      var boardXlsxFilePath = Path.Combine( folderPath, boardFile + ".xlsx" ) ;
+      var boardXlsFilePath = Path.Combine( folderPath, boardFile + ".xls" ) ;
+      if ( File.Exists( boardXlsxFilePath ) || File.Exists( boardXlsFilePath ) ) {
+        var filePath = File.Exists( boardXlsxFilePath ) ? boardXlsxFilePath : boardXlsFilePath ;
+        _registrationOfBoardDataModelData = ExcelToModelConverter.GetAllRegistrationOfBoardDataModel( filePath ) ;
+        if ( _registrationOfBoardDataModelData.Any() ) {
+          listCsvFileModel.Add( new CsvFileModel( boardFile, renamePathToRelative( filePath ), Path.GetFileName( filePath ) ) ) ;
+        }
       }
-      if ( !errorMessage.ToString().Trim().Equals( defaultErrorMessage ) ) {
-        resultMessage += errorMessage ;
-      }
-      if ( string.IsNullOrEmpty( resultMessage.Trim() ) ) {
-        resultMessage = "指定されたフォルダに条件に一致するファイルが存在しません。" ;
-      }
-      MessageBox.Show( resultMessage,"Result Message" ) ;
 
       CsvFileModels = listCsvFileModel ;
     }
     
-    private bool LoadCeedCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceedCodeFile, string equipmentSymbolsFile, string ceedCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath, ObservableCollection<CsvFileModel> listCsvFile )
+    private bool LoadCeedCodeFile( string equipmentSymbolsFile, string ceedCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath, ObservableCollection<CsvFileModel> listCsvFile )
     {
       if ( File.Exists( equipmentSymbolsXlsxFilePath ) ) {
         _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
         if ( _ceedModelData.Any() ) {
-          correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
-          correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
-          
           listCsvFile.Add( new CsvFileModel(equipmentSymbolsFile, renamePathToRelative(equipmentSymbolsXlsxFilePath), equipmentSymbolsFile + ".xlsx") );
           return true ;
         }
@@ -612,27 +591,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( File.Exists( equipmentSymbolsXlsFilePath ) ) {
         _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsFilePath) ;
         if ( _ceedModelData.Any() ) {
-          correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
-          correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
-          
           listCsvFile.Add( new CsvFileModel(equipmentSymbolsFile, renamePathToRelative(equipmentSymbolsXlsxFilePath), equipmentSymbolsFile + ".xls") );
           return true ;
         }
       }
 
       _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, string.Empty ) ;
-      if ( _ceedModelData.Any() ) {
-        correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
-        return true ;
-      }
-
-      errorMessage.AppendLine( $"\u2022 {Path.GetFileName( ceedCodeFilePath )}" ) ;
-
-      if ( File.Exists( equipmentSymbolsXlsxFilePath ) )
-        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsXlsxFilePath )}" ) ;
-      if ( File.Exists( equipmentSymbolsXlsFilePath ) )
-        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsXlsFilePath )}" ) ;
-      return false ;
+      return _ceedModelData.Any() ;
     }
     
     private bool GetData( string path, int startLine, ModelName modelName, bool showMessageFlag )
