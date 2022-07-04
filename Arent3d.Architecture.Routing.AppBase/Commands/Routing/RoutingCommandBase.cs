@@ -55,10 +55,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( Result.Failed == executionResultChangePriorityConduit.Result ) return ExecutionResult.Failed ;
         executionResultValue = executionResultChangePriorityConduit.Value ;
       }
-      else {
+      else if ( result is not PickRoutingCommandBase.PickState { IsRouteBetweenPowerConnectors: true } ) {
         // Electrical.AppのPickRoutingCommandとSelectionRangeRouteCommandのみで追加処理をしているため、他のAppに影響しないはずです
         executionResultValue = CreatePullBoxAfterRouteGenerated( document, executor, executionResult.Value, result ) ;
       }
+      else
+        executionResultValue = executionResult.Value ;
 
       // execute after route command
       AfterRouteGenerated( document, executionResultValue, result ) ;
@@ -189,7 +191,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected virtual OperationResult<IReadOnlyCollection<Route>> ChangePriorityConduit( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result, RoutingExecutor executor )
     {
-      return OperationResult<IReadOnlyCollection<Route>>.Cancelled ;
+      return OperationResult<IReadOnlyCollection<Route>>.Cancelled;
     }
     
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
