@@ -42,7 +42,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void FileType_Unchecked( object sender, RoutedEventArgs e )
     {
-      ViewModel.FileTypeChecked( sender );
+      ViewModel.FileTypeUnchecked( sender );
+    }
+
+
+    private void OutputItems_Checked( object sender, RoutedEventArgs e )
+    {
+      ViewModel.OutputItemsChecked( sender );
     }
   }
 
