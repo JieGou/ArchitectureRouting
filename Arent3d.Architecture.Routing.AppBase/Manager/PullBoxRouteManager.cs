@@ -1003,10 +1003,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var ( originX, originY, originZ) = origin ;
       var height = originZ - level!.Elevation ;
       if ( direction.X is 1 or -1 ) {
-        originX += distanceOrigin < distanceEnd ? direction.X * PullBoxWidth * baseLengthOfLine : - direction.X * PullBoxWidth * baseLengthOfLine ;
+        originX += direction.X * PullBoxWidth * baseLengthOfLine ;
       }
       else if ( direction.Y is 1 or -1 ) {
-        originY += distanceOrigin < distanceEnd ? - direction.Y * PullBoxLenght * baseLengthOfLine : direction.Y * PullBoxLenght * baseLengthOfLine ;
+        originY += direction.Y * PullBoxLenght * baseLengthOfLine ;
       }
 
       origin = new XYZ( originX, originY, height ) ;
