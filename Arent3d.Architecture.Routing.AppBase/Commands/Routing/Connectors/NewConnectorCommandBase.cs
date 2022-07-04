@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -22,6 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      _defaultConstructionItem = document.GetDefaultConstructionItem() ;
       try {
         var (originX, originY, originZ) = uiDocument.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
 
