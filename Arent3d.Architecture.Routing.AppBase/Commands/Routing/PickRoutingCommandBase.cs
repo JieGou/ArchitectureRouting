@@ -14,6 +14,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using Line = Autodesk.Revit.DB.Line ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -37,7 +38,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      var minLenght = ( 600.0 ).MillimetersToRevitUnits() ; 
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       var routingExecutor = GetRoutingExecutor() ;
@@ -50,29 +50,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       XYZ? passPointPosition = null ;
       XYZ? passPointDirection = null ;
-      var ( redLineIds, blueLineIds ) = CreatePreviewLines( uiDocument.Document, fromPickResult, toPickResult ) ;
+      var ( previewLineIds, allLineIds ) = PickCommandUtil.CreatePreviewLines( uiDocument.Document, fromPickResult, toPickResult ) ;
       
-      if ( redLineIds.Any() && blueLineIds.Any() ) {
-        var previewLineIds = new List<ElementId>() ;
-        previewLineIds.AddRange( redLineIds ) ;
-        previewLineIds.AddRange( blueLineIds ) ;
+      if ( previewLineIds.Any() && allLineIds.Any() ) {
         PreviewLineSelectionFilter previewLineSelectionFilter = new( previewLineIds ) ;
         var selectedRoute = uiDocument.Selection.PickObject( ObjectType.Element, previewLineSelectionFilter, "Select preview line." ) ;
         var selectedLine = ( document.GetElement( selectedRoute.ElementId ) as DetailLine ) ! ;
         var passPointLine = ( selectedLine.GeometryCurve as Line ) ! ;
-        if ( passPointLine.Length < minLenght ) {
-          var isSelectedRedLine = redLineIds.FirstOrDefault( i => i == selectedRoute.ElementId ) != null ;
-          var selectedLineId = isSelectedRedLine ? redLineIds.FirstOrDefault( i => i != selectedRoute.ElementId ) : blueLineIds.FirstOrDefault( i => i != selectedRoute.ElementId ) ;
-          selectedLine = ( document.GetElement( selectedLineId ) as DetailLine ) ! ;
-          passPointLine = ( selectedLine.GeometryCurve as Line ) ! ;
-        }
-        
         var (x0, y0, z0) = passPointLine.GetEndPoint( 0 ) ;
         var (x1, y1, z1) = passPointLine.GetEndPoint( 1 ) ;
         passPointPosition = new XYZ( ( x0 + x1 ) / 2, ( y0 + y1 ) / 2, ( z0 + z1 ) / 2 ) ;
         passPointDirection = passPointLine.Direction ;
       
-        RemovePreviewLines( document, previewLineIds ) ;
+        PickCommandUtil.RemovePreviewLines( document, allLineIds ) ;
       }
 
       var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
@@ -81,93 +71,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
 
       return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection ) ) ;
-    }
-
-    private ( List<ElementId>, List<ElementId> ) CreatePreviewLines( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
-    {
-      if ( fromPickResult.PickedConnector == null || toPickResult.PickedConnector == null ) {
-        return ( new List<ElementId>(), new List<ElementId>() ) ;
-      }
-      using Transaction trans = new( document, "Create preview lines" ) ;
-      trans.Start() ;
-      var firstPoint = fromPickResult.GetOrigin() ;
-      var lastPoint = toPickResult.GetOrigin() ;
-      if ( Math.Abs( firstPoint.X - lastPoint.X ) == 0 || Math.Abs( firstPoint.Y - lastPoint.Y ) == 0 ) 
-        return ( new List<ElementId>(), new List<ElementId>() ) ;
-      
-      var mpt = ( firstPoint + lastPoint ) * 0.5 ;
-      var currView = document.ActiveView ;
-      var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
-      var mirrorMat = Transform.CreateReflection( plane ) ;
-      var secondPoint = mirrorMat.OfPoint( firstPoint ) ;
-      var thirdPoint = mirrorMat.OfPoint( lastPoint ) ;
-      
-      List<ElementId> redLineIds = new() ;
-      List<ElementId> blueLineIds = new() ;
-      List<XYZ> points = new() { secondPoint, lastPoint }  ;
-      var prevP = firstPoint ;
-      var redColor = new Color( 255, 0, 0 ) ;
-      var blueColor = new Color( 0, 0, 255 ) ;
-      var redLineCategory = GetLineStyle( document, redColor, "Red" ) ;
-      var blueLineCategory = GetLineStyle( document, blueColor, "Blue" ) ;
-      foreach ( var nextP in points ) {
-        var curve = Line.CreateBound( prevP, nextP ) ;
-        var detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
-        detailCurve.LineStyle = redLineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        redLineIds.Add( detailCurve.Id ) ;
-        prevP = nextP ;
-      }
-      
-      points = new List<XYZ>() { thirdPoint, lastPoint }  ;
-      prevP = firstPoint ;
-      foreach ( var nextP in points ) {
-        var curve = Line.CreateBound( prevP, nextP ) ;
-        var detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
-        detailCurve.LineStyle = blueLineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        blueLineIds.Add( detailCurve.Id ) ;
-        prevP = nextP ;
-      }
-
-      trans.Commit() ;
-
-      return ( redLineIds, blueLineIds ) ;
-    }
-
-    private XYZ FindPoint( XYZ firstPoint, XYZ firstDirection, XYZ secondPoint, XYZ secondDirection )
-    {
-      var (x1, y1, z1) = firstPoint ;
-      var (x2, y2, z2) = secondPoint ;
-      var (a1, b1, c1) = firstDirection ;
-      var (a2, b2, c2) = secondDirection ;
-
-      var x = ( ( b1 * x1 ) / a1 - ( b2 * x2 ) / a2 - y1 + y2 ) / ( ( b1 / a1 ) - ( b2 / a2 ) ) ;
-      var y = ( x - x1 ) * ( b1 / a1 ) + y1 ;
-      var point = new XYZ( x, y, z1 ) ;
-      return point ;
-    }
-    
-    private void RemovePreviewLines( Document document, List<ElementId> previewLineIds )
-    {
-      using Transaction trans = new( document, "Remove preview lines" ) ;
-      trans.Start() ;
-      document.Delete( previewLineIds ) ;
-      trans.Commit() ;
-    }
-    
-    private static Category GetLineStyle( Document doc, Color color, string colorName )
-    {
-      var categories = doc.Settings.Categories ;
-      var subCategoryName = colorName + "PreviewLine" ;
-      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
-      Category subCategory ;
-      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
-        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
-        subCategory.LineColor = color ;
-      }
-      else
-        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
-
-      return subCategory ;
     }
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, MEPSystemType? systemType )
@@ -249,7 +152,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, XYZ? passPointPosition, XYZ? passPointDirection )
     {
       var useConnectorDiameter = UseConnectorDiameter() ;
-      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
+      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter, passPointDirection ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult, useConnectorDiameter ) ;
 
       if ( passPointPosition == null ) {
