@@ -43,19 +43,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var executionResult = GenerateRoutes( document, executor, result ) ;
       if ( Result.Cancelled == executionResult.Result ) return ExecutionResult.Cancelled ;
       if ( Result.Failed == executionResult.Result ) return ExecutionResult.Failed ;
-      
-      if(result is SelectionRangeRouteCommandBase.SelectState uiResult &&  uiResult.IsPowersBoard) {
+
+      // Avoid Revit bugs about reducer insertion.
+      FixReducers( document, executor, executionResult.Value ) ;
+      IReadOnlyCollection<Route> executionResultValue ;
+
+      if ( result is SelectionRangeRouteCommandBase.SelectState { IsSelectionRangeRouteBetweenPowerConnectors: true } ) {
         var executionResultChangePriorityConduit = ChangePriorityConduit( document, executionResult.Value, result, executor ) ;
         if ( Result.Cancelled == executionResultChangePriorityConduit.Result ) return ExecutionResult.Cancelled ;
         if ( Result.Failed == executionResultChangePriorityConduit.Result ) return ExecutionResult.Failed ;
-        executionResult = executionResultChangePriorityConduit ;
+        executionResultValue = executionResultChangePriorityConduit.Value ;
       }
-      
-      // Avoid Revit bugs about reducer insertion.
-      FixReducers( document, executor, executionResult.Value ) ;
+      else {
+        executionResultValue = CreatePullBoxAfterRouteGenerated( document, executor, executionResult.Value, result ) ;
+      }
 
-      var executionResultValue = CreatePullBoxAfterRouteGenerated( document, executor, executionResult.Value, result ) ;
-      
       // execute after route command
       AfterRouteGenerated( document, executionResultValue, result ) ;
 
