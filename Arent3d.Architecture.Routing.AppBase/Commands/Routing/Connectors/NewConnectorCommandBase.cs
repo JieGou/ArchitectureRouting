@@ -17,12 +17,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
     private const string DefaultConstructionItem = "未設定" ;
     private const string DefaultConnectorWidth = "100" ;
     private const string DefaultConnectorLength = "150" ;
+    private string _defaultConstructionItem = "未設定" ;
     protected virtual ConnectorFamilyType? ConnectorType => null ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      _defaultConstructionItem = document.GetDefaultConstructionItem() ;
       try {
         var (originX, originY, originZ) = uiDocument.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
 
@@ -63,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
       instance.TrySetProperty( "D", (connectorLength * scaleRatio ).MillimetersToRevitUnits()) ;
 
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? _ ) ) return ;
-      instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+      instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, _defaultConstructionItem ) ;
        
       //Set value for isEcoMode property from default value in DB
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;

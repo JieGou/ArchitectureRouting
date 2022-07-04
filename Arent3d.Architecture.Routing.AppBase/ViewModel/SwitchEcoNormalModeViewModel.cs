@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit.I18n ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel

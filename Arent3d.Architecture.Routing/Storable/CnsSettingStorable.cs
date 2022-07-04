@@ -24,6 +24,7 @@ namespace Arent3d.Architecture.Routing.Storable
       Conduit, //配線に工事項目を設定する
       Connector,
       Rack,
+      Range,
       All
     }
 

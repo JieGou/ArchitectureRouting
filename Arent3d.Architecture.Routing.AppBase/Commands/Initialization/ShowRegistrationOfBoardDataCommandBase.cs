@@ -16,12 +16,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ShowRegistrationOfBoardDataCommandBase : IExternalCommand
   {
-    private const string DefaultConstructionItem = "未設定" ;
-    private const string StatusPrompt = "配置場所を選択して下さい。" ;
+     private const string StatusPrompt = "配置場所を選択して下さい。" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
+      var defaultConstructionItem = doc.GetDefaultConstructionItem() ;
       try {
         var viewModel = new RegistrationOfBoardDataViewModel( commandData.Application.ActiveUIDocument.Document ) ;
         var dlgRegistrationOfBoardDataModel = new RegistrationOfBoardDataDialog( viewModel ) ;
@@ -46,28 +46,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           if ( elementFromToPower is FamilyInstance familyInstanceFromToPower ) {
             familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
-            familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
             var elevationParameter = elementFromToPower.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ) ;
             elevationParameter?.Set( 0.0 ) ;
           }
 
           if ( elementConnectorPower is FamilyInstance familyInstanceConnectorPower ) {
             familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
-            familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
             familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
           }
 
           var defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-          var noteWidth = .12 ;
-          // make sure note width works for the text type
-          var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
-          var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
-          if ( noteWidth < minWidth ) {
-            noteWidth = minWidth ;
-          }
-          else if ( noteWidth > maxWidth ) {
-            noteWidth = maxWidth ;
-          }
 
           TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
@@ -75,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           ? viewModel.CellSelectedAutoControlPanel 
           : viewModel.CellSelectedSignalDestination ;
         var txtPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, text, opts ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
         var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
         if ( textNoteType == null ) {
           var elementType = textNote.TextNoteType.Duplicate( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName ) ;

@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.IO ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
 {
