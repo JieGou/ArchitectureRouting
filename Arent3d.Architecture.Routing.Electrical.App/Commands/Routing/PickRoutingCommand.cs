@@ -6,7 +6,6 @@ using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
@@ -57,7 +56,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
-      while ( true ) {
+      for ( int i = 0 ; i < 50 ; i++ ) {
         var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
         var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
         if ( ! segments.Any() ) break ;
@@ -100,9 +99,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
 
       #endregion
-      
-      // Reroute after calculate new dimension for pull box
-      // executeResultValue = PullBoxRoutingCommandBase.ExecuteReRoute( document, executor, progress, resultRoute ) ;
 
       return executeResultValue ;
     }

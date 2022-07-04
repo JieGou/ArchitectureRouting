@@ -26,11 +26,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const double NearShaftTolerance = 0.01 ;
     private static readonly double PullBoxWidth = ( 300.0 ).MillimetersToRevitUnits() ;
     private static readonly double PullBoxLenght = ( 250.0 ).MillimetersToRevitUnits() ;
-    private const string HinmeiPullBox = "プルボックス" ;
+    private const string HinmeiOfPullBox = "プルボックス" ;
     public const string DefaultPullBoxLabel = "PB" ;
     public const string MaterialCodeParameter = "Material Code" ;
     public const string IsAutoCalculatePullBoxSizeParameter = "IsAutoCalculatePullBoxSize" ;
-    private const string TaniPullBox = "個" ;
+    private const string TaniOfPullBox = "個" ;
 
     public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, Route route, Element element, FamilyInstance pullBox, double heightConnector, 
       double heightWire, XYZ routeDirection, bool isCreatePullBoxWithoutSettingHeight, string nameBase, ref int parentIndex, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null )
@@ -337,7 +337,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( ! string.IsNullOrEmpty( ceedCodeOfConnector ) ) ceedCodes.Add( ceedCodeOfConnector! ) ;
     }
 
-    private static (int depth, int width, int height) CalculatePullBoxDimension(int[] plumbingSizes, bool isStraightDirection)
+    private static (int depth, int width, int height) GetPullBoxDimension(int[] plumbingSizes, bool isStraightDirection)
     {
       int depth = 0, width = 0, height = 0 ;
       if ( plumbingSizes.Any() ) {
@@ -349,12 +349,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         else {
           depth = width = plumbingSizes.Sum( x => x + 30 ) + 30 + 8 * maxPlumbingSize ;
         }
-        height = GetHeightByPlumbingSize( maxPlumbingSize ) ;
+        height = GetHeightOfPullBoxByPlumbingSize( maxPlumbingSize ) ;
       }
       return ( depth, width, height ) ;
     }
     
-    private static int GetHeightByPlumbingSize( int plumbingSize )
+    private static int GetHeightOfPullBoxByPlumbingSize( int plumbingSize )
     {
       switch ( plumbingSize ) {
         case 19: case 16: case 25: case 22: case 31: case 28: return 200 ;
@@ -417,8 +417,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBox ( Document document, IReadOnlyCollection<Route> executeResultValue, List<string> boardUniqueIds, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex)
     {
       const string angleParameter = "角度" ;
-      const double maxAngle = 270 ;
-      var maxLength = ( 30.0 ).MetersToRevitUnits() ;
+      const double pullBoxAutomaticPlacementCondition3Threshold = 270 ;
+      var pullBoxAutomaticPlacementCondition4Threshold = ( 30.0 ).MetersToRevitUnits() ;
 
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
       var grade = defaultSettingStorable.GradeSettingData.GradeMode ;
@@ -441,7 +441,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               sumAngle += angle ;
             }
 
-            if ( sumAngle < maxAngle ) continue ;
+            if ( sumAngle < pullBoxAutomaticPlacementCondition3Threshold ) continue ;
             selectedConduitFitting = conduitFitting ;
             break ;
           }
@@ -458,7 +458,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               sumLength += length ;
             }
 
-            if ( sumLength < maxLength ) continue ;
+            if ( sumLength < pullBoxAutomaticPlacementCondition4Threshold ) continue ;
             selectedConduit = conduit ;
             break ;
           }
@@ -498,7 +498,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var toDirection = pullBoxInfo.ToDirection ;
             var height = originZ - pullBoxInfo.Level.Elevation ;
             var pullBoxPosition = new XYZ( originX, originY, height ) ;
-            var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxPosition ) ;
+            var isSamePullBoxPositions = IsPullBoxExistInThePosition(document, pullBoxPositions, pullBoxPosition ) ;
             if ( isSamePullBoxPositions ) continue ;
             result = CreatePullBoxAndGetSegments( document, route, conduitFitting, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out FamilyInstance? pullBoxElement, ref parentIndex, fromDirection, toDirection ).ToList() ;
             if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxPosition) ) ;
@@ -506,14 +506,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             return result ;
           }
 
-          if ( sumAngle > maxAngle && selectedConduitFitting != null ) {
+          if ( sumAngle > pullBoxAutomaticPlacementCondition3Threshold && selectedConduitFitting != null ) {
             var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, selectedConduitFitting ) ;
             var ( originX, originY, originZ)  = pullBoxInfo.Position ;
             var fromDirection = pullBoxInfo.FromDirection ;
             var toDirection = pullBoxInfo.ToDirection ;
             var height = originZ - pullBoxInfo.Level.Elevation ;
             var pullBoxPosition = new XYZ( originX, originY, height ) ;
-            var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, pullBoxPosition ) ;
+            var isSamePullBoxPositions = IsPullBoxExistInThePosition(document, pullBoxPositions, pullBoxPosition ) ;
             if ( isSamePullBoxPositions ) continue ;
             result = CreatePullBoxAndGetSegments( document, route, selectedConduitFitting, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out FamilyInstance? pullBoxElement, ref parentIndex, fromDirection, toDirection ).ToList() ;
             if ( pullBoxElement != null ) pullBoxElements.Add( (pullBoxElement, pullBoxPosition) ) ;
@@ -521,7 +521,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             return result ;
           }
 
-          if ( sumLength > maxLength && selectedConduit != null ) {
+          if ( sumLength > pullBoxAutomaticPlacementCondition4Threshold && selectedConduit != null ) {
             double originX = 0, originY = 0, originZ = 0, height = 0 ;
             Level? level = null ;
             XYZ? direction = null ;
@@ -533,7 +533,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               var line = ( location.Curve as Line ) ! ;
               ( originX, originY, originZ) = line.GetEndPoint( 0 ) ;
               direction = line.Direction ;
-              var length = ( sumLength - maxLength ) ;
+              var length = ( sumLength - pullBoxAutomaticPlacementCondition4Threshold ) ;
               if ( direction.X is 1 or -1 ) {
                 originX += direction.X * length ;
               }
@@ -544,12 +544,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                 originZ += direction.Z * length ;
               }
               height = originZ - level!.Elevation ;
-              var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, new XYZ( originX, originY, height ) ) ;
+              var isSamePullBoxPositions = IsPullBoxExistInThePosition(document, pullBoxPositions, new XYZ( originX, originY, height ) ) ;
               if ( isSamePullBoxPositions ) continue ;
             }
             else if ( selectedConduit is FamilyInstance conduitFitting ) {
               var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFitting ) ;
-              var isSamePullBoxPositions = ComparePullBoxPosition(document, pullBoxPositions, new XYZ( originX, originY, height ) ) ;
+              var isSamePullBoxPositions = IsPullBoxExistInThePosition(document, pullBoxPositions, new XYZ( originX, originY, height ) ) ;
               if ( isSamePullBoxPositions ) continue ;
             
               ( originX, originY, originZ ) = pullBoxInfo.Position ;
@@ -598,7 +598,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
           if ( conduitFittingBottomShaft == null ) continue ;
           var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFittingBottomShaft ) ;
-          var isSamePullBoxPositions = ComparePullBoxPosition( document, pullBoxPositions, pullBoxInfo.Position ) ;
+          var isSamePullBoxPositions = IsPullBoxExistInThePosition( document, pullBoxPositions, pullBoxInfo.Position ) ;
           if ( isSamePullBoxPositions ) continue ;
 
           var (originX, originY, originZ) = pullBoxInfo.Position ;
@@ -715,21 +715,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       
       textLabel = GetPullBoxTextBox( depth, height, defaultLabel ) ;
 
-      using Transaction t1 = new(document, "Update dimension of pull box") ;
-      t1.Start() ;
+      using Transaction t = new(document, "Update dimension of pull box") ;
+      t.Start() ;
       if (!string.IsNullOrEmpty( buzaiCd ))
         pullBox.ParametersMap.get_Item( MaterialCodeParameter )?.Set( buzaiCd ) ;
       pullBox.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
       detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId ) ;
-      t1.Commit() ;
 
-      using Transaction t2 = new(document, "Create text note") ;
-      t2.Start() ;
       if(positionLabel != null)
         CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       else 
         ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
-      t2.Commit() ;
+      t.Commit() ;
     }
 
     private static void ChangeLabelOfPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement, string textLabel, bool isAutoCalculatePullBoxSize )
@@ -789,7 +786,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return text ;
     }
 
-    private static bool ComparePullBoxPosition(Document document, IEnumerable<XYZ> pullBoxPositions, XYZ newPullBoxPosition )
+    private static bool IsPullBoxExistInThePosition(Document document, IEnumerable<XYZ> pullBoxPositions, XYZ newPullBoxPosition )
     {
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var baseLengthOfLine = scale / 100d ;
@@ -1080,11 +1077,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       var plumbingSizes = newDetailTableModels.Where( p => int.TryParse( p.PlumbingSize, out _ ) )
         .Select( p => Convert.ToInt32( p.PlumbingSize ) ).ToArray() ;
-      var (depth, width, height) = CalculatePullBoxDimension( plumbingSizes, isStraightDirection ) ;
+      var (depth, width, height) = GetPullBoxDimension( plumbingSizes, isStraightDirection ) ;
 
       if ( depth == 0 || width == 0 || height == 0 )
         return null ;
-      var minPullBoxModelDepth = hiroiMasterModels.Where( p => p.Tani == TaniPullBox && p.Hinmei.Contains( HinmeiPullBox ) )
+      var minPullBoxModelDepth = hiroiMasterModels.Where( p => p.Tani == TaniOfPullBox && p.Hinmei.Contains( HinmeiOfPullBox ) )
         .Where( p =>
         {
           var (d, w, h) = ParseKikaku( p.Kikaku ) ;

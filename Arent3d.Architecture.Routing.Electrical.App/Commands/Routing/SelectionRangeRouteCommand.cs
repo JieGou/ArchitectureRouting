@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
-      while ( true ) {
+      for ( int i = 0 ; i < 50 ; i++ ) {
         var segments = PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
@@ -109,9 +109,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
 
       #endregion
-      
-      // Reroute after calculate new dimension for pull box
-      // executeResultValue = PullBoxRoutingCommandBase.ExecuteReRoute( document, executor, progress, resultRoute ) ;
 
       return executeResultValue ;
     }

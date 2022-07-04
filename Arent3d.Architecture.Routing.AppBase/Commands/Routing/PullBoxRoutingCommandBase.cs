@@ -106,11 +106,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         conduitsModelData, hiroiMasterModels, scale, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, isAutoCalculatePullBoxSize, selectedPullBox ) ;
       
       #endregion
-
-      // Reroute after calculate new dimension for pull box
-      // using var progress = ShowProgressBar( "Routing...", false ) ;
-      // executeResultValue = ExecuteReRoute( document, executor, progress, executeResultValue ) ;
-
+      
       return executeResultValue ;
     }
 
