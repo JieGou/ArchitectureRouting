@@ -176,16 +176,7 @@
                 <DataGridTemplateColumn Header="電線種類" Width="45" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding WireType, Mode=OneWay}">
-                                <!-- <i:Interaction.Triggers> -->
-                                <!--     <i:EventTrigger EventName="MouseLeftButtonUp"> -->
-                                <!--         <i:InvokeCommandAction -->
-                                <!--             Command="{Binding SelectedItemCommand}" -->
-                                <!--             CommandParameter="{Binding ElementName = FolderTreeView}"> -->
-                                <!--         </i:InvokeCommandAction> -->
-                                <!--     </i:EventTrigger> -->
-                                <!-- </i:Interaction.Triggers> -->
-                            </TextBlock>
+                            <TextBlock Text="{Binding WireType, Mode=OneWay}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
@@ -201,14 +192,6 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-                
-                <!-- <DataGridTemplateColumn Header="電線サイズ" Width="45" CanUserSort="False"> -->
-                <!--     <DataGridTemplateColumn.CellTemplate> -->
-                <!--         <DataTemplate> -->
-                <!--             <TextBlock Text="{Binding WireSize, Mode=OneWay}" /> -->
-                <!--         </DataTemplate> -->
-                <!--     </DataGridTemplateColumn.CellTemplate> -->
-                <!-- </DataGridTemplateColumn> -->
 
                 <DataGridComboBoxColumn Header="電線サイズ" Width="45"
                                         SelectedValueBinding="{Binding WireSize}"
@@ -248,14 +231,6 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <!-- <DataGridTemplateColumn Header="電線条数" Width="45" CanUserSort="False"> -->
-                <!--     <DataGridTemplateColumn.CellTemplate> -->
-                <!--         <DataTemplate> -->
-                <!--             <TextBlock Text="{Binding WireStrip, Mode=OneWay}" /> -->
-                <!--         </DataTemplate> -->
-                <!--     </DataGridTemplateColumn.CellTemplate> -->
-                <!-- </DataGridTemplateColumn> -->
 
                 <DataGridComboBoxColumn Header="電線条数" Width="45"
                                         SelectedValueBinding="{Binding WireStrip}"

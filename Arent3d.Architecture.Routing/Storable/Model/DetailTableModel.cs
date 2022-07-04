@@ -12,7 +12,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string Floor { get ; set ; }
     public string CeedCode { get ; set ; }
     public string DetailSymbol { get ; set ; }
-    public string DetailSymbolId { get ; set ; }
+    public string DetailSymbolUniqueId { get ; set ; }
+    public string FromConnectorUniqueId { get ; set ; }
+    public string ToConnectorUniqueId { get ; set ; }
     public string WireType { get ; set ; }
     public string WireSize { get ; set ; }
     public string WireStrip { get ; set ; }
@@ -102,7 +104,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? floor, 
       string? ceedCode,
       string? detailSymbol,
-      string? detailSymbolId,
+      string? detailSymbolUniqueId,
+      string? fromConnectorUniqueId,
+      string? toConnectorUniqueId,
       string? wireType, 
       string? wireSize, 
       string? wireStrip, 
@@ -142,7 +146,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Floor = floor ?? string.Empty ;
       CeedCode = ceedCode ?? string.Empty ;
       DetailSymbol = detailSymbol ?? string.Empty ;
-      DetailSymbolId = detailSymbolId ?? string.Empty ;
+      DetailSymbolUniqueId = detailSymbolUniqueId ?? string.Empty ;
+      FromConnectorUniqueId = fromConnectorUniqueId ?? string.Empty ;
+      ToConnectorUniqueId = toConnectorUniqueId ?? string.Empty ;
       WireType = wireType ?? string.Empty ;
       WireSize = wireSize ?? string.Empty ;
       WireStrip = wireStrip ?? string.Empty ;
@@ -184,7 +190,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? floor, 
       string? ceedCode,
       string? detailSymbol,
-      string? detailSymbolId,
+      string? detailSymbolUniqueId,
+      string? fromConnectorUniqueId,
+      string? toConnectorUniqueId,
       string? wireType, 
       string? wireSize, 
       string? wireStrip, 
@@ -224,7 +232,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Floor = floor ?? string.Empty ;
       CeedCode = ceedCode ?? string.Empty ;
       DetailSymbol = detailSymbol ?? string.Empty ;
-      DetailSymbolId = detailSymbolId ?? string.Empty ;
+      DetailSymbolUniqueId = detailSymbolUniqueId ?? string.Empty ;
+      FromConnectorUniqueId = fromConnectorUniqueId ?? string.Empty ;
+      ToConnectorUniqueId = toConnectorUniqueId ?? string.Empty ;
       WireType = wireType ?? string.Empty ;
       WireSize = wireSize ?? string.Empty ;
       WireStrip = wireStrip ?? string.Empty ;
@@ -261,14 +271,16 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       PlumbingItemTypes = plumbingItemTypes??new() ; ;
     }
     
-    public DetailTableModel( string? detailSymbol, string? detailSymbolId)
+    public DetailTableModel( string? detailSymbol, string? detailSymbolUniqueId, string? fromConnectorUniqueId, string? toConnectorUniqueId)
     {
       var index = "new-" + DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
       CalculationExclusion = false ;
       Floor = string.Empty ;
       CeedCode = string.Empty ;
       DetailSymbol = detailSymbol ?? string.Empty ;
-      DetailSymbolId = detailSymbolId ?? string.Empty ;
+      DetailSymbolUniqueId = detailSymbolUniqueId ?? string.Empty ;
+      FromConnectorUniqueId = fromConnectorUniqueId ?? string.Empty ;
+      ToConnectorUniqueId = toConnectorUniqueId ?? string.Empty ;
       WireType = string.Empty ;
       WireSize = string.Empty ;
       WireStrip = string.Empty ;
@@ -305,7 +317,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? floor, 
       string? ceedCode,
       string? detailSymbol,
-      string? detailSymbolId,
+      string? detailSymbolUniqueId,
+      string? fromConnectorUniqueId,
+      string? toConnectorUniqueId,
       string? wireType, 
       string? wireSize, 
       string? wireStrip, 
@@ -337,7 +351,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Floor = floor ?? string.Empty ;
       CeedCode = ceedCode ?? string.Empty ;
       DetailSymbol = detailSymbol ?? string.Empty ;
-      DetailSymbolId = detailSymbolId ?? string.Empty ;
+      DetailSymbolUniqueId = detailSymbolUniqueId ?? string.Empty ;
+      FromConnectorUniqueId = fromConnectorUniqueId ?? string.Empty ;
+      ToConnectorUniqueId = toConnectorUniqueId ?? string.Empty ;
       WireType = wireType ?? string.Empty ;
       WireSize = wireSize ?? string.Empty ;
       WireStrip = wireStrip ?? string.Empty ;

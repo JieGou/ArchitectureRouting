@@ -133,13 +133,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     private void SaveDetailTableData( IReadOnlyCollection<DetailTableModel> detailTableModels, Document doc )
     {
       try {
-        DetailTableStorable detailTableStorable = doc.GetDetailTableStorable() ;
-        {
-          if ( ! detailTableModels.Any() ) return ;
-          var existedDetailSymbolIds = detailTableStorable.DetailTableModelData.Select( d => d.DetailSymbolId ).Distinct().ToList() ;
-          var itemNotInDb = detailTableModels.Where( d => ! existedDetailSymbolIds.Contains( d.DetailSymbolId ) ).ToList() ;
-          if ( itemNotInDb.Any() ) detailTableStorable.DetailTableModelData.AddRange( itemNotInDb ) ;
-        }
+        var detailTableStorable = doc.GetDetailTableStorable() ;
+        if ( ! detailTableModels.Any() )
+          return ;
+        
+        var existedKeys = detailTableStorable.DetailTableModelData.Select( GetKeyRouting ).Distinct().ToList() ;
+        var itemNotInDb = detailTableModels.Where( d => ! existedKeys.Contains( GetKeyRouting(d) ) ).ToList() ;
+        
+        if ( itemNotInDb.Any() ) 
+          detailTableStorable.DetailTableModelData.AddRange( itemNotInDb ) ;
         detailTableStorable.Save() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {

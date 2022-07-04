@@ -21,6 +21,7 @@ using MessageBox = System.Windows.MessageBox ;
 using Expression = System.Linq.Expressions.Expression;
 using System.Linq.Expressions;
 using System.Windows.Media ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 
@@ -178,6 +179,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _symbolInformationStorable = _document.GetSymbolInformationStorable() ;
       _ceedDetailStorable = _document.GetCeedDetailStorable() ;
       _pickUpModels = GetPickUpData(equipmentCategory) ;
+      var ls = _pickUpModels.Select( x => x.Quantity ) ;
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) {
         MessageBox.Show( "Don't have element.", "Result Message" ) ;
@@ -232,6 +234,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if(pickUpModel.EquipmentType == $"{ProductType.Cable}" || pickUpModel.EquipmentType == $"{ProductType.Conduit}")
           pickUpModel.Quantity = $"{Math.Round( double.Parse( pickUpModel.Quantity ).RevitUnitsToMillimeters() / 1000, 2 )}" ;
       }
+
+      // var ps = pickUpModels.Where( x => x.Standard == "AE 0.9mmx2C" ) ;
       
       return pickUpModels ;
     }
@@ -298,8 +302,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceedModelNumber ) ) {
               var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
 
-              var detailSymbolModel = _detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.ConduitId == pickUpElement.Conduit?.UniqueId ) ;
-              var detailTableModelList = _detailTableStorable.DetailTableModelData.Where( x => x.DetailSymbolId == detailSymbolModel?.DetailSymbolId ).ToList() ;
+              var routeName = pickUpElement.Conduit?.GetRouteName() ?? string.Empty ;
+              var detailTableModelList = null != pickUpElement.Conduit ? 
+                _detailTableStorable.DetailTableModelData.Where( x => (x.FromConnectorUniqueId == pickUpElement.Connector.UniqueId || x.ToConnectorUniqueId == pickUpElement.Connector.UniqueId) && x.RouteName == routeName ).ToList() 
+                : new List<DetailTableModel>() ;
               if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 && null != hiroiSetMasterModel) {
                 foreach ( var detailTableModel in detailTableModelList ) {
                   var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( x => IsExistHiroiMasterModel(detailTableModel, x) ) ;
@@ -583,7 +589,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
         AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty,string.Empty) ;
       }
-      
+
       var conduitFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
       foreach ( var conduitFitting in conduitFittings ) {
         conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
@@ -677,8 +683,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var checkPickUp = string.IsNullOrEmpty( connectorId ) 
         ? AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers, dictMaterialCode, conduit ) 
         : AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers, connectorId!, conduit ) ;
-      if ( ! checkPickUp ) return ;
-      quantities.Add( Math.Round( quantity, 2 ) ) ;
+      if ( ! checkPickUp ) 
+        return ;
+      
       switch ( conduitType ) {
         case ConduitType.Conduit :
           var location = ( conduit.Location as LocationCurve )! ;
@@ -702,7 +709,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      quantities.Add( quantity ) ;
+      quantities.Add( Math.Round( quantity, 2 ) ) ;
     }
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<(Element Connector, Element? Conduit)> pickUpConnectors, string routeName, List<int> pickUpNumbers, 
@@ -712,7 +719,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var isPickUpByFromConnector = toConnector != null && ( toConnector.Name == ElectricalRoutingFamilyType.PressureConnector.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ) ;
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
-      if ( toConnector == null || (_detailTableStorable.DetailTableModelData.FirstOrDefault(x=>x.DetailSymbolId == toConnector.UniqueId) == null
+      if ( toConnector == null || (_detailTableStorable.DetailTableModelData.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null
            &&  toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 

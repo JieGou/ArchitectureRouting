@@ -192,7 +192,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var firstChildSymbol = conduitSamePosition.Any() ? detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != ceedCode && ! conduitSamePosition.Contains( d.ConduitId ) ) : detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != ceedCode ) ;
       if ( firstChildSymbol == null ) return ;
       {
-        var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+        var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
         foreach ( var id in detailSymbolIds ) {
           var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == id ) ;
           if ( textElement == null ) continue ;
@@ -237,13 +237,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var plumbingType = oldDetailSymbolModel == null ? DefaultPlumbingType : oldDetailSymbolModel.PlumbingType ;
         if ( oldDetailSymbolModel != null )
           if ( routeName == representativeRouteName )
-            detailSymbolModelsIsDeleted = detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbolId == oldDetailSymbolModel.DetailSymbolId && d.RouteName == oldDetailSymbolModel.RouteName ).ToList() ;
+            detailSymbolModelsIsDeleted = detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbolUniqueId == oldDetailSymbolModel.DetailSymbolUniqueId && d.FromConnectorUniqueId == oldDetailSymbolModel.FromConnectorUniqueId && d.ToConnectorUniqueId == oldDetailSymbolModel.ToConnectorUniqueId && d.RouteName == oldDetailSymbolModel.RouteName ).ToList() ;
           else
-            detailSymbolModelsIsDeleted = detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbolId == oldDetailSymbolModel.DetailSymbolId && routeNameSamePosition.Contains( oldDetailSymbolModel.RouteName ) && d.CountCableSamePosition == routeNameSamePosition.Count ).ToList() ;
+            detailSymbolModelsIsDeleted = detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbolUniqueId == oldDetailSymbolModel.DetailSymbolUniqueId && d.FromConnectorUniqueId == oldDetailSymbolModel.FromConnectorUniqueId && d.ToConnectorUniqueId == oldDetailSymbolModel.ToConnectorUniqueId && routeNameSamePosition.Contains( oldDetailSymbolModel.RouteName ) && d.CountCableSamePosition == routeNameSamePosition.Count ).ToList() ;
 
-        var detailSymbolModel = CreateDetailSymbolModel( conduit, detailSymbol.UniqueId, detailSymbolContent, lineIds, isParentSymbol, routeName!, ceedCode, routeNameSamePosition.Count, deviceSymbol, plumbingType ) ;
+        var fromConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, true ) ;
+        var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, false ) ;
+        if(null == fromConnector || null == toConnector)
+          return;
+        
+        var detailSymbolModel = CreateDetailSymbolModel( conduit, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, toConnector.UniqueId, lineIds, isParentSymbol, routeName!, ceedCode, routeNameSamePosition.Count, deviceSymbol, plumbingType ) ;
         detailSymbolModels.Add( detailSymbolModel ) ;
-        AddDetailSymbolForConduitSameRoute( doc, allConduit, allConnector, detailSymbolModels, detailSymbol.UniqueId, detailSymbolContent, lineIds, isParentSymbol, routeName!, detailSymbolModel.Code, routeNameSamePosition.Count, deviceSymbol, plumbingType ) ;
+        AddDetailSymbolForConduitSameRoute( doc, allConduit, allConnector, detailSymbolModels, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, toConnector.UniqueId , lineIds, isParentSymbol, routeName!, detailSymbolModel.Code, routeNameSamePosition.Count, deviceSymbol, plumbingType ) ;
 
         // update symbol of conduit same symbol and different code 
         if ( ! string.IsNullOrEmpty( detailSymbolModel.Code ) ) {
@@ -256,14 +261,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         // add symbol for conduit same position
         if ( ! string.IsNullOrEmpty( representativeRouteName ) && ! string.IsNullOrEmpty( routeName ) && representativeRouteName != routeName ) {
-          AddDetailSymbolForConduitsSamePosition( doc, allConduit, allConnector, detailSymbolModels, detailSymbolContent, routeName!, detailSymbol.UniqueId, lineIds, isParentSymbol, routeNameSamePosition, plumbingType ) ;
+          AddDetailSymbolForConduitsSamePosition( doc, allConduit, allConnector, detailSymbolModels, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, 
+            toConnector.UniqueId, routeName!, lineIds, isParentSymbol, routeNameSamePosition, plumbingType ) ;
         }
 
         detailSymbolStorable.DetailSymbolModelData.AddRange( detailSymbolModels ) ;
 
         // remove old detail symbol
         if ( detailSymbolModelsIsDeleted.Any() ) {
-          var detailSymbols = detailSymbolModelsIsDeleted.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.First().LineIds ) ;
+          var detailSymbols = detailSymbolModelsIsDeleted.GroupBy( d => d.DetailSymbolUniqueId ).ToDictionary( g => g.Key, g => g.First().LineIds ) ;
           if ( detailSymbols.Any() ) {
             foreach ( var (symbolId, strLineIds) in detailSymbols ) {
               DeleteDetailSymbol( doc, symbolId, strLineIds ) ;
@@ -277,7 +283,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         
         //Update detail table when update detail symbol
         if ( oldDetailSymbolModel != null )
-          UpdateDetailTableModel( doc, oldDetailSymbolModel.DetailSymbolId, detailSymbol.UniqueId, detailSymbolContent ) ;
+          UpdateDetailTableModel( doc, oldDetailSymbolModel, detailSymbol.UniqueId, detailSymbolContent, fromConnector.UniqueId, toConnector.UniqueId ) ;
 
         detailSymbolStorable.Save() ;
       }
@@ -286,15 +292,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    public static void UpdateDetailTableModel( Document doc, string oldDetailSymbolId, string newDetailSymbolId, string detailSymbol )
+    public static void UpdateDetailTableModel( Document doc, DetailSymbolModel detailSymbolModel, string newDetailSymbolId, string detailSymbol, string fromConnectorUniqueId, string toConnectorUniqueId )
     {
       try {
-        DetailTableStorable detailTableStorable = doc.GetDetailTableStorable() ;
-        var detailTableModels = detailTableStorable.DetailTableModelData.Where( d => d.DetailSymbolId == oldDetailSymbolId ).ToList() ;
-        if ( ! detailTableModels.Any() ) return ;
+        var detailTableStorable = doc.GetDetailTableStorable() ;
+        
+        var detailTableModels = detailTableStorable.DetailTableModelData.Where( d => CreateDetailTableCommandBase.GetKeyRouting(d) == CreateDetailTableCommandBase.GetKeyRouting(detailSymbolModel) ).ToList() ;
+        if ( ! detailTableModels.Any() ) 
+          return ;
+        
         foreach ( var detailTableModel in detailTableModels ) {
-          detailTableModel.DetailSymbolId = newDetailSymbolId ;
+          detailTableModel.DetailSymbolUniqueId = newDetailSymbolId ;
           detailTableModel.DetailSymbol = detailSymbol ;
+          detailTableModel.FromConnectorUniqueId = fromConnectorUniqueId ;
+          detailTableModel.ToConnectorUniqueId = toConnectorUniqueId ;
         }
 
         detailTableStorable.Save() ;
@@ -322,9 +333,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( ceedCode, deviceSymbol ) ;
     }
 
-    public static DetailSymbolModel CreateDetailSymbolModel( Element conduit, string detailSymbolId, string detailSymbol, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
+    public static DetailSymbolModel CreateDetailSymbolModel( Element conduit, string detailSymbol, string detailSymbolId, string fromConnectorUniqueId, string toConnectorUniqueId, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
     {
-      var detailSymbolModel = new DetailSymbolModel( detailSymbolId, detailSymbol, conduit.UniqueId, routeName, ceedCode, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
+      var detailSymbolModel = new DetailSymbolModel( detailSymbol, detailSymbolId, fromConnectorUniqueId, toConnectorUniqueId, conduit.UniqueId, routeName, ceedCode, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
       return detailSymbolModel ;
     }
 
@@ -355,18 +366,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return subCategory ;
     }
 
-    public static void AddDetailSymbolForConduitSameRoute( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbolId, string detailSymbol, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
+    public static void AddDetailSymbolForConduitSameRoute( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbolContent, string detailSymbolId, string fromConnectorUniqueId, string toConnectorUniqueId, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
     {
       var conduitOfRoute = allConduit.Where( c => c.GetRouteName() == routeName ).ToList() ;
+      
       if ( string.IsNullOrEmpty( ceedCode ) )
         ( ceedCode, deviceSymbol ) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName ) ;
+      
       foreach ( var conduit in conduitOfRoute ) {
-        var detailSymbolModel = new DetailSymbolModel( detailSymbolId, detailSymbol, conduit.UniqueId, routeName, ceedCode, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
+        var detailSymbolModel = new DetailSymbolModel( detailSymbolContent, detailSymbolId, fromConnectorUniqueId, toConnectorUniqueId, conduit.UniqueId, routeName, ceedCode, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
         detailSymbolModels.Add( detailSymbolModel ) ;
       }
     }
 
-    public static void AddDetailSymbolForConduitsSamePosition( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbolContent, string conduitRouteName, string detailSymbolId, string lineIds, bool isParentSymbol, List<string> routeNamesSamePosition, string plumbingType )
+    public static void AddDetailSymbolForConduitsSamePosition( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbolContent, string detailSymbolId, string fromConnectorUniqueId, string toConnectorUniqueId, string conduitRouteName, string lineIds, bool isParentSymbol, List<string> routeNamesSamePosition, string plumbingType )
     {
       var routeNames = allConduit.Where( c => routeNamesSamePosition.Contains( c.GetRouteName()! ) && c.GetRouteName() != conduitRouteName ).Select( c => c.GetRouteName() ).Distinct().ToList() ;
       foreach ( var routeName in routeNames ) {
@@ -374,7 +387,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( ! conduitRouteName.Any() ) continue ;
         var (ceedCode, deviceSymbol) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName! ) ;
         foreach ( var conduit in conduitsOfRouteName ) {
-          DetailSymbolModel detailSymbolModel = CreateDetailSymbolModel( conduit, detailSymbolId, detailSymbolContent, lineIds, isParentSymbol, routeName!, ceedCode, routeNamesSamePosition.Count, deviceSymbol, plumbingType ) ;
+          var detailSymbolModel = CreateDetailSymbolModel( conduit, detailSymbolContent, detailSymbolId, fromConnectorUniqueId, toConnectorUniqueId, lineIds, isParentSymbol, routeName!, ceedCode, routeNamesSamePosition.Count, deviceSymbol, plumbingType ) ;
           detailSymbolModels.Add( detailSymbolModel ) ;
         }
       }
@@ -386,7 +399,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( ! detailSymbolStorable.DetailSymbolModelData.Any() ) return ;
       foreach ( var detailSymbolModel in detailSymbolStorable.DetailSymbolModelData ) {
         var conduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault( c => c.UniqueId == detailSymbolModel.ConduitId ) ;
-        var detailSymbol = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == detailSymbolModel.DetailSymbolId ) ;
+        var detailSymbol = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == detailSymbolModel.DetailSymbolUniqueId ) ;
         if ( conduit == null || detailSymbol == null ) {
           detailSymbolUnused.Add( detailSymbolModel ) ;
         }
@@ -453,7 +466,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var routeName = conduit.GetRouteName() ;
       var (ceedCode, _) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnectors, routeName! ) ;
       if ( string.IsNullOrEmpty( ceedCode ) ) return true ;
-      var detailSymbolModel = conduitSamePosition.Any() ? detailSymbolModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Code ) && d.Code != ceedCode && d.DetailSymbol == detailSymbol && d.IsParentSymbol && ! conduitSamePosition.Contains( d.ConduitId ) ) : detailSymbolModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Code ) && d.Code != ceedCode && d.DetailSymbol == detailSymbol && d.IsParentSymbol ) ;
+      var detailSymbolModel = conduitSamePosition.Any() ? 
+        detailSymbolModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Code ) && d.Code != ceedCode && d.DetailSymbol == detailSymbol && d.IsParentSymbol && ! conduitSamePosition.Contains( d.ConduitId ) ) : 
+        detailSymbolModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Code ) && d.Code != ceedCode && d.DetailSymbol == detailSymbol && d.IsParentSymbol ) ;
       return detailSymbolModel == null ;
     }
 
