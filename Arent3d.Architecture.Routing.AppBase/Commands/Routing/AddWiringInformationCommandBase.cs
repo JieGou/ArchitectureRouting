@@ -119,7 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return detailTableModels.Any( x => x.DetailSymbol != SpecialSymbol ) ;
     }
 
-    public void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable )
+    public static void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, string? uniqueId = null)
     {
       if(detailSymbolStorable.DetailSymbolModelData.Any(x => x.ConduitId.Equals(pickConduit.UniqueId)))
         return;
@@ -153,13 +153,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var plumbingType = GetPlumpingType( hiroiSetMasterModel, csvStorable.ConduitsModelData ) ;
         
         foreach ( var conduitOfRoute in conduitOfRoutes ) {
-          var detailSymbolModel = new DetailSymbolModel( string.Empty, SpecialSymbol, conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, plumbingType ) ;
-          detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel );
+          var detailSymbolModel = new DetailSymbolModel( !string.IsNullOrEmpty( uniqueId ) ? uniqueId : toConnector.UniqueId, SpecialSymbol, conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count> 2? ceedSetCode[1] : string.Empty, plumbingType ) ;
+          if(null == detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.DetailSymbolId == detailSymbolModel.DetailSymbolId && x.ConduitId == detailSymbolModel.ConduitId )) 
+            detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel );
         } 
       } 
     }
 
-    private string GetPlumpingType( HiroiSetMasterModel hiroiSetMasterModel, List<ConduitsModel> conduitsModels)
+    private static string GetPlumpingType( HiroiSetMasterModel hiroiSetMasterModel, List<ConduitsModel> conduitsModels)
     {
       if ( string.IsNullOrEmpty( hiroiSetMasterModel.Name2 ) )
         return NoPlumping ;
@@ -171,7 +172,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return NoPlumping ;
     }
 
-    public List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
+    public static List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
     {
       List<string> routeNames = new List<string>() ;
       if ( pickConduit is Conduit ) {

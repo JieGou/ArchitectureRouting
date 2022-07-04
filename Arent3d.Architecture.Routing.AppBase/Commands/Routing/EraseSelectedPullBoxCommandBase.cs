@@ -2,6 +2,7 @@
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -63,8 +64,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       result.AddRange( GetSelectedRouteSegments( document, routesRelatedPullBox ) );
       
       var allRouteSegments =  GetAllRouteSegment(routesRelatedPullBox) ;
-      List<IEndPoint> fromEndPoints = new List<IEndPoint>() ;
-      List<IEndPoint> toEndPoints = new List<IEndPoint>() ;
+      List<IEndPoint> fromEndPoints = new() ;
+      List<IEndPoint> toEndPoints = new() ;
       bool isHaveFromEndPoint = false ;
       bool isHaveToEndPoint = false ;
       var routeSegments = allRouteSegments.ToList() ;
@@ -82,48 +83,60 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           isHaveToEndPoint = true ;
         }
       }
-      
-      List<RouteSegment> routeSegmentsTemp = new List<RouteSegment>() ;
-      int countAddSegmentPullBox = 0 ;
-      foreach ( var routeSegment in routeSegments ) {
-        if ( routeSegment.FromEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId || routeSegment.ToEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) 
-        {
-          if ( countAddSegmentPullBox < 1 ) {
-            routeSegmentsTemp.Add( new RouteSegment( classificationInfo, systemType, curveType, fromEndPoints.First(), toEndPoints.First(), diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) );
-            countAddSegmentPullBox++ ;
+
+      if ( fromEndPoints.Any() && toEndPoints.Any() ) {
+        List<RouteSegment> routeSegmentsTemp = new() ;
+        int countAddSegmentPullBox = 0 ;
+        foreach ( var routeSegment in routeSegments ) {
+          if ( routeSegment.FromEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId || routeSegment.ToEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) 
+          {
+            if ( countAddSegmentPullBox < 1 ) {
+              routeSegmentsTemp.Add( new RouteSegment( classificationInfo, systemType, curveType, fromEndPoints.First(), toEndPoints.First(), diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) );
+              countAddSegmentPullBox++ ;
+            }
+          }
+          else {
+            // var segment = new RouteSegment( routeSegment.SystemClassificationInfo, routeSegment.SystemType, routeSegment.CurveType,  routeSegment.FromEndPoint, routeSegment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+            routeSegmentsTemp.Add(  routeSegment ) ;
           }
         }
-        else {
-          // var segment = new RouteSegment( routeSegment.SystemClassificationInfo, routeSegment.SystemType, routeSegment.CurveType,  routeSegment.FromEndPoint, routeSegment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
-          routeSegmentsTemp.Add(  routeSegment ) ;
+        
+        // Rename route name for pass point 
+        RenameRoutePassPoint( document, name, routeSegmentsTemp ) ;
+        
+        // Add main route
+        var firstRouteSegment = FirstRouteSegment( routeSegmentsTemp ) ;
+        result.Add( (name, firstRouteSegment)) ;       // Add first segment
+
+        // Add next segments
+        while ( true ) {
+          var nextSegment = NextRouteSegment( result.Last().Segment.ToEndPoint, routeSegmentsTemp ) ;
+          if(nextSegment == null) break ;
+          result.Add( (name, nextSegment) ) ;
+        }
+
+        // Add branch route
+        foreach ( var ( routeName, segment ) in routeRecords ) {
+          var passPointEndPointUniqueId = segment.FromEndPoint.Key.GetElementUniqueId() ;
+          if ( segment.FromEndPoint.DisplayTypeName == PassPointBranchEndPoint.Type ) {
+            var fromEndPointKey = GetFromEndPointKey( document, result, passPointEndPointUniqueId ) ?? firstRouteSegment.FromEndPoint.Key ;
+            var branchEndPoint = new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
+            result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+          }
+          else {
+            result.Add( ( routeName, segment ) ) ;
+          }
         }
       }
-      
-      // Rename route name for pass point 
-      RenameRoutePassPoint( document, name, routeSegmentsTemp ) ;
-      
-      // Add main route
-      var firstRouteSegment = FirstRouteSegment( routeSegmentsTemp ) ;
-      result.Add( (name, firstRouteSegment)) ;       // Add first segment
 
-      // Add next segments
-      while ( true ) {
-        var nextSegment = NextRouteSegment( result.Last().Segment.ToEndPoint, routeSegmentsTemp ) ;
-        if(nextSegment == null) break ;
-        result.Add( (name, nextSegment) ) ;
-      }
-
-      // Add branch route
-      foreach ( var ( routeName, segment ) in routeRecords ) {
-        var passPointEndPointUniqueId = segment.FromEndPoint.Key.GetElementUniqueId() ;
-        if ( segment.FromEndPoint.DisplayTypeName == PassPointBranchEndPoint.Type ) {
-          var fromEndPointKey = GetFromEndPointKey( document, result, passPointEndPointUniqueId ) ?? firstRouteSegment.FromEndPoint.Key ;
-          var branchEndPoint = new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
-          result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-        }
-        else {
-          result.Add( ( routeName, segment ) ) ;
-        }
+      //Delete label of pull box
+      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
+      var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == elementPullBox.UniqueId ) ;
+      if ( pullBoxInfoModel != null ) {
+        var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel.TextNoteUniqueId == t.UniqueId ) ;
+        if( textNote != null )
+          document.Delete( textNote.Id ) ;
+        pullBoxInfoStorable.PullBoxInfoModelData.Remove( pullBoxInfoModel ) ;
       }
 
       //Delete pull box
