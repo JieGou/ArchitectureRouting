@@ -48,6 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       FixReducers( document, executor, executionResult.Value ) ;
       IReadOnlyCollection<Route> executionResultValue ;
 
+      // TODO: 個の処理をAfterRouteGeneratedで行うこと
       if ( result is SelectionRangeRouteCommandBase.SelectState { IsSelectionRangeRouteBetweenPowerConnectors: true } ) {
         var executionResultChangePriorityConduit = ChangePriorityConduit( document, executionResult.Value, result, executor ) ;
         if ( Result.Cancelled == executionResultChangePriorityConduit.Result ) return ExecutionResult.Cancelled ;
@@ -55,6 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         executionResultValue = executionResultChangePriorityConduit.Value ;
       }
       else {
+        // Electrical.AppのPickRoutingCommandとSelectionRangeRouteCommandのみで追加処理をしているため、他のAppに影響しないはずです
         executionResultValue = CreatePullBoxAfterRouteGenerated( document, executor, executionResult.Value, result ) ;
       }
 
