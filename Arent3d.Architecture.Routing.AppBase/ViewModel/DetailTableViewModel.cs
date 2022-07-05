@@ -30,10 +30,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string DefaultParentPlumbingType = "E" ;
     private const string NoPlumping = "配管なし" ;
     private const string NoPlumbingSize = "（なし）" ;
-    private static string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage = "Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?" ;
+    private const string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage = "Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?" ;
     public const string DefaultChildPlumbingSymbol = "↑" ;
     private const string IncorrectDataErrorMessage = "Incorrect data." ;
     private const string CaptionErrorMessage = "Error" ;
+    private const char MultiplicationSymbol = 'x' ;
     
     
     private readonly Document _document ;
@@ -981,14 +982,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var detailTableModelsGroupByDetailSymbolId = 
         detailTableModels
           .Where(d => !selectedDetailTableRows.Any() || selectedDetailTableRows.Contains(d) )
-          .Where( d => 
-                             ! string.IsNullOrEmpty( d.WireType ) 
-                          && ! string.IsNullOrEmpty( d.WireSize ) 
-                          && ! string.IsNullOrEmpty( d.WireStrip )
-                          && ! string.IsNullOrEmpty( d.WireBook ) 
-                          && ! string.IsNullOrEmpty( d.SignalType ) 
-                          && ! string.IsNullOrEmpty( d.ConstructionItems ) 
-                          && ! string.IsNullOrEmpty( d.Remark ) )
+          .Where( d => ! string.IsNullOrEmpty( d.WireType ) 
+                       && ! string.IsNullOrEmpty( d.WireSize ) 
+                       && ! string.IsNullOrEmpty( d.WireStrip )
+                       && ! string.IsNullOrEmpty( d.WireBook ) 
+                       && ! string.IsNullOrEmpty( d.SignalType ) 
+                       && ! string.IsNullOrEmpty( d.ConstructionItems ) 
+                       && ! string.IsNullOrEmpty( d.Remark ) )
           .GroupBy( CreateDetailTableCommandBase.GetKeyRouting )
           .Select( g => g.ToList() ) ;
       foreach ( var detailTableRowsWithSameDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
@@ -1656,10 +1656,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public static string GetRemark( string oldRemark, int wireBook )
     {
-      const char multiplicationSymbol = 'x' ;
-      var remarks = oldRemark.Split( multiplicationSymbol ) ;
-      if ( ! remarks.Any() ) return string.Empty ;
-      var newRemarks = wireBook > 1 ? remarks.First() + multiplicationSymbol + wireBook : remarks.First() ;
+      var remarks = oldRemark.Split( MultiplicationSymbol ) ;
+      if ( ! remarks.Any() ) 
+        return string.Empty ;
+      var newRemarks = wireBook > 1 ? remarks.First() + MultiplicationSymbol + wireBook : remarks.First() ;
       return newRemarks ;
     }
 
@@ -1710,7 +1710,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var detailTableRow in referenceDetailTableModels ) {
         if ( ! string.IsNullOrEmpty( detailTableRow.GroupId ) ) detailTableRow.GroupId += index ;
         detailTableRow.PlumbingIdentityInfo += index ;
-        if ( detailTableRow.Remark.Contains( ',' ) || detailTableRow.Remark.Contains( 'x' ) ) {
+        if ( detailTableRow.Remark.Contains( ',' ) || detailTableRow.Remark.Contains( MultiplicationSymbol ) ) {
           AddUnGroupDetailTableRows( ReferenceDetailTableModelsOrigin, detailTableRow ) ; 
         }
         else {
@@ -1725,10 +1725,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var remarks = detailTableRow.Remark.Split( ',' ) ;
       var isParentDetailRow = ! detailTableRow.IsParentRoute ;
       foreach ( var remark in remarks ) {
-        if ( remark.Contains( 'x' ) ) {
-          var remarkArr = remark.Split( 'x' ) ;
+        if ( remark.Contains( MultiplicationSymbol ) ) {
+          var remarkArr = remark.Split( MultiplicationSymbol ) ;
           var countRows = int.Parse( remarkArr.Last() ) ;
-          var remarkRow = remarkArr.Length == 2 ? remarkArr.First().Trim() : remarkArr.First().Trim() + 'x' + remarkArr.ElementAt( 1 ) ;
+          var remarkRow = remarkArr.Length == 2 ? remarkArr.First().Trim() : remarkArr.First().Trim() + MultiplicationSymbol + remarkArr.ElementAt( 1 ) ;
           var wireBook = remarkArr.Length == 2 ? "1" : remarkArr.ElementAt( 1 ) ;
           if ( ! isParentDetailRow ) {
             var newDetailTableRow = CreateParentDetailTableModel( detailTableRow, wireBook, remarkRow ) ;
@@ -2021,7 +2021,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private List<DetailTableModel> GroupDetailTableModels( ObservableCollection<DetailTableModel> oldDetailTableModels )
     {
-      const char multiplicationSymbol = 'x' ;
       List<DetailTableModel> newDetailTableModels = new() ;
       List<string> existedGroupIds = new() ;
       foreach ( var detailTableRow in oldDetailTableModels ) {
@@ -2029,16 +2028,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           newDetailTableModels.Add( detailTableRow ) ;
         }
         else {
-          if ( existedGroupIds.Contains( detailTableRow.GroupId ) ) continue ;
+          if ( existedGroupIds.Contains( detailTableRow.GroupId ) ) 
+            continue ;
+          
           var detailTableRowWithSameWiringType = oldDetailTableModels.Where( d => d.GroupId == detailTableRow.GroupId ) ;
           var detailTableRowsGroupByRemark = detailTableRowWithSameWiringType
             .GroupBy( d => d.Remark )
             .ToDictionary( g => g.Key, g => g.ToList() ) ;
+          
           List<string> newRemark = new() ;
           var wireBook = 0 ;
           var numberOfGrounds = 0 ;
           foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
-            newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + multiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
+            // newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + MultiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
             foreach ( var detailTableRowWithSameRemark in detailTableRowsWithSameRemark ) {
               if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.WireBook ) ) {
                 wireBook += int.Parse( detailTableRowWithSameRemark.WireBook ) ;
@@ -2047,6 +2049,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 numberOfGrounds += int.Parse( detailTableRowWithSameRemark.NumberOfGrounds ) ;
               }
             }
+            newRemark.Add( wireBook == 1 ? remark : remark + MultiplicationSymbol + wireBook ) ;
           }
 
           var newDetailTableRow = new DetailTableModel( 
@@ -2059,16 +2062,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             detailTableRow.ToConnectorUniqueId,
             detailTableRow.WireType, 
             detailTableRow.WireSize, 
-            detailTableRow.WireStrip, wireBook > 0 ? wireBook.ToString() : string.Empty, 
+            detailTableRow.WireStrip, 
+            wireBook > 0 ? wireBook.ToString() : string.Empty, 
             detailTableRow.EarthType, 
-            detailTableRow.EarthSize, numberOfGrounds > 0 ? numberOfGrounds.ToString() : string.Empty, 
+            detailTableRow.EarthSize, 
+            numberOfGrounds > 0 ? numberOfGrounds.ToString() : string.Empty, 
             detailTableRow.PlumbingType, 
             detailTableRow.PlumbingSize, 
             detailTableRow.NumberOfPlumbing, 
             detailTableRow.ConstructionClassification, 
             detailTableRow.SignalType, 
             detailTableRow.ConstructionItems, 
-            detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
+            detailTableRow.PlumbingItems, 
+            string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, 
             detailTableRow.CountCableSamePosition, 
             detailTableRow.RouteName, 
