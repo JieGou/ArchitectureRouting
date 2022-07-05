@@ -461,6 +461,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ! pickUpModels.Any() ) return rowStart ;
       var pickUpModel = pickUpModels.First() ;
       var rowName = sheet.CreateRow( rowStart ) ;
+      var isLengthItem = IsLengthItem( pickUpModel ) ;
       CreateMergeCell( sheet, rowName, rowStart, rowStart, 1, 3, pickUpModel.ProductName, xssfCellStyles[ "leftAlignmentLeftRightBorderedCellStyle" ] ) ;
       CreateMergeCell( sheet, rowName, rowStart, rowStart + 1, 4, 4, pickUpModel.Tani, xssfCellStyles[ "borderedCellStyle" ] ) ;
 
@@ -480,12 +481,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           quantityFloor += quantity ;
         }
 
-        CreateCell( rowName, i, quantityFloor == 0 ? string.Empty : Math.Round( quantityFloor, 2 ).ToString(), xssfCellStyles[ "leftRightBorderedCellStyle" ] ) ;
+        CreateCell( rowName, i, quantityFloor == 0 ? string.Empty : Math.Round( quantityFloor, isLengthItem ? 1 : 2 ).ToString(), xssfCellStyles[ "leftRightBorderedCellStyle" ] ) ;
         CreateCell( rowStandard, i, "", xssfCellStyles[ "exceptTopBorderedCellStyle" ] ) ;
         total += quantityFloor ;
       }
 
-      CreateCell( rowName, index, total == 0 ? string.Empty : Math.Round( total, 2 ).ToString(), xssfCellStyles[ "leftRightBorderedCellStyle" ] ) ;
+      CreateCell( rowName, index, total == 0 ? string.Empty : Math.Round( total, isLengthItem ? 1 : 2 ).ToString(), xssfCellStyles[ "leftRightBorderedCellStyle" ] ) ;
       CreateCell( rowStandard, index, "", xssfCellStyles[ "exceptTopBorderedCellStyle" ] ) ;
       rowStart++ ;
       return rowStart ;
@@ -507,6 +508,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
       var row = sheet.CreateRow( rowStart ) ;
+      var isLengthItem = IsLengthItem( pickUpModel ) ;
       CreateCell( row, 1, pickUpModel.ProductName, xssfCellStyles[ "leftBottomBorderedCellStyle" ] ) ;
       CreateCell( row, 2, pickUpModel.Standard, xssfCellStyles[ "leftBottomBorderedCellStyle" ] ) ;
       CreateCell( row, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyle" ] ) ;
@@ -534,10 +536,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         var number = DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
-        var seenQuantityStr = seenQuantity > 0 ? Math.Round( seenQuantity, 2 ).ToString() : string.Empty ;
+        var seenQuantityStr = seenQuantity > 0 ? Math.Round( seenQuantity, isLengthItem ? 1 : 2  ).ToString() : string.Empty ;
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
-          notSeenQuantityStr += value > 0 ? " + ↓" + Math.Round( value, 2 ) : string.Empty ;
+          notSeenQuantityStr += value > 0 ? " + ↓" + Math.Round( value, isLengthItem ? 1 : 2 ) : string.Empty ;
         }
 
         var key = "( " + seenQuantityStr + notSeenQuantityStr + " )" ;
@@ -551,7 +553,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       List<string> trajectoryStr = ( from item in trajectory select item.Value == 1 ? item.Key : item.Key + " x " + item.Value ).ToList() ;
       CreateMergeCell( sheet, row, rowStart, rowStart, 5, 15, string.Join( " + ", trajectoryStr ), xssfCellStyles[ "wrapTextBorderedCellStyle" ] ) ;
-      CreateCell( row, 16, Math.Round( total, 2 ).ToString(), xssfCellStyles[ "rightBottomBorderedCellStyle" ] ) ;
+      CreateCell( row, 16, Math.Round( total, isLengthItem ? 1 : 2 ).ToString(), xssfCellStyles[ "rightBottomBorderedCellStyle" ] ) ;
 
       rowStart++ ;
       return rowStart ;
@@ -636,6 +638,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             && (settings.Contains( h.Syurui )) )) ;
 
       PickUpModels = new ObservableCollection<PickUpModel>( newPickUpModels ) ;
+    }
+
+    private bool IsLengthItem( PickUpModel pickUpModel )
+    {
+      return _hiroiMasterModels.Any( h => (int.Parse( h.Buzaicd ) ==  int.Parse( pickUpModel.ProductCode.Split( '-' ).First())) && ( h.Syurui == LengthItem)) ;
     }
     
     public class ListBoxItem
