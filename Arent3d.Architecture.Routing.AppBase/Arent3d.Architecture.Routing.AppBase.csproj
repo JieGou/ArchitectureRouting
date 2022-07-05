@@ -23,8 +23,6 @@
     <None Update="resources\ElectricalCategory.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Compile Remove="Forms\SettingOutputPickUpReport.cs" />
-    <Compile Remove="Forms\SettingOutputPickUpReport.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
