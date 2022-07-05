@@ -39,13 +39,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string SummaryFileName = "_拾い出し集計表.xlsx" ;
     private const string ConfirmationFileName = "_拾い根拠確認表.xlsx" ;
     private const string DefaultConstructionItem = "未設定" ;
-    private const string LengthSetting = "長さ物" ;
-    private const string SettingConstruction = "工事部材" ;
-    private const string SettingEquipment = "機器取付" ;
-    private const string SettingConnection = "結線" ;
-    private const string SettingBoard  = "盤搬入据付" ;
-    private const string SettingInteriorRepairEquipment = "内装・補修・設備" ;
-    private const string SettingOthers = "その他" ;
+    private const string LengthItem = "長さ物" ;
+    private const string ConstructionMaterialItem = "工事部材" ;
+    private const string EquipmentMountingItem = "機器取付" ;
+    private const string WiringItem = "結線" ;
+    private const string BoardItem  = "盤搬入据付" ;
+    private const string InteriorRepairEquipmentItem = "内装・補修・設備" ;
+    private const string OtherItem = "その他" ;
     
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
     private readonly Document _document ;
@@ -99,7 +99,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public RelayCommand GetSaveLocationCommand => new( GetSaveLocation ) ;
     public RelayCommand<Window> CancelCommand => new( Cancel ) ;
     public RelayCommand<Window> ExecuteCommand => new( Execute ) ;
-    public RelayCommand SettingCommand => new( Setting ) ;
+    public RelayCommand SettingCommand => new( OutputItemsSelectionSetting ) ;
     public RelayCommand<Window> SetOptionCommand => new( SetOption ) ;
     
     
@@ -182,13 +182,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void CreateSettingList()
     {
-      CurrentSettingList.Add( new ListBoxItem { TheText = LengthSetting, TheValue = true } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = SettingConstruction, TheValue = true } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = SettingEquipment, TheValue = false } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = SettingConnection, TheValue = false } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = SettingBoard, TheValue = false } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = SettingInteriorRepairEquipment, TheValue = true } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = SettingOthers, TheValue = false } );
+      CurrentSettingList.Add( new ListBoxItem { TheText = LengthItem, TheValue = true } );
+      CurrentSettingList.Add( new ListBoxItem { TheText = ConstructionMaterialItem, TheValue = true } );
+      CurrentSettingList.Add( new ListBoxItem { TheText = EquipmentMountingItem, TheValue = false } );
+      CurrentSettingList.Add( new ListBoxItem { TheText = WiringItem, TheValue = false } );
+      CurrentSettingList.Add( new ListBoxItem { TheText = BoardItem, TheValue = false } );
+      CurrentSettingList.Add( new ListBoxItem { TheText = InteriorRepairEquipmentItem, TheValue = true } );
+      CurrentSettingList.Add( new ListBoxItem { TheText = OtherItem, TheValue = false } );
 
       PreviousSettingList = new ObservableCollection<ListBoxItem>( CurrentSettingList.Select( x => x.Copy() ).ToList() ) ;
     }
@@ -598,7 +598,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return borderedCellStyle ;
     }
     
-    private void Setting()
+    private void OutputItemsSelectionSetting()
     {
       var settingOutputPickUpReport = new SettingOutputPickUpReport( this ) ;
       settingOutputPickUpReport.ShowDialog();
