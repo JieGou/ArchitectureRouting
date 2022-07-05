@@ -434,43 +434,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    // private (bool IsValid, string? MaterialCode, string? Name) GetCode( List<HiroiSetMasterModel> hiroiSetMasterModels, string key )
-    // {
-    //   var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name1.Contains( key ) ) ;
-    //   if ( null != hiroiSetMasterModel ) 
-    //     return (true, hiroiSetMasterModel.MaterialCode1, hiroiSetMasterModel.Name1) ;
-    //   
-    //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name2.Contains( key ) ) ;
-    //   if ( null != hiroiSetMasterModel ) 
-    //     return (true, hiroiSetMasterModel.MaterialCode2, hiroiSetMasterModel.Name2) ;
-    //   
-    //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name3.Contains( key ) ) ;
-    //   if ( null != hiroiSetMasterModel ) 
-    //     return (true, hiroiSetMasterModel.MaterialCode3, hiroiSetMasterModel.Name3) ;
-    //   
-    //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name4.Contains( key ) ) ;
-    //   if ( null != hiroiSetMasterModel ) 
-    //     return (true, hiroiSetMasterModel.MaterialCode4, hiroiSetMasterModel.Name4) ;
-    //   
-    //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name5.Contains( key ) ) ;
-    //   if ( null != hiroiSetMasterModel ) 
-    //     return (true, hiroiSetMasterModel.MaterialCode5, hiroiSetMasterModel.Name5) ;
-    //   
-    //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name6.Contains( key ) ) ;
-    //   if ( null != hiroiSetMasterModel ) 
-    //     return (true, hiroiSetMasterModel.MaterialCode6, hiroiSetMasterModel.Name6) ;
-    //   
-    //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name7.Contains( key ) ) ;
-    //   if ( null != hiroiSetMasterModel ) 
-    //     return (true, hiroiSetMasterModel.MaterialCode7, hiroiSetMasterModel.Name7) ;
-    //   
-    //   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( x => x.Name8.Contains( key ) ) ;
-    //   if ( null != hiroiSetMasterModel ) 
-    //     return (true, hiroiSetMasterModel.MaterialCode8, hiroiSetMasterModel.Name8) ;
-    //
-    //   return (false, null, null) ;
-    // }
-
     private Dictionary<string, string> GetMaterialCodes(ProductType productType, HiroiSetMasterModel hiroiSetMasterModel, DetailTableModel? detailTableModel )
     {
       Dictionary<string, string> materialCodes = new() ;
@@ -487,14 +450,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             materialCodes.Add(hiroiMasterModelForPlumbing.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForPlumbing.Kikaku);
           }
         }
-        
-        
-        // if ( ! string.IsNullOrEmpty( plumbingKey ) ) {
-        //   var codePlumbing = GetCode(_hiroiSetMasterNormalModels, plumbingKey) ;
-        //   if ( codePlumbing.IsValid ) {
-        //     materialCodes.Add(codePlumbing.MaterialCode + $"-{materialCodes.Count + 1}", codePlumbing.Name!);
-        //   }
-        // }
 
         //Wiring
         var wireStrip = Regex.IsMatch( detailTableModel.WireStrip, @"^\d" ) ? $"x{detailTableModel.WireStrip}" : "" ;
@@ -503,13 +458,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( null != hiroiMasterModelForWoring ) {
           materialCodes.Add(hiroiMasterModelForWoring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWoring.Kikaku);
         }
-        
-        // var codeWiring = GetCode( _hiroiSetMasterNormalModels, wiringKey ) ;
-        // if ( codeWiring.IsValid ) {
-        //   for ( var i = 0 ; i < int.Parse(detailTableModel.WireBook) ; i++ ) {
-        //     materialCodes.Add(codeWiring.MaterialCode + $"-{materialCodes.Count + 1}", codeWiring.Name!);
-        //   }
-        // }
       }
       else {
         if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode1 ) ) materialCodes.Add( hiroiSetMasterModel.MaterialCode1 + "-1", hiroiSetMasterModel.Name1 ) ;
