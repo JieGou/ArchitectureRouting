@@ -515,6 +515,8 @@
         
         <key>Electrical.App.Commands.Routing.EraseSelectedPullBoxCommand</key>
         <string>Delete Pull Box</string>
-        
+
+        <key>Electrical.App.Commands.Initialization.PickUpMapCreationCommand</key>
+        <string>Pick Up&#xA;Diagram</string>
     </dict>
 </plist>

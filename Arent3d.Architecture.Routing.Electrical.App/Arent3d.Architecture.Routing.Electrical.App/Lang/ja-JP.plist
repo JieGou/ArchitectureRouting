@@ -502,6 +502,9 @@
 
         <key> Electrical.App.Commands.Initialization.ChangePullBoxDimensionCommand</key>
         <string>プルボックス&#xA;自動計算</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpMapCreationCommand</key>
+        <string>拾い図作成</string>
     </dict>
 </plist>
 

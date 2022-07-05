@@ -1,0 +1,68 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.PickUpMapCreationDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        Name="PickUpMapCreation"
+        mc:Ignorable="d"
+        Title="拾い図作成" Height="240" Width="400"
+        WindowStartupLocation="CenterScreen"
+        d:DataContext="{d:DesignInstance {x:Type local:DesignPickUpMapCreationViewModel}, IsDesignTimeCreatable=True}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="150" />
+            <RowDefinition Height="30" />
+        </Grid.RowDefinitions>
+        
+        <StackPanel Grid.Row="0" Orientation = "Horizontal" HorizontalAlignment="Center">
+            
+            <ListBox 
+                HorizontalContentAlignment="Stretch" 
+                BorderBrush="White" 
+                DockPanel.Dock="Left" 
+                Width="150" Height="90" 
+                FontSize="16" 
+                VerticalAlignment="Top"  
+                Margin="20, 40, 10, 0" 
+                ItemsSource="{Binding RepresentTypes}">
+                
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton  GroupName="Represent" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            
+            <GroupBox Grid.Row="0" Header="ドーコン" DockPanel.Dock="Left" Width="150" Height="100" FontSize="16" VerticalAlignment="Top" Margin="20, 20, 10, 0" HorizontalAlignment="Left">
+                <ListBox HorizontalContentAlignment="Stretch" BorderBrush="White" ItemsSource="{Binding DoconTypes}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <RadioButton GroupName="Docon" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+        </StackPanel>
+        
+        <StackPanel Grid.Row="1" Orientation = "Horizontal" Margin="10 0 10 0" HorizontalAlignment="Center">
+            <Button 
+                    Content="処理実行"
+                    HorizontalAlignment="Center"
+                    Width="100" 
+                    Height="30"/>
+            <Button 
+                    Content="キャンセル"
+                    Command="{Binding CancelCommand}"
+                    CommandParameter="{Binding ElementName=PickUpMapCreation}"
+                    HorizontalAlignment="Center"
+                    Height="30"
+                    Margin="20 0 0 0"
+                    Width="100" />
+        </StackPanel>
+       
+
+        
+    </Grid>
+</Window>

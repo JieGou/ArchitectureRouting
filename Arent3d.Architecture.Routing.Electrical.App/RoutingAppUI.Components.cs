@@ -315,6 +315,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class PickUpReportCommandButton
           {
           }
+          
+          [Button( typeof( PickUpMapCreationCommand ), OnlyInitialized = true )]
+          private static class PickUpMapCreationCommandButton
+          {
+          }
 
           [Button( typeof( CreateDetailTableCommand ), OnlyInitialized = true )]
           private static class CreateDetailTableCommandButton
