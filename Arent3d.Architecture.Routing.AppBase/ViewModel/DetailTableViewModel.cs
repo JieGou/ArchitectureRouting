@@ -1080,7 +1080,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newDetailTableModels = new List<DetailTableModel>() ;
       
       var newDetailTableRow = new DetailTableModel( selectDetailTableRow.DetailSymbol, selectDetailTableRow.DetailSymbolUniqueId, 
-        selectDetailTableRow.FromConnectorUniqueId, selectDetailTableRow.ToConnectorUniqueId ) ;
+        selectDetailTableRow.FromConnectorUniqueId, selectDetailTableRow.ToConnectorUniqueId, selectDetailTableRow.RouteName ) ;
       
       if ( _isCallFromAddWiringInformationCommand ) {
         newDetailTableRow.PlumbingType = DefaultParentPlumbingType ;
@@ -1306,13 +1306,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var routesWithConstructionItemHasChanged = detailTableRowsChangeConstructionItems.Select( d => d.RouteName ).Distinct().ToList() ;
         UpdatePlumbingItemsAfterChangeConstructionItems( _detailTableModelsOrigin, detailTableRow.RouteName, constructionItem.ToString() ) ;
         if ( ! detailTableRow.IsMixConstructionItems ) {
-          #region Update Plumbing Type (Comment out)
-          // var detailTableRowsWithSameRouteName = newDetailTableModels.Where( c => c.RouteName == detailTableRow.RouteName ).ToList() ;
-          // foreach ( var detailTableRowWithSameRouteName in detailTableRowsWithSameRouteName ) {
-          //   var detailTableRowsWithSameDetailSymbolId = newDetailTableModels.Where( c => c.DetailSymbolId == detailTableRowWithSameRouteName.DetailSymbolId ).ToList() ;
-          //   CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, detailTableRowsWithSameDetailSymbolId, detailTableRow.PlumbingType, false, _isMixConstructionItems ) ;
-          // }
-          #endregion
           UnGroupDetailTableRowsAfterChangeConstructionItems( _detailTableModelsOrigin, routesWithConstructionItemHasChanged, constructionItem.ToString() ) ;
         }
         foreach ( var routeName in routesWithConstructionItemHasChanged ) {

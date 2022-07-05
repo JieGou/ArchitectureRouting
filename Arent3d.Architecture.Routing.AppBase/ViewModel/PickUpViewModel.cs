@@ -456,7 +456,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var wiringKey = $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ;
         var hiroiMasterModelForWoring = _hiroiMasterModels.FirstOrDefault( x => x.Kikaku.Replace( " ", "" ) == wiringKey ) ;
         if ( null != hiroiMasterModelForWoring ) {
-          materialCodes.Add(hiroiMasterModelForWoring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWoring.Kikaku);
+          for ( var i = 0 ; i < int.Parse(detailTableModel.WireBook) ; i++ ) {
+            materialCodes.Add(hiroiMasterModelForWoring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWoring.Kikaku);
+          }
         }
       }
       else {

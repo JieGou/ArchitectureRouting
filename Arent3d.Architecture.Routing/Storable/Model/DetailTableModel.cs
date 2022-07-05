@@ -271,9 +271,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       PlumbingItemTypes = plumbingItemTypes??new() ; ;
     }
     
-    public DetailTableModel( string? detailSymbol, string? detailSymbolUniqueId, string? fromConnectorUniqueId, string? toConnectorUniqueId)
+    public DetailTableModel( string? detailSymbol, string? detailSymbolUniqueId, string? fromConnectorUniqueId, string? toConnectorUniqueId, string routeName)
     {
-      var index = "new-" + DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
       CalculationExclusion = false ;
       Floor = string.Empty ;
       CeedCode = string.Empty ;
@@ -298,11 +297,11 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Remark = string.Empty ;
       WireCrossSectionalArea = 0 ;
       CountCableSamePosition = 1 ;
-      RouteName = index ;
+      RouteName = routeName ;
       IsEcoMode = string.Empty ;
       IsParentRoute = true ;
       IsReadOnly = false ;
-      PlumbingIdentityInfo = index ;
+      PlumbingIdentityInfo = string.Empty ;
       GroupId = string.Empty ;
       IsReadOnlyPlumbingItems = false ;
       IsMixConstructionItems = false ;
