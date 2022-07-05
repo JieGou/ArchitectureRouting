@@ -308,19 +308,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 : new List<DetailTableModel>() ;
               if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 && null != hiroiSetMasterModel) {
                 foreach ( var detailTableModel in detailTableModelList ) {
-                  var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( x => IsExistHiroiMasterModel(detailTableModel, x) ) ;
-                  if(null == hiroiMasterModel)
-                    continue;
-                  
-                  var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel!, detailTableModel ) ;
-                  hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber( h.ParentPartModelNumber, hiroiMasterModel.Kikaku ) ) ;
-                  if ( hiroiSetMasterModel == null ) 
-                    continue ;
-
-                  foreach ( var materialCode in GetMaterialCodes( productType, hiroiSetMasterModel, detailTableModel ) ) {
-                    if(!materialCodes.ContainsKey(materialCode.Key))
-                      materialCodes.Add(materialCode.Key, materialCode.Value);
-                  }
+                  var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, detailTableModel ) ;
                   
                   if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                     PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, @group, layer,
@@ -409,26 +397,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         index++ ;
       }
-    }
-
-    private bool IsExistHiroiMasterModel( DetailTableModel detailTableModel, HiroiMasterModel hiroiMasterModel )
-    {
-      var isExistWireType = hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireType ) ;
-      if ( ! isExistWireType )
-        return false ;
-      
-      var isExistWireSize = hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireSize ) ;
-      if ( ! isExistWireSize )
-        return false ;
-      
-      return detailTableModel.WireStrip.Contains( "-" ) || hiroiMasterModel.Ryakumeicd.Contains( detailTableModel.WireStrip ) ;
-    }
-
-    private bool CompareMaterialCodeAndProducParentNumber( string materialCode, string productParentNumber )
-    {
-      materialCode = materialCode.Replace( " ", "" ).Replace( "-", "" ).Replace( "x", "" ) ;
-      productParentNumber = productParentNumber.Replace( " ", "" ).Replace( "-", "" ).Replace( "x", "" ) ;
-      return string.Equals( materialCode, productParentNumber, StringComparison.CurrentCultureIgnoreCase ) ;
     }
 
     private void PickUpModelBaseOnMaterialCode( Dictionary<string, string> materialCodes, string specification, string productName, string size, string tani, string standard, ProductType productType, List<PickUpModel> pickUpModels, string? floor, string constructionItems, string construction,

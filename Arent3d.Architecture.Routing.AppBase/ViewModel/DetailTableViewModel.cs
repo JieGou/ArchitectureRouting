@@ -620,10 +620,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         transaction.Start( "Remove Detail Symbol" ) ;
 
         var removeDetailSymbols = detailSymbolStorable.DetailSymbolModelData
-          .Where( x => x.DetailSymbol == detailSymbolModel.DetailSymbol && 
-                       x.DetailSymbolUniqueId == detailSymbolModel.DetailSymbolUniqueId &&
-                       x.FromConnectorUniqueId == detailSymbolModel.FromConnectorUniqueId &&
-                       x.ToConnectorUniqueId == detailSymbolModel.ToConnectorUniqueId )
+          .Where( x => CreateDetailTableCommandBase.GetKeyRouting(x) == CreateDetailTableCommandBase.GetKeyRouting( detailSymbolModel ) )
           .EnumerateAll() ;
 
         foreach ( var removeDetailSymbol in removeDetailSymbols ) {
