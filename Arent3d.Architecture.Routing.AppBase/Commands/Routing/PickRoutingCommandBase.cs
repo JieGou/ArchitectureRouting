@@ -152,7 +152,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, XYZ? passPointPosition, XYZ? passPointDirection )
     {
       var useConnectorDiameter = UseConnectorDiameter() ;
-      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter, passPointDirection ) ;
+      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult, useConnectorDiameter ) ;
 
       if ( passPointPosition == null ) {
