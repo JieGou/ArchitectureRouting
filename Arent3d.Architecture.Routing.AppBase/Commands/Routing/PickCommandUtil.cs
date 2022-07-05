@@ -330,7 +330,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( Math.Abs( firstPoint.X - lastPoint.X ) == 0 || Math.Abs( firstPoint.Y - lastPoint.Y ) == 0 ) 
         return ( new List<ElementId>(), new List<ElementId>() ) ;
       
-      var (secondPoint, thirdPoint) = GetPoints( fromPickResult, toPickResult ) ;
+      var (secondPoint, thirdPoint, isDirectionXOrY ) = GetPoints( fromPickResult, toPickResult ) ;
       
       List<ElementId> previewLineIds = new() ;
       List<ElementId> allLineIds = new() ;
@@ -339,22 +339,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var redLineCategory = GetLineStyle( document, redColor, "Red" ) ;
       var blueLineCategory = GetLineStyle( document, blueColor, "Blue" ) ;
 
-      CreateLines( document, redLineCategory, firstPoint, secondPoint, allLineIds, previewLineIds ) ;
-      CreateLines( document, blueLineCategory, firstPoint, thirdPoint, allLineIds, previewLineIds ) ;
+      CreateLines( document, redLineCategory, isDirectionXOrY, firstPoint, lastPoint, secondPoint, allLineIds, previewLineIds ) ;
+      CreateLines( document, blueLineCategory, isDirectionXOrY, firstPoint, lastPoint, thirdPoint, allLineIds, previewLineIds ) ;
 
       trans.Commit() ;
 
       return ( previewLineIds, allLineIds ) ;
     }
 
-    private static ( XYZ, XYZ ) GetPoints( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    private static ( XYZ, XYZ, bool ) GetPoints( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
       var toOrigin = toPickResult.GetOrigin() ;
       var fromOrigin = fromPickResult.GetOrigin() ;
       var origin = new Vector3d( fromOrigin.X, fromOrigin.Y, fromOrigin.Z ) ;
       var firstElement = ( fromPickResult.PickedElement as FamilyInstance ) ! ;
       var direction = firstElement.HandOrientation ;
+      var toElement = ( toPickResult.PickedElement as FamilyInstance ) ! ;
+      var toDirection = toElement.HandOrientation ;
+
       Vector3d secondDirection ;
+      Vector3d firstPoint, secondPoint ;
       var firstDirection = new Vector3d( fromOrigin.X < toOrigin.X ? Math.Abs( direction.X ) : -Math.Abs( direction.X ), fromOrigin.Y < toOrigin.Y ? Math.Abs( direction.Y ) : -Math.Abs( direction.Y ), direction.Z ) ;
       if ( firstDirection.x != 0 ) {
         var y = firstDirection.x is 1 or -1 ? ( fromOrigin.Y < toOrigin.Y ? Math.Abs( direction.X ) : -Math.Abs( direction.X ) ) : ( fromOrigin.Y > toOrigin.Y ? Math.Abs( direction.X ) : -Math.Abs( direction.X ) ) ;
@@ -367,16 +371,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         secondDirection = new Vector3d( x, y, firstDirection.z ) ;
       }
 
-      var length = Math.Min( Math.Abs( fromOrigin.X - toOrigin.X ), Math.Abs( fromOrigin.Y - toOrigin.Y ) ) ;
+      var isDirectionXOrY = ( ( direction.X is 1 or -1 && direction.Y == 0 ) || ( direction.Y is 1 or -1 && direction.X == 0 ) ) 
+                            && ( ( toDirection.X is 1 or -1 && toDirection.Y == 0 ) || ( toDirection.Y is 1 or -1 && toDirection.X == 0 ) ) ;
       var firstLine = new MathLib.Line( origin, firstDirection ) ;
       var secondLine = new MathLib.Line( origin, secondDirection ) ;
-      var firstPoint = firstLine.GetPointAt( length ) ;
-      var secondPoint = secondLine.GetPointAt( length ) ;
-      
-      return ( new XYZ( firstPoint.x, firstPoint.y, firstPoint.z ), new XYZ( secondPoint.x, secondPoint.y, secondPoint.z ) ) ;
+      var xLength = Math.Abs( fromOrigin.X - toOrigin.X ) ;
+      var yLength = Math.Abs( fromOrigin.Y - toOrigin.Y ) ;
+      if ( isDirectionXOrY ) {
+        firstPoint = firstLine.GetPointAt( firstDirection.x is 1 or -1 ? xLength : yLength ) ;
+        secondPoint = secondLine.GetPointAt( secondDirection.x is 1 or -1 ? xLength : yLength ) ;
+      }
+      else {
+        var length = Math.Min( xLength, yLength ) ;
+        firstPoint = firstLine.GetPointAt( length ) ;
+        secondPoint = secondLine.GetPointAt( length ) ;
+      }
+
+      return ( new XYZ( firstPoint.x, firstPoint.y, firstPoint.z ), new XYZ( secondPoint.x, secondPoint.y, secondPoint.z ), isDirectionXOrY ) ;
     }
 
-    private static void CreateLines( Document document, Category lineCategory, XYZ firstPoint, XYZ secondPoint, List<ElementId> allLineIds, List<ElementId> previewLineIds )
+    private static void CreateLines( Document document, Category lineCategory, bool isDirectionXOrY, XYZ firstPoint, XYZ lastPoint, XYZ secondPoint, List<ElementId> allLineIds, List<ElementId> previewLineIds )
     {
       const double lengthLine = 0.5 ;
       var curve = Line.CreateBound( firstPoint, secondPoint ) ;
@@ -384,26 +398,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
       previewLineIds.Add( detailCurve.Id ) ;
       allLineIds.Add( detailCurve.Id ) ;
+
+      if ( isDirectionXOrY ) {
+        curve = Line.CreateBound( secondPoint, lastPoint ) ;
+        detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        previewLineIds.Add( detailCurve.Id ) ;
+        allLineIds.Add( detailCurve.Id ) ;
+      }
+      else {
+        var (x, y, z) = curve.Origin ;
+        var (a, b, c) = curve.Direction ;
+        var mainLine = new MathLib.Line( new Vector3d( x, y, z ), new Vector3d( a, b, c ) ) ;
+        var length = curve.Length ;
+        var origin = mainLine.GetPointAt( length - lengthLine ) ;
+        var direction = new Vector3d( b, -a, c ) ;
+        var firstLine = new MathLib.Line( origin, direction ) ;
+        var (x1, y1, z1) = firstLine.GetPointAt( lengthLine ) ;
+        var (x2, y2, z2) = firstLine.GetPointAt( -lengthLine ) ;
       
-      var (x, y, z) = curve.Origin ;
-      var (a, b, c) = curve.Direction ;
-      var mainLine = new MathLib.Line( new Vector3d( x, y, z ), new Vector3d( a, b, c ) ) ;
-      var length = curve.Length ;
-      var origin = mainLine.GetPointAt( length - lengthLine ) ;
-      var direction = new Vector3d( b, -a, c ) ;
-      var firstLine = new MathLib.Line( origin, direction ) ;
-      var (x1, y1, z1) = firstLine.GetPointAt( lengthLine ) ;
-      var (x2, y2, z2) = firstLine.GetPointAt( -lengthLine ) ;
+        curve = Line.CreateBound( secondPoint, new XYZ( x1, y1, z1 ) ) ;
+        detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        allLineIds.Add( detailCurve.Id ) ;
       
-      curve = Line.CreateBound( secondPoint, new XYZ( x1, y1, z1 ) ) ;
-      detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
-      detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-      allLineIds.Add( detailCurve.Id ) ;
-      
-      curve = Line.CreateBound( secondPoint, new XYZ( x2, y2, z2 ) ) ;
-      detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
-      detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-      allLineIds.Add( detailCurve.Id ) ;
+        curve = Line.CreateBound( secondPoint, new XYZ( x2, y2, z2 ) ) ;
+        detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        allLineIds.Add( detailCurve.Id ) ;
+      }
     }
 
     public static void RemovePreviewLines( Document document, List<ElementId> previewLineIds )
