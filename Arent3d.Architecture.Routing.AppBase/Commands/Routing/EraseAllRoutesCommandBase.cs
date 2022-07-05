@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         return document.Transaction( "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( null ), _ =>
         {
-          RouteGenerator.EraseRoutes( document, hashSet, true ) ;
+          RouteGenerator.EraseRoutes( document, hashSet, true, true ) ;
           cache.Drop( hashSet ) ;
           return Result.Succeeded ;
         } ) ;
