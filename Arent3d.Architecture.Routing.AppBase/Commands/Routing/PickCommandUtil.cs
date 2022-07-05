@@ -349,6 +349,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static ( XYZ, XYZ, bool ) GetPoints( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
+      const double tolerance = 0.001 ;
       var toOrigin = toPickResult.GetOrigin() ;
       var fromOrigin = fromPickResult.GetOrigin() ;
       var origin = new Vector3d( fromOrigin.X, fromOrigin.Y, fromOrigin.Z ) ;
@@ -371,8 +372,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         secondDirection = new Vector3d( x, y, firstDirection.z ) ;
       }
 
-      var isDirectionXOrY = ( ( direction.X is 1 or -1 && direction.Y == 0 ) || ( direction.Y is 1 or -1 && direction.X == 0 ) ) 
-                            && ( ( toDirection.X is 1 or -1 && toDirection.Y == 0 ) || ( toDirection.Y is 1 or -1 && toDirection.X == 0 ) ) ;
+      var isDirectionXOrY = ( ( direction.X is 1 or -1 && Math.Round( direction.Y ) < tolerance && Math.Round( direction.Y ) > -tolerance ) 
+                              || ( direction.Y is 1 or -1 && Math.Round( direction.X ) < tolerance && Math.Round( direction.X ) > -tolerance ) ) 
+                            && ( ( toDirection.X is 1 or -1 && Math.Round( toDirection.Y ) < tolerance && Math.Round( toDirection.Y ) > -tolerance ) 
+                                 || ( toDirection.Y is 1 or -1 && Math.Round( toDirection.X ) < tolerance && Math.Round( toDirection.X ) > -tolerance ) ) ;
       var firstLine = new MathLib.Line( origin, firstDirection ) ;
       var secondLine = new MathLib.Line( origin, secondDirection ) ;
       var xLength = Math.Abs( fromOrigin.X - toOrigin.X ) ;
@@ -400,6 +403,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       allLineIds.Add( detailCurve.Id ) ;
 
       if ( isDirectionXOrY ) {
+        lastPoint = new XYZ( lastPoint.X, lastPoint.Y, firstPoint.Z ) ;
         curve = Line.CreateBound( secondPoint, lastPoint ) ;
         detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
         detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
