@@ -52,11 +52,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
 
-      if ( false == instance.TryGetProperty( "W", out string? connectorWidthString ) && string.IsNullOrEmpty( connectorWidthString ) ) connectorWidthString = DefaultConnectorWidth;
-      if  ( false == instance.TryGetProperty( "D",out string? connectorLengthString) && string.IsNullOrEmpty( connectorLengthString )) connectorLengthString = DefaultConnectorLength;
+      if ( false == instance.TryGetProperty( "W", out string? connectorWidthString,true ) && string.IsNullOrEmpty( connectorWidthString ) ) connectorWidthString = DefaultConnectorWidth;
+      if  ( false == instance.TryGetProperty( "D",out string? connectorLengthString,true) && string.IsNullOrEmpty( connectorLengthString )) connectorLengthString = DefaultConnectorLength;
 
-      if ( false == int.TryParse( connectorLengthString, out var connectorWidth ) ) return ;
-      if ( false == int.TryParse( connectorWidthString,out var connectorLength )) return;
+      if ( false == int.TryParse( connectorWidthString, out var connectorWidth ) ) return ;
+      if ( false == int.TryParse( connectorLengthString,out var connectorLength )) return;
 
       var scaleRatio = GetConnectorScaleRatio( uiDocument.Document )/100.0 ;
 

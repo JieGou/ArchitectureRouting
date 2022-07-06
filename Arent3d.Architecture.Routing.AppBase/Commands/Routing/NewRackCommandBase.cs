@@ -277,6 +277,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var document = uiDocument.Document ;
       var conduit = ( element as Conduit )! ;
+      var scaleRatio = uiDocument.Document.ActiveView.Scale/100.0;
 
       var location = ( element.Location as LocationCurve )! ;
       var line = ( location.Curve as Line )! ;
@@ -297,7 +298,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // set cable rack length
       if ( cableRackWidth > 0 )
-        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), cableRackWidth.MillimetersToRevitUnits() ) ;
+        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), (cableRackWidth*scaleRatio).MillimetersToRevitUnits() ) ;
 
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
@@ -495,8 +496,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var point = ( rack.Location as LocationPoint )!.Point ;
             var connectors = rack.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
             point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y ), point.Z ) ;
-            var scaleRatio = doc.ActiveView.Scale / 100 ;
-            var notationDistance = widthCableTray.RevitUnitsToMillimeters() * scaleRatio ;
+            var notationDistance = widthCableTray.RevitUnitsToMillimeters() ;
             var notation = count > 1 ? string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ) + xSymbol + racks.Count : string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ) ;
             var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc ) ;
             if ( null == textNoteType ) return ;
