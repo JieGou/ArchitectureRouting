@@ -31,11 +31,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var routingExecutor = GetRoutingExecutor() ;
 
-      var (powerConnector, sensorConnectors, sensorDirection, errorMessage) = SelectionRangeRouteManager.SelectionRangeRoute( uiDocument ) ;
+      var (powerConnectors, sensorConnectors, sensorDirection, errorMessage) = SelectionRangeRouteManager.SelectionRangeRoute( uiDocument ) ;
       if ( null != errorMessage ) return OperationResult<RoomSelectState>.FailWithMessage( errorMessage ) ;
 
       var room = RoomRouteManager.PickRoom( uiDocument ) ;
 
+      var powerConnector = powerConnectors.FirstOrDefault() ;
       var farthestSensorConnector = sensorConnectors.Last() ;
       var property = ShowPropertyDialog( uiDocument.Document, powerConnector!, farthestSensorConnector ) ;
       if ( true != property?.DialogResult ) return OperationResult<RoomSelectState>.Cancelled ;

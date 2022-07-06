@@ -95,6 +95,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var torance = 10d.MillimetersToRevitUnits() ;
       cableTrays = cableTrays.Where( MEPModelOnPlan ).ToList() ;
       fittings = fittings.Where( MEPModelOnPlan ).ToList() ;
+      var cableTrayWidth = WidthCableTrayDefault2D ;
 
       if ( ! cableTrays.Any() )
         return fittings ;
@@ -112,8 +113,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var cableTray = groupCableTray[ 0 ] ;
         newCableTrays.Add( cableTray ) ;
         cableTray.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) ).Set( locationAfterIntersect.Length ) ;
-        var width = cableTray.LookupParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ;
-        infoCableTrays.Add( ( locationAfterIntersect, width ) ) ;
+        cableTrayWidth = cableTray.LookupParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ;
+        infoCableTrays.Add( ( locationAfterIntersect, cableTrayWidth ) ) ;
         var locationCableTray = ( cableTray.Location as LocationPoint )!.Point ;
         var pointNearest = locationAfterIntersect.GetEndPoint( 0 ).DistanceTo( locationCableTray ) < locationAfterIntersect.GetEndPoint( 1 ).DistanceTo( locationCableTray ) ? locationAfterIntersect.GetEndPoint( 0 ) : locationAfterIntersect.GetEndPoint( 1 ) ;
         ElementTransformUtils.MoveElement( document, cableTray.Id, new XYZ( pointNearest.X, pointNearest.Y, locationCableTray.Z ) - locationCableTray ) ;
@@ -124,7 +125,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       if ( ! IsCircle ) {
         var inforCableTrays = ExtendCurves( document, infoCableTrays, fittings ) ;
-        var curveLoops = GroupCurves( inforCableTrays ).Select( x => CurveLoop.CreateViaThicken( x.CurveLoop, WidthCableTrayDefault2D, XYZ.BasisZ ) ) ;
+        var curveLoops = GroupCurves( inforCableTrays ).Select( x => CurveLoop.CreateViaThicken( x.CurveLoop, cableTrayWidth, XYZ.BasisZ ) ) ;
         var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         CreateDetailLines( document, curveLoops, lineStyle ) ;
       }
@@ -135,7 +136,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         curves.AddRange( fittingLocations.Select( x => x.Key ) ) ;
         var mergeCurves = MergeCurves( curves ) ;
 
-        var curveLoops = mergeCurves.Select( x => CurveLoop.Create( x.ToList() ) ).Select( x => CurveLoop.CreateViaThicken( x, WidthCableTrayDefault2D, XYZ.BasisZ ) ) ;
+        var curveLoops = mergeCurves.Select( x => CurveLoop.Create( x.ToList() ) ).Select( x => CurveLoop.CreateViaThicken( x, cableTrayWidth, XYZ.BasisZ ) ) ;
         var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         CreateDetailLines( document, curveLoops, lineStyle) ;
       }
