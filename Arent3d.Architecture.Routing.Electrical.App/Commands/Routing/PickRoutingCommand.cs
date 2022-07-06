@@ -52,6 +52,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState state )
     {
+      if ( ! PullBoxRouteManager.IsGradeUnderThree( document ) ) return executeResultValue ;
+
       var registrationOfBoardDataModels = document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
       var (fromPickResult, toPickResult, _, _) = state ;
       var listConnectors = new List<Element>() { fromPickResult.PickedElement, toPickResult.PickedElement } ;
