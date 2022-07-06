@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     private const string ErrorMessageCannotDeterminePowerConnectorArrayDirection = "The power need to be placed outside the bounding rectangle of all sensors." ;
 
-    public record SelectState( IReadOnlyList<FamilyInstance> PowerConnectors, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteManager.SensorArrayDirection SensorDirection, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec, bool IsPowersBoard = true ) ;
+    public record SelectState( IReadOnlyList<FamilyInstance> PowerConnectors, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteManager.SensorArrayDirection SensorDirection, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec, bool IsSelectionRangeRouteBetweenPowerConnectors = true ) ;
 
     public record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
@@ -57,9 +57,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var pipeSpec = new MEPSystemPipeSpec( new RouteMEPSystem( uiDocument.Document, property.GetSystemType(), property.GetCurveType() ), routingExecutor.FittingSizeCalculator ) ;
 
-      var isPowersBoard = ( powerConnectors.Count() != 1 ) ;
+      var isSelectionRangeRouteBetweenPowerConnectors = powerConnectors.Count != 1 ;
 
-      return new OperationResult<SelectState>( new SelectState( powerConnectors, sensorConnectors, sensorDirection, property, classificationInfo, pipeSpec, isPowersBoard ) ) ;
+      return new OperationResult<SelectState>( new SelectState( powerConnectors, sensorConnectors, sensorDirection, property, classificationInfo, pipeSpec, isSelectionRangeRouteBetweenPowerConnectors ) ) ;
     }
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( Element fromPickElement, Element toPickElement, MEPSystemType? systemType )
