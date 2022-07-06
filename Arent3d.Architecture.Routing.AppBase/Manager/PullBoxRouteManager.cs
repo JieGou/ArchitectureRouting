@@ -602,7 +602,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static bool IsGradeOfPullBox( Document document )
+    public static bool IsGradeUnderThree( Document document )
     {
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
       var grade = defaultSettingStorable.GradeSettingData.GradeMode ;
