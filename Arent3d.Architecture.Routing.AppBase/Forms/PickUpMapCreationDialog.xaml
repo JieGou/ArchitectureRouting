@@ -30,12 +30,21 @@
                 
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <RadioButton  GroupName="Represent" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" />
+                        <RadioButton  GroupName="Represent" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" Checked="Represent_Checked"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
             
-            <GroupBox Grid.Row="0" Header="ドーコン" DockPanel.Dock="Left" Width="150" Height="100" FontSize="16" VerticalAlignment="Top" Margin="20, 20, 10, 0" HorizontalAlignment="Left">
+            <GroupBox 
+                Header="ドーコン" 
+                DockPanel.Dock="Left" 
+                Width="150" 
+                Height="100" 
+                FontSize="16" 
+                VerticalAlignment="Top"
+                Margin="20, 20, 10, 0" 
+                HorizontalAlignment="Left" 
+                IsEnabled="{Binding IsDoconEnable}">
                 <ListBox HorizontalContentAlignment="Stretch" BorderBrush="White" ItemsSource="{Binding DoconTypes}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
@@ -49,6 +58,8 @@
         <StackPanel Grid.Row="1" Orientation = "Horizontal" Margin="10 0 10 0" HorizontalAlignment="Center">
             <Button 
                     Content="処理実行"
+                    Command="{Binding ExecuteCommand}"
+                    CommandParameter="{Binding ElementName=PickUpMapCreation}"
                     HorizontalAlignment="Center"
                     Width="100" 
                     Height="30"/>

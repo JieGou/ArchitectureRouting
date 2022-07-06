@@ -12,6 +12,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
       DataContext = viewModel ;
     }
+
+    private void Represent_Checked( object sender, RoutedEventArgs e )
+    {
+      ViewModel.RepresentItemChecked( sender ) ;
+    }
   }
   
   public class DesignPickUpMapCreationViewModel : PickUpMapCreationViewModel
