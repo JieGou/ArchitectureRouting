@@ -353,10 +353,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var toOrigin = toPickResult.GetOrigin() ;
       var fromOrigin = fromPickResult.GetOrigin() ;
       var origin = new Vector3d( fromOrigin.X, fromOrigin.Y, fromOrigin.Z ) ;
-      var firstElement = ( fromPickResult.PickedElement as FamilyInstance ) ! ;
-      var direction = firstElement.HandOrientation ;
-      var toElement = ( toPickResult.PickedElement as FamilyInstance ) ! ;
-      var toDirection = toElement.HandOrientation ;
+      var direction = XYZ.BasisX ;
+      var toDirection = -XYZ.BasisX ;
 
       Vector3d secondDirection ;
       Vector3d firstPoint, secondPoint ;
@@ -372,10 +370,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         secondDirection = new Vector3d( x, y, firstDirection.z ) ;
       }
 
-      var isDirectionXOrY = ( ( direction.X is 1 or -1 && Math.Round( direction.Y ) < tolerance && Math.Round( direction.Y ) > -tolerance ) 
-                              || ( direction.Y is 1 or -1 && Math.Round( direction.X ) < tolerance && Math.Round( direction.X ) > -tolerance ) ) 
-                            && ( ( toDirection.X is 1 or -1 && Math.Round( toDirection.Y ) < tolerance && Math.Round( toDirection.Y ) > -tolerance ) 
-                                 || ( toDirection.Y is 1 or -1 && Math.Round( toDirection.X ) < tolerance && Math.Round( toDirection.X ) > -tolerance ) ) ;
+      var isDirectionXOrY = ( ( direction.X is 1 or -1 && Math.Abs( direction.Y ) < tolerance ) || ( direction.Y is 1 or -1 && Math.Abs( direction.X ) < tolerance ) )
+                            && ( ( toDirection.X is 1 or -1 && Math.Abs( toDirection.Y ) < tolerance ) || ( toDirection.Y is 1 or -1 && Math.Abs( toDirection.X ) < tolerance ) ) ;
       var firstLine = new MathLib.Line( origin, firstDirection ) ;
       var secondLine = new MathLib.Line( origin, secondDirection ) ;
       var xLength = Math.Abs( fromOrigin.X - toOrigin.X ) ;
@@ -393,7 +389,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( new XYZ( firstPoint.x, firstPoint.y, firstPoint.z ), new XYZ( secondPoint.x, secondPoint.y, secondPoint.z ), isDirectionXOrY ) ;
     }
 
-    private static void CreateLines( Document document, Category lineCategory, bool isDirectionXOrY, XYZ firstPoint, XYZ lastPoint, XYZ secondPoint, List<ElementId> allLineIds, List<ElementId> previewLineIds )
+    private static void CreateLines( Document document, Category lineCategory, bool isDirectionXOrY, XYZ firstPoint, XYZ lastPoint, XYZ secondPoint, ICollection<ElementId> allLineIds, ICollection<ElementId> previewLineIds )
     {
       const double lengthLine = 0.5 ;
       var curve = Line.CreateBound( firstPoint, secondPoint ) ;
