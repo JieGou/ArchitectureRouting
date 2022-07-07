@@ -512,6 +512,9 @@
 
         <key> Electrical.App.Commands.Initialization.ChangePullBoxDimensionCommand</key>
         <string>Change Pullbox Dimension</string>
+
+        <key> Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
+        <string>Switch Print Mode</string>
         
         <key>Electrical.App.Commands.Routing.EraseSelectedPullBoxCommand</key>
         <string>Delete Pull Box</string>
