@@ -162,18 +162,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public static string GetKeyRouting( DetailSymbolModel? detailSymbolModel )
     {
-      if ( null == detailSymbolModel )
-        return string.Empty ;
-      
-      return GetKeyRouting( detailSymbolModel.DetailSymbolUniqueId, detailSymbolModel.FromConnectorUniqueId, detailSymbolModel.ToConnectorUniqueId ) ;
+      return null == detailSymbolModel ? string.Empty : GetKeyRouting( detailSymbolModel.DetailSymbolUniqueId, detailSymbolModel.FromConnectorUniqueId, detailSymbolModel.ToConnectorUniqueId ) ;
     }
 
     public static string GetKeyRouting( DetailTableModel? detailTableModel )
     {
-      if ( null == detailTableModel )
-        return string.Empty ;
-      
-      return GetKeyRouting( detailTableModel.DetailSymbolUniqueId, detailTableModel.FromConnectorUniqueId, detailTableModel.ToConnectorUniqueId ) ;
+      return null == detailTableModel ? string.Empty : GetKeyRouting( detailTableModel.DetailSymbolUniqueId, detailTableModel.FromConnectorUniqueId, detailTableModel.ToConnectorUniqueId ) ;
     }
 
     public static ( ObservableCollection<DetailTableModel>, bool, bool ) CreateDetailTable( Document doc, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, List<Element> conduits, IEnumerable<string> elementUniqueIds, bool isReferenceDetailTableModels, bool isFromCreateDetailTable = false )
@@ -634,7 +628,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               parentDetailRow.PlumbingSizes = plumbingSizes ;
               parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
               parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
-              parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.Parse(parentDetailRow.WireBook) ) ;
+              parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.TryParse(parentDetailRow.WireBook, out var value) ? value : 0 ) ;
               parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
               parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
               parentDetailRow.IsReadOnlyPlumbingSize = false ;
@@ -706,7 +700,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                   parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
                 }
                 parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
-                parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.Parse(parentDetailRow.WireBook) ) ;
+                parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.TryParse(parentDetailRow.WireBook, out var value) ? value : 0 ) ;
                 parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
                 parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
                 parentDetailRow.IsReadOnlyPlumbingSize = false ;

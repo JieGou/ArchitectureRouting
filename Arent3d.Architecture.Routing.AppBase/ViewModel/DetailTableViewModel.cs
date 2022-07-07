@@ -291,7 +291,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private void MoveDetailTableRow( bool isMoveUp )
     {
-      SelectionChanged() ;
       if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) return ;
       var selectedDetailTableRow = _selectedDetailTableRows.First() ;
       var selectedDetailTableRowSummary = _selectedDetailTableRowsSummary.First() ;
@@ -976,7 +975,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         isMixConstructionItems, detailSymbolIdsWithPlumbingTypeHasChanged ) ;
     }
     
-    public static ObservableCollection<DetailTableModel> SummarizePlumbing(ObservableCollection<DetailTableModel> detailTableModels, List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
+    public static ObservableCollection<DetailTableModel> SummarizePlumbing(ObservableCollection<DetailTableModel> detailTableModels, List<ConduitsModel> conduitsModelData, 
+      DetailSymbolStorable detailSymbolStorable, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
       Dictionary<DetailTableModel, List<DetailTableModel>> sortDetailTableModel = new() ;
       var detailTableModelsGroupByDetailSymbolId = 
@@ -1914,21 +1914,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void AddReferenceDetailTableRows(List<DetailTableModel> selectedDetailTableModels )
     {
-      var detailTableModelOrigin = _detailTableModelsOrigin.DistinctBy(CreateDetailTableCommandBase.GetKeyRouting).ToList() ;
-      if(detailTableModelOrigin.Count != 1)
+      DetailTableModel? detailTableModel = null ;
+      if ( DtGrid.SelectedItems.Count == 1 && selectedDetailTableModels.Count > 0)
+        detailTableModel = (DetailTableModel) DtGrid.SelectedItems[ 0 ] ;
+
+      if ( null == detailTableModel )
         return;
       
-      var index = DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
+      SelectionChanged() ;
+      if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) 
+        return ;
+      
+      var indexForSelectedDetailTableRow = _detailTableModelsOrigin.IndexOf( _selectedDetailTableRows.Last() );
+      var indexForSelectedDetailTableRowSummary = DetailTableModels.IndexOf( _selectedDetailTableRowsSummary.Last() ) ;
+      
+      var extendValue = DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
       foreach ( var detailTableRow in selectedDetailTableModels ) {
-        var groupId = string.IsNullOrEmpty( detailTableRow.GroupId ) ? string.Empty : detailTableRow.GroupId + "-" + index ;
+        indexForSelectedDetailTableRow++ ;
+        indexForSelectedDetailTableRowSummary++ ;
+        var groupId = string.IsNullOrEmpty( detailTableRow.GroupId ) ? string.Empty : detailTableRow.GroupId + "-" + extendValue ;
         var referenceDetailTableRow = new DetailTableModel( 
           detailTableRow.CalculationExclusion, 
           detailTableRow.Floor, 
           detailTableRow.CeedCode, 
-          _isCallFromAddWiringInformationCommand ? AddWiringInformationCommandBase.SpecialSymbol : detailTableRow.DetailSymbol, 
-          detailTableModelOrigin[0].DetailSymbolUniqueId,
-          detailTableModelOrigin[0].FromConnectorUniqueId, 
-          detailTableModelOrigin[0].ToConnectorUniqueId, 
+          _isCallFromAddWiringInformationCommand ? AddWiringInformationCommandBase.SpecialSymbol : detailTableModel.DetailSymbol, 
+          detailTableModel.DetailSymbolUniqueId,
+          detailTableModel.FromConnectorUniqueId, 
+          detailTableModel.ToConnectorUniqueId, 
           detailTableRow.WireType, 
           detailTableRow.WireSize,
           detailTableRow.WireStrip, 
@@ -1946,15 +1958,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           detailTableRow.Remark, 
           detailTableRow.WireCrossSectionalArea, 
           detailTableRow.CountCableSamePosition, 
-          detailTableModelOrigin[0].RouteName, 
+          detailTableModel.RouteName, 
           detailTableRow.IsEcoMode, 
           detailTableRow.IsParentRoute, 
           detailTableRow.IsReadOnly, 
-          detailTableRow.PlumbingIdentityInfo + "-" + index, 
+          detailTableRow.PlumbingIdentityInfo + "-" + extendValue, 
           groupId, 
           detailTableRow.IsReadOnlyPlumbingItems,
           detailTableRow.IsMixConstructionItems, 
-          detailTableRow.CopyIndex + index, 
+          detailTableRow.CopyIndex + extendValue, 
           detailTableRow.IsReadOnlyParameters, 
           detailTableRow.IsReadOnlyWireSizeAndWireStrip,
           detailTableRow.IsReadOnlyPlumbingSize,
@@ -1970,10 +1982,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               detailTableRowOfGroup.CalculationExclusion, 
               detailTableRowOfGroup.Floor, 
               detailTableRowOfGroup.CeedCode, 
-              _isCallFromAddWiringInformationCommand ? AddWiringInformationCommandBase.SpecialSymbol : detailTableRowOfGroup.DetailSymbol, 
-              detailTableModelOrigin[0].DetailSymbolUniqueId,
-              detailTableModelOrigin[0].FromConnectorUniqueId, 
-              detailTableModelOrigin[0].ToConnectorUniqueId, 
+              _isCallFromAddWiringInformationCommand ? AddWiringInformationCommandBase.SpecialSymbol : detailTableModel.DetailSymbol, 
+              detailTableModel.DetailSymbolUniqueId,
+              detailTableModel.FromConnectorUniqueId, 
+              detailTableModel.ToConnectorUniqueId, 
               detailTableRowOfGroup.WireType, 
               detailTableRowOfGroup.WireSize, 
               detailTableRowOfGroup.WireStrip,
@@ -1991,15 +2003,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               detailTableRowOfGroup.Remark, 
               detailTableRowOfGroup.WireCrossSectionalArea, 
               detailTableRowOfGroup.CountCableSamePosition, 
-              detailTableModelOrigin[0].RouteName, 
+              detailTableModel.RouteName, 
               detailTableRowOfGroup.IsEcoMode, 
               detailTableRowOfGroup.IsParentRoute, 
               detailTableRowOfGroup.IsReadOnly, 
-              detailTableRowOfGroup.PlumbingIdentityInfo + "-" + index, 
+              detailTableRowOfGroup.PlumbingIdentityInfo + "-" + extendValue, 
               groupId, 
               detailTableRowOfGroup.IsReadOnlyPlumbingItems,
               detailTableRowOfGroup.IsMixConstructionItems, 
-              detailTableRowOfGroup.CopyIndex + index, 
+              detailTableRowOfGroup.CopyIndex + extendValue, 
               detailTableRowOfGroup.IsReadOnlyParameters,
               detailTableRowOfGroup.IsReadOnlyWireSizeAndWireStrip,
               detailTableRowOfGroup.IsReadOnlyPlumbingSize, 
@@ -2008,14 +2020,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               detailTableRowOfGroup.EarthSizes, 
               detailTableRowOfGroup.PlumbingSizes, 
               detailTableRowOfGroup.PlumbingItemTypes ) ;
-            _detailTableModelsOrigin.Add( newReferenceDetailTableRow ) ;
+            _detailTableModelsOrigin.Insert( indexForSelectedDetailTableRow, newReferenceDetailTableRow ) ;
           }
         }
         else {
-          _detailTableModelsOrigin.Add( referenceDetailTableRow ) ;
+          _detailTableModelsOrigin.Insert( indexForSelectedDetailTableRow, referenceDetailTableRow ) ;
         }
 
-        DetailTableModels.Add( referenceDetailTableRow ) ;
+        DetailTableModels.Insert( indexForSelectedDetailTableRowSummary, referenceDetailTableRow ) ;
       }
     }
 

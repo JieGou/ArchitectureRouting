@@ -22,6 +22,7 @@ using Expression = System.Linq.Expressions.Expression;
 using System.Linq.Expressions;
 using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using MoreLinq ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -442,10 +443,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         //Plumping
         var plumbingKey = $"{detailTableModel.PlumbingType}{detailTableModel.PlumbingSize}" ;
         plumbingKey = plumbingKey.Replace( DetailTableViewModel.DefaultChildPlumbingSymbol, string.Empty ) ;
-        
-        var conduitsModel = _conduitsModels.FirstOrDefault( x => $"{x.PipingType}{x.Size}".Replace( "mm", "" ) == plumbingKey ) ;
-        if ( null != conduitsModel ) {
-          var hiroiMasterModelForPlumbing = _hiroiMasterModels.FirstOrDefault( x => x.Kikaku.Replace( " ", "" ) == $"{conduitsModel.PipingType}{conduitsModel.Size}" ) ;
+
+        if ( ! string.IsNullOrEmpty( plumbingKey ) ) {
+          var hiroiMasterModelForPlumbing = _hiroiMasterModels.FirstOrDefault( x => $"{x.Type}{x.Size1}".Replace( " ", "" ) == plumbingKey ) ;
           if ( null != hiroiMasterModelForPlumbing ) {
             materialCodes.Add(hiroiMasterModelForPlumbing.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForPlumbing.Kikaku);
           }
@@ -454,7 +454,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         //Wiring
         var wireStrip = Regex.IsMatch( detailTableModel.WireStrip, @"^\d" ) ? $"x{detailTableModel.WireStrip}" : "" ;
         var wiringKey = $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ;
-        var hiroiMasterModelForWoring = _hiroiMasterModels.FirstOrDefault( x => x.Kikaku.Replace( " ", "" ) == wiringKey ) ;
+        var hiroiMasterModelForWoring = _hiroiMasterModels.FirstOrDefault( x => x.Ryakumeicd.Replace( " ", "" ).Replace("*", "").Replace("600V_", "") == wiringKey ) ;
         if ( null != hiroiMasterModelForWoring ) {
           for ( var i = 0 ; i < int.Parse(detailTableModel.WireBook) ; i++ ) {
             materialCodes.Add(hiroiMasterModelForWoring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWoring.Kikaku);
