@@ -9,16 +9,12 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
 using System.Globalization ;
-using System.Windows.Media ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Utility ;
 using Autodesk.Revit.ApplicationServices ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
-using TextElement = Autodesk.Revit.DB.TextElement ;
 using Transform = Autodesk.Revit.DB.Transform ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -277,7 +273,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var document = uiDocument.Document ;
       var conduit = ( element as Conduit )! ;
-      var scaleRatio = uiDocument.Document.ActiveView.Scale/100.0;
+      var scaleRatio = uiDocument.Document.ActiveView.Scale / 100.0 ;
 
       var location = ( element.Location as LocationCurve )! ;
       var line = ( location.Curve as Line )! ;
@@ -298,7 +294,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // set cable rack length
       if ( cableRackWidth > 0 )
-        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), (cableRackWidth*scaleRatio).MillimetersToRevitUnits() ) ;
+        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
+          ( cableRackWidth * scaleRatio ).MillimetersToRevitUnits() ) ;
 
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
