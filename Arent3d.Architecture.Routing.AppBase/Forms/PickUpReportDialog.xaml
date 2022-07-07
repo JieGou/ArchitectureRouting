@@ -17,12 +17,19 @@
             <RowDefinition Height="10" />
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
-
-        <StackPanel>
-            
-        </StackPanel>
         <GroupBox Grid.Row="0" Header="出力ファイル種類" DockPanel.Dock="Left" Width="200" Height="95" FontSize="16" VerticalAlignment="Top" Margin="30, 10, 10, 10" HorizontalAlignment="Left">
             <ListBox HorizontalContentAlignment="Stretch" BorderBrush="White" ItemsSource="{Binding FileTypes}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <CheckBox IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" Checked="FileType_Checked" Unchecked="FileType_Unchecked" /> 
@@ -33,6 +40,17 @@
 
         <GroupBox Grid.Row="0" Header="ドーコン" DockPanel.Dock="Left" Width="120" Height="95" FontSize="16" VerticalAlignment="Top" Margin="240, 10, 10, 10" HorizontalAlignment="Left">
             <ListBox HorizontalContentAlignment="Stretch" BorderBrush="White" ItemsSource="{Binding DoconTypes}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <RadioButton GroupName="Docon" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14"  Checked="DoconItem_Checked" />
@@ -44,6 +62,17 @@
         <GroupBox Grid.Row="0" Header="出力項目" DockPanel.Dock="Left" Width="200" Height="95" FontSize="16" VerticalAlignment="Top" Margin="370, 10, 10, 10" HorizontalAlignment="Left">
             <Grid>  
                 <ListBox Name="ListBox" BorderBrush="White" ItemsSource="{Binding OutputItems}" HorizontalAlignment="Left" Width="140">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <RadioButton GroupName="OutputItems" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14"  Checked="OutputItems_Checked" />
