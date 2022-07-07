@@ -64,6 +64,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, SelectState selectState )
     {
+      if ( ! PullBoxRouteManager.IsGradeUnderThree( document ) ) return executeResultValue ;
+      
       using var progress = ShowProgressBar( "Routing...", false ) ;
       List<string> boards = new() ;
       List<XYZ> pullBoxPositions = new() ;

@@ -10,6 +10,8 @@ using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using MathLib ;
+using Line = Autodesk.Revit.DB.Line ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -313,6 +315,145 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return null ;
     }
+
+    #region Preview Lines
+
+    public static ( List<ElementId>, List<ElementId> ) CreatePreviewLines( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    {
+      if ( fromPickResult.PickedConnector == null || toPickResult.PickedConnector == null ) {
+        return ( new List<ElementId>(), new List<ElementId>() ) ;
+      }
+      using Transaction trans = new( document, "Create preview lines" ) ;
+      trans.Start() ;
+      var firstPoint = fromPickResult.GetOrigin() ;
+      var lastPoint = toPickResult.GetOrigin() ;
+      if ( Math.Abs( firstPoint.X - lastPoint.X ) == 0 || Math.Abs( firstPoint.Y - lastPoint.Y ) == 0 ) 
+        return ( new List<ElementId>(), new List<ElementId>() ) ;
+      
+      var (secondPoint, thirdPoint, isDirectionXOrY ) = GetPoints( fromPickResult, toPickResult ) ;
+      
+      List<ElementId> previewLineIds = new() ;
+      List<ElementId> allLineIds = new() ;
+      var redColor = new Color( 255, 0, 0 ) ;
+      var blueColor = new Color( 0, 0, 255 ) ;
+      var redLineCategory = GetLineStyle( document, redColor, "Red" ) ;
+      var blueLineCategory = GetLineStyle( document, blueColor, "Blue" ) ;
+
+      CreateLines( document, redLineCategory, isDirectionXOrY, firstPoint, lastPoint, secondPoint, allLineIds, previewLineIds ) ;
+      CreateLines( document, blueLineCategory, isDirectionXOrY, firstPoint, lastPoint, thirdPoint, allLineIds, previewLineIds ) ;
+
+      trans.Commit() ;
+
+      return ( previewLineIds, allLineIds ) ;
+    }
+
+    private static ( XYZ, XYZ, bool ) GetPoints( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    {
+      const double tolerance = 0.001 ;
+      var toOrigin = toPickResult.GetOrigin() ;
+      var fromOrigin = fromPickResult.GetOrigin() ;
+      var origin = new Vector3d( fromOrigin.X, fromOrigin.Y, fromOrigin.Z ) ;
+      var direction = XYZ.BasisX ;
+      var toDirection = -XYZ.BasisX ;
+
+      Vector3d secondDirection ;
+      Vector3d firstPoint, secondPoint ;
+      var firstDirection = new Vector3d( fromOrigin.X < toOrigin.X ? Math.Abs( direction.X ) : -Math.Abs( direction.X ), fromOrigin.Y < toOrigin.Y ? Math.Abs( direction.Y ) : -Math.Abs( direction.Y ), direction.Z ) ;
+      if ( firstDirection.x != 0 ) {
+        var y = firstDirection.x is 1 or -1 ? ( fromOrigin.Y < toOrigin.Y ? Math.Abs( direction.X ) : -Math.Abs( direction.X ) ) : ( fromOrigin.Y > toOrigin.Y ? Math.Abs( direction.X ) : -Math.Abs( direction.X ) ) ;
+        var x = Math.Abs( y - firstDirection.x ) == 0 ? -firstDirection.y : firstDirection.y ;
+        secondDirection = new Vector3d( x, y, firstDirection.z ) ;
+      }
+      else {
+        var x = firstDirection.y is 1 or -1 ? ( fromOrigin.X < toOrigin.X ? Math.Abs( direction.Y ) : -Math.Abs( direction.Y ) ) : ( fromOrigin.X > toOrigin.X ? Math.Abs( direction.Y ) : -Math.Abs( direction.Y ) ) ;
+        var y = Math.Abs( x - firstDirection.y ) == 0 ? -firstDirection.x : firstDirection.x ;
+        secondDirection = new Vector3d( x, y, firstDirection.z ) ;
+      }
+
+      var isDirectionXOrY = ( ( direction.X is 1 or -1 && Math.Abs( direction.Y ) < tolerance ) || ( direction.Y is 1 or -1 && Math.Abs( direction.X ) < tolerance ) )
+                            && ( ( toDirection.X is 1 or -1 && Math.Abs( toDirection.Y ) < tolerance ) || ( toDirection.Y is 1 or -1 && Math.Abs( toDirection.X ) < tolerance ) ) ;
+      var firstLine = new MathLib.Line( origin, firstDirection ) ;
+      var secondLine = new MathLib.Line( origin, secondDirection ) ;
+      var xLength = Math.Abs( fromOrigin.X - toOrigin.X ) ;
+      var yLength = Math.Abs( fromOrigin.Y - toOrigin.Y ) ;
+      if ( isDirectionXOrY ) {
+        firstPoint = firstLine.GetPointAt( firstDirection.x is 1 or -1 ? xLength : yLength ) ;
+        secondPoint = secondLine.GetPointAt( secondDirection.x is 1 or -1 ? xLength : yLength ) ;
+      }
+      else {
+        var length = Math.Min( xLength, yLength ) ;
+        firstPoint = firstLine.GetPointAt( length ) ;
+        secondPoint = secondLine.GetPointAt( length ) ;
+      }
+
+      return ( new XYZ( firstPoint.x, firstPoint.y, firstPoint.z ), new XYZ( secondPoint.x, secondPoint.y, secondPoint.z ), isDirectionXOrY ) ;
+    }
+
+    private static void CreateLines( Document document, Category lineCategory, bool isDirectionXOrY, XYZ firstPoint, XYZ lastPoint, XYZ secondPoint, ICollection<ElementId> allLineIds, ICollection<ElementId> previewLineIds )
+    {
+      const double lengthLine = 0.5 ;
+      var curve = Line.CreateBound( firstPoint, secondPoint ) ;
+      var detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+      detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      previewLineIds.Add( detailCurve.Id ) ;
+      allLineIds.Add( detailCurve.Id ) ;
+
+      if ( isDirectionXOrY ) {
+        lastPoint = new XYZ( lastPoint.X, lastPoint.Y, firstPoint.Z ) ;
+        curve = Line.CreateBound( secondPoint, lastPoint ) ;
+        detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        previewLineIds.Add( detailCurve.Id ) ;
+        allLineIds.Add( detailCurve.Id ) ;
+      }
+      else {
+        var (x, y, z) = curve.Origin ;
+        var (a, b, c) = curve.Direction ;
+        var mainLine = new MathLib.Line( new Vector3d( x, y, z ), new Vector3d( a, b, c ) ) ;
+        var length = curve.Length ;
+        var origin = mainLine.GetPointAt( length - lengthLine ) ;
+        var direction = new Vector3d( b, -a, c ) ;
+        var firstLine = new MathLib.Line( origin, direction ) ;
+        var (x1, y1, z1) = firstLine.GetPointAt( lengthLine ) ;
+        var (x2, y2, z2) = firstLine.GetPointAt( -lengthLine ) ;
+      
+        curve = Line.CreateBound( secondPoint, new XYZ( x1, y1, z1 ) ) ;
+        detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        allLineIds.Add( detailCurve.Id ) ;
+      
+        curve = Line.CreateBound( secondPoint, new XYZ( x2, y2, z2 ) ) ;
+        detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        allLineIds.Add( detailCurve.Id ) ;
+      }
+    }
+
+    public static void RemovePreviewLines( Document document, List<ElementId> previewLineIds )
+    {
+      using Transaction trans = new( document, "Remove preview lines" ) ;
+      trans.Start() ;
+      document.Delete( previewLineIds ) ;
+      trans.Commit() ;
+    }
+    
+    private static Category GetLineStyle( Document doc, Color color, string colorName )
+    {
+      var categories = doc.Settings.Categories ;
+      var subCategoryName = colorName + "PreviewLine" ;
+      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      Category subCategory ;
+      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
+        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
+        subCategory.LineColor = color ;
+      }
+      else
+        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+
+      return subCategory ;
+    }
+    
+    #endregion
 
     private class PseudoPickResult : ConnectorPicker.IPickResult
     {
