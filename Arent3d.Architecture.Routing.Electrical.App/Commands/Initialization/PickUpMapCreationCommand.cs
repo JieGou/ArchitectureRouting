@@ -10,6 +10,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   
   public class PickUpMapCreationCommand : PickUpMapCreationCommandBase
   {
-    
+    protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
   }
 }

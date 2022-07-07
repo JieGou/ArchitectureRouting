@@ -322,6 +322,9 @@
         <key>TransactionName.Commands.Routing.SelectRangeRoute</key>
         <string>選択範囲配線</string>
 
+        <key>TransactionName.Commands.Initialization.PickUpMapCreation</key>
+        <string>拾い図作成</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>自動ルーティング初期化エラー</string>

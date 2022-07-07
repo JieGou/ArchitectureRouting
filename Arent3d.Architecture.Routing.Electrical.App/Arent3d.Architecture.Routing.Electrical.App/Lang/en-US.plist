@@ -319,6 +319,9 @@
         <key>TransactionName.Commands.Routing.OffsetSetting</key>
         <string>Offset Setting</string>
 
+        <key>TransactionName.Commands.Initialization.PickUpMapCreation</key>
+        <string>Pick Up Map Creation</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>

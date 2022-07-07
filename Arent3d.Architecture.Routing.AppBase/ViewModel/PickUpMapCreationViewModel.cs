@@ -61,16 +61,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private void Execute( Window window )
     {
-      var level = _document.ActiveView.GenLevel.Name ;
-      var codeList = GetCodeList() ;
-      
-      foreach ( var code in codeList ) {
-        var conduitPickUpModels = PickUpModels.Where( p => p.Specification2 == code && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
-       
-        GetPickUpToShow( conduitPickUpModels.First().PickUpModels ) ;
-        
-      }
-
       window.DialogResult = true ;
       window.Close() ;
     }
