@@ -322,5 +322,16 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new ChangePlumbingInformationStorable( document ) ;
       }
     }
+    
+    public static DemoStorable GetDemoStorable( this Document document )
+    {
+      try {
+        return DemoStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DemoStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new DemoStorable( document ) ;
+      }
+    }
+    
   }
 }

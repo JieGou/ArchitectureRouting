@@ -571,6 +571,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( DemoDeleteAllRoutedElements ) )]
         private static class DemoDeleteAllRoutedElementsCommandButton { }
+        
+        [Button( typeof( OldStorableCommand ) )]
+        private static class OldStorableCommandButton { }
+        
+        [Button( typeof( NewStorableCommand ) )]
+        private static class NewStorableCommandButton { }
       }
 
       [Panel( "arent3d.architecture.rc.debug", TitleKey = "App.Panels.Rc.Debug" )]
