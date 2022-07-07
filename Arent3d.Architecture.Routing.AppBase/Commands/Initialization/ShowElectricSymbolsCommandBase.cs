@@ -223,7 +223,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return new ConnectorInfo( ceedSetCode, deviceSymbol, modelNumber ) ;
     }
 
-    public static string CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels, string level , bool isDuplicated = true)
+    public static string CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels, string level , bool isAllowDuplicatedElectricalSymbols = true)
     {
       string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + " - " + level + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
       var electricalSchedule = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
@@ -233,8 +233,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         electricalSchedule.TrySetProperty( ElectricalRoutingElementParameter.ScheduleBaseName, scheduleName ) ;
       }
       
-      if( isDuplicated )
-        CreateScheduleDataDuplicated( document, electricalSchedule, electricalSymbolModels ) ;
+      if( isAllowDuplicatedElectricalSymbols )
+        CreateScheduleDataAllowDuplicatedElectricalSymbols( document, electricalSchedule, electricalSymbolModels ) ;
       else
         CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;
       return scheduleName ;
@@ -258,7 +258,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       OutPlumbingType,
     }
 
-    #region Not allow duplicated electrical symbol
+    #region Not allow duplicated electrical symbols
 
     private static void CreateScheduleData( Document document, ViewSchedule viewSchedule, List<ElectricalSymbolModel> electricalSymbolModels )
     {
@@ -384,9 +384,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     #endregion
 
-    #region Allow duplicated electrical symbol
+    #region Allow duplicated electrical symbols
 
-    private static void CreateScheduleDataDuplicated( Document document, ViewSchedule viewSchedule, List<ElectricalSymbolModel> electricalSymbolModels )
+    private static void CreateScheduleDataAllowDuplicatedElectricalSymbols( Document document, ViewSchedule viewSchedule, List<ElectricalSymbolModel> electricalSymbolModels )
     {
       const int startRowData = 3 ;
       const int defaultColumnCount = 5 ;
