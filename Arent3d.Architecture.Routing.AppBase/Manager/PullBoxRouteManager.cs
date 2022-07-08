@@ -564,7 +564,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex )
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex, bool isWireEnteredShaft )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
       var passedShaftRoute = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) ;
@@ -577,15 +577,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var nameBase = curveType?.Category.Name ;
 
         if ( shaftId == null ) continue ;
-        FamilyInstance? conduitFittingBottomShaft = null ;
         var shaft = document.GetElementById<Opening>( route.UniqueShaftElementUniqueId ?? string.Empty ) ;
         if ( shaft == null ) continue ;
         var shaftLocation = GetShaftLocation( route, document ) ;
-        if ( shaftLocation != null )
-          conduitFittingBottomShaft = GetConduitFittingAtBottomShaft( shaftLocation, conduitFittingsOfRoute ) ;
+        if ( shaftLocation == null ) continue ;
+        
+        var conduitFittingShaft = GetConduitFittingShaft( shaftLocation, conduitFittingsOfRoute, isWireEnteredShaft ) ;
+        if ( conduitFittingShaft == null ) continue ;
 
-        if ( conduitFittingBottomShaft == null ) continue ;
-        var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFittingBottomShaft ) ;
+        var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFittingShaft ) ;
         var isSamePullBoxPositions = IsPullBoxExistInThePosition( document, pullBoxPositions, pullBoxInfo.Position ) ;
         if ( isSamePullBoxPositions ) continue ;
 
@@ -593,7 +593,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var fromDirection = pullBoxInfo.FromDirection ;
         var toDirection = pullBoxInfo.ToDirection ;
         var height = originZ - pullBoxInfo.Level.Elevation ;
-        result = CreatePullBoxAndGetSegments( document, route, conduitFittingBottomShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex, fromDirection, toDirection, fromHeight ).ToList() ;
+        result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex, fromDirection, toDirection, fromHeight ).ToList() ;
         if ( pullBoxElement != null ) pullBoxElements.Add( ( pullBoxElement, null ) ) ;
         pullBoxPositions.Add( pullBoxInfo.Position ) ;
         return result ;
@@ -622,25 +622,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return shaftArc == null ? null : shaftArc.Center ;
     }
 
-    private static FamilyInstance? GetConduitFittingAtBottomShaft( XYZ shaftLocation, IEnumerable<FamilyInstance> conduitFittings )
+    private static FamilyInstance? GetConduitFittingShaft( XYZ shaftLocation, IEnumerable<FamilyInstance> conduitFittings, bool isWireEnteredShaft )
     {
-      FamilyInstance? conduitFittingAtBottomShaft = null ;
-      XYZ? lowestConduitPosition = null ;
+      FamilyInstance? conduitFittingShaft = null ;
+      XYZ? conduitPosition = null ;
       foreach ( var conduitFitting in conduitFittings ) {
         var conduitFittingLocationPoint = ( conduitFitting.Location as LocationPoint )?.Point ;
         if ( ! conduitFittingLocationPoint.IsNearShaft( shaftLocation ) ) continue ;
-        if ( conduitFittingAtBottomShaft == null ) {
-          conduitFittingAtBottomShaft = conduitFitting ;
-          lowestConduitPosition = conduitFittingLocationPoint ;
+        if ( conduitFittingShaft == null ) {
+          conduitFittingShaft = conduitFitting ;
+          conduitPosition = conduitFittingLocationPoint ;
         }
-        else {
-          if ( conduitFittingLocationPoint?.Z > lowestConduitPosition?.Z ) continue ;
-          conduitFittingAtBottomShaft = conduitFitting ;
-          lowestConduitPosition = conduitFittingLocationPoint ;
-        }
+
+        if ( ( !isWireEnteredShaft && conduitFittingLocationPoint?.Z < conduitPosition?.Z ) ||
+             ( isWireEnteredShaft && conduitFittingLocationPoint?.Z > conduitPosition?.Z ) ) continue ;
+        conduitFittingShaft = conduitFitting ;
+        conduitPosition = conduitFittingLocationPoint ;
       }
 
-      return conduitFittingAtBottomShaft ;
+      return conduitFittingShaft ;
     }
 
     private static bool IsNearShaft( this XYZ? thisPoint, XYZ anotherPoint )

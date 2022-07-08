@@ -58,9 +58,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
+      var isWireEnteredShaft = false ;
       for ( int i = 0 ; i < 50 ; i++ ) {
         var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
-        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex, isWireEnteredShaft ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
@@ -80,7 +81,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         transaction.Commit( failureOptions ) ;
-        if ( isPassedShaft ) break ;
+
+        if ( ! isPassedShaft ) continue ;
+        if ( isWireEnteredShaft ) break ;
+        isWireEnteredShaft = true ;
       }
       
       #region Change dimension of pullbox and set new label
