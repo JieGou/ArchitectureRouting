@@ -21,7 +21,8 @@
                 HorizontalContentAlignment="Center" 
                 BorderBrush="White" 
                 DockPanel.Dock="Left" 
-                Width="150" Height="30" 
+                Width="150"
+                Height="30" 
                 FontSize="16" 
                 VerticalAlignment="Top"  
                 Margin="0, 20, 0, 0" 
@@ -46,7 +47,7 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <RadioButton  GroupName="Represent" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="15, 0, 0, 0" FontSize="14" Checked="Represent_Checked"/>
+                        <RadioButton Width="55"  GroupName="Represent" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="14, 0, 0, 0" FontSize="12" Checked="Represent_Checked"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -54,13 +55,12 @@
             <GroupBox 
                 Header="ドーコン" 
                 DockPanel.Dock="Left" 
-                Width="150" 
                 FontSize="16" 
                 VerticalAlignment="Top"
                 Margin="0, 5, 0, 0" 
                 HorizontalAlignment="Left" 
                 IsEnabled="{Binding IsDoconEnable}">
-                <ListBox HorizontalContentAlignment="Center" BorderBrush="White" ItemsSource="{Binding DoconTypes}" Height="30" BorderThickness="0">
+                <ListBox HorizontalContentAlignment="Center" BorderBrush="White" ItemsSource="{Binding DoconTypes}" Height="30" BorderThickness="0" Width="150" >
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel IsItemsHost="True" Orientation="Horizontal"/>
@@ -79,7 +79,7 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <RadioButton GroupName="Docon" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="15, 5, 0, 0" FontSize="14" />
+                            <RadioButton Width="55" GroupName="Docon" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="15, 5, 0, 0" FontSize="12" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
