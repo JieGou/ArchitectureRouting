@@ -12,6 +12,8 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Arent3d.Revit.UI.Forms;
+using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -301,29 +303,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         grdCategories.CancelEdit( DataGridEditingUnit.Cell ) ;
 
     }
-    
+
     private void HighLightConstructionItems_Click( object sender, RoutedEventArgs e )
     {
-      ClearHighLightAllConstructionItemElement();
-      
-      var selectedCnsSettingDataList =  grdCategories.SelectedItems.Cast<CnsSettingModel>().ToList() ;
-      
-      selectedCnsSettingDataList.ForEach(cnsSettingModel=>cnsSettingModel.IsHighLighted = !cnsSettingModel.IsHighLighted );
-      
-      // Saving HightLight State of constructionSetting Model
-      using Transaction tx = new Transaction( _document) ;
-      tx.Start( "Change Element Color" );
-      _cnsSettingViewModel.CnsSettingStorable.Save();
-      tx.Commit();
+      using var processData = ProgressBar.ShowWithNewThread( this, false ) ;
+      processData.Message = "Highlighting construction items ..." ;
+      using ( processData?.Reserve( 0.5 ) ) {
+        ClearHighLightAllConstructionItemElement() ;
 
-      if (!selectedCnsSettingDataList.Any()) return;
+        var selectedCnsSettingDataList = grdCategories.SelectedItems.Cast<CnsSettingModel>().ToList() ;
 
-      var elementsByConstructionCategory = GetAllConstructionItemElementsByCnsSettingModel( selectedCnsSettingDataList ) ;
+        selectedCnsSettingDataList.ForEach( cnsSettingModel =>
+          cnsSettingModel.IsHighLighted = ! cnsSettingModel.IsHighLighted ) ;
 
-      if ( selectedCnsSettingDataList.FirstOrDefault()!.IsHighLighted ) {
-        HighLightSelectedConstructionITemElements( elementsByConstructionCategory);
+        // Saving HightLight State of constructionSetting Model
+        using Transaction tx = new Transaction( _document ) ;
+        tx.Start( "Change Element Color" ) ;
+        _cnsSettingViewModel.CnsSettingStorable.Save() ;
+        tx.Commit() ;
+
+        if ( ! selectedCnsSettingDataList.Any() ) return ;
+
+        var elementsByConstructionCategory =
+          GetAllConstructionItemElementsByCnsSettingModel( selectedCnsSettingDataList ) ;
+
+        if ( selectedCnsSettingDataList.FirstOrDefault()!.IsHighLighted ) {
+          HighLightSelectedConstructionITemElements( elementsByConstructionCategory ) ;
+        }
       }
-
     }
 
     private void ClearHighLightAllConstructionItemElement()
