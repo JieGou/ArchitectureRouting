@@ -196,6 +196,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SelectionChangedReference() ;
       if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
       AddReferenceDetailTableRows(_selectedReferenceDetailTableRows ) ;
+      DtReferenceGrid.SelectedItems.Clear();
     }
     private void AddReference( Window window )
     {
