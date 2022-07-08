@@ -8,6 +8,7 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
+using System.Globalization ;
 using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -28,10 +29,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private static readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
+    private static readonly double MaxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
     private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
-    private const double RATIO_BEND_RADIUS = 3.45 ;
-    private const string Notation = "CR (W:400)" ;
+    private const double RatioBendRadius = 3.45 ;
+    private const string Notation = "CR (W:{0})" ;
     private const char XChar = 'x' ;
 
     public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string> { { 0, "Normal Rack" }, { 1, "Limit Rack" } } ;
@@ -180,7 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var locationPoint = ( location as LocationPoint )! ;
         var otherLocationPoint = ( otherLocation as LocationPoint )! ;
-        return locationPoint.Point.DistanceTo( otherLocationPoint.Point) <= maxDistanceTolerance &&
+        return locationPoint.Point.DistanceTo( otherLocationPoint.Point) <= MaxDistanceTolerance &&
                locationPoint.Rotation == otherLocationPoint.Rotation ;
       }
       else if ( location is LocationCurve ) {
@@ -194,7 +195,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var otherLocationCurve = ( otherLocation as LocationCurve )! ;
         var otherLine = ( otherLocationCurve.Curve as Line )! ;
 
-        return line.Origin.IsAlmostEqualTo( otherLine.Origin, maxDistanceTolerance ) &&
+        return line.Origin.IsAlmostEqualTo( otherLine.Origin, MaxDistanceTolerance ) &&
                line.Direction == otherLine.Direction && line.Length == otherLine.Length ;
       }
 
@@ -263,7 +264,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( ! connector.IsConnected ) {
           var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
           if ( otherConnectors != null ) {
-            var connectTo = GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
+            var connectTo = GetConnectorClosestTo( otherConnectors, connector.Origin, MaxDistanceTolerance ) ;
             if ( connectTo != null ) {
               connector.ConnectTo( connectTo ) ;
             }
@@ -351,7 +352,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
 
       // set cable tray Bend Radius
-      bendRadius = cableTrayDefaultBendRadius == 0 ? ( RATIO_BEND_RADIUS * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
+      bendRadius = cableTrayDefaultBendRadius == 0 ? ( RatioBendRadius * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
       SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadius ) ; // TODO may be must change when FamilyType change
 
       // set cable rack length
@@ -494,7 +495,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var point = ( rack.Location as LocationPoint )!.Point ;
             var connectors = rack.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
             point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y ), point.Z ) ;
-            var notation = count > 1 ? Notation + xSymbol + racks.Count : Notation ;
+            var scaleRatio = doc.ActiveView.Scale / 100 ;
+            var notationDistance = widthCableTray.RevitUnitsToMillimeters() * scaleRatio ;
+            var notation = count > 1 ? string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ) + xSymbol + racks.Count : string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ) ;
             var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc ) ;
             if ( null == textNoteType ) return ;
             TextNote textNote ;
