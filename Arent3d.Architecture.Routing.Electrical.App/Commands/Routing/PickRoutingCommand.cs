@@ -3,13 +3,15 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
+using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -51,6 +53,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState state )
     {
       if ( ! PullBoxRouteManager.IsGradeUnderThree( document ) ) return executeResultValue ;
+
+      var registrationOfBoardDataModels = document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
+      var (fromPickResult, toPickResult, _, _) = state ;
+      var listConnectors = new List<Element>() { fromPickResult.PickedElement, toPickResult.PickedElement } ;
+      var isRouteBetweenPowerConnectors = IsRouteBetweenPowerConnectors( listConnectors, registrationOfBoardDataModels ) ;
+      if ( isRouteBetweenPowerConnectors ) return executeResultValue ;
       
       using var progress = ShowProgressBar( "Routing...", false ) ;
       List<string> boards = new() ;
@@ -103,6 +111,32 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       #endregion
 
       return executeResultValue ;
+    }
+    
+    private static bool IsRouteBetweenPowerConnectors( IEnumerable<Element> listConnectors, IReadOnlyCollection<RegistrationOfBoardDataModel> registrationOfBoardDataModels )
+    {
+      var powerConnectors = listConnectors.Where( IsPowerConnector ).ToList() ;
+
+      if ( powerConnectors.Count <= 1 ) return false ;
+
+      var boardConnectors = new List<Element>() ;
+      foreach ( var element in powerConnectors ) {
+        element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfConnector ) ;
+        if ( string.IsNullOrEmpty( ceedCodeOfConnector ) ) continue ;
+        var registrationOfBoardDataModel = registrationOfBoardDataModels.FirstOrDefault( x =>
+          x.AutoControlPanel == ceedCodeOfConnector || x.SignalDestination == ceedCodeOfConnector ) ;
+        if ( registrationOfBoardDataModel == null ) continue ;
+        boardConnectors.Add( element ) ;
+      }
+
+      return boardConnectors.Count > 1 ;
+    }
+
+    private static bool IsPowerConnector( Element element )
+    {
+      if ( element is not FamilyInstance familyInstance ) return false ;
+      if ( familyInstance.GetConnectorFamilyType() is not { } connectorFamilyType ) return false ;
+      return connectorFamilyType == ConnectorFamilyType.Power ;
     }
   }
 }
