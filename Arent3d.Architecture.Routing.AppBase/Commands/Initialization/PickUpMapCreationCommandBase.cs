@@ -12,6 +12,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -71,6 +72,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var routeName = pickUpModel.RouteName ;
       var textNoteIds = new List<TextNotePickUpModel>() ;
       
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var route = routes.SingleOrDefault( r => r.Key == routeName ) ;
+      var lastSegment = route.Value.RouteSegments.Last() ;
+      
       foreach ( var pickUpNumber in pickUpNumbers ) {
         double seenQuantity = 0 ;
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
@@ -88,7 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             seenQuantity += quantity ;
         }
 
-        
+       
         // Not seen quantity
         foreach ( var notSeenQuantity in notSeenQuantities ) {
           var points = notSeenQuantity.Key.Split( ',' ) ;
@@ -97,17 +102,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var textPickUpNumber = viewModel.DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
           var notSeenQuantityStr = textPickUpNumber + "↓" + Math.Round( notSeenQuantity.Value, 1 ) ;
           
-          string textNoteId = CreateTextNote( document, new XYZ( xPoint, yPoint, 0 ), notSeenQuantityStr, true );
+          string textNoteId = CreateTextNote( document, new XYZ( xPoint, yPoint, 0 ), notSeenQuantityStr, true);
           textNoteIds.Add( new TextNotePickUpModel(textNoteId) );
         }
 
         // Seen quantity
+        // Element? conduitNearest = null  ;
+
         var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ) ;
         var conduitsOfRoute = allConduits.Where( conduit => conduit.GetRouteName() == routeName ).ToList();
-        var conduitMaxLength = conduitsOfRoute.Max(c => c.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() );
-        Element conduitHaveMaxLength = conduitsOfRoute.First(c=>  ( c.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() - conduitMaxLength ) == 0 ) ;
         
-        if ( conduitHaveMaxLength.Location is LocationCurve location ) {
+        // double minDistance = Double.MaxValue;
+        var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
+
+        var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
+
+        if ( conduitNearest is { Location: LocationCurve location } ) {
           var line = ( location.Curve as Line )! ;
           var fromPoint = line.GetEndPoint( 0 ) ;
           var toPoint = line.GetEndPoint( 1 ) ;
@@ -115,12 +125,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var point = MiddlePoint( fromPoint, toPoint, direction ) ;
           var textPickUpNumber = viewModel.DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
           var seenQuantityStr = textPickUpNumber +  Math.Round( seenQuantity, 1 )  ;
-          string textNoteId = CreateTextNote( document, point, seenQuantityStr, true ) ;
+          string textNoteId = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
           textNoteIds.Add( new TextNotePickUpModel(textNoteId)  );
         }
       }
 
       return textNoteIds ;
+    }
+
+    private Element? FindConduitNearest(Document document,List<Element> conduitsOfRoute, XYZ toPosition)
+    {
+      Element? result = null  ;
+      
+      double minDistance = Double.MaxValue ;
+      foreach ( var conduitOfRoute in conduitsOfRoute ) {
+        if ( conduitOfRoute.Location is LocationCurve conduitLocation ) {
+          var line = ( conduitLocation.Curve as Line )! ;
+          var toPoint = line.GetEndPoint( 1 ) ;
+          var distance = toPosition.DistanceTo( toPoint ) ;
+          if ( distance < minDistance &&  conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() > 5.0) {
+            minDistance = distance ;
+            result = conduitOfRoute ;
+          }
+        }
+      }
+
+      return result ;
     }
 
     private XYZ MiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
@@ -132,24 +162,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
     }
 
-    private string CreateTextNote(Document doc, XYZ point, string text, bool isChangeColor )
+    private string CreateTextNote(Document doc, XYZ txtPosition, string text, bool isRotate = false, XYZ? direction = null )
     {
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
-      
-      var txtPosition = new XYZ( point.X, point.Y, point.Z ) ;
-      
+
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
 
       var textNoteType = textNote.TextNoteType ;
-      double newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
+      double newSize = ( 1.0 / 3.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
       textNote.ChangeTypeId( textNoteType.Id ) ;
 
-      if ( isChangeColor ) {
-        var color = new Color( 255, 225, 0 ) ;
-        ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
+      if ( isRotate ) {
+        ElementTransformUtils.RotateElement( doc, textNote.Id, Line.CreateBound( txtPosition, txtPosition + XYZ.BasisZ ),  Math.PI / 4 ) ;
+      } else if ( direction is { Y: 1 or -1 } ) {
+        ElementTransformUtils.RotateElement( doc, textNote.Id, Line.CreateBound( txtPosition, txtPosition + XYZ.BasisZ ),  Math.PI / 2 ) ;
       }
+      
+      
+      
+      var color = new Color( 255, 225, 51 ) ;
+      ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
 
       return textNote.UniqueId ;
     }
