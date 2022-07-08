@@ -7,30 +7,46 @@
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         Name="PickUpMapCreation"
         mc:Ignorable="d"
-        Title="拾い図作成" Height="240" Width="400"
+        Title="拾い図作成" Height="230" Width="250"
         WindowStartupLocation="CenterScreen"
         d:DataContext="{d:DesignInstance {x:Type local:DesignPickUpMapCreationViewModel}, IsDesignTimeCreatable=True}">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="150" />
+            <RowDefinition Height="140" />
             <RowDefinition Height="30" />
         </Grid.RowDefinitions>
         
-        <StackPanel Grid.Row="0" Orientation = "Horizontal" HorizontalAlignment="Center">
-            
+        <StackPanel Grid.Row="0" Orientation = "Vertical" HorizontalAlignment="Center">
             <ListBox 
-                HorizontalContentAlignment="Stretch" 
+                HorizontalContentAlignment="Center" 
                 BorderBrush="White" 
                 DockPanel.Dock="Left" 
-                Width="150" Height="90" 
+                Width="150" Height="30" 
                 FontSize="16" 
                 VerticalAlignment="Top"  
-                Margin="20, 40, 10, 0" 
-                ItemsSource="{Binding RepresentTypes}">
-                
+                Margin="0, 20, 0, 0" 
+                ItemsSource="{Binding RepresentTypes}"
+                VerticalContentAlignment="Center"
+                >
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel IsItemsHost="True" Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <RadioButton  GroupName="Represent" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" Checked="Represent_Checked"/>
+                        <RadioButton  GroupName="Represent" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="15, 0, 0, 0" FontSize="14" Checked="Represent_Checked"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -39,29 +55,44 @@
                 Header="ドーコン" 
                 DockPanel.Dock="Left" 
                 Width="150" 
-                Height="100" 
                 FontSize="16" 
                 VerticalAlignment="Top"
-                Margin="20, 20, 10, 0" 
+                Margin="0, 5, 0, 0" 
                 HorizontalAlignment="Left" 
                 IsEnabled="{Binding IsDoconEnable}">
-                <ListBox HorizontalContentAlignment="Stretch" BorderBrush="White" ItemsSource="{Binding DoconTypes}">
+                <ListBox HorizontalContentAlignment="Center" BorderBrush="White" ItemsSource="{Binding DoconTypes}" Height="30" BorderThickness="0">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel IsItemsHost="True" Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <RadioButton GroupName="Docon" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" />
+                            <RadioButton GroupName="Docon" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="15, 5, 0, 0" FontSize="14" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </GroupBox>
         </StackPanel>
         
-        <StackPanel Grid.Row="1" Orientation = "Horizontal" Margin="10 0 10 0" HorizontalAlignment="Center">
+        <StackPanel Grid.Row="1" Orientation = "Horizontal" Margin="0 0 10 0" HorizontalAlignment="Center">
             <Button 
                     Content="処理実行"
                     Command="{Binding ExecuteCommand}"
                     CommandParameter="{Binding ElementName=PickUpMapCreation}"
                     HorizontalAlignment="Center"
-                    Width="100" 
+                    Width="80" 
                     Height="30"/>
             <Button 
                     Content="キャンセル"
@@ -70,7 +101,7 @@
                     HorizontalAlignment="Center"
                     Height="30"
                     Margin="20 0 0 0"
-                    Width="100" />
+                    Width="80" />
         </StackPanel>
        
 
