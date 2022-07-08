@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class EraseLimitRackCommandBase : IExternalCommand
   {
-    private const string BoundaryCableTrayLineStyleName = "BoundaryCableTray" ;
+    public const string BoundaryCableTrayLineStyleName = "BoundaryCableTray" ;
     private const string EraseLimitRackTransactionName = "Erase Limit Rack" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         transaction.Start() ;
         RemoveLimitRacks( document, allLimitRackIds.rackIds ) ;
         RemoveBoundaryCableTray( document, allLimitRackIds.detailCurverIds ) ;
-        RemoveLimitRackModels( limitRackStorable, allLimitRackIds.limitRackModels ) ;
+        RemoveLimitRackModels( limitRackStorable, allLimitRackIds.selectedLimitRackModels ) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -38,11 +38,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected abstract (IEnumerable<string> rackIds, IEnumerable<string> detailCurverIds, IEnumerable<LimitRackModel>
-      limitRackModels) GetLimitRackIds( UIDocument ui, Document doc, LimitRackStorable limitRackStorable ) ;
+    protected abstract (IEnumerable<string> rackIds, IEnumerable<string>? detailCurverIds, IEnumerable<LimitRackModel>? selectedLimitRackModels) GetLimitRackIds( UIDocument ui, Document doc, LimitRackStorable limitRackStorable ) ;
 
     protected abstract void RemoveLimitRackModels( LimitRackStorable limitRackStorable,
-      IEnumerable<LimitRackModel> selectedLimitRackModels ) ;
+      IEnumerable<LimitRackModel>? selectedLimitRackModels ) ;
 
     private static void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
     {

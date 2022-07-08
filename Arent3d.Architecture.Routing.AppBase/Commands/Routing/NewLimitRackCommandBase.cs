@@ -134,7 +134,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! IsCircle ) {
         var inforCableTrays = ExtendCurves( document, infoCableTrays, fittings ) ;
         var curveLoops = GroupCurves( inforCableTrays ).Select( x => CurveLoop.CreateViaThicken( x.CurveLoop, cableTrayWidth, XYZ.BasisZ ) ) ;
-        var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        var lineStyle = GetLineStyle( document, EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         CreateDetailLines( document, curveLoops, lineStyle ) ;
       }
       else {
@@ -145,7 +145,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var mergeCurves = MergeCurves( curves ) ;
 
         var curveLoops = mergeCurves.Select( x => CurveLoop.Create( x.ToList() ) ).Select( x => CurveLoop.CreateViaThicken( x, cableTrayWidth, XYZ.BasisZ ) ) ;
-        var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        var lineStyle = GetLineStyle( document, EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         CreateDetailLines( document, curveLoops, lineStyle) ;
       }
       return newCableTrays ;

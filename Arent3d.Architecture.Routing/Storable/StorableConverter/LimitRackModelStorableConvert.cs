@@ -3,7 +3,6 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 {
@@ -21,10 +20,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
       var routeName = deserializer.GetString( SerializeField.RouteName ) ;
-      var rackIds = deserializer.GetNonNullStringArray( SerializeField.RackIds ) ;
-      // var conduitId = deserializer.GetString( SerializeField.ConduitId) ;
-      // var rackId = deserializer.GetString( SerializeField.RackId) ;
-      return new LimitRackModel( routeName ) ;
+      var rackIds = deserializer.GetNonNullStringArray( SerializeField.RackIds ).ToList() ;
+      var limitRack = new LimitRackModel( routeName ) ;
+      limitRack.RackIds.AddRange( rackIds ) ;
+      return limitRack ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, LimitRackModel customTypeValue )
@@ -32,8 +31,6 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var serializerObject = new SerializerObject<SerializeField>() ;
       serializerObject.AddNonNull( SerializeField.RouteName, customTypeValue.RouteName );
       serializerObject.AddNonNull( SerializeField.RackIds , customTypeValue.RackIds );
-      // serializerObject.AddNonNull( SerializeField.ConduitId, customTypeValue.ConduitId ) ;
-      // serializerObject.AddNonNull( SerializeField.RackId, customTypeValue.RackId ) ;
       return serializerObject ;
     }
   }
