@@ -105,12 +105,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var newCableTrays = new List<FamilyInstance>() ;
       var infoCableTrays = new List<(Line LocationLine, double Width)>() ;
       foreach ( var groupCableTray in groupCableTrays ) {
+        
         var locationTempt = GetMaxLength( document, groupCableTray.Select( GetConnector ).SelectMany( x => x ).Select( x => x.Origin ).ToList() ) ;
         if ( null == locationTempt )
           continue ;
 
         var locationAfterIntersect = IntersectFitting( locationTempt, fittings, torance ) ;
         var cableTray = groupCableTray[ 0 ] ;
+
+        var limitRackModel = GetLimitRackModelRelatedWithRack( cableTray.UniqueId, limitRackStorable ) ;
+        var groupCableTraysExceptFirst = groupCableTray.Where( ( _, i ) => i != 0 ) ;
+        groupCableTraysExceptFirst.ForEach( cb=> limitRackModel?.RackIds.Remove( cb.UniqueId ) );
+
         newCableTrays.Add( cableTray ) ;
         cableTray.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) ).Set( locationAfterIntersect.Length ) ;
         cableTrayWidth = cableTray.LookupParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ;
@@ -122,6 +128,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         groupCableTray.RemoveAt( 0 ) ;
         document.Delete( groupCableTray.Select( x => x.Id ).ToList() ) ;
       }
+      
+      limitRackStorable.Save();
 
       if ( ! IsCircle ) {
         var inforCableTrays = ExtendCurves( document, infoCableTrays, fittings ) ;
@@ -141,6 +149,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         CreateDetailLines( document, curveLoops, lineStyle) ;
       }
       return newCableTrays ;
+    }
+
+    private static LimitRackModel? GetLimitRackModelRelatedWithRack( string limitRackId, LimitRackStorable limitRackStorable )
+    {
+      return limitRackStorable.LimitRackModelData.FirstOrDefault( limitRackModel =>
+        limitRackModel.RackIds.Any( rackId => rackId == limitRackId ) ) ;
     }
 
     private List<List<Curve>> MergeCurves( List<Curve> curves )
@@ -525,8 +539,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private void StoreConduitAndLimitRackToLimitRackModel(LimitRackStorable limitRackStorable, Element conduit, FamilyInstance rackInstance)
     {
-      var limitRackModel = new LimitRackModel(conduit.UniqueId,rackInstance.UniqueId)  ;
-      limitRackStorable?.LimitRackModelData.Add( limitRackModel );
+      var routeName = conduit.GetRouteName() ;
+      var exitedLimitRackModel = limitRackStorable.LimitRackModelData.FirstOrDefault( x => x.RouteName == routeName ) ;
+      if ( exitedLimitRackModel == null ) {
+        // var limitRackModel = new LimitRackModel(routeName,conduit.UniqueId,rackInstance.UniqueId)  ;
+        var limitRackModel = new LimitRackModel(routeName) ;
+        limitRackModel.RackIds.Add( rackInstance.UniqueId );
+        limitRackStorable?.LimitRackModelData.Add( limitRackModel );
+      }
+      else {
+        exitedLimitRackModel.RackIds.Add( rackInstance.UniqueId );
+      }
+      
       limitRackStorable?.Save();
     }
 

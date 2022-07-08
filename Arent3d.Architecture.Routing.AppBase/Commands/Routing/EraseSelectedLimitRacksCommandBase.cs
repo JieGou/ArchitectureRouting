@@ -22,15 +22,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var selectedConduitAndConduitFittings = ui.Selection
         .PickElementsByRectangle( ConduitAndConduitFittingSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).ToList() ;
 
-      CollectHiddenConduitIn2dView( doc, selectedConduitAndConduitFittings ) ;
+      // CollectHiddenConduitIn2dView( doc, selectedConduitAndConduitFittings ) ;
 
       var selectedLimitRackModels =
-        GetSelectedLimitRackModel( limitRackStorable, selectedConduitAndConduitFittings ).ToList() ;
-      var rackIds = selectedLimitRackModels.Select( x => x.RackId ).Distinct().ToHashSet() ;
+        (GetSelectedLimitRackModel( limitRackStorable, selectedConduitAndConduitFittings ) ?? Array.Empty<LimitRackModel>()).ToList() ;
+      var rackIds = new HashSet<string>() ;
+      selectedLimitRackModels.ForEach( model =>  rackIds.AddRange( model.RackIds ) ) ;
       var detailLineIds = selectedConduitAndConduitFittings.Where( detailLine => detailLine is DetailLine ).Select( detailLine => detailLine.UniqueId )
         .ToList() ;
 
-      CollectHiddenCableTrayIn2dView( doc, selectedConduitAndConduitFittings, rackIds ) ;
+      // CollectHiddenCableTrayIn2dView( doc, selectedConduitAndConduitFittings, rackIds ) ;
 
       return new ValueTuple<IEnumerable<string>, IEnumerable<string>, IEnumerable<LimitRackModel>>( rackIds,
         detailLineIds, selectedLimitRackModels ) ;
@@ -43,20 +44,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       limitRackStorable.Save() ;
     }
 
-    private static IEnumerable<LimitRackModel> GetSelectedLimitRackModel( LimitRackStorable? limitRackStorable,
+    private static IEnumerable<LimitRackModel>? GetSelectedLimitRackModel( LimitRackStorable? limitRackStorable,
       IEnumerable<Element> selectedConduitAndConduitFittings )
     {
+      var allSelectedRoute = selectedConduitAndConduitFittings.Select( x => x.GetRouteName() ).Distinct() ;
+
+      var selectedRoute = allSelectedRoute as string?[] ?? allSelectedRoute.ToArray() ;
+      if (!selectedRoute.Any()) yield break;
+      
       if ( limitRackStorable == null || ! limitRackStorable.LimitRackModelData.Any() ) {
         yield break ;
       }
 
-      foreach ( var limitRackModel in from limitRackModel in limitRackStorable.LimitRackModelData
-               let conduitAndConduitFittings =
-                 selectedConduitAndConduitFittings as Element[] ?? selectedConduitAndConduitFittings.ToArray()
-               where conduitAndConduitFittings.Any( x => x.UniqueId == limitRackModel.ConduitId )
-               select limitRackModel ) {
+      var allSelectedLimitRackModel =
+        limitRackStorable.LimitRackModelData.Where( lmd => selectedRoute.Any( route => route == lmd.RouteName ) ) ;
+
+      var selectedLimitRackModel = allSelectedLimitRackModel as LimitRackModel[] ?? allSelectedLimitRackModel.ToArray() ;
+      if (!selectedLimitRackModel.Any()) yield break;
+      
+      foreach ( var limitRackModel in selectedLimitRackModel ) {
         yield return limitRackModel ;
       }
+      // foreach ( var limitRackModel in from limitRackModel in limitRackStorable.LimitRackModelData
+      //          let conduitAndConduitFittings =
+      //            selectedConduitAndConduitFittings as Element[] ?? selectedConduitAndConduitFittings.ToArray()
+      //          where conduitAndConduitFittings.Any( x => x.UniqueId == limitRackModel.ConduitId )
+      //          select limitRackModel ) {
+      //   yield return limitRackModel ;
+      // }
     }
 
     private static void CollectHiddenCableTrayIn2dView( Document doc, List<Element> selectedConduitAndConduitFittings,

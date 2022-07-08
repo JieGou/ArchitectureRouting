@@ -5,19 +5,24 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class LimitRackModel
   {
-    public string ConduitId { get ; init ; }
-    public string RackId { get ; init ; }
+    public string RouteName { get ; init ; }
+    // public string ConduitId { get ; init ; }
+    public List<string> RackIds { get ; init ; }
 
     public LimitRackModel()
     {
-      ConduitId = string.Empty ;
-      RackId = string.Empty ;
+      RouteName = string.Empty ;
+      RackIds = new List<string>() ;
+      // ConduitId = string.Empty ;
+      // RackId = string.Empty ;
     }
 
-    public LimitRackModel( string? conduitId, string? rackId )
+    public LimitRackModel( string? routeName )
     {
-      ConduitId = conduitId ?? string.Empty ;
-      RackId = rackId ?? string.Empty ;
+      RouteName = routeName ?? string.Empty ;
+      RackIds = new List<string>() ;
+      // ConduitId = conduitId ?? string.Empty ;
+      // RackId = rackId ?? string.Empty ;
     }
   }
 }
