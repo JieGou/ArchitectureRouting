@@ -11,6 +11,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.Extensions ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -35,17 +36,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               MessageBox.Show( "Don't have pick up data.", "Message" ) ;
               return Result.Cancelled ;
             }
+
+            RemoveTextNotePickUp( document ) ;
             
             var level = document.ActiveView.GenLevel.Name ;
-            var codeList = viewModel.GetCodeList() ;
-            var routes = viewModel.PickUpModels.Select( x => x.RouteName ).Distinct() ;
-            
+            var routes = viewModel.PickUpModels.Select( x => x.RouteName ).Where(r=> r != "").Distinct() ;
             foreach ( var route in routes ) {
-              double nextTextSeen = 0.0 ;
-              double nextTextNotSeen = 0.0 ;
-              var conduitPickUpModels = viewModel.PickUpModels.Where( p => p.RouteName == route && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
-              ShowPickUp(document, viewModel,conduitPickUpModels.First().PickUpModels, ref nextTextSeen, ref nextTextNotSeen ) ;
+              var conduitPickUpModels = viewModel.PickUpModels
+                .Where( p => p.RouteName == route && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
+                .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ).ToList() ;
+              var textNoteIdsPickUpModels = ShowPickUp( document, viewModel, conduitPickUpModels.First().PickUpModels ) ;
+              SaveTextNotePickUpModel( document, textNoteIdsPickUpModels ) ;
             }
+          }
+          else {
+            RemoveTextNotePickUp( document ) ;
           }
         
           return Result.Succeeded ;
@@ -59,12 +64,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
-    private void ShowPickUp(Document document, PickUpMapCreationViewModel viewModel , List<PickUpModel> pickUpModels, ref double nextTextSeen, ref double nextTextNotSeen )
+    private List<TextNotePickUpModel> ShowPickUp(Document document, PickUpMapCreationViewModel viewModel , List<PickUpModel> pickUpModels )
     {
-      if ( ! pickUpModels.Any() ) return ;
       var pickUpNumbers = viewModel.GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
       var routeName = pickUpModel.RouteName ;
+      var textNoteIds = new List<TextNotePickUpModel>() ;
       
       foreach ( var pickUpNumber in pickUpNumbers ) {
         double seenQuantity = 0 ;
@@ -92,7 +97,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var textPickUpNumber = viewModel.DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
           var notSeenQuantityStr = textPickUpNumber + "↓" + Math.Round( notSeenQuantity.Value, 1 ) ;
           
-          CreateTextNote( document, new XYZ( xPoint, yPoint - nextTextNotSeen, 0 ), notSeenQuantityStr, true );
+          string textNoteId = CreateTextNote( document, new XYZ( xPoint, yPoint, 0 ), notSeenQuantityStr, true );
+          textNoteIds.Add( new TextNotePickUpModel(textNoteId) );
         }
 
         // Seen quantity
@@ -106,24 +112,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var fromPoint = line.GetEndPoint( 0 ) ;
           var toPoint = line.GetEndPoint( 1 ) ;
           var direction = line.Direction ;
-          var point = MiddlePoint( fromPoint, toPoint, direction, nextTextSeen ) ;
+          var point = MiddlePoint( fromPoint, toPoint, direction ) ;
           var textPickUpNumber = viewModel.DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
           var seenQuantityStr = textPickUpNumber +  Math.Round( seenQuantity, 1 )  ;
-          CreateTextNote( document, point, seenQuantityStr, true ) ;
+          string textNoteId = CreateTextNote( document, point, seenQuantityStr, true ) ;
+          textNoteIds.Add( new TextNotePickUpModel(textNoteId)  );
         }
       }
+
+      return textNoteIds ;
     }
 
-    private XYZ MiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction, double nextTextSeen )
+    private XYZ MiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
     {
-      if(direction.Y is 1 or -1) return new XYZ( (( fromPoint.X + toPoint.X ) / 2 ) + 0.4 , (( fromPoint.Y + toPoint.Y ) / 2 ) + nextTextSeen, fromPoint.Z ) ;
+      if(direction.Y is 1 or -1) return new XYZ( (( fromPoint.X + toPoint.X ) / 2 ) + 0.4 , (( fromPoint.Y + toPoint.Y ) / 2 ), fromPoint.Z ) ;
       
-      if(direction.X is 1 or -1) return new XYZ( (( fromPoint.X + toPoint.X ) / 2 ) + nextTextSeen, (( fromPoint.Y + toPoint.Y ) / 2) + 0.5, fromPoint.Z ) ;
+      if(direction.X is 1 or -1) return new XYZ( (( fromPoint.X + toPoint.X ) / 2 ), (( fromPoint.Y + toPoint.Y ) / 2) + 0.5, fromPoint.Z ) ;
       
       return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
     }
 
-    private double CreateTextNote(Document doc, XYZ point, string text, bool isChangeColor )
+    private string CreateTextNote(Document doc, XYZ point, string text, bool isChangeColor )
     {
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
@@ -142,7 +151,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
       }
 
-      return textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).AsDouble() + 0.2;
+      return textNote.UniqueId ;
+    }
+
+    private void SaveTextNotePickUpModel(Document document, List<TextNotePickUpModel> textNotePickUpModels)
+    {
+      var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
+      try {
+        
+        textNotePickUpStorable.TextNotePickUpData.AddRange(textNotePickUpModels) ;
+        textNotePickUpStorable.Save() ;
+     
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      }
+    }
+    
+    private void RemoveTextNotePickUp( Document document )
+    {
+      var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
+      var textNotePickUpData = textNotePickUpStorable.TextNotePickUpData;
+      var textNotes = document.GetAllElements<TextNote>() ;
+      foreach ( var textNotePickUp in textNotePickUpData ) {
+        var textNote = textNotes.FirstOrDefault( t => t.UniqueId == textNotePickUp.TextNoteId) ;
+        if( textNote == null ) continue ;
+        document.Delete( textNote.Id ) ;
+      }
     }
   }
 }

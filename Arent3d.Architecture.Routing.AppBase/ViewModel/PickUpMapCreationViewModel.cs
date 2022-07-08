@@ -21,8 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string Off = "OFF" ;
     private const string Represent = "表示" ;
     private const string NonRepresent = "非表示" ;
-    private const string DefaultConstructionItem = "未設定" ;
-    
+
     public List<PickUpModel> PickUpModels { get ; set ; }
     public ObservableCollection<ListBoxItem> DoconTypes { get ; set ; }
     public ObservableCollection<ListBoxItem> RepresentTypes { get ; set ; }

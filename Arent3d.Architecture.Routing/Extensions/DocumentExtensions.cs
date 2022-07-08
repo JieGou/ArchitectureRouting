@@ -322,5 +322,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new ChangePlumbingInformationStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get TextNotePickUpModel data from snoop DB.
+    /// </summary>
+    public static TextNotePickUpModelStorable GetTextNotePickUpStorable( this Document document )
+    {
+      try {
+        return TextNotePickUpModelStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( TextNotePickUpModelStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new TextNotePickUpModelStorable( document ) ;
+      }
+    }
   }
 }

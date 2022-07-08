@@ -265,7 +265,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var pickUpNumber = productType == ProductType.Connector ? string.Empty : pickUpNumbers[ index ].ToString() ;
         var direction = productType == ProductType.Conduit ? directionZ[ index ] : string.Empty ;
         var ceedCodeModel = GetCeedSetCodeOfElement( element ) ;
-        var routeName = routeNames[ index ] ?? string.Empty;
+        var routeName = routeNames.Any() ? routeNames[ index ] ?? string.Empty : string.Empty;
         if ( _ceedModels.Any() && ceedCodeModel.Any() && ! ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ) {
           ceedSetCode = ceedCodeModel.First() ;
           
