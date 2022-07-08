@@ -666,8 +666,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var routeName = conduit.GetRouteName()! ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
-      var routeNameArr = routeName.Split( '_' ) ;
-      routeName = string.Join( "_", routeNameArr.First(), routeNameArr.ElementAt( 1 ) ) ;
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
       var checkPickUp = string.IsNullOrEmpty( connectorId ) 
         ? AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, dictMaterialCode ) 
         : AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, connectorId! ) ;
