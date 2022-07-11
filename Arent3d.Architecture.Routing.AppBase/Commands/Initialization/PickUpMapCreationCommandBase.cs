@@ -13,6 +13,7 @@ using Autodesk.Revit.UI ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -107,19 +108,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         // Seen quantity
-        // Element? conduitNearest = null  ;
-
-        var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ) ;
+        var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>() ; ;
         var conduitsOfRoute = allConduits.Where( conduit => conduit.GetRouteName() == routeName ).ToList();
         
-        // double minDistance = Double.MaxValue;
         var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
 
         var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
         
-        var conduitNeeded = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition, conduitNearest ) ;
-
-        if ( conduitNeeded is { Location: LocationCurve location } ) {
+        if ( conduitNearest is { Location: LocationCurve location } ) {
           var line = ( location.Curve as Line )! ;
           var fromPoint = line.GetEndPoint( 0 ) ;
           var toPoint = line.GetEndPoint( 1 ) ;
@@ -135,33 +131,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return textNoteIds ;
     }
 
-    private Element? FindConduitNearest(Document document,List<Element> conduitsOfRoute, XYZ toPosition, Element? conduit = null)
+    private Conduit? FindConduitNearest(Document document,List<Conduit> conduitsOfRoute, XYZ toPosition)
     {
-      Element? result = null  ;
+      Conduit? result = null  ;
       
       double minDistance = Double.MaxValue ;
       foreach ( var conduitOfRoute in conduitsOfRoute ) {
         if ( conduitOfRoute.Location is LocationCurve conduitLocation ) {
           var line = ( conduitLocation.Curve as Line )! ;
+          var direction = line.Direction ;
           var toPoint = line.GetEndPoint( 1 ) ;
           var distance = toPosition.DistanceTo( toPoint ) ;
-          
-          if ( conduit == null ) {
-            if ( distance < minDistance ) {
-              minDistance = distance ;
-              result = conduitOfRoute ;
-            }
+          if ( direction.Z is 1 or -1 ) continue ;
+          var lengthConduit = conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
+          if ( distance < minDistance && lengthConduit > 3.0) {
+            minDistance = distance ;
+            result = conduitOfRoute ;
           }
-          else {
-            var lengthConduitOfRoute = conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
-            var lengthConduit = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
-            if ( distance < minDistance && lengthConduitOfRoute > lengthConduit ) {
-              minDistance = distance ;
-              result = conduitOfRoute ;
-            }
-          }
-          
-         
         }
       }
 
