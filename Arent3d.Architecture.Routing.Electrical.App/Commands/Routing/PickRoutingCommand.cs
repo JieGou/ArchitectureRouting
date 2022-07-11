@@ -58,10 +58,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
+      
+      var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
       var isWireEnteredShaft = false ;
+      var (fromPickResult, toPickResult, _, _, _, _) = state ;
+      var isPickedFromBottomToTop = fromPickResult.PickedConnector!.Origin.Z < toPickResult.PickedConnector!.Origin.Z ;
+      
       for ( int i = 0 ; i < 50 ; i++ ) {
-        var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
-        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex, isWireEnteredShaft ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, resultRoute, pullBoxPositions, pullBoxElements, ref parentIndex, isWireEnteredShaft, isPickedFromBottomToTop) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;

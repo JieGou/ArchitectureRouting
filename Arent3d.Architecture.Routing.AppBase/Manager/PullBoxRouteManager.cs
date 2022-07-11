@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const string TaniOfPullBox = "個" ;
 
     public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, Route route, Element element, FamilyInstance pullBox, double heightConnector, 
-      double heightWire, XYZ routeDirection, bool isCreatePullBoxWithoutSettingHeight, string nameBase, ref int parentIndex, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null )
+      double heightWire, XYZ routeDirection, bool isCreatePullBoxWithoutSettingHeight, string nameBase, ref int parentIndex, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool isWireEnteredShaft = false )
     {
       const int index = 1 ;
       var ( routeRecords, parentRoute ) = GetRelatedBranchSegments( route ) ;
@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, firstHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
             result.Add( ( parentRoute.RouteName, newSegment ) ) ;
             beforeSegments.Add( newSegment ) ;
-            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, null ) ) ) ;
+            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, isWireEnteredShaft ? null : shaftElementUniqueId ) ) ) ;
           }
           else {
             if ( ! isBeforeSegment ) {
@@ -564,15 +564,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex, bool isWireEnteredShaft )
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex, bool isWireEnteredShaft, bool isPickedFromBottomToTop )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
-      var passedShaftRoute = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) ;
-      var shaftId = passedShaftRoute?.UniqueShaftElementUniqueId ;
-      var fromHeight = passedShaftRoute?.UniqueFromFixedHeight ;
       foreach ( var route in executeResultValue ) {
+        if( route == null || string.IsNullOrEmpty( route.UniqueShaftElementUniqueId ) ) continue ;
         var conduitFittingsOfRoute = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
-
+        var shaftId = route.UniqueShaftElementUniqueId ;
+        var fromHeight = route.UniqueFromFixedHeight ;
         var curveType = route.UniqueCurveType ;
         var nameBase = curveType?.Category.Name ;
 
@@ -582,7 +581,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var shaftLocation = GetShaftLocation( route, document ) ;
         if ( shaftLocation == null ) continue ;
         
-        var conduitFittingShaft = GetConduitFittingShaft( shaftLocation, conduitFittingsOfRoute, isWireEnteredShaft ) ;
+        var conduitFittingShaft = GetConduitFittingShaft( shaftLocation, conduitFittingsOfRoute, isWireEnteredShaft ? isPickedFromBottomToTop : !isPickedFromBottomToTop ) ;
         if ( conduitFittingShaft == null ) continue ;
 
         var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFittingShaft ) ;
@@ -593,7 +592,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var fromDirection = pullBoxInfo.FromDirection ;
         var toDirection = pullBoxInfo.ToDirection ;
         var height = originZ - pullBoxInfo.Level.Elevation ;
-        result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex, fromDirection, toDirection, fromHeight ).ToList() ;
+        result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex, fromDirection, toDirection, fromHeight, isWireEnteredShaft ).ToList() ;
         if ( pullBoxElement != null ) pullBoxElements.Add( ( pullBoxElement, null ) ) ;
         pullBoxPositions.Add( pullBoxInfo.Position ) ;
         return result ;
@@ -622,7 +621,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return shaftArc == null ? null : shaftArc.Center ;
     }
 
-    private static FamilyInstance? GetConduitFittingShaft( XYZ shaftLocation, IEnumerable<FamilyInstance> conduitFittings, bool isWireEnteredShaft )
+    private static FamilyInstance? GetConduitFittingShaft( XYZ shaftLocation, IEnumerable<FamilyInstance> conduitFittings, bool isBottom = false )
     {
       FamilyInstance? conduitFittingShaft = null ;
       XYZ? conduitPosition = null ;
@@ -634,8 +633,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           conduitPosition = conduitFittingLocationPoint ;
         }
 
-        if ( ( !isWireEnteredShaft && conduitFittingLocationPoint?.Z < conduitPosition?.Z ) ||
-             ( isWireEnteredShaft && conduitFittingLocationPoint?.Z > conduitPosition?.Z ) ) continue ;
+        if ( ( isBottom && conduitFittingLocationPoint?.Z < conduitPosition?.Z ) ||
+             ( !isBottom && conduitFittingLocationPoint?.Z > conduitPosition?.Z ) ) continue ;
         conduitFittingShaft = conduitFitting ;
         conduitPosition = conduitFittingLocationPoint ;
       }
@@ -658,7 +657,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreatePullBoxAndGetSegments( Document document, Route route, Element element, double originX, double originY, double originZ,
-      Level? level, XYZ? direction, string nameBase, out FamilyInstance? pullBox, ref int parentIndex, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null )
+      Level? level, XYZ? direction, string nameBase, out FamilyInstance? pullBox, ref int parentIndex, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool isWireEnteredShaft = true )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
       pullBox = null ;
@@ -670,7 +669,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
         using Transaction t1 = new( document, "Get segments" ) ;
         t1.Start() ;
-        result.AddRange( GetRouteSegments( document, route, element, pullBox, originZ, originZ, direction!, true, nameBase, ref parentIndex, fromDirection, toDirection, firstHeight ) ) ;
+        result.AddRange( GetRouteSegments( document, route, element, pullBox, originZ, originZ, direction!, true, nameBase, ref parentIndex, fromDirection, toDirection, firstHeight, isWireEnteredShaft ) ) ;
         t1.Commit() ;
       }
       catch {
@@ -762,15 +761,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private static string GetPullBoxTextBox( int depth, int height, string text)
     {
       if ( depth == 0 || height == 0 ) return text ;
-      Dictionary<int, (int, int)> defaultDimensions = new() ;
-      defaultDimensions.Add(1, (150, 100));
-      defaultDimensions.Add(2, ( 200, 200 ));
-      defaultDimensions.Add(3, (300, 300));
-      defaultDimensions.Add(4, (400, 300));
-      defaultDimensions.Add(5, (500, 400));
-      defaultDimensions.Add(6, (600, 400));
-      defaultDimensions.Add(8, (800, 400));
-      defaultDimensions.Add(10, (1000, 400));
+      Dictionary<int, (int, int)> defaultDimensions = new()
+        {
+          { 1, ( 150, 100 ) }, 
+          { 2, ( 200, 200 ) }, 
+          { 3, ( 300, 300 ) },
+          { 4, (400, 300) },
+          { 5, (500, 400) },
+          { 6, (600, 400) },
+          { 8, (800, 400) },
+          { 10, (1000, 400) }
+        } ;
       foreach ( var defaultDimension in defaultDimensions ) {
         var (d, h) = defaultDimension .Value;
         if ( d >= depth && h >= height )
