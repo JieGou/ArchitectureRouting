@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       CeedSetCode = ceedSetCode ?? string.Empty ;
       DeviceSymbol = deviceSymbol ?? string.Empty ;
       Condition = condition ?? string.Empty ;
-      RouteName = routeName ?? String.Empty ;
+      RouteName = routeName ?? string.Empty ;
     }
   }
 }
