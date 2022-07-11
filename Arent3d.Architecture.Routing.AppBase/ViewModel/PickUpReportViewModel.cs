@@ -376,22 +376,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateCell( row2, 16, "合計数量", xssfCellStyles[ "borderedCellStyle" ] ) ;
 
             rowStart += 3 ;
-            List<KeyValuePair<string, List<PickUpModel>>> dictionaryConduitPickUpModel = new List<KeyValuePair<string, List<PickUpModel>>>() ;
+            List<KeyValuePair<string, List<PickUpModel>>> dictionaryDataPickUpModel = new List<KeyValuePair<string, List<PickUpModel>>>() ;
             
             foreach ( var code in codeList ) {
-              var conduitPickUpModels = PickUpModels
-                .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.Floor == level &&
-                             p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
+              var dataPickUpModels = PickUpModels
+                .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.Floor == level )
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             
-              foreach ( var conduitPickUpModel in conduitPickUpModels ) {
-                dictionaryConduitPickUpModel.Add( new KeyValuePair<string, List<PickUpModel>>( conduitPickUpModel.ProductCode, conduitPickUpModel.PickUpModels ) ) ;
+              foreach ( var dataPickUpModel in dataPickUpModels ) {
+                dictionaryDataPickUpModel.Add( new KeyValuePair<string, List<PickUpModel>>( dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels ) ) ;
               }
             }
 
-            var dictionaryConduitPickUpModelOrder = dictionaryConduitPickUpModel.OrderBy( x => x.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard  ) ;
-            foreach ( var conduitPickUpModel in dictionaryConduitPickUpModelOrder ) {
-              rowStart = AddConfirmationPickUpRow( conduitPickUpModel.Value, sheet, rowStart, xssfCellStyles ) ;
+            var dictionaryDataPickUpModelOrder = dictionaryDataPickUpModel.OrderBy( x => x.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard  ) ;
+            foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrder ) {
+              rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, xssfCellStyles ) ;
             }
 
             var lastRow = sheet.CreateRow( rowStart ) ;
@@ -438,19 +437,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           CreateCell( row3, index, "", xssfCellStyles[ "borderedCellStyle" ] ) ;
 
           rowStart = 4 ;
-          List<KeyValuePair<string, List<PickUpModel>>> dictionaryConduitPickUpModelSummary = new List<KeyValuePair<string, List<PickUpModel>>>() ;
+          List<KeyValuePair<string, List<PickUpModel>>> dictionaryDataPickUpModelSummary = new List<KeyValuePair<string, List<PickUpModel>>>() ;
           foreach ( var code in codeList ) {
-            var conduitPickUpModels = PickUpModels
-              .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
+            var dataPickUpModels = PickUpModels
+              .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code )
               .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
-            foreach ( var conduitPickUpModel in conduitPickUpModels ) {
-              dictionaryConduitPickUpModelSummary.Add( new KeyValuePair<string, List<PickUpModel>>( conduitPickUpModel.ProductCode, conduitPickUpModel.PickUpModels ) );
+            foreach ( var dataPickUpModel in dataPickUpModels ) {
+              dictionaryDataPickUpModelSummary.Add( new KeyValuePair<string, List<PickUpModel>>( dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels ) );
             }
           }
           
-          var dictionaryConduitPickUpModelOrderSummary = dictionaryConduitPickUpModelSummary.OrderBy( x => x.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard  ) ;
-          foreach ( var conduitPickUpModel in dictionaryConduitPickUpModelOrderSummary ) {
-            rowStart = AddSummaryPickUpRow( conduitPickUpModel.Value, sheet, rowStart, levelColumns, index, xssfCellStyles ) ;
+          var dictionaryDataPickUpModelOrderSummary = dictionaryDataPickUpModelSummary.OrderBy( x => x.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard  ) ;
+          foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrderSummary ) {
+            rowStart = AddSummaryPickUpRow( dataPickUpModel.Value, sheet, rowStart, levelColumns, index, xssfCellStyles ) ;
           }
           
           break ;
