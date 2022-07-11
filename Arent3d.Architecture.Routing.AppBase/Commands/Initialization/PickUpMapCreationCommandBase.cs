@@ -116,8 +116,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
 
         var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
+        
+        var conduitNeeded = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition, conduitNearest ) ;
 
-        if ( conduitNearest is { Location: LocationCurve location } ) {
+        if ( conduitNeeded is { Location: LocationCurve location } ) {
           var line = ( location.Curve as Line )! ;
           var fromPoint = line.GetEndPoint( 0 ) ;
           var toPoint = line.GetEndPoint( 1 ) ;
@@ -133,7 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return textNoteIds ;
     }
 
-    private Element? FindConduitNearest(Document document,List<Element> conduitsOfRoute, XYZ toPosition)
+    private Element? FindConduitNearest(Document document,List<Element> conduitsOfRoute, XYZ toPosition, Element? conduit = null)
     {
       Element? result = null  ;
       
@@ -143,10 +145,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var line = ( conduitLocation.Curve as Line )! ;
           var toPoint = line.GetEndPoint( 1 ) ;
           var distance = toPosition.DistanceTo( toPoint ) ;
-          if ( distance < minDistance &&  conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() > 5.0) {
-            minDistance = distance ;
-            result = conduitOfRoute ;
+          
+          if ( conduit == null ) {
+            if ( distance < minDistance ) {
+              minDistance = distance ;
+              result = conduitOfRoute ;
+            }
           }
+          else {
+            var lengthConduitOfRoute = conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
+            var lengthConduit = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
+            if ( distance < minDistance && lengthConduitOfRoute > lengthConduit ) {
+              minDistance = distance ;
+              result = conduitOfRoute ;
+            }
+          }
+          
+         
         }
       }
 
