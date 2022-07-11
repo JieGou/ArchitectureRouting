@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateDummyConduitsIn3DViewCommand : IExternalCommand
   {
-    private const string DummyName = "Dummy";
+    public const string DummyName = "Dummy";
     
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {

@@ -213,6 +213,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class CreateDummyConduitsIn3DViewCommandButton
           {
           }
+          
+          [Button( typeof( RemoveDummyConduitsCommand ), OnlyInitialized = true )]
+          private static class RemoveDummyConduitsCommandButton
+          {
+          }
         }
 
         [SplitButton( "arent3d.architecture.routing.drawing.rack", TitleKey = "Electrical.App.Panels.Routing.Drawing.Rack" )]
