@@ -3,6 +3,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
 using System ;
 using System.Collections.ObjectModel ;
+using System.Collections.Specialized ;
 using System.IO ;
 using System.Linq ;
 using System.Windows ;
@@ -22,6 +23,8 @@ using CheckBox = System.Windows.Controls.CheckBox ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using RadioButton = System.Windows.Controls.RadioButton ;
 using Arent3d.Architecture.Routing.Extensions ;
+using MoreLinq ;
+using MoreLinq.Extensions ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -373,14 +376,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateCell( row2, 16, "合計数量", xssfCellStyles[ "borderedCellStyle" ] ) ;
 
             rowStart += 3 ;
+            List<KeyValuePair<string, List<PickUpModel>>> dictionaryConduitPickUpModel = new List<KeyValuePair<string, List<PickUpModel>>>() ;
+            
             foreach ( var code in codeList ) {
               var conduitPickUpModels = PickUpModels
                 .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.Floor == level &&
                              p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
+            
               foreach ( var conduitPickUpModel in conduitPickUpModels ) {
-                rowStart = AddConfirmationPickUpRow( conduitPickUpModel.PickUpModels, sheet, rowStart, xssfCellStyles ) ;
+                dictionaryConduitPickUpModel.Add( new KeyValuePair<string, List<PickUpModel>>( conduitPickUpModel.ProductCode, conduitPickUpModel.PickUpModels ) ) ;
               }
+            }
+
+            var dictionaryConduitPickUpModelOrder = dictionaryConduitPickUpModel.OrderBy( x => x.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard  ) ;
+            foreach ( var conduitPickUpModel in dictionaryConduitPickUpModelOrder ) {
+              rowStart = AddConfirmationPickUpRow( conduitPickUpModel.Value, sheet, rowStart, xssfCellStyles ) ;
             }
 
             var lastRow = sheet.CreateRow( rowStart ) ;
@@ -427,15 +438,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           CreateCell( row3, index, "", xssfCellStyles[ "borderedCellStyle" ] ) ;
 
           rowStart = 4 ;
+          List<KeyValuePair<string, List<PickUpModel>>> dictionaryConduitPickUpModelSummary = new List<KeyValuePair<string, List<PickUpModel>>>() ;
           foreach ( var code in codeList ) {
             var conduitPickUpModels = PickUpModels
               .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
               .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             foreach ( var conduitPickUpModel in conduitPickUpModels ) {
-              rowStart = AddSummaryPickUpRow( conduitPickUpModel.PickUpModels, sheet, rowStart, levelColumns, index, xssfCellStyles ) ;
+              dictionaryConduitPickUpModelSummary.Add( new KeyValuePair<string, List<PickUpModel>>( conduitPickUpModel.ProductCode, conduitPickUpModel.PickUpModels ) );
             }
           }
-
+          
+          var dictionaryConduitPickUpModelOrderSummary = dictionaryConduitPickUpModelSummary.OrderBy( x => x.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard  ) ;
+          foreach ( var conduitPickUpModel in dictionaryConduitPickUpModelOrderSummary ) {
+            rowStart = AddSummaryPickUpRow( conduitPickUpModel.Value, sheet, rowStart, levelColumns, index, xssfCellStyles ) ;
+          }
+          
           break ;
       }
     }
