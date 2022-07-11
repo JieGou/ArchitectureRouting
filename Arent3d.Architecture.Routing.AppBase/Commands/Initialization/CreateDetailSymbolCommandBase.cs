@@ -224,9 +224,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       try {
         const string defaultPlumbingType = "E" ;
-        List<DetailSymbolModel> detailSymbolModels = new List<DetailSymbolModel>() ;
-        List<DetailSymbolModel> detailSymbolModelsIsDeleted = new List<DetailSymbolModel>() ;
-        List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+        List<DetailSymbolModel> detailSymbolModels = new() ;
+        List<DetailSymbolModel> detailSymbolModelsIsDeleted = new() ;
+        List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).Where( e => e.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
         List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.Id != conduit.Id ).ToList() ;
         var routeName = conduit.GetRouteName() ;
         var representativeRouteName = GetRepresentativeRouteName( doc, conduit, routeName! ) ;
@@ -307,7 +307,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       string ceedCode = string.Empty ;
       string deviceSymbol = string.Empty ;
-      var conduitsOfRoute = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      var conduitsOfRoute = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
       foreach ( var conduit in conduitsOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
@@ -357,7 +359,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public static void AddDetailSymbolForConduitSameRoute( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbolId, string detailSymbol, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
     {
-      var conduitOfRoute = allConduit.Where( c => c.GetRouteName() == routeName ).ToList() ;
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      var conduitOfRoute = allConduit.Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
       if ( string.IsNullOrEmpty( ceedCode ) )
         ( ceedCode, deviceSymbol ) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName ) ;
       foreach ( var conduit in conduitOfRoute ) {
@@ -368,9 +372,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public static void AddDetailSymbolForConduitsSamePosition( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, DetailSymbolSettingDialog detailSymbolSettingDialog, string conduitRouteName, string detailSymbolId, string lineIds, bool isParentSymbol, List<string> routeNamesSamePosition, string plumbingType )
     {
-      var routeNames = allConduit.Where( c => routeNamesSamePosition.Contains( c.GetRouteName()! ) && c.GetRouteName() != conduitRouteName ).Select( c => c.GetRouteName() ).Distinct().ToList() ;
+      var routeNames = allConduit.Where( c => routeNamesSamePosition.Contains( c.GetRouteName()! ) && c.GetRouteName() != conduitRouteName ).Select( c => c.GetRouteName()! ).Distinct().ToList() ;
       foreach ( var routeName in routeNames ) {
-        var conduitsOfRouteName = allConduit.Where( c => c.GetRouteName() == routeName ).ToList() ;
+        var routeNameArray = routeName.Split( '_' ) ;
+        var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+        var conduitsOfRouteName = allConduit.Where( c => c.GetRouteName() is { } rName && rName.Contains( mainRouteName ) ).ToList() ;
         if ( ! conduitRouteName.Any() ) continue ;
         var (ceedCode, deviceSymbol) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName! ) ;
         foreach ( var conduit in conduitsOfRouteName ) {
