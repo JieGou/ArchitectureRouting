@@ -1,16 +1,19 @@
-﻿using System.Collections.Generic ;
-using System.Linq ;
+﻿using System.Runtime.InteropServices ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
+  [Guid("CF1DB4C1-71AF-4C23-B382-4CD8008D149C")]
   public class BorderTextNoteModel
   {
-    public int TextNoteId { get ; set ; }
     public string BorderIds { get ; set ; }
-  
-    public BorderTextNoteModel(int? textNoteId = default, string? borderIds = default)
+
+    public BorderTextNoteModel()
     {
-      TextNoteId = textNoteId ?? 0 ;
+      BorderIds = string.Empty ;
+    }
+    
+    public BorderTextNoteModel(string? borderIds = default)
+    {
       BorderIds = borderIds ?? string.Empty ;
     }
   }

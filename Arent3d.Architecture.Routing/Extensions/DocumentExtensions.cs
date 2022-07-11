@@ -173,19 +173,6 @@ namespace Arent3d.Architecture.Routing.Extensions
     /// <summary>
     /// Get text note data from snoop DB.
     /// </summary>
-    public static BorderTextNoteStorable GetBorderTextNoteStorable( this Document document )
-    {
-      try {
-        return BorderTextNoteStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( BorderTextNoteStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new BorderTextNoteStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get text note data from snoop DB.
-    /// </summary>
     public static RegistrationOfBoardDataStorable GetRegistrationOfBoardDataStorable( this Document document )
     {
       try {
