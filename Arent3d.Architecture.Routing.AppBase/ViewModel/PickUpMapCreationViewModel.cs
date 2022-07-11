@@ -46,8 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       DoconTypes = new ObservableCollection<ListBoxItem>() ;
       RepresentTypes = new ObservableCollection<ListBoxItem>() ;
       PickUpModels = new List<PickUpModel>() ;
-
-      InitPickUpModels() ;
+      
       CreateCheckBoxList() ;
       IsDoconEnable = RepresentTypes.Any( x => (x.TheText == Represent && x.TheValue ) ) ;
     }
@@ -60,6 +59,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private void Execute( Window window )
     {
+      if ( IsDoconEnable ) {
+        var pickUpViewModel = new PickUpViewModel( _document ) ;
+        PickUpModels = pickUpViewModel.OriginPickUpModels ;
+      }
+
       window.DialogResult = true ;
       window.Close() ;
     }
@@ -82,12 +86,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       IsDoconEnable = isRepresent ;
     }
     
-    private void InitPickUpModels()
-    {
-      var pickUpStorable = _document.GetAllStorables<PickUpStorable>().FirstOrDefault() ;
-      if ( pickUpStorable != null ) PickUpModels = pickUpStorable.AllPickUpModelData  ;
-    }
-
     public List<string> GetPickUpNumbersList( List<PickUpModel> pickUpModels )
     {
       var pickUpNumberList = new List<string>() ;
