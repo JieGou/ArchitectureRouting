@@ -24,17 +24,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       try {
         return document.Transaction( "TransactionName.Commands.Routing.RemoveDummyConduitsCommand".GetAppStringByKeyOrDefault( "Remove Dummy Conduits" ), _ =>
         {
-          var allConduitIds = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
-            .Where( c => ! string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName()!.Contains( CreateDummyConduitsIn3DViewCommand.DummyName ) )
-            .Select( c => c.UniqueId ).ToList() ;
-
-          if ( ! allConduitIds.Any() ) return Result.Succeeded ;
-          try {
-            document.Delete( allConduitIds ) ;
-          }
-          catch {
-            //
-          }
+          CreateDummyConduitsIn3DViewCommand.RemoveDummyConduits( document ) ;
 
           return Result.Succeeded ;
         } ) ;
