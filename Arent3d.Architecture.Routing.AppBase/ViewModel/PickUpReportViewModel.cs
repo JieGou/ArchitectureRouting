@@ -529,11 +529,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CreateCell( row, 2, pickUpModel.Standard, xssfCellStyles[ "leftBottomBorderedCellStyle" ] ) ;
       CreateCell( row, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyle" ] ) ;
       CreateCell( row, 4, pickUpModel.Tani, xssfCellStyles[ "borderedCellStyle" ] ) ;
-
+      
       double total = 0 ;
       Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
       foreach ( var pickUpNumber in pickUpNumbers ) {
         double seenQuantity = 0 ;
+        string stringNotTani = string.Empty ;
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
         var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
         foreach ( var item in items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ) ) {
@@ -545,20 +546,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
             notSeenQuantities[ item.Direction ] += quantity ;
           }
-          else
+          else {
+            if ( ! isTani ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? quantity : $"+{quantity}" ;
             seenQuantity += quantity ;
-
+          }
+          
           total += quantity ;
         }
-
-        var number = DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
-        var seenQuantityStr = seenQuantity > 0 ? Math.Round( seenQuantity, isTani ? 1 : 2  ).ToString() : string.Empty ;
+        
+        var number = DoconTypes.First().TheValue && !string.IsNullOrEmpty(pickUpNumber) ? "[" + pickUpNumber + "]" : string.Empty ;
+        var seenQuantityStr = isTani ? ( seenQuantity > 0 ? Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString() : string.Empty ) : stringNotTani ;
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
           notSeenQuantityStr += value > 0 ? " + ↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
         }
 
-        var key = "( " + seenQuantityStr + notSeenQuantityStr + " )" ;
+        var key = isTani ? ( "( " + seenQuantityStr + notSeenQuantityStr + " )" ) : ( seenQuantityStr + notSeenQuantityStr ) ;
         var itemKey = trajectory.FirstOrDefault( t => t.Key.Contains( key ) ).Key ;
         if ( string.IsNullOrEmpty( itemKey ) )
           trajectory.Add( number + key, 1 ) ;
