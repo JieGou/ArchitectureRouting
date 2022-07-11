@@ -19,7 +19,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class PickUpMapCreationCommandBase : IExternalCommand
   {
-    protected abstract AddInType GetAddInType() ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
@@ -93,8 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           else
             seenQuantity += quantity ;
         }
-
-       
+        
         // Not seen quantity
         foreach ( var notSeenQuantity in notSeenQuantities ) {
           var points = notSeenQuantity.Key.Split( ',' ) ;
@@ -181,8 +179,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         ElementTransformUtils.RotateElement( doc, textNote.Id, Line.CreateBound( txtPosition, txtPosition + XYZ.BasisZ ),  Math.PI / 2 ) ;
       }
       
-      
-      
       var color = new Color( 255, 225, 51 ) ;
       ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
 
@@ -193,10 +189,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
       try {
-        
         textNotePickUpStorable.TextNotePickUpData.AddRange(textNotePickUpModels) ;
         textNotePickUpStorable.Save() ;
-     
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
       }
