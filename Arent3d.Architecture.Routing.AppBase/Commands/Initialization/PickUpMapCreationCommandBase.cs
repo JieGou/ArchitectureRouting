@@ -22,32 +22,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-
-      var viewModel = new PickUpMapCreationViewModel( document ) ;
-      var dialog = new PickUpMapCreationDialog( viewModel ) ;
-
-      dialog.ShowDialog() ;
-      if ( dialog.DialogResult == false ) return Result.Cancelled ;
       
       try {
         var result = document.Transaction( "TransactionName.Commands.Initialization.PickUpMapCreation".GetAppStringByKeyOrDefault( "Pick Up Map Creation" ), _ =>
         {
-          if ( viewModel.IsDoconEnable ) {
-            if ( ! viewModel.PickUpModels.Any() ) {
+          var pickUpViewModel = new PickUpViewModel( document ) ;
+          var pickUpModels = pickUpViewModel.DataPickUpModels ;
+          var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
+          var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any() ;
+          
+          if ( ! isDisplay ) {
+            if ( ! pickUpModels.Any() ) {
               MessageBox.Show( "Don't have pick up data.", "Message" ) ;
               return Result.Cancelled ;
             }
-
-            RemoveTextNotePickUp( document ) ;
             
             var level = document.ActiveView.GenLevel.Name ;
-            var routes = viewModel.PickUpModels.Select( x => x.RouteName ).Where(r=> r != "").Distinct() ;
+            var routes = pickUpModels.Select( x => x.RouteName ).Where(r=> r != "").Distinct() ;
             var textNotePositions = new List<XYZ>() ; 
             foreach ( var route in routes ) {
-              var conduitPickUpModels = viewModel.PickUpModels
+              var conduitPickUpModels = pickUpModels
                 .Where( p => p.RouteName == route && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ).ToList() ;
-              var textNoteIdsPickUpModels = ShowPickUp( document, viewModel, conduitPickUpModels.First().PickUpModels, textNotePositions ) ;
+              var textNoteIdsPickUpModels = ShowPickUp( document, true, conduitPickUpModels.First().PickUpModels, textNotePositions ) ;
               SaveTextNotePickUpModel( document, textNoteIdsPickUpModels ) ;
             }
           }
@@ -66,9 +63,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
-    private List<TextNotePickUpModel> ShowPickUp(Document document, PickUpMapCreationViewModel viewModel , List<PickUpModel> pickUpModels, List<XYZ> positionsTextNote)
+    private List<TextNotePickUpModel> ShowPickUp(Document document, bool isDisplayPickUpNumber ,List<PickUpModel> pickUpModels, List<XYZ> positionsTextNote)
     {
-      var pickUpNumbers = viewModel.GetPickUpNumbersList( pickUpModels ) ;
+      var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
       var routeName = pickUpModel.RouteName ;
       var textNoteIds = new List<TextNotePickUpModel>() ;
@@ -99,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var points = notSeenQuantity.Key.Split( ',' ) ;
           var xPoint  = double.Parse(points.First()) ;
           var yPoint = double.Parse(points.Skip( 1 ).First()) ;
-          var textPickUpNumber = viewModel.DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
+          var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
           var notSeenQuantityStr = textPickUpNumber + "↓" + Math.Round( notSeenQuantity.Value, 1 ) ;
           
           string textNoteId = CreateTextNote( document, new XYZ( xPoint, yPoint, 0 ), notSeenQuantityStr, true);
@@ -130,7 +127,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
           }
           positionsTextNote.Add( point );
-          var textPickUpNumber = viewModel.DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
+          var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
           var seenQuantityStr = textPickUpNumber +  Math.Round( seenQuantity, 1 )  ;
           string textNoteId = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
           textNoteIds.Add( new TextNotePickUpModel(textNoteId)  );
@@ -217,6 +214,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if( textNote == null ) continue ;
         document.Delete( textNote.Id ) ;
       }
+
+      textNotePickUpStorable.TextNotePickUpData = new List<TextNotePickUpModel>() ;
+    }
+    
+    private List<string> GetPickUpNumbersList( List<PickUpModel> pickUpModels )
+    {
+      var pickUpNumberList = new List<string>() ;
+      foreach ( var pickUpModel in pickUpModels.Where( pickUpModel => ! pickUpNumberList.Contains( pickUpModel.PickUpNumber ) ) ) {
+        pickUpNumberList.Add( pickUpModel.PickUpNumber ) ;
+      }
+
+      return pickUpNumberList ;
     }
   }
 }
