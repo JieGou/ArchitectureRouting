@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var pickUpModels = pickUpViewModel.DataPickUpModels ;
           var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
           var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any() ;
+          var isDisplayPickUpNumber = textNotePickUpStorable.IsPickUpNumberSetting ;
           
           if ( ! isDisplay ) {
             if ( ! pickUpModels.Any() ) {
@@ -44,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               var conduitPickUpModels = pickUpModels
                 .Where( p => p.RouteName == route && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ).ToList() ;
-              var textNoteIdsPickUpModels = ShowPickUp( document, true, conduitPickUpModels.First().PickUpModels, textNotePositions ) ;
+              var textNoteIdsPickUpModels = ShowPickUp( document, isDisplayPickUpNumber, conduitPickUpModels.First().PickUpModels, textNotePositions ) ;
               SaveTextNotePickUpModel( document, textNoteIdsPickUpModels ) ;
             }
           }

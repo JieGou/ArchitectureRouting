@@ -521,5 +521,8 @@
 
         <key>Electrical.App.Commands.Initialization.PickUpMapCreationCommand</key>
         <string>Pick Up&#xA;Diagram</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
+        <string>Pick Up&#xA;Number Setting</string>
     </dict>
 </plist>
