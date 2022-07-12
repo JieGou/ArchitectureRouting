@@ -25,6 +25,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     protected override void BeforeInitialize( Document document )
     {
       FilterHelper.InitialFilters( document ) ;
+    }
+    
+    protected override void AfterInitialize( Document document )
+    {
       LoadDefaultElectricalDb( document ) ;
     }
 
