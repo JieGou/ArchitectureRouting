@@ -840,9 +840,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       catch ( Exception ex ) {
         MessageBox.Show( "Export data failed because " + ex, "Error Message" ) ;
       }
-
-      window.DialogResult = true ;
-      window.Close() ;
     }
 
     private void Save( Window window )
