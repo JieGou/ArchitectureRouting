@@ -657,7 +657,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void SetGroupIdForDetailTableRows( IEnumerable<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
+    private static void SetGroupIdForDetailTableRows( IEnumerable<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
     {
       const bool isMixConstructionItems = false ;
       var detailTableRowsGroupByPlumbingIdentityInfo = 
@@ -693,7 +693,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void SetGroupIdForDetailTableRowsMixConstructionItems( IEnumerable<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
+    private static void SetGroupIdForDetailTableRowsMixConstructionItems( IEnumerable<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
     {
       const bool isMixConstructionItems = true ;
       var detailTableRowsGroupByPlumbingIdentityInfo = 
@@ -945,10 +945,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void PlumbingSummary( List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
+      _detailTableModelsOrigin = SummarizePlumbing( _detailTableModelsOrigin, conduitsModelData, detailSymbolStorable, selectedDetailTableRows,
+        isMixConstructionItems, detailSymbolIdsWithPlumbingTypeHasChanged ) ;
+    }
+    
+    public static ObservableCollection<DetailTableModel> SummarizePlumbing(ObservableCollection<DetailTableModel> detailTableModels, List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
+    {
       Dictionary<DetailTableModel, List<DetailTableModel>> sortDetailTableModel = new() ;
       var detailTableModelsGroupByDetailSymbolId = 
-        _detailTableModelsOrigin
-          .Where( selectedDetailTableRows.Contains )
+        detailTableModels
+          .Where(d => !selectedDetailTableRows.Any() || selectedDetailTableRows.Contains(d) )
           .Where( d => 
                              ! string.IsNullOrEmpty( d.WireType ) 
                           && ! string.IsNullOrEmpty( d.WireSize ) 
@@ -961,7 +967,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           .Select( g => g.ToList() ) ;
       foreach ( var detailTableRowsWithSameDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
         var plumbingIdentityInfos = detailTableRowsWithSameDetailSymbolId.Select( d => d.PlumbingIdentityInfo ).Distinct().ToHashSet() ;
-        var otherDetailTableRowsWithSamePlumbingIdentityInfo = _detailTableModelsOrigin
+        var otherDetailTableRowsWithSamePlumbingIdentityInfo = detailTableModels
           .Where( d => plumbingIdentityInfos.Contains( d.PlumbingIdentityInfo ) && ! detailTableRowsWithSameDetailSymbolId.Contains( d ) )
           .GroupBy( d => d.PlumbingIdentityInfo )
           .Select( g => g.ToList() ) ;
@@ -1028,7 +1034,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       foreach ( var (parentDetailTableRow, detailTableRows) in sortDetailTableModel ) {
         List<DetailTableModel> newDetailTableModels = new() ;
-        foreach ( var detailTableRow in _detailTableModelsOrigin ) {
+        foreach ( var detailTableRow in detailTableModels ) {
           if ( detailTableRow == parentDetailTableRow ) {
             newDetailTableModels.AddRange( detailTableRows ) ;
           }
@@ -1037,8 +1043,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
         }
 
-        _detailTableModelsOrigin = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+        return new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
       }
+
+      return new ObservableCollection<DetailTableModel>() ;
     }
 
     private void AddDetailTableRow(DetailTableModel selectDetailTableRow, DetailTableModel selectDetailTableRowSummary )

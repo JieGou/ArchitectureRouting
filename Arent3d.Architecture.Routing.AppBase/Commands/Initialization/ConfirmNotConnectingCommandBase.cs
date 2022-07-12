@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
-    private IEnumerable<Element> GetElementsNotConnect( Document document )
+    public static IEnumerable<Element> GetElementsNotConnect( Document document )
     {
       var conduitsNotConnected = new List<Element>() ;
       var connectorIdsNotConnected = new List<ElementId>() ;
@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return elementsNotConnected ;
     }
 
-    private void GetFromConnectorIdAndToConnectorIdOfCable( IEnumerable<Element> allConduits, IReadOnlyCollection<Element> allConnectors, ICollection<ElementId> connectorIdsNotConnected, List<Element> conduitsNotConnected, Element conduit )
+    private static void GetFromConnectorIdAndToConnectorIdOfCable( IEnumerable<Element> allConduits, IReadOnlyCollection<Element> allConnectors, ICollection<ElementId> connectorIdsNotConnected, List<Element> conduitsNotConnected, Element conduit )
     {
       var cableIsFromConnected = false ;
       var cableIsToConnected = false ;

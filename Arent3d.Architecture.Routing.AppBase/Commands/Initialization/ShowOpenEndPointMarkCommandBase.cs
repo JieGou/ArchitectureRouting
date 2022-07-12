@@ -92,5 +92,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                             throw new InvalidOperationException() ;
       return document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList() ;
     }
+
+    public static void RemoveDisplayingOpenEndPointMark( Document document )
+    {
+      var openEndPointMarkInstanceIds = GetExistedOpenEndPointMarkInstanceIds( document ) ;
+      if ( openEndPointMarkInstanceIds.Count > 0 )
+        document.Delete( openEndPointMarkInstanceIds ) ;
+    }
   }
 }
