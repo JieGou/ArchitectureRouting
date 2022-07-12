@@ -1,9 +1,12 @@
 using Arent3d.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
@@ -22,6 +25,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     protected override void BeforeInitialize( Document document )
     {
       FilterHelper.InitialFilters( document ) ;
+      LoadDefaultElectricalDb( document ) ;
     }
 
     protected override bool Setup( Document document )
@@ -39,6 +43,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
 
       return RoutingSettingsAreInitialized( document ) ;
+    }
+
+    private void LoadDefaultElectricalDb( Document document )
+    {
+      var activeViewName = document.ActiveView.Name ;
+      var defaultSettingStorable = document.GetDefaultSettingStorable() ;
+      var setupPrintStorable = document.GetSetupPrintStorable() ;
+      var scale = setupPrintStorable.Scale ;
+      var defaultSettingViewModel = new DefaultSettingViewModel( new UIDocument( document ), defaultSettingStorable,
+        scale, activeViewName ) ;
+      defaultSettingViewModel.LoadDefaultDb() ;
     }
   }
 }
