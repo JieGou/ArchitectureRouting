@@ -163,11 +163,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private XYZ NearestToPoint( XYZ toPoint, XYZ direction )
     {
-      if(direction.Y is -1) return new XYZ( toPoint.X - 1.5, toPoint.Y, toPoint.Z ) ;
-      if(direction.Y is 1) return new XYZ( toPoint.X - 1.5, toPoint.Y - 2, toPoint.Z ) ;
+      if(direction.Y is -1) return new XYZ( toPoint.X - 1.5, toPoint.Y + 1, toPoint.Z ) ;
+      if(direction.Y is 1) return new XYZ( toPoint.X - 1.5, toPoint.Y - 3, toPoint.Z ) ;
       
-      if(direction.X is -1) return new XYZ( toPoint.X, toPoint.Y + 1.5, toPoint.Z ) ;
-      if(direction.X is 1) return new XYZ( toPoint.X - 1.5, toPoint.Y + 1.5, toPoint.Z ) ;
+      if(direction.X is -1) return new XYZ( toPoint.X + 1, toPoint.Y + 1.5, toPoint.Z ) ;
+      if(direction.X is 1) return new XYZ( toPoint.X - 3, toPoint.Y + 1.5, toPoint.Z ) ;
       
       return new XYZ( toPoint.X, toPoint.Y, toPoint.Z ) ;
     }
