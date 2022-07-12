@@ -323,7 +323,7 @@
         <string>選択範囲配線</string>
 
         <key>TransactionName.Commands.Initialization.PickUpMapCreation</key>
-        <string>拾い図作成</string>
+        <string>電線長さ表示</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
@@ -507,7 +507,7 @@
         <string>プルボックス&#xA;自動計算</string>
 
         <key>Electrical.App.Commands.Initialization.PickUpMapCreationCommand</key>
-        <string>拾い図作成</string>
+        <string>電線長さ表示</string>
 
         <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
         <string>ピックアップ番号設定</string>
