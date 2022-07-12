@@ -120,11 +120,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var point = NearestToPoint( toPoint, direction ) ;
           while ( positionsTextNote.Any( x => Math.Abs( x.X - point.X ) == 0 && Math.Abs( x.Y - point.Y ) == 0 ) ) {
             if ( direction.Y is 1 or -1 ) {
-              point = new XYZ( point.X, point.Y + 0.5, point.Z ) ;
+              point = new XYZ( point.X, point.Y + 1.3, point.Z ) ;
             }
             
             if ( direction.X is 1 or -1 ) {
-              point = new XYZ( point.X + 0.5, point.Y, point.Z ) ;
+              point = new XYZ( point.X + 1.3, point.Y, point.Z ) ;
             }
           }
           positionsTextNote.Add( point );
