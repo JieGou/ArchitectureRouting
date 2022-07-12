@@ -384,7 +384,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             
               foreach ( var dataPickUpModel in dataPickUpModels ) {
-                dictionaryDataPickUpModel.Add( new KeyValuePair<string, List<PickUpModel>>( dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels ) ) ;
+                if ( dictionaryDataPickUpModel.Any( l => l.Key == dataPickUpModel.ProductCode ) && ! IsTani( dataPickUpModel.PickUpModels.First() ) ) {
+                  var dataPickUpModelExist = dictionaryDataPickUpModel.Single( x => x.Key == dataPickUpModel.ProductCode ) ;
+                  dataPickUpModelExist.Value.AddRange( dataPickUpModel.PickUpModels );
+                }
+                else {
+                  dictionaryDataPickUpModel.Add( new KeyValuePair<string, List<PickUpModel>>(dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels) );
+                }
               }
             }
 
@@ -443,7 +449,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code )
               .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             foreach ( var dataPickUpModel in dataPickUpModels ) {
-              dictionaryDataPickUpModelSummary.Add( new KeyValuePair<string, List<PickUpModel>>( dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels ) );
+              if ( dictionaryDataPickUpModelSummary.Any( l => l.Key == dataPickUpModel.ProductCode ) && ! IsTani( dataPickUpModel.PickUpModels.First() ) ) {
+                var dataPickUpModelExist = dictionaryDataPickUpModelSummary.Single( x => x.Key == dataPickUpModel.ProductCode ) ;
+                dataPickUpModelExist.Value.AddRange( dataPickUpModel.PickUpModels );
+              }
+              else {
+                dictionaryDataPickUpModelSummary.Add( new KeyValuePair<string, List<PickUpModel>>(dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels) );
+              }
             }
           }
           
