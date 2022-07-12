@@ -27,6 +27,7 @@
     <Reference Include="Arent3d.Utility, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
       <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="PresentationCore, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
       <HintPath>C:\Windows\Microsoft.Net\assembly\GAC_64\PresentationCore\v4.0_4.0.0.0__31bf3856ad364e35\PresentationCore.dll</HintPath>
     </Reference>

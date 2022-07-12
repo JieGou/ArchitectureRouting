@@ -572,11 +572,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( DemoDeleteAllRoutedElements ) )]
         private static class DemoDeleteAllRoutedElementsCommandButton { }
         
-        [Button( typeof( OldStorableCommand ) )]
-        private static class OldStorableCommandButton { }
+        // [Button( typeof( OldStorableCommand ) )]
+        // private static class OldStorableCommandButton { }
+        //
+        // [Button( typeof( NewStorableCommand ) )]
+        // private static class NewStorableCommandButton { }
         
-        [Button( typeof( NewStorableCommand ) )]
-        private static class NewStorableCommandButton { }
+        [Button( typeof( TestStorageCommand ) )]
+        private static class TestStorageCommandButton { }
       }
 
       [Panel( "arent3d.architecture.rc.debug", TitleKey = "App.Panels.Rc.Debug" )]
