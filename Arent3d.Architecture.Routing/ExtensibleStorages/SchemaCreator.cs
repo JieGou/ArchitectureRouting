@@ -2,6 +2,7 @@
 using System.IO ;
 using System.Reflection ;
 using Arent3d.Architecture.Routing.ExtensibleStorages.Attributes ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.ExtensibleStorages
@@ -15,9 +16,12 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
     private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new() ;
     private readonly IFieldFactory _fieldFactory = new FieldFactory() ;
 
-    public Schema CreateSchema( Type type )
+    public Schema FindOrCreate( Type type )
     {
       var schemaAttribute = _schemaAttributeExtractor.GetAttribute( type ) ;
+      if ( Schema.Lookup( schemaAttribute.GUID ) is { } schema )
+        return schema ;
+
       if ( ! SchemaBuilder.GUIDIsValid( schemaAttribute.GUID ) )
         throw new InvalidDataException( $"GUID of the type {nameof( type )} is invalid." ) ;
 
@@ -55,7 +59,7 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
           fieldBuilder.SetDocumentation( fieldAttribute.Documentation ) ;
 
         if ( fieldBuilder.NeedsUnits() )
-          fieldBuilder.SetSpec( fieldAttribute.SpecType ) ;
+          fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
       }
 
       return schemaBuilder.Finish() ;

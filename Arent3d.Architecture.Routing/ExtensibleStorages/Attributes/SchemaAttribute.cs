@@ -6,23 +6,23 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Attributes
   /// <summary>
   /// Definition of a schema
   /// </summary>
-  [AttributeUsage(AttributeTargets.Class)]
+  [AttributeUsage( AttributeTargets.Class )]
   public class SchemaAttribute : Attribute
   {
-    public SchemaAttribute(string guid, string schemaName)
+    public SchemaAttribute( string guid, string schemaName )
     {
       if ( ! Guid.TryParse( guid, out var value ) )
         throw new InvalidCastException( "GUID value is not in the correct format." ) ;
-      
-      GUID = value;
-      SchemaName = schemaName;
+
+      GUID = value ;
+      SchemaName = schemaName ;
     }
 
     public Guid GUID { get ; }
     public string SchemaName { get ; }
-    
 
-    public Guid ApplicationGUID { get; set; } = Guid.Empty;
+
+    public Guid ApplicationGUID { get ; set ; } = Guid.Empty ;
 
     public string Documentation { get ; set ; } = string.Empty ;
 

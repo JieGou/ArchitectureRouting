@@ -2,6 +2,7 @@
 {
   public static class SpecType
   {
+    #region Revit 2022
     public const string WireDiameter = "autodesk.spec.aec.electrical:wireDiameter-2.0.0" ;
     public const string WeightPerUnitLength = "autodesk.spec.aec.structural:weightPerUnitLength-2.0.0" ;
     public const string Weight = "autodesk.spec.aec.structural:weight-2.0.0" ;
@@ -161,5 +162,6 @@
     public const string Url = "autodesk.spec.string:url-2.0.0" ;
     public const string Text = "autodesk.spec:spec.string-2.0.0" ;
     public const string MultilineText = "autodesk.spec.aec:multilineText-2.0.0" ;
+    #endregion
   }
 }

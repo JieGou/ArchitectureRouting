@@ -2,40 +2,50 @@
 using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.ExtensibleStorages.Attributes ;
 using Arent3d.Architecture.Routing.ExtensibleStorages.Extensions ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.ExtensibleStorages
 {
   public class EntityConverter : IEntityConverter
   {
-    private readonly ISchemaCreator _schemaCreator;
-    
-    public EntityConverter(ISchemaCreator schemaCreator)
+    private readonly ISchemaCreator _schemaCreator ;
+    private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new() ;
+
+    public EntityConverter( ISchemaCreator schemaCreator )
     {
-      _schemaCreator = schemaCreator;
+      _schemaCreator = schemaCreator ;
     }
 
     public Entity Convert( IModelEntity modelEntity )
     {
       var modelType = modelEntity.GetType() ;
-      var schema = _schemaCreator.CreateSchema( modelType ) ;
+      var schema = _schemaCreator.FindOrCreate( modelType ) ;
       var entity = new Entity( schema ) ;
-      
+
       var schemaFields = schema.ListFields() ;
       foreach ( var field in schemaFields ) {
-        var property = modelType.GetProperty( field.FieldName ) ;
-        if(null == property)
-          continue;
-        
-        dynamic propertyValue = property.GetValue( modelEntity ) ;
+        var propertyInfo = modelType.GetProperty( field.FieldName ) ;
+        if ( null == propertyInfo )
+          continue ;
+
+        var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyInfo ) ;
+        dynamic propertyValue = propertyInfo.GetValue( modelEntity ) ;
         if ( propertyValue is null )
           continue ;
 
         switch ( field.ContainerType ) {
           case ContainerType.Simple :
             propertyValue = ConvertSimpleProperty( propertyValue, field ) ;
-            entity.Set( field, propertyValue ) ;
+
+            if ( field.GetSpecTypeId().Empty() ) {
+              entity.Set( field, propertyValue ) ;
+            }
+            else if ( IsCompatibleUnitType( field, fieldAttribute.UnitTypeId ) ) {
+              entity.Set( field, propertyValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
+            }
 
             break ;
           case ContainerType.Array :
@@ -43,20 +53,30 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
               continue ;
 
             var convertedArrayFieldValue = ConvertArrayProperty( propertyValue, field ) ;
-            EntityExtension.SetWrapper( entity, field, convertedArrayFieldValue ) ;
+            if ( field.GetSpecTypeId().Empty() ) {
+              EntityExtension.SetWrapper( entity, field, convertedArrayFieldValue ) ;
+            }
+            else if ( IsCompatibleUnitType( field, fieldAttribute.UnitTypeId ) ) {
+              EntityExtension.SetWrapper( entity, field, convertedArrayFieldValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
+            }
 
             break ;
 
           case ContainerType.Map :
             if ( propertyValue.Count == 0 )
               continue ;
-            
+
             var convertedMapFieldValue = ConvertMapProperty( propertyValue, field ) ;
-            EntityExtension.SetWrapper( entity, field, convertedMapFieldValue ) ;
+            if ( field.GetSpecTypeId().Empty() ) {
+              EntityExtension.SetWrapper( entity, field, convertedMapFieldValue ) ;
+            }
+            else if ( IsCompatibleUnitType( field, fieldAttribute.UnitTypeId ) ) {
+              EntityExtension.SetWrapper( entity, field, convertedMapFieldValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
+            }
 
             break ;
           default :
-            throw new NotSupportedException( $"Unknown {typeof(ContainerType).FullName}." ) ;
+            throw new NotSupportedException( $"Unknown {typeof( ContainerType ).FullName}." ) ;
         }
       }
 
@@ -68,37 +88,36 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
       var modelType = typeof( TModelEntity ) ;
       var modelInstance = Activator.CreateInstance<TModelEntity>() ;
 
-      var schema = entity.Schema ;
-      var schemaFields = schema.ListFields() ;
+      var schemaFields = entity.Schema.ListFields() ;
       foreach ( var field in schemaFields ) {
         var property = modelType.GetProperty( field.FieldName ) ;
-        if(null == property)
-          continue;
-        
+        if ( null == property )
+          continue ;
+
         object? entityValue = null ;
         switch ( field.ContainerType ) {
           case ContainerType.Simple :
             entityValue = GetEntityFieldValue( entity, field, field.ValueType ) ;
-            if ( entityValue is Entity subEntity && subEntity.Schema != null)
+            if ( entityValue is Entity subEntity && subEntity.Schema != null )
               entityValue = Convert( property.PropertyType, subEntity ) ;
-            
+
             break ;
           case ContainerType.Array :
             var listType = typeof( IList<> ) ;
             var genericListType = listType.MakeGenericType( field.ValueType ) ;
             entityValue = GetEntityFieldValue( entity, field, genericListType ) ;
 
-            if(entityValue is not IList listEntityValues)
-              continue;
+            if ( entityValue is not IList listEntityValues )
+              continue ;
 
             IList listProperty ;
             if ( property.PropertyType.GetConstructor( new[] { typeof( int ) } ) != null ) {
-              listProperty = ( IList ) Activator.CreateInstance( property.PropertyType, listEntityValues.Count ) ;
+              listProperty = (IList) Activator.CreateInstance( property.PropertyType, listEntityValues.Count ) ;
             }
             else {
-              listProperty = ( IList ) Activator.CreateInstance( property.PropertyType ) ;
+              listProperty = (IList) Activator.CreateInstance( property.PropertyType ) ;
             }
-            
+
             if ( field.ValueType == typeof( Entity ) ) {
               var subModelType = property.PropertyType.GetGenericArguments()[ 0 ] ;
               foreach ( Entity listEntityValue in listEntityValues ) {
@@ -119,18 +138,18 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
             var dicitonaryType = typeof( IDictionary<,> ) ;
             var genericDicitionaryType = dicitonaryType.MakeGenericType( field.KeyType, field.ValueType ) ;
             entityValue = GetEntityFieldValue( entity, field, genericDicitionaryType ) ;
-            
-            if ( entityValue is not IDictionary mapEntityValues ) 
+
+            if ( entityValue is not IDictionary mapEntityValues )
               continue ;
 
             IDictionary dictProperty ;
             if ( property.PropertyType.GetConstructor( new[] { typeof( int ) } ) != null ) {
-              dictProperty = ( IDictionary ) Activator.CreateInstance( property.PropertyType, mapEntityValues.Count ) ;
+              dictProperty = (IDictionary) Activator.CreateInstance( property.PropertyType, mapEntityValues.Count ) ;
             }
             else {
-              dictProperty = ( IDictionary ) Activator.CreateInstance( property.PropertyType ) ;
+              dictProperty = (IDictionary) Activator.CreateInstance( property.PropertyType ) ;
             }
-            
+
             if ( field.ValueType == typeof( Entity ) ) {
               var subModelType = property.PropertyType.GetGenericArguments()[ 1 ] ;
 
@@ -157,19 +176,24 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
       return modelInstance ;
     }
 
+    #region Methods
+
     private object ConvertMapProperty( dynamic propertyValue, Field field )
     {
+      if ( field.ContainerType != ContainerType.Map )
+        throw new InvalidOperationException( "Field is not a map type." ) ;
+      
       Type propertyValueType = propertyValue.GetType() ;
       var isImplementIDictionaryInterface = propertyValueType.GetInterfaces().Any( x => x.GetGenericTypeDefinition() == typeof( IDictionary<,> ) ) ;
       if ( ! isImplementIDictionaryInterface )
         throw new NotSupportedException( "Unsupported type." ) ;
 
-      if ( field.ValueType != typeof( Entity ) ) 
+      if ( field.ValueType != typeof( Entity ) )
         return propertyValue ;
-      
+
       var dictionaryType = typeof( Dictionary<,> ).MakeGenericType( field.KeyType, typeof( Entity ) ) ;
 
-      var mapArray = ( IDictionary ) Activator.CreateInstance( dictionaryType, new object[] { propertyValue.Count } ) ;
+      var mapArray = (IDictionary) Activator.CreateInstance( dictionaryType, new object[] { propertyValue.Count } ) ;
       foreach ( var keyValuePair in propertyValue ) {
         var convertedEntity = Convert( keyValuePair.Value ) ;
         mapArray.Add( keyValuePair.Key, convertedEntity ) ;
@@ -177,28 +201,31 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
 
       return mapArray ;
     }
-    
-    private object ConvertSimpleProperty(dynamic propertyValue, Field field)
+
+    private object ConvertSimpleProperty( dynamic propertyValue, Field field )
     {
-      if (field.ContainerType != ContainerType.Simple)
-        throw new InvalidOperationException("Field is not a simple type.");
-      
-      if (field.ValueType == typeof (Entity))
-        propertyValue = Convert(propertyValue);
-      
-      return propertyValue;
+      if ( field.ContainerType != ContainerType.Simple )
+        throw new InvalidOperationException( "Field is not a simple type." ) ;
+
+      if ( field.ValueType == typeof( Entity ) )
+        propertyValue = Convert( propertyValue ) ;
+
+      return propertyValue ;
     }
 
     private object ConvertArrayProperty( dynamic propertyValue, Field field )
     {
+      if ( field.ContainerType != ContainerType.Array )
+        throw new InvalidOperationException( "Field is not a array type." ) ;
+      
       Type propertyValueType = propertyValue.GetType() ;
       var isImplementIListInterface = propertyValueType.GetInterfaces().Any( x => x.GetGenericTypeDefinition() == typeof( IList<> ) ) ;
-      if ( ! isImplementIListInterface ) 
+      if ( ! isImplementIListInterface )
         throw new NotSupportedException( "Unsupported type." ) ;
 
-      if ( field.ValueType != typeof( Entity ) ) 
+      if ( field.ValueType != typeof( Entity ) )
         return propertyValue ;
-      
+
       IList<Entity> entityList = new List<Entity>( propertyValue.Count ) ;
       foreach ( IModelEntity modelEntity in propertyValue ) {
         var convertedEntity = Convert( modelEntity ) ;
@@ -207,30 +234,60 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
 
       return entityList ;
     }
-    
-    private object Convert(Type modelEntityType, Entity entity)
-    {
-      var convertMethod = GetType().GetMethod(nameof(Convert), new[] { typeof(Entity) });
-      if ( null == convertMethod )
-        throw new InvalidOperationException($"Not found the {nameof(Convert)} method.") ;
-      
-      var convertMethodGeneric = convertMethod.MakeGenericMethod(modelEntityType);
-      var iEntity = convertMethodGeneric.Invoke(this, new object[] { entity });
-      return iEntity;
-    }
-    
-    private static object? GetEntityFieldValue(Entity entity, Field field, Type fieldValueType)
-    {
-      if (field.SubSchemaGUID != Guid.Empty && field.SubSchema == null)
-        return null;
 
-      var entityGetMethod = entity.GetType().GetMethod(nameof(Entity.Get), new[] {typeof (Field)});
-      if(null == entityGetMethod)
-        throw new InvalidOperationException($"Not found the {nameof(Entity.Get)} method.") ;
-      
-      var entityGetMethodGeneric = entityGetMethod.MakeGenericMethod(fieldValueType);
-      var entityValue = entityGetMethodGeneric.Invoke(entity, new object[] {field}) ;
-      return entityValue;
+    private object Convert( Type modelEntityType, Entity entity )
+    {
+      var convertMethod = GetType().GetMethod( nameof( Convert ), new[] { typeof( Entity ) } ) ;
+      if ( null == convertMethod )
+        throw new InvalidOperationException( $"Not found the {nameof( Convert )} method of the {modelEntityType.Name} type." ) ;
+
+      var convertMethodGeneric = convertMethod.MakeGenericMethod( modelEntityType ) ;
+      var iEntity = convertMethodGeneric.Invoke( this, new object[] { entity } ) ;
+      return iEntity ;
     }
+
+    private object? GetEntityFieldValue( Entity entity, Field field, Type fieldValueType )
+    {
+      if ( field.SubSchemaGUID != Guid.Empty && field.SubSchema == null )
+        return null ;
+
+      object? entityValue = null ;
+      if ( field.GetSpecTypeId().Empty() ) {
+        var entityGetMethod = entity.GetType().GetMethod( nameof( Entity.Get ), new[] { typeof( Field ) } ) ;
+        if ( null == entityGetMethod )
+          throw new InvalidOperationException( $"Not found the {nameof( Entity.Get )} method of the {typeof(Entity)} type." ) ;
+
+        var entityGetMethodGeneric = entityGetMethod.MakeGenericMethod( fieldValueType ) ;
+        entityValue = entityGetMethodGeneric.Invoke( entity, new object[] { field } ) ;
+      }
+      else {
+        var propertyInfo = fieldValueType.GetProperty( field.FieldName ) ;
+        if ( null == propertyInfo )
+          throw new InvalidOperationException( $"Not found the {field.FieldName} property of the {fieldValueType.Name} type." ) ;
+
+        var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyInfo ) ;
+        if ( ! IsCompatibleUnitType( field, fieldAttribute.UnitTypeId ) )
+          return entityValue ;
+
+        var entityGetMethod = entity.GetType().GetMethod( nameof( Entity.Get ), new[] { typeof( Field ), typeof( ForgeTypeId ) } ) ;
+        if ( null == entityGetMethod )
+          throw new InvalidOperationException( $"Not found the {nameof( Entity.Get )} method of the {typeof(Entity)} type." ) ;
+
+        var entityGetMethodGeneric = entityGetMethod.MakeGenericMethod( fieldValueType ) ;
+        entityValue = entityGetMethodGeneric.Invoke( entity, new object[] { field, new ForgeTypeId( fieldAttribute.UnitTypeId ) } ) ;
+      }
+
+      return entityValue ;
+    }
+
+    private static bool IsCompatibleUnitType( Field field, string unitTypeId )
+    {
+      if ( ! field.CompatibleUnit( new ForgeTypeId( unitTypeId ) ) )
+        throw new ArgumentException( $"At field {field.FieldName}, {nameof( UnitTypeId )} don't compatible with {nameof( SpecTypeId )}." ) ;
+
+      return true ;
+    }
+
+    #endregion
   }
 }
