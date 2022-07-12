@@ -670,12 +670,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string?> isEcoModes, string? isEcoMode, List<string> constructionClassifications, string constructionClassification,
       string plumbingInfo, List<string> routeNames, string? connectorId = null )
     {
-      var routeName = conduit.GetRouteName() ;
+      var routeName = conduit.GetRouteName()! ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
       routeNames.Add( routeName! );
       var checkPickUp = string.IsNullOrEmpty( connectorId ) 
-        ? AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers, dictMaterialCode ) 
-        : AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers, connectorId! ) ;
+        ? AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, dictMaterialCode ) 
+        : AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, connectorId! ) ;
       if ( ! checkPickUp ) return ;
       switch ( conduitType ) {
         case ConduitType.Conduit :
@@ -693,7 +695,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       isEcoModes.Add( string.IsNullOrEmpty( isEcoMode ) ? string.Empty : isEcoMode ) ;
       constructionClassifications.Add( constructionClassification ) ;
       plumbingInfos.Add( plumbingInfo ) ;
-      if ( routeName != null && pullBoxs.Any() && ! routes.Contains( routeName )) {
+      if ( pullBoxs.Any() && ! routes.Contains( routeName ) ) {
         var lengthPullBox = GetLengthPullBox( routes, routeName ) ;
         if ( lengthPullBox != null ) {
           quantity += (double) lengthPullBox ;
@@ -710,7 +712,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
       if ( toConnector == null || (_detailTableStorable.DetailTableModelData.FirstOrDefault(x=>x.DetailSymbolId == toConnector.UniqueId) == null
-           &&  toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
+           && toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) ) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
@@ -837,7 +839,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private Element? GetConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName, bool isFrom )
     {
-      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
       foreach ( var conduit in conduitsOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
@@ -845,7 +847,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var toElementId = toEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( toElementId ) ) continue ;
         var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
-        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() || toConnector.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) continue ;
         return toConnector ;
       }
 

@@ -185,7 +185,7 @@
         <string>未設定確認</string>
         
         <key>Electrical.App.Commands.Initialization.BulkHighlightOffCommand</key>
-        <string>バルクハイライトオフ</string>
+        <string>一括&#xA;ハイライトオフ</string>
 
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>表分割</string>
