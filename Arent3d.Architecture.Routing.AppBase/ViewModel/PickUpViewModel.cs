@@ -47,6 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterEcoModels ;
     private Dictionary<int, string> _pickUpNumbers ;
     private int _pickUpNumber ;
+    public List<PickUpModel> DataPickUpModels ;
 
     public RelayCommand<Window> ExportFileCommand => new(ExportFile) ;
     public RelayCommand<Window> SaveCommand => new(Save) ;
@@ -178,6 +179,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _symbolInformationStorable = _document.GetSymbolInformationStorable() ;
       _ceedDetailStorable = _document.GetCeedDetailStorable() ;
       _pickUpModels = GetPickUpData(equipmentCategory) ;
+      DataPickUpModels = _pickUpModels ;
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have element.", "Result Message" ) ;
       else {

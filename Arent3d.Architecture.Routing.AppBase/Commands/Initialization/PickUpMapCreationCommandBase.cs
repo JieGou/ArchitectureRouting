@@ -142,7 +142,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var distance = toPosition.DistanceTo( toPoint ) ;
           if ( direction.Z is 1 or -1 ) continue ;
           var lengthConduit = conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
-          if ( distance < minDistance && lengthConduit > 3.0) {
+          if ( distance < minDistance && lengthConduit > 1.0) {
             minDistance = distance ;
             result = conduitOfRoute ;
           }

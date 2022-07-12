@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       if ( IsDoconEnable ) {
         var pickUpViewModel = new PickUpViewModel( _document ) ;
-        PickUpModels = pickUpViewModel.OriginPickUpModels ;
+        PickUpModels = pickUpViewModel.DataPickUpModels ;
       }
 
       window.DialogResult = true ;
