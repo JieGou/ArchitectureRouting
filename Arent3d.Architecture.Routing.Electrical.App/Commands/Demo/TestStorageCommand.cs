@@ -28,10 +28,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
       trans.Start( "Set Data" ) ;
       
       var element = document.GetElement( selection.PickObject( ObjectType.Element ) ) ;
-
-      // var model = new SimpleModel { Value = 10 } ;
-      // element.SetEntity( model ) ;
-
       var model = new ComplexModel
       {
         IntProperty = int.MaxValue,
@@ -61,7 +57,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         {
           new()
           {
-            ArrayField = new List<int>() { 123, 456 },
+            ArrayField = new List<int> { 123, 456 },
             StringProperty = "Hello, world!",
             IntProperty = 99,
             DoubleProperty = 0.0000000056,
@@ -79,9 +75,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
           }
         },
         BoolXyzMap = new Dictionary<bool, XYZ> { { true, new XYZ( 1, 2, 3 ) }, { false, new XYZ( -3, -2, -1 ) } },
-        ByteGuidMap = new SortedDictionary<byte, Guid>() { { 0, new Guid( "D2EF3FB3-0EF9-4F5A-BCBD-A1F84EA658B8" ) }, { 255, new Guid( "71DA88AA-6D47-4BF9-972A-DDB6F90BFAE0" ) }, { 124, new Guid( "1DDF733C-5AA1-4079-99E9-D621DBDFD928" ) } },
-        ShortElementIdMap = new Dictionary<short, ElementId>() { { -23, ElementId.InvalidElementId }, { 124, new ElementId( 245 ) }, { 156, new ElementId( 984534 ) }, { -145, new ElementId( 991233516 ) } },
-        IntSubModelMap = new SortedDictionary<int, SubModel>()
+        ByteGuidMap = new SortedDictionary<byte, Guid> { { 0, new Guid( "D2EF3FB3-0EF9-4F5A-BCBD-A1F84EA658B8" ) }, { 255, new Guid( "71DA88AA-6D47-4BF9-972A-DDB6F90BFAE0" ) }, { 124, new Guid( "1DDF733C-5AA1-4079-99E9-D621DBDFD928" ) } },
+        ShortElementIdMap = new Dictionary<short, ElementId> { { -23, ElementId.InvalidElementId }, { 124, new ElementId( 245 ) }, { 156, new ElementId( 984534 ) }, { -145, new ElementId( 991233516 ) } },
+        IntSubModelMap = new SortedDictionary<int, SubModel>
         {
           {
             -1, new SubModel
@@ -114,17 +110,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
       
       trans.Commit() ;
 
-      var data = element.GetEntity<SimpleModel>() ;
+      var data = element.GetEntity<ComplexModel>() ;
 
       return Result.Succeeded ;
     }
-  }
-
-  [Schema( "4E5B6F62-B8B3-4A2F-9B06-DDD953D4D4BB", nameof( SimpleModel ), Documentation = "Simple Model" )]
-  public class SimpleModel : IModelEntity
-  {
-    [Field( Documentation = "Value" )]
-    public int Value { get ; set ; }
   }
 
   [Schema( "685551F3-04D4-4A34-94CA-0C2E34B2A5BF", nameof( ComplexModel ), Documentation = "The class I want to save in the project" )]
@@ -142,10 +131,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     [Field( Documentation = "Byte Property" )]
     public byte ByteProperty { get ; set ; }
 
-    [Field( Documentation = "Double Property", SpecTypeId = SpecType.Number )]
+    [Field( Documentation = "Double Property", SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public double DoubleProperty { get ; set ; }
 
-    [Field( Documentation = "Float Property", SpecTypeId = SpecType.Number )]
+    [Field( Documentation = "Float Property", SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public float FloatProperty { get ; set ; }
 
     [Field( Documentation = "Boolean Property" )]
@@ -160,10 +149,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     [Field( Documentation = "ElementId Property" )]
     public ElementId? ElementIdProperty { get ; set ; }
 
-    [Field( Documentation = "XYZ Property", SpecTypeId = SpecType.Volume )]
+    [Field( Documentation = "XYZ Property", SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public XYZ? XyzProperty { get ; set ; }
 
-    [Field( Documentation = "UV Property", SpecTypeId = SpecType.DuctInsulationThickness )]
+    [Field( Documentation = "UV Property", SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public UV? UvProperty { get ; set ; }
 
     [Field]
@@ -182,10 +171,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     [Field( Documentation = "BindingList of Byte Property" )]
     public BindingList<byte>? ByteArrayProperty { get ; set ; }
 
-    [Field( Documentation = "ObservableCollection of Double Property", SpecTypeId = SpecType.Number )]
+    [Field( Documentation = "ObservableCollection of Double Property", SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public ObservableCollection<double>? DoubleArrayProperty { get ; set ; }
 
-    [Field( Documentation = "Float List Property", SpecTypeId = SpecType.Number )]
+    [Field( Documentation = "Float List Property", SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public List<float>? FloatArrayProperty { get ; set ; }
 
     [Field( Documentation = "Boolean List Property" )]
@@ -200,10 +189,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     [Field( Documentation = "ElementId List Property" )]
     public List<ElementId>? ElementIdArrayProperty { get ; set ; }
 
-    [Field( Documentation = "XYZ List Property", SpecTypeId = SpecType.PipingTemperature )]
+    [Field( Documentation = "XYZ List Property", SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public Collection<XYZ>? XyzArrayProperty { get ; set ; }
 
-    [Field( Documentation = "UV BindingList Property", SpecTypeId = SpecType.HvacEnergy )]
+    [Field( Documentation = "UV BindingList Property", SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public BindingList<UV>? UvArrayProperty { get ; set ; }
 
     [Field]
@@ -214,7 +203,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
 
     #region Map properties
 
-    [Field]
+    [Field( SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public Dictionary<bool, XYZ>? BoolXyzMap { get ; set ; }
 
     [Field]
@@ -232,7 +221,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     [Field]
     public Dictionary<Guid, DeepModel>? GuidDeepModelMap { get ; set ; }
 
-    [Field( SpecTypeId = SpecType.Number )]
+    [Field( SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public SortedDictionary<string, double>? StringDoubleMap { get ; set ; }
 
     #endregion
@@ -258,7 +247,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     [Field( Documentation = "Integer property" )]
     public int IntProperty { get ; set ; }
 
-    [Field( SpecTypeId = SpecType.Number )]
+    [Field( SpecTypeId = SpecType.Length, UnitTypeId = UnitType.Millimeters )]
     public double DoubleProperty { get ; set ; }
 
     [Field]
