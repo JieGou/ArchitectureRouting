@@ -182,7 +182,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     [Field( Documentation = "Byte Property" )]
     public byte ByteProperty { get ; set ; }
 
-    [Field( Documentation = "Double Property", SpecTypeValue = SpecTypeId.Int.Integer.TypeId )]
+    [Field( Documentation = "Double Property", SpecTypeId = SpecType.Number )]
     public double DoubleProperty { get ; set ; }
 
     [Field( Documentation = "Float Property" )]

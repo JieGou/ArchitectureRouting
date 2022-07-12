@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Attributes
     public FieldAttribute()
     {
       Documentation = string.Empty ;
-      SpecTypeId  = string.Em ;
+      SpecTypeId  = SpecType.Custom ;
     }
 
     public string Documentation { get; set; }
