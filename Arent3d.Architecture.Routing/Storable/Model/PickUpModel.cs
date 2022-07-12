@@ -28,9 +28,10 @@
     public string CeedSetCode { get ; set ; }
     public string DeviceSymbol { get ; set ; }
     public string Condition { get ; set ; }
+    public string SumQuantity { get ; set ; }
 
     public PickUpModel( string? item, string? floor, string? constructionItems, string? equipmentType, string? productName, string? use, string? usageName, string? construction, string? modelNumber, string? specification, string? specification2, string? size, string? quantity, string? tani, string? supplement, string? supplement2, string? group, string? layer, string? classification, string? standard, string? pickUpNumber, string? direction, string? productCode,
-      string? ceedSetCode, string? deviceSymbol, string? condition)
+      string? ceedSetCode, string? deviceSymbol, string? condition, string? sumQuantity )
     {
       Item = item ?? string.Empty ;
       Floor = floor ?? string.Empty ;
@@ -58,6 +59,7 @@
       CeedSetCode = ceedSetCode ?? string.Empty ;
       DeviceSymbol = deviceSymbol ?? string.Empty ;
       Condition = condition ?? string.Empty ;
+      SumQuantity = sumQuantity ?? string.Empty ;
     }
   }
 }

@@ -559,7 +559,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             notSeenQuantities[ item.Direction ] += quantity ;
           }
           else {
-            if ( ! isTani ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? quantity : $"+{quantity}" ;
+            if ( ! isTani ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? item.SumQuantity : $"+{item.SumQuantity}" ;
             seenQuantity += quantity ;
           }
           
