@@ -98,9 +98,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var xPoint  = double.Parse(points.First()) ;
           var yPoint = double.Parse(points.Skip( 1 ).First()) ;
           var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
-          var notSeenQuantityStr = textPickUpNumber + "↓" + Math.Round( notSeenQuantity.Value, 1 ) ;
+          var notSeenQuantityStr = textPickUpNumber + "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
           
-          string textNoteId = CreateTextNote( document, new XYZ( xPoint, yPoint, 0 ), notSeenQuantityStr, true);
+          string textNoteId = CreateTextNote( document, new XYZ( xPoint - 0.5, yPoint + 1.0, 0 ), notSeenQuantityStr, true);
           textNoteIds.Add( new TextNotePickUpModel(textNoteId) );
         }
 
@@ -118,6 +118,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var toPoint = line.GetEndPoint( 1 ) ;
           var direction = line.Direction ;
           var point = MiddlePoint( fromPoint, toPoint, direction ) ;
+          
+          if ( direction.Y is 1 or -1 ) {
+            point = new XYZ( point.X - 1.5, point.Y - 0.8 , point.Z ) ;
+          }
+          
+          if ( direction.X is 1 or -1 ) {
+            point = new XYZ( point.X - 0.8, point.Y , point.Z ) ;
+          }
+          
           while ( positionsTextNote.Any( x => Math.Abs( x.X - point.X ) == 0 && Math.Abs( x.Y - point.Y ) == 0 ) ) {
             if ( direction.Y is 1 or -1 ) {
               point = new XYZ( point.X, point.Y + 1.3, point.Z ) ;
@@ -151,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var distance = toPosition.DistanceTo( toPoint ) ;
           if ( direction.Z is 1 or -1 ) continue ;
           var lengthConduit = conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
-          if ( distance < minDistance && lengthConduit > 1.0) {
+          if ( distance < minDistance && lengthConduit > 1.0 ) {
             minDistance = distance ;
             result = conduitOfRoute ;
           }
@@ -163,9 +172,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private XYZ MiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
     {
-      if(direction.Y is 1 or -1) return new XYZ( (( fromPoint.X + toPoint.X ) / 2 ) + 0.4 , (( fromPoint.Y + toPoint.Y ) / 2 ), fromPoint.Z ) ;
+      if(direction.Y is 1 or -1) return new XYZ( (( fromPoint.X * 3 + toPoint.X * 7) / 10 ), (( fromPoint.Y * 3 + toPoint.Y * 7 ) / 10 ), fromPoint.Z ) ;
       
-      if(direction.X is 1 or -1) return new XYZ( (( fromPoint.X + toPoint.X ) / 2 ), (( fromPoint.Y + toPoint.Y ) / 2) + 0.5, fromPoint.Z ) ;
+      if(direction.X is 1 or -1) return new XYZ( (( fromPoint.X * 3 + toPoint.X * 7 ) / 10 ), (( fromPoint.Y * 3 + toPoint.Y * 7 ) / 10) , fromPoint.Z ) ;
       
       return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
     }
@@ -178,8 +187,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
 
       var textNoteType = textNote.TextNoteType ;
-      double newSize = ( 1.0 / 3.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
+      double newSize = .01 ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
+      textNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( 0 ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
       textNote.ChangeTypeId( textNoteType.Id ) ;
 
       if ( isRotate ) {
