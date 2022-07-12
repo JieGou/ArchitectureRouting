@@ -117,7 +117,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var fromPoint = line.GetEndPoint( 0 ) ;
           var toPoint = line.GetEndPoint( 1 ) ;
           var direction = line.Direction ;
-          var point = NearestToPoint( toPoint, direction ) ;
+          var point = MiddlePoint( fromPoint, toPoint, direction ) ;
           while ( positionsTextNote.Any( x => Math.Abs( x.X - point.X ) == 0 && Math.Abs( x.Y - point.Y ) == 0 ) ) {
             if ( direction.Y is 1 or -1 ) {
               point = new XYZ( point.X, point.Y + 1.3, point.Z ) ;
@@ -161,15 +161,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return result ;
     }
 
-    private XYZ NearestToPoint( XYZ toPoint, XYZ direction )
+    private XYZ MiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
     {
-      if(direction.Y is -1) return new XYZ( toPoint.X - 1.5, toPoint.Y + 1, toPoint.Z ) ;
-      if(direction.Y is 1) return new XYZ( toPoint.X - 1.5, toPoint.Y - 3, toPoint.Z ) ;
+      if(direction.Y is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2 - 1.5 , ( fromPoint.Y + toPoint.Y ) / 2 - 1, fromPoint.Z ) ;
       
-      if(direction.X is -1) return new XYZ( toPoint.X + 1, toPoint.Y + 1.5, toPoint.Z ) ;
-      if(direction.X is 1) return new XYZ( toPoint.X - 3, toPoint.Y + 1.5, toPoint.Z ) ;
+      if(direction.X is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2 - 1, ( fromPoint.Y + toPoint.Y ) / 2 + 1.5, fromPoint.Z ) ;
       
-      return new XYZ( toPoint.X, toPoint.Y, toPoint.Z ) ;
+      return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
     }
 
     private string CreateTextNote(Document doc, XYZ txtPosition, string text, bool isRotate = false, XYZ? direction = null )
