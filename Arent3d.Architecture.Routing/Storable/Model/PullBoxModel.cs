@@ -1,6 +1,4 @@
-using System ;
 using System.Text.RegularExpressions ;
-using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
@@ -43,17 +41,17 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       return int.TryParse( match.Value, out var result ) ? result : 0 ;
     }
 
-    private static string GetPullBoxName( int width, int height) =>
-      (width,height) switch
+    private static string GetPullBoxName( int width, int height ) =>
+      ( width, height ) switch
       {
-        (<=150,<=100) => PullBoxSizeNameConstance.PB1,
-        (<=200,<= 200) => PullBoxSizeNameConstance.PB2,
-        (<=300,<= 300) => PullBoxSizeNameConstance.PB3,
-        (<=400,<= 300) => PullBoxSizeNameConstance.PB4,
-        (<=500,<= 400) => PullBoxSizeNameConstance.PB5,
-        (<=600,<= 400) => PullBoxSizeNameConstance.PB6,
-        (<=800,<= 400) => PullBoxSizeNameConstance.PB8,
-        (<=1000,<= 400) => PullBoxSizeNameConstance.PB10,
+        (<= 150, <= 100) => PullBoxSizeNameConstance.PB1,
+        (<= 200, <= 200) => PullBoxSizeNameConstance.PB2,
+        (<= 300, <= 300) => PullBoxSizeNameConstance.PB3,
+        (<= 400, <= 300) => PullBoxSizeNameConstance.PB4,
+        (<= 500, <= 400) => PullBoxSizeNameConstance.PB5,
+        (<= 600, <= 400) => PullBoxSizeNameConstance.PB6,
+        (<= 800, <= 400) => PullBoxSizeNameConstance.PB8,
+        (<= 1000, <= 400) => PullBoxSizeNameConstance.PB10,
         _ => string.Empty
       } ;
 
