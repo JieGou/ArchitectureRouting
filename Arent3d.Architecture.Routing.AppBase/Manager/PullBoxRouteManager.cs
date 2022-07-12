@@ -722,9 +722,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       else {
         if ( selectedPullBoxModel != null ) {
           buzaiCd = selectedPullBoxModel.Buzaicd ;
-          depth = selectedPullBoxModel.Depth ;
-          height = selectedPullBoxModel.Height ;
-          // ( depth, _, height ) = ParseKikaku( selectedPullBoxModel.Kikaku ) ;
+          ( depth, _, height ) = ParseKikaku( selectedPullBoxModel.Kikaku ) ;
         }
       }
       
