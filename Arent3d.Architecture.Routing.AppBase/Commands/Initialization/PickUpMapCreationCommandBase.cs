@@ -98,9 +98,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var xPoint  = double.Parse(points.First()) ;
           var yPoint = double.Parse(points.Skip( 1 ).First()) ;
           var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
-          var notSeenQuantityStr = textPickUpNumber + "↓" + Math.Round( notSeenQuantity.Value, 1 ) ;
+          var notSeenQuantityStr = textPickUpNumber + "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
           
-          string textNoteId = CreateTextNote( document, new XYZ( xPoint, yPoint, 0 ), notSeenQuantityStr, true);
+          string textNoteId = CreateTextNote( document, new XYZ( xPoint - 0.5, yPoint + 2.5, 0 ), notSeenQuantityStr, true);
           textNoteIds.Add( new TextNotePickUpModel(textNoteId) );
         }
 
@@ -117,14 +117,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var fromPoint = line.GetEndPoint( 0 ) ;
           var toPoint = line.GetEndPoint( 1 ) ;
           var direction = line.Direction ;
-          var point = MiddlePoint( fromPoint, toPoint, direction ) ;
+          var point = NearestToPoint( toPoint, direction ) ;
           while ( positionsTextNote.Any( x => Math.Abs( x.X - point.X ) == 0 && Math.Abs( x.Y - point.Y ) == 0 ) ) {
             if ( direction.Y is 1 or -1 ) {
-              point = new XYZ( point.X, point.Y + 1.3, point.Z ) ;
+              point = new XYZ( point.X, point.Y + 0.5, point.Z ) ;
             }
             
             if ( direction.X is 1 or -1 ) {
-              point = new XYZ( point.X + 1.3, point.Y, point.Z ) ;
+              point = new XYZ( point.X + 0.5, point.Y, point.Z ) ;
             }
           }
           positionsTextNote.Add( point );
@@ -161,26 +161,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return result ;
     }
 
-    private XYZ MiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
+    private XYZ NearestToPoint( XYZ toPoint, XYZ direction )
     {
-      if(direction.Y is 1 or -1) return new XYZ( (( fromPoint.X + toPoint.X ) / 2 ) + 0.4 , (( fromPoint.Y + toPoint.Y ) / 2 ), fromPoint.Z ) ;
+      if(direction.Y is -1) return new XYZ( toPoint.X - 1.5, toPoint.Y, toPoint.Z ) ;
+      if(direction.Y is 1) return new XYZ( toPoint.X - 1.5, toPoint.Y - 2, toPoint.Z ) ;
       
-      if(direction.X is 1 or -1) return new XYZ( (( fromPoint.X + toPoint.X ) / 2 ), (( fromPoint.Y + toPoint.Y ) / 2) + 0.5, fromPoint.Z ) ;
+      if(direction.X is -1) return new XYZ( toPoint.X, toPoint.Y + 1.5, toPoint.Z ) ;
+      if(direction.X is 1) return new XYZ( toPoint.X - 1.5, toPoint.Y + 1.5, toPoint.Z ) ;
       
-      return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
+      return new XYZ( toPoint.X, toPoint.Y, toPoint.Z ) ;
     }
 
     private string CreateTextNote(Document doc, XYZ txtPosition, string text, bool isRotate = false, XYZ? direction = null )
     {
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
-
+      
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
-
-      var textNoteType = textNote.TextNoteType ;
-      double newSize = ( 1.0 / 3.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
-      textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
-      textNote.ChangeTypeId( textNoteType.Id ) ;
+      var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
+      if ( deviceSymbolTextNoteType != null ) textNote.ChangeTypeId( deviceSymbolTextNoteType.Id ) ;
+      else {
+        var textNoteType = textNote.TextNoteType ;
+        var newSize = .005 ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
+        textNote.ChangeTypeId( textNoteType.Id ) ;
+      }
 
       if ( isRotate ) {
         ElementTransformUtils.RotateElement( doc, textNote.Id, Line.CreateBound( txtPosition, txtPosition + XYZ.BasisZ ),  Math.PI / 4 ) ;
