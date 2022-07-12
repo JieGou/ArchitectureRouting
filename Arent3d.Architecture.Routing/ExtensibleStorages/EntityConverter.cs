@@ -40,7 +40,6 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
           case ContainerType.Simple :
             propertyValue = ConvertSimpleProperty( propertyValue, field ) ;
 
-            var a = field.GetSpecTypeId() ;
             if ( field.GetSpecTypeId().Empty() ) {
               entity.Set( field, propertyValue ) ;
             }
@@ -183,12 +182,12 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
     private object ConvertMapProperty( dynamic propertyValue, Field field )
     {
       if ( field.ContainerType != ContainerType.Map )
-        throw new InvalidOperationException( "Field is not a map type." ) ;
+        throw new InvalidOperationException( "Field is not a IDictionary type." ) ;
       
       Type propertyValueType = propertyValue.GetType() ;
-      var isImplementIDictionaryInterface = propertyValueType.GetInterfaces().Any( x => x.GetGenericTypeDefinition() == typeof( IDictionary<,> ) ) ;
-      if ( ! isImplementIDictionaryInterface )
-        throw new NotSupportedException( "Unsupported type." ) ;
+      var isImplementDictionaryInterface = propertyValueType.GetInterfaces().Any( x => x.GetGenericTypeDefinition() == typeof( IDictionary<,> ) ) ;
+      if ( ! isImplementDictionaryInterface )
+        throw new NotSupportedException( $"Unsupported type {propertyValueType.Name}." ) ;
 
       if ( field.ValueType != typeof( Entity ) )
         return propertyValue ;
@@ -218,12 +217,12 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
     private object ConvertArrayProperty( dynamic propertyValue, Field field )
     {
       if ( field.ContainerType != ContainerType.Array )
-        throw new InvalidOperationException( "Field is not a array type." ) ;
+        throw new InvalidOperationException( "Field is not a IList type." ) ;
       
       Type propertyValueType = propertyValue.GetType() ;
-      var isImplementIListInterface = propertyValueType.GetInterfaces().Any( x => x.GetGenericTypeDefinition() == typeof( IList<> ) ) ;
-      if ( ! isImplementIListInterface )
-        throw new NotSupportedException( "Unsupported type." ) ;
+      var isImplementListInterface = propertyValueType.GetInterfaces().Any( x => x.GetGenericTypeDefinition() == typeof( IList<> ) ) ;
+      if ( ! isImplementListInterface )
+        throw new NotSupportedException( $"Unsupported type {propertyValueType.Name}." ) ;
 
       if ( field.ValueType != typeof( Entity ) )
         return propertyValue ;
@@ -244,8 +243,8 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
         throw new InvalidOperationException( $"Not found the {nameof( Convert )} method of the {modelEntityType.Name} type." ) ;
 
       var convertMethodGeneric = convertMethod.MakeGenericMethod( modelEntityType ) ;
-      var iEntity = convertMethodGeneric.Invoke( this, new object[] { entity } ) ;
-      return iEntity ;
+      var modelEntity = convertMethodGeneric.Invoke( this, new object[] { entity } ) ;
+      return modelEntity ;
     }
 
     private object? GetEntityFieldValue( Entity entity, Field field, Type fieldValueType, string unitType )

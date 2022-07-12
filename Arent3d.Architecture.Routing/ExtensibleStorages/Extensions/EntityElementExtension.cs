@@ -31,15 +31,15 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Extensions
       ISchemaCreator schemaCreator = new SchemaCreator() ;
       IEntityConverter entityConverter = new EntityConverter( schemaCreator ) ;
 
-      var revitEntity = entityConverter.Convert<TModelEntity>( entity ) ;
-      return revitEntity ;
+      var modelEntity = entityConverter.Convert<TModelEntity>( entity ) ;
+      return modelEntity ;
     }
 
     public static bool DeleteEntity<TModelEntity>( this Element element ) where TModelEntity : class, IModelEntity
     {
-      var revitEntityType = typeof( TModelEntity ) ;
+      var modelType = typeof( TModelEntity ) ; 
       var schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
-      var schemaAttribute = schemaAttributeExtractor.GetAttribute( revitEntityType ) ;
+      var schemaAttribute = schemaAttributeExtractor.GetAttribute( modelType ) ;
 
       return Schema.Lookup( schemaAttribute.GUID ) is { } schema && element.DeleteEntity( schema ) ;
     }
