@@ -42,11 +42,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             
             var level = document.ActiveView.GenLevel.Name ;
             var routes = viewModel.PickUpModels.Select( x => x.RouteName ).Where(r=> r != "").Distinct() ;
+            var textNotePositions = new List<XYZ>() ; 
             foreach ( var route in routes ) {
               var conduitPickUpModels = viewModel.PickUpModels
                 .Where( p => p.RouteName == route && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ).ToList() ;
-              var textNoteIdsPickUpModels = ShowPickUp( document, viewModel, conduitPickUpModels.First().PickUpModels ) ;
+              var textNoteIdsPickUpModels = ShowPickUp( document, viewModel, conduitPickUpModels.First().PickUpModels, textNotePositions ) ;
               SaveTextNotePickUpModel( document, textNoteIdsPickUpModels ) ;
             }
           }
@@ -65,7 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
-    private List<TextNotePickUpModel> ShowPickUp(Document document, PickUpMapCreationViewModel viewModel , List<PickUpModel> pickUpModels )
+    private List<TextNotePickUpModel> ShowPickUp(Document document, PickUpMapCreationViewModel viewModel , List<PickUpModel> pickUpModels, List<XYZ> positionsTextNote)
     {
       var pickUpNumbers = viewModel.GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
@@ -119,6 +120,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var toPoint = line.GetEndPoint( 1 ) ;
           var direction = line.Direction ;
           var point = MiddlePoint( fromPoint, toPoint, direction ) ;
+          while ( positionsTextNote.Any( x => Math.Abs( x.X - point.X ) == 0 && Math.Abs( x.Y - point.Y ) == 0 ) ) {
+            if ( direction.Y is 1 or -1 ) {
+              point = new XYZ( point.X, point.Y + 1.3, point.Z ) ;
+            }
+            
+            if ( direction.X is 1 or -1 ) {
+              point = new XYZ( point.X + 1.3, point.Y, point.Z ) ;
+            }
+          }
+          positionsTextNote.Add( point );
           var textPickUpNumber = viewModel.DoconTypes.First().TheValue ? "[" + pickUpNumber + "]" : string.Empty ;
           var seenQuantityStr = textPickUpNumber +  Math.Round( seenQuantity, 1 )  ;
           string textNoteId = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
