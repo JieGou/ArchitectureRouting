@@ -71,7 +71,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var textNoteIds = new List<TextNotePickUpModel>() ;
 
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      var lastRoute = routes.LastOrDefault( r => r.Key is { } rName && rName.Contains( routeName ) ) ;
+      var lastRoute = routes.LastOrDefault( r =>
+      {
+        if ( r.Key is not { } rName ) return false ;
+        var routeNameArray = rName.Split( '_' ) ;
+        var strRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+        return strRouteName == routeName ;
+      } ) ;
       var lastSegment = lastRoute.Value.RouteSegments.Last() ;
       double seenQuantity = 0 ;
       Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
@@ -95,7 +101,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var points = notSeenQuantity.Key.Split( ',' ) ;
           var xPoint = double.Parse( points.First() ) ;
           var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
-          var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
+          var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
+          var notSeenQuantityStr = textPickUpNumber + "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
 
           string textNoteId = CreateTextNote( document, new XYZ( xPoint - 0.5, yPoint - 1.5, 0 ), notSeenQuantityStr, true ) ;
           textNoteIds.Add( new TextNotePickUpModel( textNoteId ) ) ;
@@ -148,7 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var distance = toPosition.DistanceTo( toPoint ) ;
           if ( direction.Z is 1 or -1 ) continue ;
           var lengthConduit = conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
-          if ( distance < minDistance && lengthConduit > 1.0) {
+          if ( distance < minDistance && lengthConduit > 1.0 ) {
             minDistance = distance ;
             result = conduitOfRoute ;
           }

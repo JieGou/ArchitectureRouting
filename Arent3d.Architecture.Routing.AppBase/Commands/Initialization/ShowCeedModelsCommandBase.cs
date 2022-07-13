@@ -131,7 +131,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           textNoteType = ( ele as TextNoteType )! ;
           const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
           Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
-          textSize.Set( .01 ) ;
+          textSize.Set( .005 ) ;
           textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
           textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
         }
