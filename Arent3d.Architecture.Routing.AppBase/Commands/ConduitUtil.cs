@@ -1,7 +1,12 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands
 {
@@ -70,6 +75,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       }
 
       return ( fromElementId, toElementId ) ;
+    }
+    
+    public  static  Element? GetConnectorOfRoute( Document document, string routeName, bool isFrom )
+    {
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).Where( e => e.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
+      var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
+      foreach ( var conduit in conduitsOfRoute ) {
+        var toEndPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.First().Key ;
+        var toElementId = toEndPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
+        return toConnector ;
+      }
+
+      return null ;
+    }
+
+    public static IEnumerable<DetailTableModel> GetDetailTableModelsFromConduits(this IEnumerable<Element> allConduits,Document doc)
+    {
+      var csvStorable = doc.GetCsvStorable() ;
+      var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
+      var allConduitIds = allConduits.Select( p => p.UniqueId ).ToList() ;
+      var (detailTableModels, isMixConstructionItems, isExistDetailTableModelRow) =
+        CreateDetailTableCommandBase.CreateDetailTable( doc, csvStorable, detailSymbolStorable, allConduits.ToList(),
+          allConduitIds, false ) ;
+
+      return detailTableModels ;
     }
   }
 }

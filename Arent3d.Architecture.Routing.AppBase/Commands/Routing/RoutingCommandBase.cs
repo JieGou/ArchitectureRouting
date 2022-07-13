@@ -1,4 +1,5 @@
 using System ;
+using System.CodeDom.Compiler ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
@@ -45,9 +46,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Avoid Revit bugs about reducer insertion.
       FixReducers( document, executor, executionResult.Value ) ;
+      IReadOnlyCollection<Route> executionResultValue ;
+
+      // TODO: 個の処理をAfterRouteGeneratedで行うこと
+      if ( result is SelectionRangeRouteCommandBase.SelectState { IsSelectionRangeRouteBetweenPowerConnectors: true } ) {
+        var executionResultChangePriorityConduit = ChangePriorityConduit( document, executionResult.Value, result, executor ) ;
+        if ( Result.Cancelled == executionResultChangePriorityConduit.Result ) return ExecutionResult.Cancelled ;
+        if ( Result.Failed == executionResultChangePriorityConduit.Result ) return ExecutionResult.Failed ;
+        executionResultValue = executionResultChangePriorityConduit.Value ;
+      }
+      else {
+        // Electrical.AppのPickRoutingCommandとSelectionRangeRouteCommandのみで追加処理をしているため、他のAppに影響しないはずです
+        executionResultValue = CreatePullBoxAfterRouteGenerated( document, executor, executionResult.Value, result ) ;
+      }
 
       // execute after route command
-      AfterRouteGenerated( document, executionResult.Value, result ) ;
+      AfterRouteGenerated( document, executionResultValue, result ) ;
 
       return ExecutionResult.Succeeded ;
     }
@@ -173,8 +187,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <returns>Routing from-to records.</returns>
     protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, TUIResult state ) ;
 
+    protected virtual OperationResult<IReadOnlyCollection<Route>> ChangePriorityConduit( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result, RoutingExecutor executor )
+    {
+      return OperationResult<IReadOnlyCollection<Route>>.Cancelled ;
+    }
+    
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
     {
+    }
+    
+    protected virtual IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
+    {
+      return executeResultValue ;
     }
   }
 

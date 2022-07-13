@@ -44,8 +44,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
             }
 
-            if ( string.IsNullOrEmpty( constructionItem ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
-            if ( string.IsNullOrEmpty( isEcoMode ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
+            if ( fromConnector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) && string.IsNullOrEmpty( constructionItem ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            if ( fromConnector.HasParameter( ElectricalRoutingElementParameter.IsEcoMode ) && string.IsNullOrEmpty( isEcoMode ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
           }
         }
 
@@ -69,12 +69,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             UnGroupConnector( document, toConnector, ref connectorGroups ) ;
           }
 
-          if ( string.IsNullOrEmpty( constructionItem ) ) {
+          if ( toConnector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) && string.IsNullOrEmpty( constructionItem ) ) {
             toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             constructionItem = DefaultConstructionItem ;
           }
 
-          if ( string.IsNullOrEmpty( isEcoMode ) ) {
+          if ( toConnector.HasParameter( ElectricalRoutingElementParameter.IsEcoMode ) && string.IsNullOrEmpty( isEcoMode ) ) {
             toConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
             isEcoMode = defaultIsEcoModeValue ;
           }
@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       GroupConnector( document, connectorGroups ) ;
     }
 
-    private static void UnGroupConnector( Document document, Element connector, ref Dictionary<ElementId, List<ElementId>> connectorGroups )
+    public static void UnGroupConnector( Document document, Element connector, ref Dictionary<ElementId, List<ElementId>> connectorGroups )
     {
       var parentGroup = document.GetElement( connector.GroupId ) as Group ;
       if ( parentGroup == null ) return ;
@@ -109,7 +109,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       parentGroup.UngroupMembers() ;
     }
 
-    private static void GroupConnector( Document document, Dictionary<ElementId, List<ElementId>> connectorGroups )
+    public static void GroupConnector( Document document, Dictionary<ElementId, List<ElementId>> connectorGroups )
     {
       using Transaction t = new Transaction( document ) ;
       t.Start( "Group connector" ) ;

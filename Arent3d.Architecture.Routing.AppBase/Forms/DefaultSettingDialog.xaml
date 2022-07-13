@@ -108,7 +108,7 @@
                             </DataGridTextColumn.CellStyle>
                         </DataGridTextColumn>
                         
-                        <DataGridTextColumn Header="階の高" Width="100" CanUserSort="False">
+                        <DataGridTextColumn Header="階高" Width="100" CanUserSort="False">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="FloorHeight" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />

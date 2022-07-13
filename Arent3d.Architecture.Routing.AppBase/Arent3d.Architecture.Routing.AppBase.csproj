@@ -17,6 +17,9 @@
     <EmbeddedResource Remove="Forms\UserControls\**" />
     <None Remove="Forms\UserControls\**" />
     <Page Remove="Forms\UserControls\**" />
+    <Compile Update="Forms\Behaviour.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <None Update="resources\ElectricalCategory.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -103,6 +106,8 @@
     <Resource Include="resources\InsertPassPoint.png" />
     <Resource Include="resources\MEP.ico" />
     <Resource Include="resources\PickFrom-To.png" />
+    <None Remove="resources\Filter_32x32.png" />
+    <Resource Include="resources\Filter_32x32.png" />
     <Resource Include="resources\icon_folder_16x16.png" />
   </ItemGroup>
 

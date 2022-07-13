@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       } ) ;
     }
 
-    private ( TextNote, string) CreateDetailSymbol( Document doc, DetailSymbolSettingDialog detailSymbolSettingDialog, XYZ firstPoint, string angle, bool isParentSymbol )
+    public static ( TextNote, string) CreateDetailSymbol( Document doc, DetailSymbolSettingDialog detailSymbolSettingDialog, XYZ firstPoint, string angle, bool isParentSymbol )
     {
       var scale = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       var baseLengthOfLine = 1d.MillimetersToRevitUnits() * scale ;
@@ -138,7 +138,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( textNote, string.Join( ",", lineIds ) ) ;
     }
 
-    private List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
+    public static List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
     {
       List<string> routeNames = new List<string>() ;
       if ( pickConduit is Conduit ) {
@@ -176,7 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return routeNames ;
     }
 
-    private void DeleteDetailSymbol( Document doc, string detailSymbolId, string lineIds )
+    public static void DeleteDetailSymbol( Document doc, string detailSymbolId, string lineIds )
     {
       var symbolId = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == detailSymbolId ).Select( t => t.Id ).FirstOrDefault() ;
       if ( symbolId != null ) doc.Delete( symbolId ) ;
@@ -186,7 +186,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void UpdateSymbolOfConduitSameSymbolAndDifferentCode( Document doc, List<DetailSymbolModel> detailSymbolModels, string detailSymbol, string ceedCode, List<string> conduitSamePosition )
+    public static void UpdateSymbolOfConduitSameSymbolAndDifferentCode( Document doc, List<DetailSymbolModel> detailSymbolModels, string detailSymbol, string ceedCode, List<string> conduitSamePosition )
     {
       var firstChildSymbol = conduitSamePosition.Any() ? detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != ceedCode && ! conduitSamePosition.Contains( d.ConduitId ) ) : detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != ceedCode ) ;
       if ( firstChildSymbol == null ) return ;
@@ -205,7 +205,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private string? GetRepresentativeRouteName( Document document, Element conduit, string routeName )
+    public static string? GetRepresentativeRouteName( Document document, Element conduit, string routeName )
     {
       var representativeRouteName = string.Empty ;
       if ( conduit is Conduit ) {
@@ -220,13 +220,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return representativeRouteName ;
     }
 
-    private void SaveDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, Element conduit, TextNote detailSymbol, DetailSymbolSettingDialog detailSymbolSettingDialog, string lineIds, bool isParentSymbol )
+    public static void SaveDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, Element conduit, TextNote detailSymbol, DetailSymbolSettingDialog detailSymbolSettingDialog, string lineIds, bool isParentSymbol )
     {
       try {
         const string defaultPlumbingType = "E" ;
-        List<DetailSymbolModel> detailSymbolModels = new List<DetailSymbolModel>() ;
-        List<DetailSymbolModel> detailSymbolModelsIsDeleted = new List<DetailSymbolModel>() ;
-        List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+        List<DetailSymbolModel> detailSymbolModels = new() ;
+        List<DetailSymbolModel> detailSymbolModelsIsDeleted = new() ;
+        List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).Where( e => e.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
         List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.Id != conduit.Id ).ToList() ;
         var routeName = conduit.GetRouteName() ;
         var representativeRouteName = GetRepresentativeRouteName( doc, conduit, routeName! ) ;
@@ -286,7 +286,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void UpdateDetailTableModel( Document doc, string oldDetailSymbolId, string newDetailSymbolId, string detailSymbol )
+    public static void UpdateDetailTableModel( Document doc, string oldDetailSymbolId, string newDetailSymbolId, string detailSymbol )
     {
       try {
         DetailTableStorable detailTableStorable = doc.GetDetailTableStorable() ;
@@ -303,11 +303,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private ( string, string ) GetCeedCodeAndDeviceSymbolOfRouteToConnector( Document doc, List<Element> allConnectors, string routeName )
+    public static ( string, string ) GetCeedCodeAndDeviceSymbolOfRouteToConnector( Document doc, List<Element> allConnectors, string routeName )
     {
       string ceedCode = string.Empty ;
       string deviceSymbol = string.Empty ;
-      var conduitsOfRoute = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      var conduitsOfRoute = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
       foreach ( var conduit in conduitsOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
@@ -322,13 +324,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( ceedCode, deviceSymbol ) ;
     }
 
-    private DetailSymbolModel CreateDetailSymbolModel( Element conduit, string detailSymbolId, string detailSymbol, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
+    public static DetailSymbolModel CreateDetailSymbolModel( Element conduit, string detailSymbolId, string detailSymbol, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
     {
       DetailSymbolModel detailSymbolModel = new DetailSymbolModel( detailSymbolId, detailSymbol, conduit.UniqueId, routeName, ceedCode, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
       return detailSymbolModel ;
     }
 
-    private ( string, string ) GetCeedCodeAndDeviceSymbolOfElement( Element element )
+    public static ( string, string ) GetCeedCodeAndDeviceSymbolOfElement( Element element )
     {
       element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
       if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) return ( string.Empty, string.Empty ) ;
@@ -338,7 +340,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( ceedCode ?? string.Empty, deviceSymbol ?? string.Empty ) ;
     }
 
-    private Category GetLineStyle( Document doc )
+    public static Category GetLineStyle( Document doc )
     {
       var categories = doc.Settings.Categories ;
       var subCategoryName = "MySubCategory" ;
@@ -355,9 +357,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return subCategory ;
     }
 
-    private void AddDetailSymbolForConduitSameRoute( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbolId, string detailSymbol, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
+    public static void AddDetailSymbolForConduitSameRoute( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbolId, string detailSymbol, string lineIds, bool isParentSymbol, string routeName, string ceedCode, int countCableSamePosition, string deviceSymbol, string plumbingType )
     {
-      var conduitOfRoute = allConduit.Where( c => c.GetRouteName() == routeName ).ToList() ;
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      var conduitOfRoute = allConduit.Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
       if ( string.IsNullOrEmpty( ceedCode ) )
         ( ceedCode, deviceSymbol ) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName ) ;
       foreach ( var conduit in conduitOfRoute ) {
@@ -366,11 +370,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void AddDetailSymbolForConduitsSamePosition( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, DetailSymbolSettingDialog detailSymbolSettingDialog, string conduitRouteName, string detailSymbolId, string lineIds, bool isParentSymbol, List<string> routeNamesSamePosition, string plumbingType )
+    public static void AddDetailSymbolForConduitsSamePosition( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, DetailSymbolSettingDialog detailSymbolSettingDialog, string conduitRouteName, string detailSymbolId, string lineIds, bool isParentSymbol, List<string> routeNamesSamePosition, string plumbingType )
     {
-      var routeNames = allConduit.Where( c => routeNamesSamePosition.Contains( c.GetRouteName()! ) && c.GetRouteName() != conduitRouteName ).Select( c => c.GetRouteName() ).Distinct().ToList() ;
+      var routeNames = allConduit.Where( c => routeNamesSamePosition.Contains( c.GetRouteName()! ) && c.GetRouteName() != conduitRouteName ).Select( c => c.GetRouteName()! ).Distinct().ToList() ;
       foreach ( var routeName in routeNames ) {
-        var conduitsOfRouteName = allConduit.Where( c => c.GetRouteName() == routeName ).ToList() ;
+        var routeNameArray = routeName.Split( '_' ) ;
+        var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+        var conduitsOfRouteName = allConduit.Where( c => c.GetRouteName() is { } rName && rName.Contains( mainRouteName ) ).ToList() ;
         if ( ! conduitRouteName.Any() ) continue ;
         var (ceedCode, deviceSymbol) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName! ) ;
         foreach ( var conduit in conduitsOfRouteName ) {
@@ -380,7 +386,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void RemoveDetailSymbolUnused( Document doc, DetailSymbolStorable detailSymbolStorable )
+    public static void RemoveDetailSymbolUnused( Document doc, DetailSymbolStorable detailSymbolStorable )
     {
       var detailSymbolUnused = new List<DetailSymbolModel>() ;
       if ( ! detailSymbolStorable.DetailSymbolModelData.Any() ) return ;
@@ -400,7 +406,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       detailSymbolStorable.Save() ;
     }
 
-    private (List<string>, List<int>, string) CreateValueForCombobox( List<DetailSymbolModel> detailSymbolModels, Element conduit )
+    public static (List<string>, List<int>, string) CreateValueForCombobox( List<DetailSymbolModel> detailSymbolModels, Element conduit )
     {
       List<string> symbols = new List<string>() ;
       for ( var letter = 'A' ; letter <= 'Z' ; letter++ ) {
@@ -436,7 +442,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( symbols, angle, defaultSymbol ) ;
     }
 
-    private List<string> GetAllConduitIdsOfRouteSamePosition( Document doc, Element conduit )
+    public static List<string> GetAllConduitIdsOfRouteSamePosition( Document doc, Element conduit )
     {
       var routeName = conduit.GetRouteName() ?? string.Empty ;
       var representativeRouteName = GetRepresentativeRouteName( doc, conduit, routeName ) ?? string.Empty ;
@@ -446,7 +452,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return conduitIdsSamePosition ;
     }
 
-    private bool CheckDetailSymbolOfConduitDifferentCode( Document doc, Element conduit, List<DetailSymbolModel> detailSymbolModels, string detailSymbol )
+    public static bool CheckDetailSymbolOfConduitDifferentCode( Document doc, Element conduit, List<DetailSymbolModel> detailSymbolModels, string detailSymbol )
     {
       List<string> conduitSamePosition = GetAllConduitIdsOfRouteSamePosition( doc, conduit ) ;
       List<Element> allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
@@ -457,7 +463,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return detailSymbolModel == null ;
     }
 
-    private void CreateNewTextNoteType( Document doc, TextNote textNote, double size, string symbolFont, string symbolStyle, int background, int widthScale, int color )
+    public static void CreateNewTextNoteType( Document doc, TextNote textNote, double size, string symbolFont, string symbolStyle, int background, int widthScale, int color )
     {
       //Create new text type
       var bold = 0 ;
@@ -499,7 +505,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       textNote.ChangeTypeId( textNoteType!.Id ) ;
     }
 
-    private void CreateNewTextNoteType( Document doc, TextNote textNote, int color )
+    public static void CreateNewTextNoteType( Document doc, TextNote textNote, int color )
     {
       //Create new text type
       string strStyleName = textNote.TextNoteType.Name + "-" + color ;
