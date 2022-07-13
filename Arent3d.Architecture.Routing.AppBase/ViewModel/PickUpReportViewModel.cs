@@ -35,8 +35,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string ConfirmationFileType = "拾い根拠確認表" ;
     private const string DoconOff = "ドーコンOFF" ;
     private const string DoconOn = "ドーコンON" ;
-    private const string On = "ON" ;
-    private const string Off = "OFF" ;
+    private const string OnText = "ON" ;
+    private const string OffText = "OFF" ;
     private const string OutputItemAll = "全項目出力" ;
     private const string OutputItemSelection = "出力項目選択" ;
     private const string SummaryFileName = "_拾い出し集計表.xlsx" ;
@@ -135,8 +135,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void GetSaveLocation()
     {
-      const string fileName = "only_choose_folder_and_do_not_edit_file_name.xlsx" ;
-      SaveFileDialog saveFileDialog = new SaveFileDialog { FileName = fileName, Filter = "Csv files (*.xlsx)|*.xlsx", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
+      const string fileName = "フォルダを選択してください.xlsx" ;
+      SaveFileDialog saveFileDialog = new SaveFileDialog { FileName = fileName, InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
 
       if ( saveFileDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK ) return ;
       PathName = Path.GetDirectoryName( saveFileDialog.FileName )! ;
@@ -172,8 +172,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       FileTypes.Add( new ListBoxItem { TheText = ConfirmationFileType, TheValue = false } ) ;
 
       // DoconTypes
-      DoconTypes.Add( new ListBoxItem { TheText = On, TheValue = true } ) ;
-      DoconTypes.Add( new ListBoxItem { TheText = Off, TheValue = false } ) ;
+      DoconTypes.Add( new ListBoxItem { TheText = OnText, TheValue = true } ) ;
+      DoconTypes.Add( new ListBoxItem { TheText = OffText, TheValue = false } ) ;
       
       // OutputItems
       OutputItems.Add( new ListBoxItem { TheText = OutputItemAll, TheValue = true } );
@@ -207,7 +207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       fileNames = new List<string>() ;
       var radioButton = sender as RadioButton ;
       var fileTypes = FileTypes.Where( f => f.TheValue == true ).Select( f => f.TheText ).ToList() ;
-      var docon = radioButton!.Content.ToString() == On ? DoconOn : DoconOff ;
+      var docon = radioButton!.Content.ToString() == OnText ? DoconOn : DoconOff ;
       foreach ( var fileType in fileTypes ) {
         string fileName = string.Empty ;
         switch ( fileType ) {
