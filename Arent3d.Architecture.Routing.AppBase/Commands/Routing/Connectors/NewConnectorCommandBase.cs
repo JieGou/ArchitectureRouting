@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -14,6 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
   {
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
     private string _defaultConstructionItem = "未設定" ;
+    private const string DefaultConnectorWidth = "100" ;
+    private const string DefaultConnectorLength = "150" ;
     protected virtual ConnectorFamilyType? ConnectorType => null ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -48,6 +51,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
     {
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+
+      if ( false == instance.TryGetProperty( "W", out string? connectorWidthString, true ) &&
+           string.IsNullOrEmpty( connectorWidthString ) ) connectorWidthString = DefaultConnectorWidth ;
+      if ( false == instance.TryGetProperty( "D", out string? connectorLengthString, true ) &&
+           string.IsNullOrEmpty( connectorLengthString ) ) connectorLengthString = DefaultConnectorLength ;
+
+      if ( false == int.TryParse( connectorWidthString, out var connectorWidth ) ) return ;
+      if ( false == int.TryParse( connectorLengthString, out var connectorLength ) ) return ;
+
+      var scaleRatio = GetConnectorScaleRatio( uiDocument.Document ) / 100.0 ;
+
+      instance.TrySetProperty( "W", ( connectorWidth * scaleRatio ).MillimetersToRevitUnits() ) ;
+      instance.TrySetProperty( "D", ( connectorLength * scaleRatio ).MillimetersToRevitUnits() ) ;
+
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? _ ) ) return ;
       instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, _defaultConstructionItem ) ;
        
@@ -57,6 +74,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
  
       if ( ConnectorType == null ) return ;
       instance.SetConnectorFamilyType( ConnectorType ?? ConnectorFamilyType.Sensor ) ;
+    }
+
+    private double GetConnectorScaleRatio( Document doc )
+    {
+      var documentScale = doc.ActiveView.Scale ;
+
+      return documentScale switch
+      {
+        <=20 => documentScale * 200.0 /100.0,
+        <=30 => documentScale * 167.7 / 100.0,
+        <=60 => documentScale * 133.3 / 100.0,
+        <=150 => documentScale * 100.0 / 100.0,
+        <=500 => documentScale * 76.7 / 100.0,
+        <=9999 => documentScale * 50.0 / 100.0,
+        _ => throw new ArgumentOutOfRangeException()
+      } ;
+
     }
   }
 }
