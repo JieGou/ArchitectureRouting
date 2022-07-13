@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public static class PickCommandUtil
   {
-    private const double MinToleranceOfConnector = 0.01;
+    private static readonly double MinToleranceOfConnector = ( 350.0 ).MillimetersToRevitUnits();
     public static IDisposable SetTempColor( this UIDocument uiDocument, ConnectorPicker.IPickResult pickResult )
     {
       return new TempColorWrapper( uiDocument, pickResult.GetAllRelatedElements() ) ;
