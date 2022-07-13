@@ -322,6 +322,9 @@
         <key>TransactionName.Commands.Initialization.PickUpMapCreation</key>
         <string>Pick Up Map Creation</string>
 
+        <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
+        <string>Pick Up Number Setting</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>

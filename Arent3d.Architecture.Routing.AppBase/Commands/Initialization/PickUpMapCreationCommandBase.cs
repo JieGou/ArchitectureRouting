@@ -11,6 +11,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Autodesk.Revit.DB.Electrical ;
 
@@ -25,29 +26,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         var result = document.Transaction( "TransactionName.Commands.Initialization.PickUpMapCreation".GetAppStringByKeyOrDefault( "Pick Up Map Creation" ), _ =>
         {
-          var pickUpViewModel = new PickUpViewModel( document ) ;
-          var pickUpModels = pickUpViewModel.DataPickUpModels ;
           var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
           var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any() ;
-          var isDisplayPickUpNumber = textNotePickUpStorable.IsPickUpNumberSetting ;
-          
+
           if ( ! isDisplay ) {
+            var pickUpViewModel = new PickUpViewModel( document ) ;
+            var pickUpModels = pickUpViewModel.DataPickUpModels ;
             if ( ! pickUpModels.Any() ) {
               MessageBox.Show( "Don't have pick up data.", "Message" ) ;
               return Result.Cancelled ;
             }
             
-            var level = document.ActiveView.GenLevel.Name ;
-            var routes = pickUpModels.Select( x => x.RouteName ).Where(r=> r != "").Distinct() ;
-            var textNotePositions = new List<XYZ>() ; 
-            var textNoteNotSeenPositions = new List<XYZ>() ; 
-            foreach ( var route in routes ) {
-              var conduitPickUpModels = pickUpModels
-                .Where( p => p.RouteName == route && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
-                .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ).ToList() ;
-              var textNoteIdsPickUpModels = ShowPickUp( document, isDisplayPickUpNumber, conduitPickUpModels.First().PickUpModels, textNotePositions, textNoteNotSeenPositions ) ;
-              SaveTextNotePickUpModel( document, textNoteIdsPickUpModels ) ;
-            }
+            ShowTextNotePickUp( textNotePickUpStorable, document, pickUpModels ) ;
           }
           else {
             RemoveTextNotePickUp( document ) ;
@@ -63,8 +53,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return Result.Failed ;
       }
     }
-    
-    private List<TextNotePickUpModel> ShowPickUp(Document document, bool isDisplayPickUpNumber ,List<PickUpModel> pickUpModels, List<XYZ> positionsTextNote, List<XYZ> positionsNotSeenTextNote )
+
+    public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document,
+      List<PickUpModel> pickUpModels )
+    {
+      var isDisplayPickUpNumber = textNotePickUpStorable.IsPickUpNumberSetting ;
+      var level = document.ActiveView.GenLevel.Name ;
+      var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
+      var textNotePositions = new List<XYZ>() ;
+      var textNoteNotSeenPositions = new List<XYZ>() ;
+      foreach ( var route in routes ) {
+        var conduitPickUpModels = pickUpModels
+          .Where( p => p.RouteName == route && p.Floor == level &&
+                       p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode,
+            ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ).ToList() ;
+        var textNoteIdsPickUpModels = ShowPickUp( document, isDisplayPickUpNumber, conduitPickUpModels.First().PickUpModels,
+          textNotePositions, textNoteNotSeenPositions ) ;
+        SaveTextNotePickUpModel( document, textNoteIdsPickUpModels ) ;
+      }
+    }
+
+    private static List<TextNotePickUpModel> ShowPickUp(Document document, bool isDisplayPickUpNumber ,List<PickUpModel> pickUpModels, List<XYZ> positionsTextNote, List<XYZ> positionsNotSeenTextNote )
     {
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
@@ -146,7 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return textNoteIds ;
     }
 
-    private Conduit? FindConduitNearest(Document document,List<Conduit> conduitsOfRoute, XYZ toPosition)
+    private static Conduit? FindConduitNearest(Document document,List<Conduit> conduitsOfRoute, XYZ toPosition)
     {
       Conduit? result = null  ;
       
@@ -169,19 +178,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return result ;
     }
 
-    private XYZ MiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
+    private static XYZ MiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
     {
-      if(direction.Y is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2 - 1.5 , ( fromPoint.Y + toPoint.Y ) / 2 - 1, fromPoint.Z ) ;
+      if(direction.Y is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2 - 1.5 , ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
       
-      if(direction.X is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2 - 1, ( fromPoint.Y + toPoint.Y ) / 2 + 1.5, fromPoint.Z ) ;
+      if(direction.X is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2 + 1.5, fromPoint.Z ) ;
       
       return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
     }
 
-    private string CreateTextNote(Document doc, XYZ txtPosition, string text, bool isRotate = false, XYZ? direction = null )
+    private static string CreateTextNote(Document doc, XYZ txtPosition, string text, bool isRotate = false, XYZ? direction = null )
     {
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
-      TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
+      TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Center } ;
       
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
       var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
@@ -212,7 +221,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return textNote.UniqueId ;
     }
 
-    private void SaveTextNotePickUpModel(Document document, List<TextNotePickUpModel> textNotePickUpModels)
+    private static void SaveTextNotePickUpModel(Document document, List<TextNotePickUpModel> textNotePickUpModels)
     {
       var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
       try {
@@ -223,7 +232,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
-    private void RemoveTextNotePickUp( Document document )
+    public static void RemoveTextNotePickUp( Document document )
     {
       var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
       var textNotePickUpData = textNotePickUpStorable.TextNotePickUpData;
@@ -237,7 +246,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       textNotePickUpStorable.TextNotePickUpData = new List<TextNotePickUpModel>() ;
     }
     
-    private List<string> GetPickUpNumbersList( List<PickUpModel> pickUpModels )
+    private static List<string> GetPickUpNumbersList( List<PickUpModel> pickUpModels )
     {
       var pickUpNumberList = new List<string>() ;
       foreach ( var pickUpModel in pickUpModels.Where( pickUpModel => ! pickUpNumberList.Contains( pickUpModel.PickUpNumber ) ) ) {
