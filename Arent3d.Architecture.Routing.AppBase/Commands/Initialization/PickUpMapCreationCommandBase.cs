@@ -1,7 +1,6 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
@@ -70,14 +69,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var pickUpModel = pickUpModels.First() ;
       var routeName = pickUpModel.RouteName ;
       var textNoteIds = new List<TextNotePickUpModel>() ;
-      
+
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      var route = routes.SingleOrDefault( r => r.Key == routeName ) ;
-      var lastSegment = route.Value.RouteSegments.Last() ;
-      
+      var lastRoute = routes.LastOrDefault( r => r.Key is { } rName && rName.Contains( routeName ) ) ;
+      var lastSegment = lastRoute.Value.RouteSegments.Last() ;
+      double seenQuantity = 0 ;
+      Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
       foreach ( var pickUpNumber in pickUpNumbers ) {
-        double seenQuantity = 0 ;
-        Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
         var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
         foreach ( var item in items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ) ) {
           double.TryParse( item.Quantity, out var quantity ) ;
@@ -91,26 +89,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           else
             seenQuantity += quantity ;
         }
-        
+
         // Not seen quantity
         foreach ( var notSeenQuantity in notSeenQuantities ) {
           var points = notSeenQuantity.Key.Split( ',' ) ;
-          var xPoint  = double.Parse(points.First()) ;
-          var yPoint = double.Parse(points.Skip( 1 ).First()) ;
-          var notSeenQuantityStr =  "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
-          
-          string textNoteId = CreateTextNote( document, new XYZ( xPoint - 0.5, yPoint - 1.5, 0 ), notSeenQuantityStr, true);
-          textNoteIds.Add( new TextNotePickUpModel(textNoteId) );
+          var xPoint = double.Parse( points.First() ) ;
+          var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
+          var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
+
+          string textNoteId = CreateTextNote( document, new XYZ( xPoint - 0.5, yPoint - 1.5, 0 ), notSeenQuantityStr, true ) ;
+          textNoteIds.Add( new TextNotePickUpModel( textNoteId ) ) ;
         }
 
         // Seen quantity
-        var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>() ; ;
-        var conduitsOfRoute = allConduits.Where( conduit => conduit.GetRouteName() == routeName ).ToList();
-        
+        var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>() ;
+        var conduitsOfRoute = allConduits.Where( conduit => conduit.GetRouteName() is { } rName && rName == lastRoute.Key ).ToList() ;
+
         var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
 
         var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
-        
+
         if ( conduitNearest is { Location: LocationCurve location } ) {
           var line = ( location.Curve as Line )! ;
           var fromPoint = line.GetEndPoint( 0 ) ;
@@ -121,16 +119,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( direction.Y is 1 or -1 ) {
               point = new XYZ( point.X, point.Y + 1.3, point.Z ) ;
             }
-            
+
             if ( direction.X is 1 or -1 ) {
               point = new XYZ( point.X + 1.3, point.Y, point.Z ) ;
             }
           }
-          positionsTextNote.Add( point );
+          positionsTextNote.Add( point ) ;
           var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
-          var seenQuantityStr = textPickUpNumber +  Math.Round( seenQuantity, 1 )  ;
-          string textNoteId = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
-          textNoteIds.Add( new TextNotePickUpModel(textNoteId)  );
+          var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
+          var textNoteId = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
+          textNoteIds.Add( new TextNotePickUpModel( textNoteId ) ) ;
         }
       }
 
@@ -176,11 +174,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
       var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
-      if ( deviceSymbolTextNoteType != null ) textNote.ChangeTypeId( deviceSymbolTextNoteType.Id ) ;
+      if ( deviceSymbolTextNoteType != null ) {
+        deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( 0 ) ;
+        deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+        deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+        textNote.ChangeTypeId( deviceSymbolTextNoteType.Id ) ;
+      }
       else {
         var textNoteType = textNote.TextNoteType ;
-        var newSize = .005 ;
-        textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( .01 ) ;
+        textNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( 0 ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
         textNote.ChangeTypeId( textNoteType.Id ) ;
       }
 
