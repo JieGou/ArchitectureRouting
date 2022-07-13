@@ -18,6 +18,13 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Attributes
             SchemaName = schemaName ;
         }
 
+        /*
+         * Change the name or data type of the property in the model, please change the model's GUID 
+         * and remove the schema and all entities with the old GUID. Otherwise, there will be a memory leak.
+         * Steps:
+         * 1. Schema.Lookup(Guid guid).
+         * 2. Document.EraseSchemaAndAllEntities(Schema schema).
+         */
         public Guid GUID { get ; }
         public string SchemaName { get ; }
 

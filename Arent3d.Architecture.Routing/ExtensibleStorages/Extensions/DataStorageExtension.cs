@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.Collections.Generic ;
+using System.IO ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
@@ -12,7 +13,7 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Extensions
         public static DataStorage FindOrCreateDataStorageForUser( this Document document )
         {
             if ( string.IsNullOrEmpty( document.Application.Username ) )
-                throw new Exception( "Please login to Revit." ) ;
+                throw new InvalidDataException( "Please login to Revit." ) ;
         
             var dataStorage = document.GetAllInstances<DataStorage>().SingleOrDefault( x => x.Name == $"{AppInfo.VendorId}_{document.Application.Username}" ) ;
             if ( null != dataStorage )

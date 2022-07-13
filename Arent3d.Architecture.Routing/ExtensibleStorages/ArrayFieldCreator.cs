@@ -8,14 +8,14 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
 {
     public class ArrayFieldCreator : IFieldFactory
     {
-        public FieldBuilder CreateField( SchemaBuilder schemaBuilder, PropertyInfo propertyInfo )
+        public FieldBuilder CreateField( SchemaBuilder schemaBuilder, PropertyInfo propertyModel )
         {
             FieldBuilder fieldBuilder ;
 
-            var genericType = propertyInfo.PropertyType.GetGenericArguments()[ 0 ] ;
+            var genericType = propertyModel.PropertyType.GetGenericArguments()[ 0 ] ;
             var dataModelType = genericType.GetInterface( nameof( IDataModel ) ) ;
             if ( null != dataModelType ) {
-                fieldBuilder = schemaBuilder.AddArrayField( propertyInfo.Name, typeof( Entity ) ) ;
+                fieldBuilder = schemaBuilder.AddArrayField( propertyModel.Name, typeof( Entity ) ) ;
 
                 var schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
                 var subSchemaAttribute = schemaAttributeExtractor.GetAttribute( genericType ) ;
@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
                 if ( ! genericType.IsAcceptValueType() )
                     throw new NotSupportedException( $"Type {genericType.Name} is not accepted." ) ;
 
-                fieldBuilder = schemaBuilder.AddArrayField( propertyInfo.Name, genericType ) ;
+                fieldBuilder = schemaBuilder.AddArrayField( propertyModel.Name, genericType ) ;
             }
 
             return fieldBuilder ;
