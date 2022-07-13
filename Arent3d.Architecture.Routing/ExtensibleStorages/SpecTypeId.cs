@@ -1,6 +1,6 @@
 ﻿namespace Arent3d.Architecture.Routing.ExtensibleStorages
 {
-  public static class SpecType
+  public static class SpecTypeId
   {
     #region Revit 2022
     public const string WireDiameter = "autodesk.spec.aec.electrical:wireDiameter-2.0.0" ;

@@ -158,7 +158,8 @@ namespace Arent3d.Architecture.Routing.Storable.Managers
       typeof(Guid),
       typeof(ElementId),
       typeof(XYZ),
-      typeof(UV)
+      typeof(UV),
+      typeof(Entity)
     } ) ;
   }
 }

@@ -8,6 +8,6 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
   /// </summary>
   public interface IFieldFactory
   {
-    FieldBuilder CreateField(SchemaBuilder schemaBuilder, PropertyInfo propertyInfo);
+    FieldBuilder CreateField( SchemaBuilder schemaBuilder, PropertyInfo propertyInfo ) ;
   }
 }

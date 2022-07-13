@@ -1,32 +1,39 @@
-﻿using System.Reflection ;
+﻿using System ;
+using System.Reflection ;
 using Arent3d.Architecture.Routing.ExtensibleStorages.Attributes ;
+using Arent3d.Architecture.Routing.ExtensibleStorages.Extensions ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.ExtensibleStorages
 {
-  internal class MapFieldCreator: IFieldFactory
+  public class MapFieldCreator : IFieldFactory
   {
-    public FieldBuilder CreateField(SchemaBuilder schemaBuilder, PropertyInfo propertyInfo)
+    public FieldBuilder CreateField( SchemaBuilder schemaBuilder, PropertyInfo propertyInfo )
     {
-      FieldBuilder fieldBuilder;
+      FieldBuilder fieldBuilder ;
 
-      var genericKeyType = propertyInfo.PropertyType.GetGenericArguments()[0];
-      var genericValueType = propertyInfo.PropertyType.GetGenericArguments()[1];
+      var genericKeyType = propertyInfo.PropertyType.GetGenericArguments()[ 0 ] ;
+      var genericValueType = propertyInfo.PropertyType.GetGenericArguments()[ 1 ] ;
 
-      if (genericValueType.GetInterface(nameof(IModelEntity)) is not null)
-      {
-        fieldBuilder = schemaBuilder.AddMapField(propertyInfo.Name, genericKeyType, typeof(Entity));
+      var dataModelType = genericValueType.GetInterface( nameof( IDataModel ) ) ;
+      if ( null != dataModelType ) {
+        fieldBuilder = schemaBuilder.AddMapField( propertyInfo.Name, genericKeyType, typeof( Entity ) ) ;
 
-        var schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>();
-        var subSchemaAttribute = schemaAttributeExtractor.GetAttribute(genericValueType);
-        fieldBuilder.SetSubSchemaGUID(subSchemaAttribute.GUID);
+        var schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
+        var subSchemaAttribute = schemaAttributeExtractor.GetAttribute( genericValueType ) ;
+        fieldBuilder.SetSubSchemaGUID( subSchemaAttribute.GUID ) ;
       }
-      else
-      {
-        fieldBuilder = schemaBuilder.AddMapField(propertyInfo.Name, genericKeyType, genericValueType);                
+      else {
+        if ( ! genericValueType.IsAcceptValueType() )
+          throw new NotSupportedException( $"The value type {genericValueType.Name} is not accepted." ) ;
+
+        if ( ! genericKeyType.IsAcceptKeyType() )
+          throw new NotSupportedException( $"The key type {genericKeyType.Name} is not accepted." ) ;
+
+        fieldBuilder = schemaBuilder.AddMapField( propertyInfo.Name, genericKeyType, genericValueType ) ;
       }
 
-      return fieldBuilder;
+      return fieldBuilder ;
     }
   }
 }

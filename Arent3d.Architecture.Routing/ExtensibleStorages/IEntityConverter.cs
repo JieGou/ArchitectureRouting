@@ -5,18 +5,18 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
   public interface IEntityConverter
   {
     /// <summary>
-    /// Convert object from IModelEntity to a Entity object
+    /// Convert object from IDataModel to a Entity object
     /// </summary>
-    /// <param name="modelEntity">IModelEntity object to convert</param>
+    /// <param name="dataModel">IDataModel object to convert</param>
     /// <returns>Entity</returns>
-    Entity Convert(IModelEntity modelEntity);
-    
+    Entity Convert( IDataModel dataModel ) ;
+
     /// <summary>
-    /// Convert Entity to the TModelEntity object
+    /// Convert Entity to the IDataModel object
     /// </summary>
     /// <param name="entity">Entity to convert</param>
-    /// <typeparam name="TModelEntity">The type of the TModelEntity</typeparam>
-    /// <returns>TModelEntity</returns>
-    TModelEntity Convert<TModelEntity>(Entity entity) where TModelEntity : class, IModelEntity;
+    /// <typeparam name="TDataModel">The type of the IDataModel</typeparam>
+    /// <returns>TDataModel</returns>
+    TDataModel Convert<TDataModel>( Entity entity ) where TDataModel : class, IDataModel ;
   }
 }

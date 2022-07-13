@@ -1,5 +1,7 @@
-﻿using System.Reflection ;
+﻿using System ;
+using System.Reflection ;
 using Arent3d.Architecture.Routing.ExtensibleStorages.Attributes ;
+using Arent3d.Architecture.Routing.ExtensibleStorages.Extensions ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.ExtensibleStorages
@@ -11,7 +13,8 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
       FieldBuilder fieldBuilder ;
 
       var genericType = propertyInfo.PropertyType.GetGenericArguments()[ 0 ] ;
-      if ( genericType.GetInterface( nameof( IModelEntity ) ) is not null ) {
+      var dataModelType = genericType.GetInterface( nameof( IDataModel ) ) ;
+      if ( null != dataModelType ) {
         fieldBuilder = schemaBuilder.AddArrayField( propertyInfo.Name, typeof( Entity ) ) ;
 
         var schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
@@ -19,6 +22,9 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
         fieldBuilder.SetSubSchemaGUID( subSchemaAttribute.GUID ) ;
       }
       else {
+        if ( ! genericType.IsAcceptValueType() )
+          throw new NotSupportedException( $"Type {genericType.Name} is not accepted." ) ;
+
         fieldBuilder = schemaBuilder.AddArrayField( propertyInfo.Name, genericType ) ;
       }
 

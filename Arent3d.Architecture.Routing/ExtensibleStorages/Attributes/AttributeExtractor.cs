@@ -13,10 +13,10 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Attributes
     {
       var attributes = memberInfo.GetCustomAttributes( typeof( TAttribute ), false ) ;
       if ( attributes.Length == 0 )
-        throw new InvalidOperationException( $"MemberInfo {memberInfo} does not have a {typeof( TAttribute )}" ) ;
+        throw new InvalidOperationException( $"MemberInfo {memberInfo.Name} does not have a {typeof( TAttribute )}" ) ;
 
       if ( attributes[ 0 ] is not TAttribute atribute )
-        throw new InvalidOperationException( $"MemberInfo {memberInfo} does not have a {typeof( TAttribute )}" ) ;
+        throw new InvalidOperationException( $"MemberInfo {memberInfo.Name} does not have a {typeof( TAttribute )}" ) ;
 
       return atribute ;
     }

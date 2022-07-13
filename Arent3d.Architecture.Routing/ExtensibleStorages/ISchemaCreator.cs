@@ -8,6 +8,6 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
   /// </summary>
   public interface ISchemaCreator
   {
-    Schema FindOrCreate(Type type);
+    Schema FindOrCreate( Type type ) ;
   }
 }

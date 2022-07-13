@@ -12,8 +12,8 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
   /// </summary>
   public class SchemaCreator : ISchemaCreator
   {
-    private readonly AttributeExtractor<SchemaAttribute> _schemaAttributeExtractor = new() ;
-    private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new() ;
+    private readonly AttributeExtractor<SchemaAttribute> _schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
+    private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new AttributeExtractor<FieldAttribute>() ;
     private readonly IFieldFactory _fieldFactory = new FieldFactory() ;
 
     public Schema FindOrCreate( Type type )
@@ -58,8 +58,18 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
         if ( ! string.IsNullOrEmpty( fieldAttribute.Documentation ) )
           fieldBuilder.SetDocumentation( fieldAttribute.Documentation ) ;
 
-        if ( fieldBuilder.NeedsUnits() )
+        if ( fieldBuilder.NeedsUnits() ) {
+          if ( string.IsNullOrEmpty( fieldAttribute.SpecTypeId ) || string.IsNullOrEmpty( fieldAttribute.UnitTypeId ) )
+            throw new ArgumentException( $"{nameof( FieldAttribute.SpecTypeId )} and {nameof( FieldAttribute.UnitTypeId )} for the property {propertyInfo.Name} is required." ) ;
+          
           fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
+        }
+        else if ( ! string.IsNullOrEmpty( fieldAttribute.SpecTypeId ) ) {
+          if ( string.IsNullOrEmpty( fieldAttribute.UnitTypeId ) )
+            throw new ArgumentException( $"{nameof( FieldAttribute.UnitTypeId )} for the property {propertyInfo.Name} is required." ) ;
+          
+          fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
+        }
       }
 
       return schemaBuilder.Finish() ;

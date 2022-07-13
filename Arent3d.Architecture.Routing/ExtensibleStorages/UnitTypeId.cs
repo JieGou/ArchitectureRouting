@@ -1,6 +1,6 @@
 ﻿namespace Arent3d.Architecture.Routing.ExtensibleStorages
 {
-  public static class UnitType
+  public static class UnitTypeId
   {
     #region 2022
     public const string WattsPerSquareMeterKelvin = "autodesk.unit.unit:wattsPerSquareMeterKelvin-1.0.1" ;
