@@ -1,12 +1,21 @@
-﻿using Arent3d.Architecture.Routing.ExtensibleStorages ;
+﻿using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.ExtensibleStorages ;
 using Arent3d.Architecture.Routing.ExtensibleStorages.Attributes ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  [Schema("CF2DB4C1-71AF-4C23-B382-4CD8008D149C", nameof(BorderTextNoteModel))]
+  [Schema("CF4DB4C1-71AF-4C23-B382-5CD8008D149C", nameof(BorderTextNoteModel))]
   public class BorderTextNoteModel : IDataModel
   {
-    [Field( Documentation = "The border of the text note." )]
-    public string BorderUniqueIds { get ; set ; } = string.Empty ;
+    [Field(Documentation = "TextNote")]
+    public Dictionary<int, BorderModel> BorderTextNotes { get ; set ; } = new() ;
+  }
+
+  [Schema( "CF5DB4C1-71AF-4C23-B382-5CD8008D149C", nameof( BorderModel ) )]
+  public class BorderModel : IDataModel
+  {
+    [Field(Documentation = "Border")]
+    public List<ElementId> BorderIds { get ; set ; } = new() ;
   }
 }

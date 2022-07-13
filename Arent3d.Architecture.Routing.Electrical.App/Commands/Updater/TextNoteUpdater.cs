@@ -6,8 +6,8 @@ using Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation ;
 using Arent3d.Architecture.Routing.ExtensibleStorages.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
@@ -15,7 +15,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
   public class TextNoteUpdater : IUpdater
   {
     private readonly UpdaterId? _updaterId ;
-    private const char JoinSign = ',' ;
 
     public TextNoteUpdater( AddInId? id )
     {
@@ -28,70 +27,79 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
         var document = data.GetDocument() ;
         var uiDocument = new UIDocument( document ) ;
         var selection = uiDocument.Selection ;
-        
-        string? borderUniqueIds = null;
+
+        var dataStorage = document.GetDataStorageForUser() ;
+        List<ElementId>? borderIds = null;
         TextNote? textNote ;
 
         if ( data.GetAddedElementIds().Count == 1 ) {
           textNote = GetTextNote( document, data.GetAddedElementIds().First(), DoubleBorderCommand.TextNoteTypeName ) ;
           if ( null != textNote ) {
             var curves = GetDoubleBorderTextNote( textNote ) ;
-            borderUniqueIds = CreateDetailCurve(document, curves) ;
+            borderIds = CreateDetailCurve(document, textNote, curves) ;
           }
           else {
             textNote = GetTextNote( document, data.GetAddedElementIds().First(), SingleBorderCommand.TextNoteTypeName ) ;
             if ( null != textNote ) {
               var curves = GetSingleBorderTextNote( textNote ) ;
-              borderUniqueIds = CreateDetailCurve(document, curves) ;
+              borderIds = CreateDetailCurve(document, textNote, curves) ;
             }
           }
 
-          if ( null == borderUniqueIds || null == textNote ) 
+          if ( null == borderIds || null == textNote ) 
             return ;
-          
-          var borderTextNoteModel = new BorderTextNoteModel { BorderUniqueIds = borderUniqueIds };
-          textNote.SetData(borderTextNoteModel);
+
+          SetDataForTextNote( dataStorage, textNote, borderIds ) ;
         }
         else if ( data.GetModifiedElementIds().Count == 1 && selection.GetElementIds().Count == 1 && data.GetModifiedElementIds().First() == selection.GetElementIds().First() ) {
           textNote = GetTextNote( document, data.GetModifiedElementIds().First(), DoubleBorderCommand.TextNoteTypeName ) ;
           if ( null != textNote ) {
             var curves = GetDoubleBorderTextNote( textNote ) ;
-            borderUniqueIds = CreateDetailCurve(document, curves) ;
+            borderIds = CreateDetailCurve(document, textNote, curves) ;
           }
           else {
             textNote = GetTextNote( document, data.GetModifiedElementIds().First(), SingleBorderCommand.TextNoteTypeName ) ;
             if ( null != textNote ) {
               var curves = GetSingleBorderTextNote( textNote ) ;
-              borderUniqueIds = CreateDetailCurve(document, curves) ;
+              borderIds = CreateDetailCurve(document, textNote, curves) ;
             }
           }
 
-          if ( null != borderUniqueIds && null != textNote ) {
-            if ( textNote.GetData<BorderTextNoteModel>() is { } borderTextNoteModel ) {
-              var detailLines = borderTextNoteModel.BorderUniqueIds.Split( JoinSign ).Select( x => document.GetElement( new ElementId(int.Parse(x)) ) ).OfType<DetailLine>().EnumerateAll() ;
-              if ( detailLines.Any() )
-                document.Delete( detailLines.Select( x => x.Id ).ToList() ) ;
-
-              borderTextNoteModel.BorderUniqueIds = borderUniqueIds ;
-            }
-            else {
-              borderTextNoteModel = new BorderTextNoteModel { BorderUniqueIds = borderUniqueIds } ;
-            }
-            textNote.SetData(borderTextNoteModel);
+          if ( null != borderIds && null != textNote ) {
+            SetDataForTextNote( dataStorage, textNote, borderIds ) ;
           }
           else {
             textNote = (TextNote) document.GetElement( data.GetModifiedElementIds().First() ) ;
-            if ( textNote.GetData<BorderTextNoteModel>() is { } borderTextNoteModel ) {
-              var detailLines = borderTextNoteModel.BorderUniqueIds.Split( JoinSign ).Select( x => document.GetElement( new ElementId(int.Parse(x)) ) ).OfType<DetailLine>().EnumerateAll() ;
+            if ( dataStorage.GetData<BorderTextNoteModel>() is { } borderTextNoteModel && borderTextNoteModel.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue)) {
+              var detailLines = borderTextNoteModel.BorderTextNotes[textNote.Id.IntegerValue].BorderIds.Where(x => x != ElementId.InvalidElementId).ToList();
               if ( detailLines.Any() )
-                document.Delete( detailLines.Select( x => x.Id ).ToList() ) ;
+                document.Delete( detailLines ) ;
             }
-            textNote.DeleteData<BorderTextNoteModel>();
+            dataStorage.DeleteData<BorderTextNoteModel>();
           }
         }
       }
       catch ( Exception exception ) {
         TaskDialog.Show( "Arent Inc", exception.Message ) ;
+      }
+    }
+
+    private void SetDataForTextNote(DataStorage dataStorage, TextNote textNote, List<ElementId> newDetailLineIds )
+    {
+      if ( dataStorage.GetData<BorderTextNoteModel>() is not { } data )
+        data = new BorderTextNoteModel() ;
+      
+      if ( data.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue) ) {
+        var oldDetailCurveIds = data.BorderTextNotes[textNote.Id.IntegerValue].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
+        if( oldDetailCurveIds.Any() )
+          dataStorage.Document.Delete( oldDetailCurveIds ) ;
+
+        data.BorderTextNotes[ textNote.Id.IntegerValue ] = new BorderModel { BorderIds = newDetailLineIds } ;
+        dataStorage.SetData(data);
+      }
+      else {
+        data.BorderTextNotes.Add( textNote.Id.IntegerValue, new BorderModel { BorderIds = newDetailLineIds } );
+        dataStorage.SetData(data);
       }
     }
 
@@ -141,16 +149,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       return curves ;
     }
 
-    private string CreateDetailCurve( Document document, IEnumerable<Curve> curves )
+    private List<ElementId> CreateDetailCurve( Document document, TextNote textNote, IEnumerable<Curve> curves )
     {
-      var curveIds = new List<string>() ;
+      var curveIds = new List<ElementId>() ;
       var graphicStyle = document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
       foreach ( var curve in curves ) {
-        var dl = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        var dl = document.Create.NewDetailCurve( (View) document.GetElement( textNote.OwnerViewId ), curve ) ;
         dl.LineStyle = graphicStyle;
-        curveIds.Add($"{dl.Id.IntegerValue}");
+        curveIds.Add(dl.Id);
       }
-      return string.Join($"{JoinSign}", curveIds) ;
+      return curveIds ;
     }
   }
 }

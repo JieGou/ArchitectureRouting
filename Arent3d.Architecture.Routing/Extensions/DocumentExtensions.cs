@@ -16,19 +16,32 @@ namespace Arent3d.Architecture.Routing.Extensions
 
     public static List<T> GetAllInstances<T>(this Document document) where T : Element
     {
-      return new FilteredElementCollector(document).OfClass(typeof(T)).OfType<T>().ToList();
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().ToList();
     }
+    
+    public static List<T> GetAllInstances<T>(this Document document, Func<T, bool> func ) where T : Element
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().Where(func).ToList();
+    }
+    
     public static List<T> GetAllInstances<T>(this Document document, View view) where T : Element
     {
-      return new FilteredElementCollector(document, view.Id).OfClass(typeof(T)).OfType<T>().ToList();
+      var filter = new FilteredElementCollector( document, view.Id ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().ToList();
     }
+    
     public static List<T> GetAllTypes<T>(this Document document) where T : ElementType
     {
-      return new FilteredElementCollector(document).OfClass(typeof(T)).WhereElementIsElementType().OfType<T>().ToList();
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).WhereElementIsElementType().OfType<T>().ToList();
     }
+    
     public static List<T> GetAllTypes<T>(this Document document, Func<T, bool> func ) where T : ElementType
     {
-      return new FilteredElementCollector( document ).OfClass( typeof( T ) ).WhereElementIsElementType().OfType<T>().Where(func).ToList();
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass( typeof( T ) ).WhereElementIsElementType().OfType<T>().Where(func).ToList();
     }
 
     #endregion
