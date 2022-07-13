@@ -297,8 +297,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           } ;
           var headerNoneBorderedCellStyle = CreateCellStyle( workbook, BorderStyle.None, BorderStyle.None, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) ;
           XSSFFont myFont = (XSSFFont) workbook.CreateFont() ;
-          myFont.FontHeightInPoints = 16 ;
+          myFont.FontHeightInPoints = 18 ;
           myFont.IsBold = true ;
+          myFont.FontName = "ＭＳ ゴシック";
           headerNoneBorderedCellStyle.SetFont( myFont ) ;
           xssfCellStyles.Add( "headerNoneBorderedCellStyle", headerNoneBorderedCellStyle ) ;
 
@@ -342,10 +343,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       int rowStart ;
       switch ( sheetType ) {
         case SheetType.Confirmation :
+          sheet.SetColumnWidth( 0, 500 ) ;
           sheet.SetColumnWidth( 1, 8000 ) ;
           sheet.SetColumnWidth( 2, 8000 ) ;
           sheet.SetColumnWidth( 3, 4000 ) ;
-          sheet.SetColumnWidth( 4, 1500 ) ;
+          sheet.SetColumnWidth( 4, 1200 ) ;
           sheet.SetColumnWidth( 5, 4000 ) ;
           sheet.SetColumnWidth( 7, 3000 ) ;
           sheet.SetColumnWidth( 16, 3000 ) ;
@@ -628,6 +630,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       borderedCellStyle.VerticalAlignment = verticalAlignment ;
       borderedCellStyle.Alignment = horizontalAlignment ;
       borderedCellStyle.WrapText = wrapText ;
+      
+      XSSFFont myFont = (XSSFFont) workbook.CreateFont() ;
+      myFont.FontName = "ＭＳ 明朝";
+      borderedCellStyle.SetFont( myFont );
       return borderedCellStyle ;
     }
     
