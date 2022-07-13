@@ -46,27 +46,30 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
             if ( ! string.IsNullOrEmpty( schemaAttribute.VendorId ) )
                 schemaBuilder.SetVendorId( schemaAttribute.VendorId ) ;
 
-            var propertyInfos = type.GetProperties( BindingFlags.Public | BindingFlags.Instance ) ;
-            foreach ( var propertyInfo in propertyInfos ) {
-                var propertyAttributes = propertyInfo.GetCustomAttributes( typeof( FieldAttribute ), true ) ;
+            var propertyModels = type.GetProperties( BindingFlags.Public | BindingFlags.Instance ) ;
+            if (propertyModels.Length > 256)
+                throw new ArgumentOutOfRangeException($"Exceeds 256 fields in type {type.Name}.");
+            
+            foreach ( var propertyModel in propertyModels ) {
+                var propertyAttributes = propertyModel.GetCustomAttributes( typeof( FieldAttribute ), true ) ;
                 if ( propertyAttributes.Length == 0 )
                     continue ;
 
-                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyInfo ) ;
-                var fieldBuilder = _fieldFactory.CreateField( schemaBuilder, propertyInfo ) ;
+                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyModel ) ;
+                var fieldBuilder = _fieldFactory.CreateField( schemaBuilder, propertyModel ) ;
 
                 if ( ! string.IsNullOrEmpty( fieldAttribute.Documentation ) )
                     fieldBuilder.SetDocumentation( fieldAttribute.Documentation ) ;
 
                 if ( fieldBuilder.NeedsUnits() ) {
                     if ( string.IsNullOrEmpty( fieldAttribute.SpecTypeId ) || string.IsNullOrEmpty( fieldAttribute.UnitTypeId ) )
-                        throw new ArgumentException( $"{nameof( FieldAttribute.SpecTypeId )} and {nameof( FieldAttribute.UnitTypeId )} for the property {propertyInfo.Name} is required." ) ;
+                        throw new MissingMemberException( $"{nameof( FieldAttribute.SpecTypeId )} and {nameof( FieldAttribute.UnitTypeId )} for the property {propertyModel.Name} is required." ) ;
 
                     fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
                 }
                 else if ( ! string.IsNullOrEmpty( fieldAttribute.SpecTypeId ) ) {
                     if ( string.IsNullOrEmpty( fieldAttribute.UnitTypeId ) )
-                        throw new ArgumentException( $"{nameof( FieldAttribute.UnitTypeId )} for the property {propertyInfo.Name} is required." ) ;
+                        throw new MissingMemberException( $"{nameof( FieldAttribute.UnitTypeId )} for the property {propertyModel.Name} is required." ) ;
 
                     fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
                 }

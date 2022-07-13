@@ -8,23 +8,23 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
 {
     public class SimpleFieldCreator : IFieldFactory
     {
-        public FieldBuilder CreateField( SchemaBuilder schemaBuilder, PropertyInfo propertyInfo )
+        public FieldBuilder CreateField( SchemaBuilder schemaBuilder, PropertyInfo propertyModel )
         {
             FieldBuilder fieldBuilder ;
 
-            var dataModelType = propertyInfo.PropertyType.GetInterface( nameof( IDataModel ) ) ;
+            var dataModelType = propertyModel.PropertyType.GetInterface( nameof( IDataModel ) ) ;
             if ( null != dataModelType ) {
-                fieldBuilder = schemaBuilder.AddSimpleField( propertyInfo.Name, typeof( Entity ) ) ;
+                fieldBuilder = schemaBuilder.AddSimpleField( propertyModel.Name, typeof( Entity ) ) ;
 
                 var schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
-                var subSchemaAttribute = schemaAttributeExtractor.GetAttribute( propertyInfo.PropertyType ) ;
+                var subSchemaAttribute = schemaAttributeExtractor.GetAttribute( propertyModel.PropertyType ) ;
                 fieldBuilder.SetSubSchemaGUID( subSchemaAttribute.GUID ) ;
             }
             else {
-                if ( ! propertyInfo.PropertyType.IsAcceptValueType() )
-                    throw new NotSupportedException( $"Type {propertyInfo.PropertyType.Name} is not accepted." ) ;
+                if ( ! propertyModel.PropertyType.IsAcceptValueType() )
+                    throw new NotSupportedException( $"Type {propertyModel.PropertyType.Name} is not accepted." ) ;
 
-                fieldBuilder = schemaBuilder.AddSimpleField( propertyInfo.Name, propertyInfo.PropertyType ) ;
+                fieldBuilder = schemaBuilder.AddSimpleField( propertyModel.Name, propertyModel.PropertyType ) ;
             }
 
             return fieldBuilder ;

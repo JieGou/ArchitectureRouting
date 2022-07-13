@@ -19,32 +19,32 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
             _schemaCreator = schemaCreator ;
         }
 
-        public Entity Convert( IDataModel modelEntity )
+        public Entity Convert( IDataModel dataModel )
         {
-            var modelType = modelEntity.GetType() ;
-            var schema = _schemaCreator.FindOrCreate( modelType ) ;
+            var dataModelType = dataModel.GetType() ;
+            var schema = _schemaCreator.FindOrCreate( dataModelType ) ;
             var entity = new Entity( schema ) ;
 
             var schemaFields = schema.ListFields() ;
-            foreach ( var field in schemaFields ) {
-                var propertyInfo = modelType.GetProperty( field.FieldName ) ;
-                if ( null == propertyInfo )
+            foreach ( var schemaField in schemaFields ) {
+                var propertyModel = dataModelType.GetProperty( schemaField.FieldName ) ;
+                if ( null == propertyModel )
                     continue ;
 
-                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyInfo ) ;
-                dynamic propertyValue = propertyInfo.GetValue( modelEntity ) ;
+                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyModel ) ;
+                dynamic propertyValue = propertyModel.GetValue( dataModel ) ;
                 if ( propertyValue is null )
                     continue ;
 
-                switch ( field.ContainerType ) {
+                switch ( schemaField.ContainerType ) {
                     case ContainerType.Simple :
-                        propertyValue = ConvertSimpleProperty( propertyValue, field ) ;
+                        propertyValue = ConvertSimpleProperty( propertyValue, schemaField ) ;
 
-                        if ( field.GetSpecTypeId().Empty() ) {
-                            entity.Set( field, propertyValue ) ;
+                        if ( schemaField.GetSpecTypeId().Empty() ) {
+                            entity.Set( schemaField, propertyValue ) ;
                         }
-                        else if ( IsCompatibleUnitType( field, fieldAttribute.UnitTypeId ) ) {
-                            entity.Set( field, propertyValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
+                        else if ( IsCompatibleUnitType( schemaField, fieldAttribute.UnitTypeId ) ) {
+                            entity.Set( schemaField, propertyValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
                         }
 
                         break ;
@@ -52,12 +52,12 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
                         if ( propertyValue.Count == 0 )
                             continue ;
 
-                        var convertedArrayFieldValue = ConvertArrayProperty( propertyValue, field ) ;
-                        if ( field.GetSpecTypeId().Empty() ) {
-                            EntityExtension.SetWrapper( entity, field, convertedArrayFieldValue ) ;
+                        var convertedArrayFieldValue = ConvertArrayProperty( propertyValue, schemaField ) ;
+                        if ( schemaField.GetSpecTypeId().Empty() ) {
+                            EntityExtension.SetWrapper( entity, schemaField, convertedArrayFieldValue ) ;
                         }
-                        else if ( IsCompatibleUnitType( field, fieldAttribute.UnitTypeId ) ) {
-                            EntityExtension.SetWrapper( entity, field, convertedArrayFieldValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
+                        else if ( IsCompatibleUnitType( schemaField, fieldAttribute.UnitTypeId ) ) {
+                            EntityExtension.SetWrapper( entity, schemaField, convertedArrayFieldValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
                         }
 
                         break ;
@@ -66,12 +66,12 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
                         if ( propertyValue.Count == 0 )
                             continue ;
 
-                        var convertedMapFieldValue = ConvertMapProperty( propertyValue, field ) ;
-                        if ( field.GetSpecTypeId().Empty() ) {
-                            EntityExtension.SetWrapper( entity, field, convertedMapFieldValue ) ;
+                        var convertedMapFieldValue = ConvertMapProperty( propertyValue, schemaField ) ;
+                        if ( schemaField.GetSpecTypeId().Empty() ) {
+                            EntityExtension.SetWrapper( entity, schemaField, convertedMapFieldValue ) ;
                         }
-                        else if ( IsCompatibleUnitType( field, fieldAttribute.UnitTypeId ) ) {
-                            EntityExtension.SetWrapper( entity, field, convertedMapFieldValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
+                        else if ( IsCompatibleUnitType( schemaField, fieldAttribute.UnitTypeId ) ) {
+                            EntityExtension.SetWrapper( entity, schemaField, convertedMapFieldValue, new ForgeTypeId( fieldAttribute.UnitTypeId ) ) ;
                         }
 
                         break ;
@@ -87,38 +87,38 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
             var dataModelInstance = Activator.CreateInstance<TDataModel>() ;
 
             var schemaFields = entity.Schema.ListFields() ;
-            foreach ( var field in schemaFields ) {
-                var propertyInfo = dataModelType.GetProperty( field.FieldName ) ;
-                if ( null == propertyInfo )
+            foreach ( var schemaField in schemaFields ) {
+                var propertyModel = dataModelType.GetProperty( schemaField.FieldName ) ;
+                if ( null == propertyModel )
                     continue ;
 
-                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyInfo ) ;
+                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyModel ) ;
                 object? entityValue = null ;
-                switch ( field.ContainerType ) {
+                switch ( schemaField.ContainerType ) {
                     case ContainerType.Simple :
-                        entityValue = GetEntityFieldValue( entity, field, field.ValueType, fieldAttribute.UnitTypeId ) ;
+                        entityValue = GetEntityFieldValue( entity, schemaField, schemaField.ValueType, fieldAttribute.UnitTypeId ) ;
                         if ( entityValue is Entity subEntity && subEntity.Schema != null )
-                            entityValue = Convert( propertyInfo.PropertyType, subEntity ) ;
+                            entityValue = Convert( propertyModel.PropertyType, subEntity ) ;
 
                         break ;
                     case ContainerType.Array :
                         var listType = typeof( IList<> ) ;
-                        var genericListType = listType.MakeGenericType( field.ValueType ) ;
-                        entityValue = GetEntityFieldValue( entity, field, genericListType, fieldAttribute.UnitTypeId ) ;
+                        var genericListType = listType.MakeGenericType( schemaField.ValueType ) ;
+                        entityValue = GetEntityFieldValue( entity, schemaField, genericListType, fieldAttribute.UnitTypeId ) ;
 
                         if ( entityValue is not IList listEntityValues )
                             continue ;
 
                         IList listProperty ;
-                        if ( propertyInfo.PropertyType.GetConstructor( new[] { typeof( int ) } ) != null ) {
-                            listProperty = (IList) Activator.CreateInstance( propertyInfo.PropertyType, listEntityValues.Count ) ;
+                        if ( propertyModel.PropertyType.GetConstructor( new[] { typeof( int ) } ) != null ) {
+                            listProperty = (IList) Activator.CreateInstance( propertyModel.PropertyType, listEntityValues.Count ) ;
                         }
                         else {
-                            listProperty = (IList) Activator.CreateInstance( propertyInfo.PropertyType ) ;
+                            listProperty = (IList) Activator.CreateInstance( propertyModel.PropertyType ) ;
                         }
 
-                        if ( field.ValueType == typeof( Entity ) ) {
-                            var subDataModelType = propertyInfo.PropertyType.GetGenericArguments()[ 0 ] ;
+                        if ( schemaField.ValueType == typeof( Entity ) ) {
+                            var subDataModelType = propertyModel.PropertyType.GetGenericArguments()[ 0 ] ;
                             foreach ( Entity listEntityValue in listEntityValues ) {
                                 var convertedEntity = Convert( subDataModelType, listEntityValue ) ;
                                 listProperty.Add( convertedEntity ) ;
@@ -135,22 +135,22 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
                         break ;
                     case ContainerType.Map :
                         var dicitonaryType = typeof( IDictionary<,> ) ;
-                        var genericDicitionaryType = dicitonaryType.MakeGenericType( field.KeyType, field.ValueType ) ;
-                        entityValue = GetEntityFieldValue( entity, field, genericDicitionaryType, fieldAttribute.UnitTypeId ) ;
+                        var genericDicitionaryType = dicitonaryType.MakeGenericType( schemaField.KeyType, schemaField.ValueType ) ;
+                        entityValue = GetEntityFieldValue( entity, schemaField, genericDicitionaryType, fieldAttribute.UnitTypeId ) ;
 
                         if ( entityValue is not IDictionary mapEntityValues )
                             continue ;
 
                         IDictionary dictProperty ;
-                        if ( propertyInfo.PropertyType.GetConstructor( new[] { typeof( int ) } ) != null ) {
-                            dictProperty = (IDictionary) Activator.CreateInstance( propertyInfo.PropertyType, mapEntityValues.Count ) ;
+                        if ( propertyModel.PropertyType.GetConstructor( new[] { typeof( int ) } ) != null ) {
+                            dictProperty = (IDictionary) Activator.CreateInstance( propertyModel.PropertyType, mapEntityValues.Count ) ;
                         }
                         else {
-                            dictProperty = (IDictionary) Activator.CreateInstance( propertyInfo.PropertyType ) ;
+                            dictProperty = (IDictionary) Activator.CreateInstance( propertyModel.PropertyType ) ;
                         }
 
-                        if ( field.ValueType == typeof( Entity ) ) {
-                            var subDataModelType = propertyInfo.PropertyType.GetGenericArguments()[ 1 ] ;
+                        if ( schemaField.ValueType == typeof( Entity ) ) {
+                            var subDataModelType = propertyModel.PropertyType.GetGenericArguments()[ 1 ] ;
 
                             foreach ( dynamic keyValuePair in mapEntityValues ) {
                                 var convertedEntity = Convert( subDataModelType, keyValuePair.Value ) ;
@@ -169,7 +169,7 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
                 }
 
                 if ( entityValue != null )
-                    propertyInfo.SetValue( dataModelInstance, entityValue ) ;
+                    propertyModel.SetValue( dataModelInstance, entityValue ) ;
             }
 
             return dataModelInstance ;
@@ -246,6 +246,11 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
 
         private object? GetEntityFieldValue( Entity entity, Field field, Type fieldValueType, string unitType )
         {
+            /*
+             * When you save an entity to an element and entity has a SubEntity you omit set SubEntity.
+             * And there is a case that would happen when there is no SubSchema loaded into the memory.
+             * In this case, Revit throws an exception about "There is no Schema with id in memory"
+             */
             if ( field.SubSchemaGUID != Guid.Empty && field.SubSchema == null )
                 return null ;
 

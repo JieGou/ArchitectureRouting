@@ -89,7 +89,8 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Extensions
                 typeof( Guid ),
                 typeof( ElementId ),
                 typeof( XYZ ),
-                typeof( UV )
+                typeof( UV ),
+                typeof(Entity)
             }) ;
 
         private static HashSet<Type> KeyTypeAccepts => new(new List<Type>

@@ -8,11 +8,11 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
 {
     public class FieldFactory : IFieldFactory
     {
-        public FieldBuilder CreateField( SchemaBuilder schemaBuilder, PropertyInfo propertyInfo )
+        public FieldBuilder CreateField( SchemaBuilder schemaBuilder, PropertyInfo propertyModel )
         {
             IFieldFactory? fieldFactory = null ;
 
-            var propertyType = propertyInfo.PropertyType ;
+            var propertyType = propertyModel.PropertyType ;
             if ( propertyType.IsGenericType ) {
                 foreach ( var interfaceType in propertyType.GetInterfaces() ) {
                     if ( ! interfaceType.IsGenericType )
@@ -34,9 +34,8 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
                 fieldFactory = new SimpleFieldCreator() ;
             }
 
-
             if ( fieldFactory != null )
-                return fieldFactory.CreateField( schemaBuilder, propertyInfo ) ;
+                return fieldFactory.CreateField( schemaBuilder, propertyModel ) ;
 
             var sb = new StringBuilder() ;
             sb.AppendLine( $"Type {propertyType.Name} does not supported." ) ;
