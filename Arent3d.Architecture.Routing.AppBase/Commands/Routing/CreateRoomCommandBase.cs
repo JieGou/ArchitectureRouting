@@ -154,7 +154,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var ogs = new OverrideGraphicSettings() ;
       ogs.SetSurfaceTransparency( 100 ) ;
-      var allView = document.GetAllElements<ViewPlan>().Where(x => !x.IsTemplate && x.Name != "3FL") ;
+      var allView = document.GetAllElements<View>() ;
       foreach ( var view in allView ) {
         try {
           foreach ( var wall in walls ) {
