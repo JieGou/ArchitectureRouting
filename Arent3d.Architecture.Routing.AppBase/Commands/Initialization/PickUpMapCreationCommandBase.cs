@@ -40,11 +40,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var level = document.ActiveView.GenLevel.Name ;
             var routes = pickUpModels.Select( x => x.RouteName ).Where(r=> r != "").Distinct() ;
             var textNotePositions = new List<XYZ>() ; 
+            var textNoteNotSeenPositions = new List<XYZ>() ; 
             foreach ( var route in routes ) {
               var conduitPickUpModels = pickUpModels
                 .Where( p => p.RouteName == route && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ).ToList() ;
-              var textNoteIdsPickUpModels = ShowPickUp( document, isDisplayPickUpNumber, conduitPickUpModels.First().PickUpModels, textNotePositions ) ;
+              var textNoteIdsPickUpModels = ShowPickUp( document, isDisplayPickUpNumber, conduitPickUpModels.First().PickUpModels, textNotePositions, textNoteNotSeenPositions ) ;
               SaveTextNotePickUpModel( document, textNoteIdsPickUpModels ) ;
             }
           }
@@ -63,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
-    private List<TextNotePickUpModel> ShowPickUp(Document document, bool isDisplayPickUpNumber ,List<PickUpModel> pickUpModels, List<XYZ> positionsTextNote)
+    private List<TextNotePickUpModel> ShowPickUp(Document document, bool isDisplayPickUpNumber ,List<PickUpModel> pickUpModels, List<XYZ> positionsTextNote, List<XYZ> positionsNotSeenTextNote )
     {
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
@@ -101,11 +102,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var points = notSeenQuantity.Key.Split( ',' ) ;
           var xPoint = double.Parse( points.First() ) ;
           var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
-          var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
-          var notSeenQuantityStr = textPickUpNumber + "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
-
-          string textNoteId = CreateTextNote( document, new XYZ( xPoint - 0.5, yPoint - 1.5, 0 ), notSeenQuantityStr, true ) ;
-          textNoteIds.Add( new TextNotePickUpModel( textNoteId ) ) ;
+          
+          if ( ! positionsNotSeenTextNote.Any( x => Math.Abs( x.X - xPoint ) == 0 && Math.Abs( x.Y - yPoint ) == 0 ) ) {
+            var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
+            var txtPosition = new XYZ( xPoint - 0.5, yPoint - 1.5, 0 ) ;
+            string textNoteId = CreateTextNote( document, txtPosition , notSeenQuantityStr, true ) ;
+            textNoteIds.Add( new TextNotePickUpModel( textNoteId ) ) ;
+            positionsNotSeenTextNote.Add( new XYZ(xPoint, yPoint, 0) );
+          }
         }
 
         // Seen quantity
