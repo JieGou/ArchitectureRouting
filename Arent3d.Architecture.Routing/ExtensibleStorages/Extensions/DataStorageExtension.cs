@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Extensions
 {
     public static class DataStorageExtension
     {
-        public static DataStorage GetDataStorageForUser( this Document document )
+        public static DataStorage FindOrCreateDataStorageForUser( this Document document )
         {
             if ( string.IsNullOrEmpty( document.Application.Username ) )
                 throw new Exception( "Please login to Revit." ) ;

@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
         var uiDocument = new UIDocument( document ) ;
         var selection = uiDocument.Selection ;
 
-        var dataStorage = document.GetDataStorageForUser() ;
+        var dataStorage = document.FindOrCreateDataStorageForUser() ;
         List<ElementId>? borderIds = null;
         TextNote? textNote ;
 
@@ -77,6 +77,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
             }
             dataStorage.DeleteData<BorderTextNoteModel>();
           }
+        }
+        else if ( data.GetDeletedElementIds().Count == 1 ) {
+          var elementId = data.GetDeletedElementIds().First().IntegerValue ;
+          var ds = dataStorage.GetData<BorderTextNoteModel>() ;
+          if ( null == ds || ! ds.BorderTextNotes.ContainsKey( elementId ) || ! ds.BorderTextNotes[ elementId ].BorderIds.Any() )
+            return ;
+          
+          var oldDetailCurveIds = ds.BorderTextNotes[ elementId ].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
+          document.Delete( oldDetailCurveIds ) ;
         }
       }
       catch ( Exception exception ) {
