@@ -97,10 +97,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var points = notSeenQuantity.Key.Split( ',' ) ;
           var xPoint  = double.Parse(points.First()) ;
           var yPoint = double.Parse(points.Skip( 1 ).First()) ;
-          var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
-          var notSeenQuantityStr = textPickUpNumber + "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
+          var notSeenQuantityStr =  "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
           
-          string textNoteId = CreateTextNote( document, new XYZ( xPoint - 0.5, yPoint + 2.5, 0 ), notSeenQuantityStr, true);
+          string textNoteId = CreateTextNote( document, new XYZ( xPoint - 0.5, yPoint - 1.5, 0 ), notSeenQuantityStr, true);
           textNoteIds.Add( new TextNotePickUpModel(textNoteId) );
         }
 

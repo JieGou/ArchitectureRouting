@@ -510,7 +510,7 @@
         <string>電線長さ表示</string>
 
         <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
-        <string>ピックアップ番号設定</string>
+        <string>拾い番号設定</string>
     </dict>
 </plist>
 
