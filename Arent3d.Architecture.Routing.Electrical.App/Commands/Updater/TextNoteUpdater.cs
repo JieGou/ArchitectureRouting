@@ -70,22 +70,30 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
           }
           else {
             textNote = (TextNote) document.GetElement( data.GetModifiedElementIds().First() ) ;
-            if ( dataStorage.GetData<BorderTextNoteModel>() is { } borderTextNoteModel && borderTextNoteModel.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue)) {
-              var detailLines = borderTextNoteModel.BorderTextNotes[textNote.Id.IntegerValue].BorderIds.Where(x => x != ElementId.InvalidElementId).ToList();
+            var borderTextNoteModel = dataStorage.GetData<BorderTextNoteModel>() ;
+            if (  null != borderTextNoteModel && borderTextNoteModel.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue)) {
+              var detailLines = borderTextNoteModel.BorderTextNotes[ textNote.Id.IntegerValue ] .BorderIds.Where(x => x != ElementId.InvalidElementId).ToList();
               if ( detailLines.Any() )
                 document.Delete( detailLines ) ;
+
+              borderTextNoteModel.BorderTextNotes.Remove( textNote.Id.IntegerValue ) ;
             }
-            dataStorage.DeleteData<BorderTextNoteModel>();
+            
+            if(null != borderTextNoteModel)
+              dataStorage.SetData(borderTextNoteModel);
           }
         }
         else if ( data.GetDeletedElementIds().Count == 1 ) {
           var elementId = data.GetDeletedElementIds().First().IntegerValue ;
-          var ds = dataStorage.GetData<BorderTextNoteModel>() ;
-          if ( null == ds || ! ds.BorderTextNotes.ContainsKey( elementId ) || ! ds.BorderTextNotes[ elementId ].BorderIds.Any() )
+          var dataModel = dataStorage.GetData<BorderTextNoteModel>() ;
+          if ( null == dataModel || ! dataModel.BorderTextNotes.ContainsKey( elementId ) || ! dataModel.BorderTextNotes[ elementId ].BorderIds.Any() )
             return ;
           
-          var oldDetailCurveIds = ds.BorderTextNotes[ elementId ].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
+          var oldDetailCurveIds = dataModel.BorderTextNotes[ elementId ].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
           document.Delete( oldDetailCurveIds ) ;
+
+          dataModel.BorderTextNotes.Remove( elementId ) ;
+          dataStorage.SetData(dataModel);
         }
       }
       catch ( Exception exception ) {
