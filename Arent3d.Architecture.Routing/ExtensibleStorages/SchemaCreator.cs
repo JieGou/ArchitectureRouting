@@ -7,72 +7,72 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.ExtensibleStorages
 {
-  /// <summary>
-  /// Create a schema from a type
-  /// </summary>
-  public class SchemaCreator : ISchemaCreator
-  {
-    private readonly AttributeExtractor<SchemaAttribute> _schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
-    private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new AttributeExtractor<FieldAttribute>() ;
-    private readonly IFieldFactory _fieldFactory = new FieldFactory() ;
-
-    public Schema FindOrCreate( Type type )
+    /// <summary>
+    /// Create a schema from a type
+    /// </summary>
+    public class SchemaCreator : ISchemaCreator
     {
-      var schemaAttribute = _schemaAttributeExtractor.GetAttribute( type ) ;
-      if ( Schema.Lookup( schemaAttribute.GUID ) is { } schema )
-        return schema ;
+        private readonly AttributeExtractor<SchemaAttribute> _schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
+        private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new AttributeExtractor<FieldAttribute>() ;
+        private readonly IFieldFactory _fieldFactory = new FieldFactory() ;
 
-      if ( ! SchemaBuilder.GUIDIsValid( schemaAttribute.GUID ) )
-        throw new InvalidDataException( $"GUID of the type {nameof( type )} is invalid." ) ;
+        public Schema FindOrCreate( Type type )
+        {
+            var schemaAttribute = _schemaAttributeExtractor.GetAttribute( type ) ;
+            if ( Schema.Lookup( schemaAttribute.GUID ) is { } schema )
+                return schema ;
 
-      var schemaBuilder = new SchemaBuilder( schemaAttribute.GUID ) ;
-      if ( ! schemaBuilder.AcceptableName( schemaAttribute.SchemaName ) )
-        throw new InvalidDataException( $"The schema name {schemaAttribute.SchemaName} is invalid." ) ;
+            if ( ! SchemaBuilder.GUIDIsValid( schemaAttribute.GUID ) )
+                throw new InvalidDataException( $"GUID of the type {nameof( type )} is invalid." ) ;
 
-      schemaBuilder.SetSchemaName( schemaAttribute.SchemaName ) ;
+            var schemaBuilder = new SchemaBuilder( schemaAttribute.GUID ) ;
+            if ( ! schemaBuilder.AcceptableName( schemaAttribute.SchemaName ) )
+                throw new InvalidDataException( $"The schema name {schemaAttribute.SchemaName} is invalid." ) ;
 
-      if ( schemaAttribute.ApplicationGUID != Guid.Empty )
-        schemaBuilder.SetApplicationGUID( schemaAttribute.ApplicationGUID ) ;
+            schemaBuilder.SetSchemaName( schemaAttribute.SchemaName ) ;
 
-      if ( ! string.IsNullOrEmpty( schemaAttribute.Documentation ) )
-        schemaBuilder.SetDocumentation( schemaAttribute.Documentation ) ;
+            if ( schemaAttribute.ApplicationGUID != Guid.Empty )
+                schemaBuilder.SetApplicationGUID( schemaAttribute.ApplicationGUID ) ;
 
-      if ( schemaAttribute.ReadAccessLevel != default )
-        schemaBuilder.SetReadAccessLevel( schemaAttribute.ReadAccessLevel ) ;
+            if ( ! string.IsNullOrEmpty( schemaAttribute.Documentation ) )
+                schemaBuilder.SetDocumentation( schemaAttribute.Documentation ) ;
 
-      if ( schemaAttribute.WriteAccessLevel != default )
-        schemaBuilder.SetWriteAccessLevel( schemaAttribute.WriteAccessLevel ) ;
+            if ( schemaAttribute.ReadAccessLevel != default )
+                schemaBuilder.SetReadAccessLevel( schemaAttribute.ReadAccessLevel ) ;
 
-      if ( ! string.IsNullOrEmpty( schemaAttribute.VendorId ) )
-        schemaBuilder.SetVendorId( schemaAttribute.VendorId ) ;
+            if ( schemaAttribute.WriteAccessLevel != default )
+                schemaBuilder.SetWriteAccessLevel( schemaAttribute.WriteAccessLevel ) ;
 
-      var propertyInfos = type.GetProperties( BindingFlags.Public | BindingFlags.Instance ) ;
-      foreach ( var propertyInfo in propertyInfos ) {
-        var propertyAttributes = propertyInfo.GetCustomAttributes( typeof( FieldAttribute ), true ) ;
-        if ( propertyAttributes.Length == 0 )
-          continue ;
+            if ( ! string.IsNullOrEmpty( schemaAttribute.VendorId ) )
+                schemaBuilder.SetVendorId( schemaAttribute.VendorId ) ;
 
-        var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyInfo ) ;
-        var fieldBuilder = _fieldFactory.CreateField( schemaBuilder, propertyInfo ) ;
+            var propertyInfos = type.GetProperties( BindingFlags.Public | BindingFlags.Instance ) ;
+            foreach ( var propertyInfo in propertyInfos ) {
+                var propertyAttributes = propertyInfo.GetCustomAttributes( typeof( FieldAttribute ), true ) ;
+                if ( propertyAttributes.Length == 0 )
+                    continue ;
 
-        if ( ! string.IsNullOrEmpty( fieldAttribute.Documentation ) )
-          fieldBuilder.SetDocumentation( fieldAttribute.Documentation ) ;
+                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyInfo ) ;
+                var fieldBuilder = _fieldFactory.CreateField( schemaBuilder, propertyInfo ) ;
 
-        if ( fieldBuilder.NeedsUnits() ) {
-          if ( string.IsNullOrEmpty( fieldAttribute.SpecTypeId ) || string.IsNullOrEmpty( fieldAttribute.UnitTypeId ) )
-            throw new ArgumentException( $"{nameof( FieldAttribute.SpecTypeId )} and {nameof( FieldAttribute.UnitTypeId )} for the property {propertyInfo.Name} is required." ) ;
-          
-          fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
+                if ( ! string.IsNullOrEmpty( fieldAttribute.Documentation ) )
+                    fieldBuilder.SetDocumentation( fieldAttribute.Documentation ) ;
+
+                if ( fieldBuilder.NeedsUnits() ) {
+                    if ( string.IsNullOrEmpty( fieldAttribute.SpecTypeId ) || string.IsNullOrEmpty( fieldAttribute.UnitTypeId ) )
+                        throw new ArgumentException( $"{nameof( FieldAttribute.SpecTypeId )} and {nameof( FieldAttribute.UnitTypeId )} for the property {propertyInfo.Name} is required." ) ;
+
+                    fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
+                }
+                else if ( ! string.IsNullOrEmpty( fieldAttribute.SpecTypeId ) ) {
+                    if ( string.IsNullOrEmpty( fieldAttribute.UnitTypeId ) )
+                        throw new ArgumentException( $"{nameof( FieldAttribute.UnitTypeId )} for the property {propertyInfo.Name} is required." ) ;
+
+                    fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
+                }
+            }
+
+            return schemaBuilder.Finish() ;
         }
-        else if ( ! string.IsNullOrEmpty( fieldAttribute.SpecTypeId ) ) {
-          if ( string.IsNullOrEmpty( fieldAttribute.UnitTypeId ) )
-            throw new ArgumentException( $"{nameof( FieldAttribute.UnitTypeId )} for the property {propertyInfo.Name} is required." ) ;
-          
-          fieldBuilder.SetSpec( new ForgeTypeId( fieldAttribute.SpecTypeId ) ) ;
-        }
-      }
-
-      return schemaBuilder.Finish() ;
     }
-  }
 }
