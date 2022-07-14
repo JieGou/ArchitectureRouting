@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           // Highlight off automatic calculation size of pull box
           var textNotesHighlightOff =
-            PullBoxRouteManager.GetTextNotesOfAutomaticCalculatedDimensionPullBox( document ) ;
+            PullBoxRouteManager.GetTextNotesOfPullBox( document, true ) ;
           highlightOffElements.AddRange( textNotesHighlightOff );
           
           ResetElementColor( document, highlightOffElements ) ;
