@@ -18,7 +18,24 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
             if ( null != dataStorage )
                 return dataStorage ;
 
-            dataStorage = DataStorage.Create( document ) ;
+            if ( !document.IsModifiable && ! document.IsReadOnly ) {
+                using var transaction = new Transaction( document ) ;
+                transaction.Start( "Create Storage" ) ;
+                
+                dataStorage = CreateDataStorage( document ) ;
+                
+                transaction.Commit() ;
+            }
+            else {
+                dataStorage = CreateDataStorage( document ) ;
+            }
+            
+            return dataStorage ;
+        }
+
+        private static DataStorage CreateDataStorage( Document document )
+        {
+            var dataStorage = DataStorage.Create( document ) ;
             dataStorage.Name = $"{AppInfo.VendorId}-{document.Application.Username}-{document.Application.LoginUserId}" ;
             return dataStorage ;
         }
