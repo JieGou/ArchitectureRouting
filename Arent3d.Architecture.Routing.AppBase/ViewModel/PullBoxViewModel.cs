@@ -105,9 +105,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var csvStorable = document.GetCsvStorable() ;
       var allPullBoxHiroiMasterModel = csvStorable.HiroiMasterModelData.Where( hr => hr.Hinmei == PullBoxName ) ;
+      var pullBoxModels =  from hiroiMasterModel in allPullBoxHiroiMasterModel
+        select new PullBoxModel( hiroiMasterModel ) ;
 
-      return ( from hiroiMasterModel in allPullBoxHiroiMasterModel select new PullBoxModel( hiroiMasterModel ) )
+      return pullBoxModels.OrderBy( pb => pb.Width ).ThenBy( pb => pb.Height )
         .ToList() ;
+
     }
 
     public ICommand OkCommand
