@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -12,6 +13,7 @@ using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
+using RibbonButton = Autodesk.Windows.RibbonButton ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -31,36 +33,41 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       try {
         using var transaction = new Transaction( document, ( "TransactionName.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetAppStringByKeyOrDefault( "Create Dummy Conduits In 3D View" ) ) ) ;
         transaction.Start() ;
-        RemoveDummyConduits( document ) ;
-        var arentConduitTypeName = "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
-        FilteredElementCollector collector = new( document ) ;
-        collector.OfClass( typeof( ConduitType ) ) ;
-        var arentConduitType = document.GetAllElements<MEPCurveType>().FirstOrDefault( c => c.Name == arentConduitTypeName ) ;
+        var isCreateDummyConduits = RemoveDummyConduits( document ) ;
+        if ( isCreateDummyConduits ) {
+          var arentConduitTypeName = "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
+          FilteredElementCollector collector = new( document ) ;
+          collector.OfClass( typeof( ConduitType ) ) ;
+          var arentConduitType = document.GetAllElements<MEPCurveType>().FirstOrDefault( c => c.Name == arentConduitTypeName ) ;
 
-        var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => ! string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName() != c.GetRepresentativeRouteName() ).ToList() ;
+          var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => ! string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName() != c.GetRepresentativeRouteName() ).ToList() ;
+          if ( allConduits.Any() ) {
+            UpdateIsEnableButton( document, false ) ;
+            Dictionary<Element, string> newConduits = new() ;
 
-        Dictionary<Element, string> newConduits = new() ;
+            var routeDic = GenerateConduits( document, arentConduitType!, allConduits, newConduits ) ;
 
-        var routeDic = GenerateConduits( document, arentConduitType!, allConduits, newConduits ) ;
+            GenerateConduitsOfBranchRoute( document, arentConduitType!, newConduits, routeDic ) ;
 
-        GenerateConduitsOfBranchRoute( document, arentConduitType!, newConduits, routeDic ) ;
+            var removedConduitIds = GenerateConduitFittings( uiDocument, arentConduitType!, routeDic, newConduits ) ;
+            transaction.Commit() ;
 
-        var removedConduitIds = GenerateConduitFittings( uiDocument, arentConduitType!, routeDic, newConduits ) ;
-        transaction.Commit() ;
-
-        transaction.Start() ;
-        if ( removedConduitIds.Any() ) {
-          foreach ( var conduitId in removedConduitIds ) {
-            try {
-              document.Delete( conduitId ) ;
+            transaction.Start() ;
+            if ( removedConduitIds.Any() ) {
+              foreach ( var conduitId in removedConduitIds ) {
+                try {
+                  document.Delete( conduitId ) ;
+                }
+                catch {
+                  //
+                }
+              }
             }
-            catch {
-              //
-            }
+        
+            HideConduitsIn2DView( document, newConduits ) ;
           }
         }
         
-        HideConduitsIn2DView( document, newConduits ) ;
         transaction.Commit() ;
 
         return Result.Succeeded ;
@@ -68,6 +75,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       catch ( Exception exception ) {
         message = exception.Message ;
         return Result.Failed ;
+      }
+    }
+    
+    private static void UpdateIsEnableButton( Document document, bool isEnable )
+    {
+      var targetTabName = "Electrical.App.Routing.TabName".GetAppStringByKey() ;
+      var selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
+      if ( selectionTab == null ) return ;
+      
+      foreach ( var panel in selectionTab.Panels ) {
+        if ( panel.Source.Title == "Electrical.App.Panels.Routing.Drawing".GetAppStringByKeyOrDefault( "Drawing" ) ) {
+          foreach ( var item in panel.Source.Items ) {
+            if ( ! ( item is RibbonButton ribbonButton && ribbonButton.Text == "Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetDocumentStringByKeyOrDefault( document, "Create Dummy Conduits\nIn 3D View" ) ) ) {
+              item.IsEnabled = isEnable ;
+            }
+          }
+        }
+        else {
+          panel.IsEnabled = isEnable ;
+        }
       }
     }
 
@@ -501,19 +528,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
     
-    public static void RemoveDummyConduits( Document document )
+    public static bool RemoveDummyConduits( Document document )
     {
       var allConduitIds = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
         .Where( c => ! string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName()!.Contains( DummyName ) )
         .Select( c => c.UniqueId ).ToList() ;
 
-      if ( ! allConduitIds.Any() ) return ;
+      if ( ! allConduitIds.Any() ) return true ;
       try {
         document.Delete( allConduitIds ) ;
       }
       catch {
         //
       }
+
+      UpdateIsEnableButton( document, true ) ;
+      return false ;
     }
 
     private void UpdateConduitLenght( Document document, MEPCurveType arentConduitType, Dictionary<Element, string> newConduits, string routeName, double lenght, XYZ handOrientation, XYZ facingOrientation, XYZ origin, List<XYZ> directions, ref List<string> removedConduitIds )
