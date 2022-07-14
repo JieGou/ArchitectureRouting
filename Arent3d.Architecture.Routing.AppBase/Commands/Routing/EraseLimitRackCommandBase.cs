@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -19,16 +20,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ??
-                              document.GetLimitRackStorable() ;
-      var allLimitRackIds = GetLimitRackIds( uiDocument, document, limitRackStorable ) ;
+      
+      var allLimitRackIds = GetLimitRackIds( uiDocument, document ) ;
 
       try {
         using var transaction = new Transaction( document, EraseLimitRackTransactionName ) ;
         transaction.Start() ;
         RemoveLimitRacks( document, allLimitRackIds.rackIds ) ;
         RemoveBoundaryCableTray( document, allLimitRackIds.detailCurverIds ) ;
-        RemoveLimitRackModels( limitRackStorable, allLimitRackIds.selectedLimitRackModels ) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -38,10 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected abstract (IEnumerable<string> rackIds, IEnumerable<string>? detailCurverIds, IEnumerable<LimitRackModel>? selectedLimitRackModels) GetLimitRackIds( UIDocument ui, Document doc, LimitRackStorable limitRackStorable ) ;
-
-    protected abstract void RemoveLimitRackModels( LimitRackStorable limitRackStorable,
-      IEnumerable<LimitRackModel>? selectedLimitRackModels ) ;
+    protected abstract (IEnumerable<string> rackIds, IEnumerable<string>? detailCurverIds) GetLimitRackIds( UIDocument ui, Document doc ) ;
 
     private static void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
     {
@@ -117,5 +113,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       document.Delete( limitRackDetailIds.Select( document.GetElement ).Select( x => x.Id ).ToList() ) ;
     }
+
+    protected static IEnumerable<FamilyInstance> GetAllLimitRackInstance(Document doc)
+    {
+      var cableTrays = doc.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTray ) ;
+      var cableTrayFittings = doc.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTrayFitting ) ;
+
+      foreach ( var cableTray in cableTrays ) {
+        var comment = cableTray.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ) ).AsString() ;
+        if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
+          yield return cableTray ;
+      }
+
+      foreach ( var cableTrayFitting in cableTrayFittings ) {
+        var comment = cableTrayFitting.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ) ).AsString() ;
+        if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
+          yield return cableTrayFitting ;
+      }
+    }
+    
   }
 }

@@ -1,7 +1,6 @@
 using System.Collections ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Selection
@@ -14,10 +13,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
     
     public bool AllowElement( Element element )
     {
-      var elementBuitInCategory = element.GetBuiltInCategory() ;
       if ( IsConnector( element ) ) return true ;
-      if ( ( (IList)BuiltInCategorySets.ElectricalRoutingElements ).Contains( elementBuitInCategory ) ) return true ;
-      if ( elementBuitInCategory == BuiltInCategory.OST_ConduitFitting ) return true ;
+      if ( IsConduitOrConduitFitting( element ) ) return true ;
       if ( element is not CurveElement { LineStyle: GraphicsStyle detailLimitLintStyle } ) return false ;
       return detailLimitLintStyle.GraphicsStyleCategory.Name == BoundaryCableTrayLineStyleName ;
     }
@@ -26,9 +23,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
 
     public static bool IsConnector( Element element )
     {
-      var elementBuitInCategory = element.GetBuiltInCategory() ;
-      return ( BuiltInCategory.OST_ElectricalFixtures == elementBuitInCategory ||
-               BuiltInCategory.OST_ElectricalEquipment == elementBuitInCategory ) ;
+      var elementBuiltInCategory = element.GetBuiltInCategory() ;
+      return ( BuiltInCategory.OST_ElectricalFixtures == elementBuiltInCategory ||
+               BuiltInCategory.OST_ElectricalEquipment == elementBuiltInCategory ) ;
+    }
+
+    public static bool IsConduitOrConduitFitting(Element element)
+    {
+      var elementBuiltInCategory = element.GetBuiltInCategory() ;
+      if ( ( (IList)BuiltInCategorySets.ElectricalRoutingElements ).Contains( elementBuiltInCategory ) ) return true ;
+      return elementBuiltInCategory == BuiltInCategory.OST_ConduitFitting ;
     }
 
   }
