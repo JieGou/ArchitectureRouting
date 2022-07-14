@@ -261,19 +261,6 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
     }
 
-    /// <summary>
-    /// Get ConduitAndDetailCurve data from snoop DB.
-    /// </summary>
-    public static ConduitAndDetailCurveStorable GetConduitAndDetailCurveStorable( this Document document )
-    {
-      try {
-        return ConduitAndDetailCurveStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ConduitAndDetailCurveStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new ConduitAndDetailCurveStorable( document ) ;
-      }
-    }
-
     public static string GetDefaultConstructionItem( this Document document )
     {
       try {

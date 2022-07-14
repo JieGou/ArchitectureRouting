@@ -24,6 +24,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private readonly UIDocument _uiDocument ;
     private readonly DataStorage _dataStorable ;
     private readonly LocationTypeModel _locationTypeModel ;
+    private readonly ConduitAndDetailCurveModel _conduitAndDetailCurveModel ;
 
     private static Dictionary<string, string>? _wireSymbolOptions ;
 
@@ -79,6 +80,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _uiDocument = uiDocument ;
       _dataStorable = _uiDocument.Document.FindOrCreateDataStorageForUser() ;
       _locationTypeModel = _dataStorable.GetData<LocationTypeModel>() ?? new LocationTypeModel();
+      _conduitAndDetailCurveModel = _dataStorable.GetData<ConduitAndDetailCurveModel>() ?? new ConduitAndDetailCurveModel() ;
     }
 
     #region Commands
@@ -122,20 +124,32 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           familySymbol.Activate();
 
         var lineStyle = GetLineStyle( _uiDocument.Document, ChangeWireTypeCommand.SubcategoryName ) ;
-        var conduitAndDetailCurveStorable = _uiDocument.Document.GetConduitAndDetailCurveStorable() ;
+        
         curves.ForEach( x =>
         {
           var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
           detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, WireSymbolOptions[ TypeNameSelected ], false ) ) ;
+          _conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels.Add( new ConduitAndDetailCurveItemModel
+          {
+            ConduitId = x.Value,
+            DetailCurveId = detailCurve.UniqueId,
+            WireType = WireSymbolOptions[ TypeNameSelected ],
+            IsLeakRoute = false
+          } ) ;
         } ) ;
         lines.ForEach( x =>
         {
           var line = _uiDocument.Document.Create.NewFamilyInstance( x.Key, familySymbol, _uiDocument.ActiveView ) ;
-          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, WireSymbolOptions[ TypeNameSelected ], false ) ) ;
+          _conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels.Add( new ConduitAndDetailCurveItemModel
+          {
+            ConduitId = x.Value,
+            DetailCurveId = line.UniqueId,
+            WireType = WireSymbolOptions[ TypeNameSelected ],
+            IsLeakRoute = false
+          }) ;
         } ) ;
         
-        conduitAndDetailCurveStorable.Save() ;
+        _dataStorable.SetData(_conduitAndDetailCurveModel) ;
 
         transaction.Commit() ;
       }

@@ -1,9 +1,9 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -41,9 +41,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! familySymbol.IsActive )
         familySymbol.Activate() ;
 
-      var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
+      var dataStorage = document.FindOrCreateDataStorageForUser() ;
+      var conduitAndDetailCurveModel = dataStorage.GetData<ConduitAndDetailCurveModel>() ?? new ConduitAndDetailCurveModel() ;
       var color = new Color( 255, 215, 0 ) ;
-      // var lineStyle = isLeakRoute ? GetLineStyle( document, color ) : GetLineStyle( document, SubcategoryName ) ; ;
       var lineStyle = GetLineStyle( document, color ) ;
       OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( color ) ;
@@ -52,16 +52,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var detailCurve = document.Create.NewDetailCurve( view, x.Key ) ;
         detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         if ( isLeakRoute ) view.SetElementOverrides( detailCurve.Id, ogs ) ;
-        conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, wireType, isLeakRoute ) ) ;
+        conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels.Add( new ConduitAndDetailCurveItemModel
+        {
+          ConduitId = x.Value,
+          DetailCurveId = detailCurve.UniqueId,
+          WireType = wireType,
+          IsLeakRoute = isLeakRoute
+        }) ;
       } ) ;
       ForEachExtension.ForEach( lines, x =>
       {
         var line = document.Create.NewFamilyInstance( x.Key, familySymbol, view ) ;
         if ( isLeakRoute ) view.SetElementOverrides( line.Id, ogs ) ;
-        conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, wireType, isLeakRoute ) ) ;
+        conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels.Add( new ConduitAndDetailCurveItemModel
+        {
+          ConduitId = x.Value,
+          DetailCurveId = line.UniqueId,
+          WireType = wireType,
+          IsLeakRoute = isLeakRoute
+        } ) ;
       } ) ;
       
-      conduitAndDetailCurveStorable.Save() ;
+      dataStorage.SetData(conduitAndDetailCurveModel) ;
 
       transaction.Commit() ;
       
@@ -127,7 +139,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       var lines = ConnectLines( view, lineConduits ) ;
-      var curves = GetCurveHorizontalFittings( document, view, fittingHorizontals ) ;
+      var curves = GetCurveHorizontalFittings( view, fittingHorizontals ) ;
       return ( lines, curves ) ;
     }
 
@@ -138,7 +150,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return 0.5 * ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) ;
       } ;
 
-    private static Dictionary<Curve, string> GetCurveHorizontalFittings( Document document, View view, IEnumerable<FamilyInstance> fittingHorizontals )
+    private static Dictionary<Curve, string> GetCurveHorizontalFittings( View view, IEnumerable<FamilyInstance> fittingHorizontals )
     {
       var comparer = new XyzComparer() ;
       fittingHorizontals = fittingHorizontals.Where( x => x.MEPModel.ConnectorManager.Connectors.Size == 2 ) ;
@@ -226,6 +238,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )
     {
+      var dataStorages = document.GetAllData<ConduitAndDetailCurveModel>() ;
       var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
       var conduitAndDetailCurves = conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Where( c => conduitIds.Contains( c.ConduitId ) ).ToList() ;
       if ( ! conduitAndDetailCurves.Any() ) return ( string.Empty, false ) ;
