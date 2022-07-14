@@ -76,7 +76,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static bool IsTwoConnectorSamePlace( Connector firstConnector, Connector anotherConnector )
     {
-      return ! ( firstConnector.Origin.DistanceTo( anotherConnector.Origin ) > 0.1 ) ;
+      const double epsilon = 0.1d ;
+      return ! ( firstConnector.Origin.DistanceTo( anotherConnector.Origin ) > epsilon ) ;
     }
   }
 }
