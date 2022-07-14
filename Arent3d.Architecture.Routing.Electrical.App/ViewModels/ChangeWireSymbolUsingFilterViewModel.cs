@@ -5,12 +5,12 @@ using System.Windows ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
-using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 
@@ -19,7 +19,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class ChangeWireSymbolUsingFilterViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly LocationTypeStorable _settingStorable ;
+    private readonly DataStorage _dataStorable ;
+    private readonly LocationTypeModel _locationTypeModel ;
 
     private ObservableCollection<string>? _typeNames ;
 
@@ -37,7 +38,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public string TypeNameSelected
     {
-      get { return _typeNameSelected ??= TypeNames.FirstOrDefault( x => x == _settingStorable.LocationType ) ?? TypeNames.First() ; }
+      get { return _typeNameSelected ??= TypeNames.FirstOrDefault( x => x == _locationTypeModel.LocationType ) ?? TypeNames.First() ; }
       set
       {
         _typeNameSelected = value ;
@@ -57,7 +58,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public ChangeWireSymbolUsingFilterViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _settingStorable = _uiDocument.Document.GetLocationTypeStorable() ;
+      _dataStorable = _uiDocument.Document.FindOrCreateDataStorageForUser() ;
+      _locationTypeModel = _dataStorable.GetData<LocationTypeModel>() ?? new LocationTypeModel() ;
     }
 
     #region Commands
@@ -95,8 +97,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         parameter.Set( TypeNameSelected ) ;
       }
 
-      _settingStorable.LocationType = TypeNameSelected ;
-      _settingStorable.Save() ;
+      _locationTypeModel.LocationType = TypeNameSelected ;
+      _dataStorable.SetData(_locationTypeModel) ;
       transaction.Commit() ;
     }
 
@@ -126,6 +128,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     }
 
     #endregion
+    
   }
 
   public class ChangeLocationTypeFilter : ISelectionFilter
