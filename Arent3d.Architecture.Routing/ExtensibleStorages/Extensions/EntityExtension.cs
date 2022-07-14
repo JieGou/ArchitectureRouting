@@ -67,15 +67,9 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages.Extensions
             return Schema.Lookup( schemaAttribute.GUID ) is { } schema && element.DeleteEntity( schema ) ;
         }
 
-        public static bool IsAcceptValueType( this Type type )
-        {
-            return ValueTypeAccepts.Any( x => x == type ) ;
-        }
+        public static bool IsAcceptValueType( this Type type ) => ValueTypeAccepts.Any( x => x == type ) ;
 
-        public static bool IsAcceptKeyType( this Type type )
-        {
-            return KeyTypeAccepts.Any( x => x == type ) ;
-        }
+        public static bool IsAcceptKeyType( this Type type ) => KeyTypeAccepts.Any( x => x == type ) ;
 
         private static HashSet<Type> ValueTypeAccepts => new(new List<Type>
             {

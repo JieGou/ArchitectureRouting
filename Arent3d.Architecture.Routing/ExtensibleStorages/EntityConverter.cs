@@ -244,7 +244,7 @@ namespace Arent3d.Architecture.Routing.ExtensibleStorages
             return modelData ;
         }
 
-        private object? GetEntityFieldValue( Entity entity, Field field, Type fieldValueType, string unitType )
+        private static object? GetEntityFieldValue( Entity entity, Field field, Type fieldValueType, string unitType )
         {
             /*
              * When you save an entity to an element and entity has a SubEntity you omit set SubEntity.
