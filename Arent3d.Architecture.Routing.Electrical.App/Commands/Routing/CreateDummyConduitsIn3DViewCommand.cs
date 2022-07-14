@@ -151,25 +151,25 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         if ( ! plusDirections.Any() || ! minusDirections.Any() ) {
           var count = conduitDirectionDic.Count / 2 ;
           for ( var i = 0 ; i <= count ; i++ ) {
-            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, defaultTolerance * ( i + 1 ) ) ;
+            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, - defaultTolerance * ( i + 1 ) ) ;
           }
 
           var number = 1 ;
           for ( var i = count + 1 ; i < conduitDirectionDic.Count ; i++ ) {
-            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, - defaultTolerance * number ) ;
+            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, defaultTolerance * number ) ;
             number++ ;
           }
         }
         else {
           var number = 1 ;
           foreach ( var plusDirection in plusDirections ) {
-            conduitToleranceDic.Add( plusDirection.Key, defaultTolerance * number ) ;
+            conduitToleranceDic.Add( plusDirection.Key, - defaultTolerance * number ) ;
             number++ ;
           }
 
           number = 1 ;
           foreach ( var minusDirection in minusDirections ) {
-            conduitToleranceDic.Add( minusDirection.Key, - defaultTolerance * number ) ;
+            conduitToleranceDic.Add( minusDirection.Key, defaultTolerance * number ) ;
             number++ ;
           }
         }
@@ -213,7 +213,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var conduitsWithSamePosition = GroupConduitsOfBranchRouteWithSamePosition( allConduitsOfBranchRoute ).Where( g => g.Value.Count > 1 ) ;
       foreach ( var (_, conduits ) in conduitsWithSamePosition ) {
         var count = 0 ;
-        var sortConduits = conduits.OrderBy( c => c.GetRouteName() ).Skip( 1 ) ;
+        var index = 0 ;
+        var endPoints = GetEndPointConduitByLength( conduits ) ;
+        var sortConduits = conduits.OrderBy( c => c.GetRouteName() ).Skip( 1 ).ToList() ;
         var conduitDirections = GetConduitDirections( allConduitsOfBranchRoute, conduits.First().GetRouteName()! ) ;
         foreach ( var conduit in sortConduits ) {
           var routeName = conduit.GetRouteName() ;
@@ -221,7 +223,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           var conduitLocation = ( conduit.Location as LocationCurve ) ! ;
           var conduitLine = ( conduitLocation.Curve as Line ) ! ;
           var startPoint = conduitLine.GetEndPoint( 0 ) ;
-          var endPoint = conduitLine.GetEndPoint( 1 ) ;
+          var endPoint = endPoints.ElementAt( index ) ;
           var direction = conduitLine.Direction ;
           double tolerance ;
           if ( ! string.IsNullOrEmpty( routeName ) && ! routeDic.Exists( r => r.RouteName == routeName! ) ) {
@@ -235,8 +237,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           }
 
           CreateConduit( document, arentConduitType, allConduitFittings, newConduits, conduitDirections, conduit, routeName!, direction, startPoint, endPoint, tolerance, levelId ) ;
+          index++ ;
         }
       }
+    }
+
+    private List<XYZ> GetEndPointConduitByLength( ICollection<Element> conduits )
+    {
+      List<XYZ> endPoints = new() ;
+      var sortConduitsByLength = conduits.OrderBy( c => ( c.Location as LocationCurve )!.Curve.Length ).ToList() ;
+      foreach ( var conduit in sortConduitsByLength ) {
+        var conduitLocation = ( conduit.Location as LocationCurve ) ! ;
+        var conduitLine = ( conduitLocation.Curve as Line ) ! ;
+        var endPoint = conduitLine.GetEndPoint( 1 ) ;
+        endPoints.Add( endPoint ) ;
+      }
+
+      return endPoints ;
     }
 
     private void CreateConduit( Document document, MEPCurveType arentConduitType, ICollection<FamilyInstance> allConduitFittings, Dictionary<Element, string> newConduits, ICollection<XYZ> conduitDirections, Element conduit, string routeName, XYZ direction, XYZ startPoint, XYZ endPoint, double tolerance, ElementId levelId )
