@@ -45,10 +45,19 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
             return document.GetAllInstances<DataStorage>( x => x.Name.StartsWith( AppInfo.VendorId ) ) ;
         }
 
-        public static IEnumerable<TDataModel> GetAllData<TDataModel>( this Document document ) where TDataModel : class, IDataModel
+        public static IEnumerable<(Element Owner, TDataModel Data)> GetAllData<TDataModel>( this Document document ) where TDataModel : class, IDataModel
         {
-            var dataStorages = GetDataStorageUsers( document ).ToList() ;
-            return dataStorages.Any() ? dataStorages.Select( x => x.GetData<TDataModel>() ).OfType<TDataModel>() : Enumerable.Empty<TDataModel>() ;
+            var allDatas = new List<(Element Owner, TDataModel Data)>() ;
+            
+            var dataStorages = GetDataStorageUsers( document );
+            foreach ( var dataStorage in dataStorages ) {
+                if(dataStorage.GetData<TDataModel>() is not { } data)
+                    continue;
+                
+                allDatas.Add((dataStorage, data));
+            }
+
+            return allDatas ;
         }
     }
 }
