@@ -1,7 +1,7 @@
 ﻿using System ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.ExtensibleStorages.Attributes
+namespace Arent3d.Architecture.Routing.Storages.Attributes
 {
     /// <summary>
     /// Only properties with field attributes are stored in storage

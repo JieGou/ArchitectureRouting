@@ -5,7 +5,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.ExtensibleStorages.Extensions
+namespace Arent3d.Architecture.Routing.Storages.Extensions
 {
     public static class DataStorageExtension
     {

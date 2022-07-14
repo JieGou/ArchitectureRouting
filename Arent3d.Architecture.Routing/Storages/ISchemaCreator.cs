@@ -1,7 +1,7 @@
 ﻿using System ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
-namespace Arent3d.Architecture.Routing.ExtensibleStorages
+namespace Arent3d.Architecture.Routing.Storages
 {
     /// <summary>
     /// Create a schema from a type

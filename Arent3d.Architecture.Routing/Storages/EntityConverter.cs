@@ -2,12 +2,12 @@
 using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.ExtensibleStorages.Attributes ;
-using Arent3d.Architecture.Routing.ExtensibleStorages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Attributes ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
-namespace Arent3d.Architecture.Routing.ExtensibleStorages
+namespace Arent3d.Architecture.Routing.Storages
 {
     public class EntityConverter : IEntityConverter
     {

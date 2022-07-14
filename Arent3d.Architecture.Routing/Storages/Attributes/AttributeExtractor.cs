@@ -1,7 +1,7 @@
 ﻿using System ;
 using System.Reflection ;
 
-namespace Arent3d.Architecture.Routing.ExtensibleStorages.Attributes
+namespace Arent3d.Architecture.Routing.Storages.Attributes
 {
     /// <summary>
     /// The helper class which helps to find value if the TAttribute of a member info

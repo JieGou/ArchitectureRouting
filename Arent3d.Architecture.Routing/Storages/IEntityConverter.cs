@@ -1,6 +1,6 @@
 ﻿using Autodesk.Revit.DB.ExtensibleStorage ;
 
-namespace Arent3d.Architecture.Routing.ExtensibleStorages
+namespace Arent3d.Architecture.Routing.Storages
 {
     public interface IEntityConverter
     {

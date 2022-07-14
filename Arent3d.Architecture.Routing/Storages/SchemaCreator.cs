@@ -1,11 +1,11 @@
 ﻿using System ;
 using System.IO ;
 using System.Reflection ;
-using Arent3d.Architecture.Routing.ExtensibleStorages.Attributes ;
+using Arent3d.Architecture.Routing.Storages.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
-namespace Arent3d.Architecture.Routing.ExtensibleStorages
+namespace Arent3d.Architecture.Routing.Storages
 {
     /// <summary>
     /// Create a schema from a type
