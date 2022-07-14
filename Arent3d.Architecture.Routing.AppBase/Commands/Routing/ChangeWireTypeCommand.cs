@@ -114,8 +114,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         subCategory = categories.NewSubcategory( category, SubcategoryName ) ;
         subCategory.LineColor = color ;
       }
-      else
+      else {
         subCategory = category.SubCategories.get_Item( SubcategoryName ) ;
+      }
 
       return subCategory ;
     }
@@ -238,27 +239,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )
     {
-      var dataStorages = document.GetAllData<ConduitAndDetailCurveModel>() ;
-      var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
-      var conduitAndDetailCurves = conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Where( c => conduitIds.Contains( c.ConduitId ) ).ToList() ;
-      if ( ! conduitAndDetailCurves.Any() ) return ( string.Empty, false ) ;
-      var familyInstanceName = conduitAndDetailCurves.First().WireType ;
-      var isLeakRoute = conduitAndDetailCurves.First().IsLeakRoute ;
+      var dataStorages = document.GetAllData<ConduitAndDetailCurveModel>().Where(x => x.Data.ConduitAndDetailCurveItemModels.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
+      if ( ! dataStorages.Any() ) 
+        return ( string.Empty, false ) ;
+      
+      var familyInstanceName = dataStorages.First().Data.ConduitAndDetailCurveItemModels.First().WireType ;
+      var isLeakRoute = dataStorages.First().Data.ConduitAndDetailCurveItemModels.First().IsLeakRoute ;
 
       using var transaction = new Transaction( document ) ;
-      transaction.Start( "Remove Detail Lines" ) ;
-      foreach ( var conduitAndDetailCurve in conduitAndDetailCurves ) {
+      transaction.Start( "Remove Detail Curves" ) ;
+      
+      foreach ( var (owner, conduitAndDetailCurveModel) in dataStorages ) {
         try {
-          document.Delete( conduitAndDetailCurve.DetailCurveId ) ;
-          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Remove( conduitAndDetailCurve ) ;
+          var conduitAndDetailCurveItems = new List<ConduitAndDetailCurveItemModel>() ;
+          foreach ( var conduitAndDetailCurveItem in conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels ) {
+            if ( conduitIds.Any( x => x == conduitAndDetailCurveItem.ConduitId ) ) {
+              document.Delete( conduitAndDetailCurveItem.DetailCurveId ) ;
+            }
+            else {
+              conduitAndDetailCurveItems.Add( conduitAndDetailCurveItem ) ;
+            }
+          }
+
+          conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels = conduitAndDetailCurveItems ;
+          owner.SetData( conduitAndDetailCurveModel ) ;
         }
         catch {
-          //
+          // Ignore
         }
       }
       
-      conduitAndDetailCurveStorable.Save() ;
       transaction.Commit() ;
+      
       return ( familyInstanceName, isLeakRoute ) ;
     }
 
