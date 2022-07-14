@@ -48,7 +48,7 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
         public static IEnumerable<TDataModel> GetAllData<TDataModel>( this Document document ) where TDataModel : class, IDataModel
         {
             var dataStorages = GetDataStorageUsers( document ).ToList() ;
-            return ! dataStorages.Any() ? Enumerable.Empty<TDataModel>() : dataStorages.Select( x => x.GetData<TDataModel>() ).OfType<TDataModel>() ;
+            return dataStorages.Any() ? dataStorages.Select( x => x.GetData<TDataModel>() ).OfType<TDataModel>() : Enumerable.Empty<TDataModel>() ;
         }
     }
 }
