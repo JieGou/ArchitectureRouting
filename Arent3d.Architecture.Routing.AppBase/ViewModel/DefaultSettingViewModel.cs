@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string NormalModeDefaultString = "Normal Mode" ;
     private const string GradeKey = "Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade" ;
     private const string GradeDefaultString = "Grade " ;
-    
+
     private readonly UIDocument _uiDocument ;
     private const string CompressionFileName = "Csv File.zip" ;
     private List<WiresAndCablesModel> _allWiresAndCablesModels ;
@@ -55,17 +55,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       EcoMode,
       NormalMode
     }
-    
+
     public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> { [ EcoNormalMode.NormalMode ] = NormalModeKey.GetAppStringByKeyOrDefault( NormalModeDefaultString ), [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault( EcoModeDefaultString ) } ;
 
-    public IReadOnlyDictionary<string, string> GradeModeTypes { get ; } = new Dictionary<string, string> { [ "1" ] = "1", [ "2" ] = "2",[ "3" ] = "3", } ;
+    public IReadOnlyDictionary<string, string> GradeModeTypes { get ; } = new Dictionary<string, string>
+    {
+      [ "1" ] = "1",
+      [ "2" ] = "2",
+      [ "3" ] = "3",
+      [ "4" ] = "4",
+      [ "5" ] = "5",
+      [ "6" ] = "6",
+      [ "7" ] = "7"
+    } ;
 
     public int SelectedEcoNormalModeIndex { get ; set ; }
     public EcoNormalMode SelectedEcoNormalMode => 0 == SelectedEcoNormalModeIndex ? EcoNormalMode.NormalMode : EcoNormalMode.EcoMode ;
-    public int SelectedGradeModeIndex { get ; set ; } 
+    public int SelectedGradeModeIndex { get ; set ; }
 
-    public int SelectedGradeMode => SelectedGradeModeIndex + 1 ; 
-    
+    public int SelectedGradeMode => SelectedGradeModeIndex + 1 ;
+
     private ObservableCollection<CsvFileModel> _csvFileModels ;
 
     public ObservableCollection<CsvFileModel> CsvFileModels
@@ -103,7 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     private int Scale { get ; }
-    
+
     private readonly List<ImportDwgMappingModel> _oldImportDwgMappingModels ;
     private readonly List<FileComboboxItemType> _oldFileItems ;
     public List<string> DeletedFloorName { get ; set ; }
@@ -111,25 +120,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
 
     public ICommand LoadDefaultDbCommand => new RelayCommand( LoadDefaultDb ) ;
-    
+
     public ICommand MoveUpCommand => new RelayCommand<DataGrid>( MoveUp ) ;
-    
+
     public ICommand MoveDownCommand => new RelayCommand<DataGrid>( MoveDown ) ;
-    
+
     public ICommand AddModelBelowCurrentSelectedRowCommand => new RelayCommand<DataGrid>( AddModelBelowCurrentSelectedRow ) ;
 
-    public DefaultSettingViewModel( UIDocument uiDocument, DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
+    public DefaultSettingViewModel( UIDocument uiDocument, DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName )
     {
       SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
-      SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.GradeMode - 1;
+      SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.GradeMode - 1 ;
       _importDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>() ;
       _fileItems = new List<FileComboboxItemType>() ;
       _oldImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
       _oldFileItems = new List<FileComboboxItemType>() ;
       DeletedFloorName = new List<string>() ;
       Scale = scale ;
-      GetImportDwgMappingModelsAndFileItems( defaultSettingStorable, activeViewName  ) ;
-      
+      GetImportDwgMappingModelsAndFileItems( defaultSettingStorable, activeViewName ) ;
+
       _uiDocument = uiDocument ;
       _csvFileModels = new ObservableCollection<CsvFileModel>() ;
       _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
@@ -143,42 +152,42 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _registrationOfBoardDataModelData = new List<RegistrationOfBoardDataModel>() ;
       GetCsvFiles( defaultSettingStorable ) ;
     }
-    
+
     private void AddModelBelowCurrentSelectedRow( DataGrid dtGrid )
     {
       const int floorHeightDistance = 3000 ;
       int index = dtGrid.SelectedIndex ;
       if ( ! ImportDwgMappingModels.Any() ) return ;
-      if(index < 0) return ;
+      if ( index < 0 ) return ;
       var importDwgMappingModels = ImportDwgMappingModels.ToList() ;
       var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
-      
+
       ImportDwgMappingModels.Insert( index + 1, new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
     }
 
-    
+
     private void MoveUp( DataGrid dtGrid )
     {
       var index = dtGrid.SelectedIndex ;
-      if(index == 0) return ;
+      if ( index == 0 ) return ;
       Swap( ImportDwgMappingModels, index, index - 1 ) ;
       dtGrid.SelectedIndex = index - 1 ;
     }
-    
+
     private void MoveDown( DataGrid dtGrid )
     {
       var index = dtGrid.SelectedIndex ;
-      if(index == ImportDwgMappingModels.Count() - 1) return ;
+      if ( index == ImportDwgMappingModels.Count() - 1 ) return ;
       Swap( ImportDwgMappingModels, index, index + 1 ) ;
       dtGrid.SelectedIndex = index + 1 ;
     }
-    
-    private void Swap(ObservableCollection<ImportDwgMappingModel> list, int indexA, int indexB)
+
+    private void Swap( ObservableCollection<ImportDwgMappingModel> list, int indexA, int indexB )
     {
-      ( list[indexA], list[indexB] ) = ( list[indexB], list[indexA] ) ;
+      ( list[ indexA ], list[ indexB ] ) = ( list[ indexB ], list[ indexA ] ) ;
     }
-    
-    private void GetCsvFiles( DefaultSettingStorable defaultSettingStorable)
+
+    private void GetCsvFiles( DefaultSettingStorable defaultSettingStorable )
     {
       if ( defaultSettingStorable.CsvFileData.Any() ) {
         CsvFileModels = new ObservableCollection<CsvFileModel>( defaultSettingStorable.CsvFileData ) ;
@@ -211,7 +220,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         } ) ;
       }
     }
-    
+
     public void DeleteImportDwgMappingItem( ImportDwgMappingModel selectedItem )
     {
       ImportDwgMappingModels.Remove( selectedItem ) ;
@@ -275,7 +284,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ImportDwgMappingModels[ i ].FloorName = newNameFloors[ i ] ;
       }
     }
-    
+
     private void UpdateDefaultFloorHeight()
     {
       const int floorHeightDistance = 3000 ;
@@ -294,22 +303,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         { "10F", 44700 }
       } ;
       foreach ( var importDwgMappingModel in ImportDwgMappingModels ) {
-        if ( _oldImportDwgMappingModels.FirstOrDefault(x=>x.Id == importDwgMappingModel.Id) == null) {
+        if ( _oldImportDwgMappingModels.FirstOrDefault( x => x.Id == importDwgMappingModel.Id ) == null ) {
           var (key, value) = defaultHeights.FirstOrDefault( x => importDwgMappingModel.FloorName.Contains( x.Key ) ) ;
           if ( key != null ) {
             importDwgMappingModel.FloorHeight = value ;
           }
           else {
-            if(importDwgMappingModel.IsEnabled)
+            if ( importDwgMappingModel.IsEnabled )
               importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
           }
         }
       }
 
-      
+
       var maxFloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) ;
       var pH1FFloor = ImportDwgMappingModels.FirstOrDefault( x => x.FloorName.Contains( "PH1F" ) ) ;
-      if ( pH1FFloor is { IsEnabled: true }) pH1FFloor.FloorHeight = maxFloorHeight + 6500 ;
+      if ( pH1FFloor is { IsEnabled: true } ) pH1FFloor.FloorHeight = maxFloorHeight + 6500 ;
 
       ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ) ;
     }
@@ -318,89 +327,89 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void LoadDefaultDb()
     {
       var folderPath = GetFolderCsvPath() ;
-      if(null == folderPath)
-        return;
+      if ( null == folderPath )
+        return ;
       LoadData( folderPath ) ;
-      Directory.Delete(folderPath, true);
+      Directory.Delete( folderPath, true ) ;
       SaveData() ;
     }
-    
-     private void SaveData()
-     {
-       var document = _uiDocument.Document ;
-       using var progress = ProgressBar.ShowWithNewThread( _uiDocument.Application ) ;
-       progress.Message = "Saving data..." ;
-       using ( var progressData = progress?.Reserve( 0.3 ) ) {
-         CsvStorable csvStorable = document.GetCsvStorable() ;
-         {
-           if ( _allWiresAndCablesModels.Any() )
-             csvStorable.WiresAndCablesModelData = _allWiresAndCablesModels ;
-           if ( _allConduitModels.Any() )
-             csvStorable.ConduitsModelData = _allConduitModels ;
-           if ( _allHiroiSetMasterNormalModels.Any() )
-             csvStorable.HiroiSetMasterNormalModelData = _allHiroiSetMasterNormalModels ;
-           if ( _allHiroiSetMasterEcoModels.Any() )
-             csvStorable.HiroiSetMasterEcoModelData = _allHiroiSetMasterEcoModels ;
-           if ( _allHiroiSetCdMasterNormalModels.Any() )
-             csvStorable.HiroiSetCdMasterNormalModelData = _allHiroiSetCdMasterNormalModels ;
-           if ( _allHiroiSetCdMasterEcoModels.Any() )
-             csvStorable.HiroiSetCdMasterEcoModelData = _allHiroiSetCdMasterEcoModels ;
-           if ( _allHiroiMasterModels.Any() )
-             csvStorable.HiroiMasterModelData = _allHiroiMasterModels ;
 
-           try {
-             using Transaction t = new Transaction( document, "Save data" ) ;
-             t.Start() ;
-             csvStorable.Save() ;
-             t.Commit() ;
-           }
-           catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-             MessageBox.Show( "Save CSV Files Failed.", "Error Message" ) ;
-             //DialogResult = false ;
-           }
-         }
-         progressData?.ThrowIfCanceled() ;
-       }
+    private void SaveData()
+    {
+      var document = _uiDocument.Document ;
+      using var progress = ProgressBar.ShowWithNewThread( _uiDocument.Application ) ;
+      progress.Message = "Saving data..." ;
+      using ( var progressData = progress?.Reserve( 0.3 ) ) {
+        CsvStorable csvStorable = document.GetCsvStorable() ;
+        {
+          if ( _allWiresAndCablesModels.Any() )
+            csvStorable.WiresAndCablesModelData = _allWiresAndCablesModels ;
+          if ( _allConduitModels.Any() )
+            csvStorable.ConduitsModelData = _allConduitModels ;
+          if ( _allHiroiSetMasterNormalModels.Any() )
+            csvStorable.HiroiSetMasterNormalModelData = _allHiroiSetMasterNormalModels ;
+          if ( _allHiroiSetMasterEcoModels.Any() )
+            csvStorable.HiroiSetMasterEcoModelData = _allHiroiSetMasterEcoModels ;
+          if ( _allHiroiSetCdMasterNormalModels.Any() )
+            csvStorable.HiroiSetCdMasterNormalModelData = _allHiroiSetCdMasterNormalModels ;
+          if ( _allHiroiSetCdMasterEcoModels.Any() )
+            csvStorable.HiroiSetCdMasterEcoModelData = _allHiroiSetCdMasterEcoModels ;
+          if ( _allHiroiMasterModels.Any() )
+            csvStorable.HiroiMasterModelData = _allHiroiMasterModels ;
 
-       using ( var progressData = progress?.Reserve( 0.6 ) ) {
-         var ceedStorable = document.GetCeedStorable() ;
-         if ( _ceedModelData.Any() ) {
-           ceedStorable.CeedModelData = _ceedModelData ;
-           ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-         }
+          try {
+            using Transaction t = new Transaction( document, "Save data" ) ;
+            t.Start() ;
+            csvStorable.Save() ;
+            t.Commit() ;
+          }
+          catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+            MessageBox.Show( "Save CSV Files Failed.", "Error Message" ) ;
+            //DialogResult = false ;
+          }
+        }
+        progressData?.ThrowIfCanceled() ;
+      }
 
-         var registrationOfBoardDataStorable = document.GetRegistrationOfBoardDataStorable() ;
-         if ( _registrationOfBoardDataModelData.Any() ) {
-           registrationOfBoardDataStorable.RegistrationOfBoardData = _registrationOfBoardDataModelData ;
-         }
+      using ( var progressData = progress?.Reserve( 0.6 ) ) {
+        var ceedStorable = document.GetCeedStorable() ;
+        if ( _ceedModelData.Any() ) {
+          ceedStorable.CeedModelData = _ceedModelData ;
+          ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+        }
 
-         if ( _ceedModelData.Any() || _registrationOfBoardDataModelData.Any() ) {
-           try {
-             using Transaction t = new Transaction( document, "Save Ceed and Board data" ) ;
-             t.Start() ;
-             if ( _ceedModelData.Any() ) {
-               ceedStorable.Save() ;
-               document.MakeCertainAllConnectorFamilies() ;
-             }
+        var registrationOfBoardDataStorable = document.GetRegistrationOfBoardDataStorable() ;
+        if ( _registrationOfBoardDataModelData.Any() ) {
+          registrationOfBoardDataStorable.RegistrationOfBoardData = _registrationOfBoardDataModelData ;
+        }
 
-             if ( _registrationOfBoardDataModelData.Any() ) {
-               registrationOfBoardDataStorable.Save() ;
-             }
+        if ( _ceedModelData.Any() || _registrationOfBoardDataModelData.Any() ) {
+          try {
+            using Transaction t = new Transaction( document, "Save Ceed and Board data" ) ;
+            t.Start() ;
+            if ( _ceedModelData.Any() ) {
+              ceedStorable.Save() ;
+              document.MakeCertainAllConnectorFamilies() ;
+            }
 
-             t.Commit() ;
-           }
-           catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-           }
-         }
+            if ( _registrationOfBoardDataModelData.Any() ) {
+              registrationOfBoardDataStorable.Save() ;
+            }
 
-         progressData?.ThrowIfCanceled() ;
-       }
+            t.Commit() ;
+          }
+          catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+          }
+        }
 
-       using ( var progressData = progress?.Reserve( 0.9 ) ) {
+        progressData?.ThrowIfCanceled() ;
+      }
+
+      using ( var progressData = progress?.Reserve( 0.9 ) ) {
         DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
         {
           if ( _csvFileModels.Any() ) {
-            defaultSettingStorable.CsvFileData = new List<CsvFileModel>(_csvFileModels)  ;
+            defaultSettingStorable.CsvFileData = new List<CsvFileModel>( _csvFileModels ) ;
             try {
               using Transaction t = new Transaction( document, "Save Csv File data" ) ;
               t.Start() ;
@@ -414,65 +423,53 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         progressData?.ThrowIfCanceled() ;
       }
     }
-    
+
     private string? GetFolderCsvPath()
     {
       var fileData = AssetManager.ReadFileEmbededSource( CompressionFileName ) ;
       if ( null == fileData )
         return null ;
 
-      var directoryPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(CompressionFileName));
+      var directoryPath = Path.Combine( Path.GetTempPath(), Path.GetFileNameWithoutExtension( CompressionFileName ) ) ;
       ExtractFilesToFolder( directoryPath, fileData ) ;
 
       return directoryPath ;
     }
-    
-    private void ExtractFilesToFolder(string directoryPath, byte[] zippedBuffer)
+
+    private void ExtractFilesToFolder( string directoryPath, byte[] zippedBuffer )
     {
-      if (Directory.Exists(directoryPath))
-      {
-        string[] filePaths = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly);
-        if (filePaths.Length > 0)
-        {
-          foreach (var filePath in filePaths)
-          {
-            File.SetAttributes(filePath, FileAttributes.Normal);
-            File.Delete(filePath);
+      if ( Directory.Exists( directoryPath ) ) {
+        string[] filePaths = Directory.GetFiles( directoryPath, "*.*", SearchOption.TopDirectoryOnly ) ;
+        if ( filePaths.Length > 0 ) {
+          foreach ( var filePath in filePaths ) {
+            File.SetAttributes( filePath, FileAttributes.Normal ) ;
+            File.Delete( filePath ) ;
           }
         }
       }
       else {
         Directory.CreateDirectory( directoryPath ) ;
       }
-      using var zippedStream = new MemoryStream(zippedBuffer);
-      using var zipArchive = new ZipArchive(zippedStream);
-      foreach (var zipArchiveEntry in zipArchive.Entries) {
+
+      using var zippedStream = new MemoryStream( zippedBuffer ) ;
+      using var zipArchive = new ZipArchive( zippedStream ) ;
+      foreach ( var zipArchiveEntry in zipArchive.Entries ) {
         if ( string.IsNullOrEmpty( zipArchiveEntry.Name ) ) continue ;
-        var pathFileName = Path.Combine(directoryPath, zipArchiveEntry.Name);
-        if (!File.Exists(pathFileName)) {
-          zipArchiveEntry.ExtractToFile(pathFileName);
+        var pathFileName = Path.Combine( directoryPath, zipArchiveEntry.Name ) ;
+        if ( ! File.Exists( pathFileName ) ) {
+          zipArchiveEntry.ExtractToFile( pathFileName ) ;
         }
-        else if (File.GetLastAccessTime(pathFileName) <= zipArchiveEntry.LastWriteTime)
-        {
-          File.SetAttributes(pathFileName, FileAttributes.Normal);
-          zipArchiveEntry.ExtractToFile(pathFileName, true);
+        else if ( File.GetLastAccessTime( pathFileName ) <= zipArchiveEntry.LastWriteTime ) {
+          File.SetAttributes( pathFileName, FileAttributes.Normal ) ;
+          zipArchiveEntry.ExtractToFile( pathFileName, true ) ;
         }
       }
     }
-    
-    private void LoadData(string folderPath)
+
+    private void LoadData( string folderPath )
     {
-      var listCsvFileModel =  new ObservableCollection<CsvFileModel>() ;
-      string[] fileNames = new[]
-      {
-        "hiroimaster.csv", 
-        "hiroisetcdmaster_normal.csv", 
-        "hiroisetcdmaster_eco.csv",
-        "hiroisetmaster_eco.csv", 
-        "hiroisetmaster_normal.csv", 
-        "電線管一覧.csv",
-        "電線・ケーブル一覧.csv"
-      } ;
+      var listCsvFileModel = new ObservableCollection<CsvFileModel>() ;
+      string[] fileNames = new[] { "hiroimaster.csv", "hiroisetcdmaster_normal.csv", "hiroisetcdmaster_eco.csv", "hiroisetmaster_eco.csv", "hiroisetmaster_normal.csv", "電線管一覧.csv", "電線・ケーブル一覧.csv" } ;
       bool isLoadedCeedFile = false ;
       var ceedCodeFile = "【CeeD】セットコード一覧表" ;
       string equipmentSymbolsFile = "機器記号一覧表" ;
@@ -487,7 +484,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiMaster, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Master" ;
-                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) ) ;
               }
 
               break ;
@@ -496,7 +493,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterNormal, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Set CD Master Normal" ;
-                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) ) ;
               }
 
               break ;
@@ -505,7 +502,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterEco, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Set CD Master ECO" ;
-                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) ) ;
               }
 
               break ;
@@ -514,7 +511,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterEco, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Set Master ECO" ;
-                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) ) ;
               }
 
               break ;
@@ -523,7 +520,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterNormal, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " Hiroi Set Master Normal" ;
-                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) ) ;
               }
 
               break ;
@@ -532,7 +529,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 2, ModelName.Conduits, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " 電線管一覧" ;
-                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) ) ;
               }
 
               break ;
@@ -541,7 +538,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               isGetDataWithoutError = GetData( path, 2, ModelName.WiresAndCables, false ) ;
               if ( isGetDataWithoutError ) {
                 var csvName = " 電線・ケーブル一覧" ;
-                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) ) ;
               }
 
               break ;
@@ -555,8 +552,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var equipmentSymbolsXlsxFilePath = Path.Combine( folderPath, equipmentSymbolsFile + ".xlsx" ) ;
       var equipmentSymbolsXlsFilePath = Path.Combine( folderPath, equipmentSymbolsFile + ".xls" ) ;
       if ( File.Exists( ceedCodeXlsxFilePath ) ) {
-        isLoadedCeedFile = LoadCeedCodeFile( equipmentSymbolsFile, ceedCodeXlsxFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel) ;
-        listCsvFileModel.Add( new CsvFileModel(ceedCodeFile, renamePathToRelative( ceedCodeXlsxFilePath ), ceedCodeFile + ".xlsx") );
+        isLoadedCeedFile = LoadCeedCodeFile( equipmentSymbolsFile, ceedCodeXlsxFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel ) ;
+        listCsvFileModel.Add( new CsvFileModel( ceedCodeFile, renamePathToRelative( ceedCodeXlsxFilePath ), ceedCodeFile + ".xlsx" ) ) ;
       }
 
       if ( File.Exists( ceedCodeXlsFilePath ) && ! isLoadedCeedFile ) {
@@ -577,21 +574,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       CsvFileModels = listCsvFileModel ;
     }
-    
+
     private bool LoadCeedCodeFile( string equipmentSymbolsFile, string ceedCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath, ObservableCollection<CsvFileModel> listCsvFile )
     {
       if ( File.Exists( equipmentSymbolsXlsxFilePath ) ) {
         _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
         if ( _ceedModelData.Any() ) {
-          listCsvFile.Add( new CsvFileModel(equipmentSymbolsFile, renamePathToRelative(equipmentSymbolsXlsxFilePath), equipmentSymbolsFile + ".xlsx") );
+          listCsvFile.Add( new CsvFileModel( equipmentSymbolsFile, renamePathToRelative( equipmentSymbolsXlsxFilePath ), equipmentSymbolsFile + ".xlsx" ) ) ;
           return true ;
         }
       }
 
       if ( File.Exists( equipmentSymbolsXlsFilePath ) ) {
-        _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsFilePath) ;
+        _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsFilePath ) ;
         if ( _ceedModelData.Any() ) {
-          listCsvFile.Add( new CsvFileModel(equipmentSymbolsFile, renamePathToRelative(equipmentSymbolsXlsxFilePath), equipmentSymbolsFile + ".xls") );
+          listCsvFile.Add( new CsvFileModel( equipmentSymbolsFile, renamePathToRelative( equipmentSymbolsXlsxFilePath ), equipmentSymbolsFile + ".xls" ) ) ;
           return true ;
         }
       }
@@ -599,7 +596,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, string.Empty ) ;
       return _ceedModelData.Any() ;
     }
-    
+
     private bool GetData( string path, int startLine, ModelName modelName, bool showMessageFlag )
     {
       var checkFile = true ;
@@ -691,14 +688,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         reader.Close() ;
         reader.Dispose() ;
         if ( ! checkFile ) {
-          if (showMessageFlag ) {
+          if ( showMessageFlag ) {
             MessageBox.Show( "Incorrect file format.", "Error Message" ) ;
           }
 
           return false ;
         }
         else {
-          if (showMessageFlag ) {
+          if ( showMessageFlag ) {
             MessageBox.Show( "Load file successful.", "Result Message" ) ;
           }
 
@@ -706,14 +703,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
       catch ( Exception ) {
-        if (showMessageFlag ) {
+        if ( showMessageFlag ) {
           MessageBox.Show( "Load file failed.", "Error Message" ) ;
         }
 
         return false ;
       }
     }
-    
+
     private string GetConstructionClassification( string oldConstructionClassification )
     {
       string newConstructionClassification ;
@@ -733,7 +730,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return newConstructionClassification ;
     }
 
-    private string renamePathToRelative(string path)
+    private string renamePathToRelative( string path )
     {
       var filePath = path.Split( '\\' ) ;
       var length = filePath.Length ;
@@ -745,24 +742,24 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       stringPath.Append( filePath[ length - 2 ] + @"\" ) ;
-      stringPath.Append( filePath[ length - 1 ]) ;
+      stringPath.Append( filePath[ length - 1 ] ) ;
       return stringPath.ToString() ;
     }
-    
+
     private enum NewConstructionClassificationType
     {
       天井コロガシ,
       打ち込み,
       フリーアクセス
     }
-    
+
     private enum OldConstructionClassificationType
     {
       天井ふところ,
       床隠蔽,
       二重床
     }
-    
+
     private enum ModelName
     {
       WiresAndCables,

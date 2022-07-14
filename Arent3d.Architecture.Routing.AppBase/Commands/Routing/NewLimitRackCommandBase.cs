@@ -65,6 +65,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           foreach ( var elbow in elbowsToCreate ) {
             CreateElbow( uiDocument, elbow.Key, elbow.Value, fittings ) ;
           }
+          
+          document.Regenerate() ;
 
           var newRacks = ConnectedRacks( document, racks, fittings ) ;
 

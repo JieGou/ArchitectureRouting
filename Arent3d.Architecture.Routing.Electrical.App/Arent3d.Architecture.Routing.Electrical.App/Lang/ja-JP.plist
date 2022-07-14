@@ -502,6 +502,9 @@
 
         <key> Electrical.App.Commands.Initialization.ChangePullBoxDimensionCommand</key>
         <string>プルボックス&#xA;自動計算</string>
+
+        <key>Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
+        <string>印刷モード切替</string>
     </dict>
 </plist>
 
