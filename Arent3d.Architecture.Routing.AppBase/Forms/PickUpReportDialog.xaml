@@ -38,7 +38,7 @@
             </ListBox>
         </GroupBox>
 
-        <GroupBox Grid.Row="0" Header="ドーコン" DockPanel.Dock="Left" Width="120" Height="95" FontSize="16" VerticalAlignment="Top" Margin="240, 10, 10, 10" HorizontalAlignment="Left">
+        <GroupBox Grid.Row="0" Header="拾い番号" DockPanel.Dock="Left" Width="120" Height="95" FontSize="16" VerticalAlignment="Top" Margin="240, 10, 10, 10" HorizontalAlignment="Left">
             <ListBox HorizontalContentAlignment="Stretch" BorderBrush="White" ItemsSource="{Binding DoconTypes}">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
@@ -103,7 +103,7 @@
             </DockPanel>
             <DockPanel Margin="10,5,120,0">
                 <Label Content="出力ファイル名" Width="120" FontSize="16" />
-                <TextBox Width="410" VerticalContentAlignment="Center" FontSize="14" IsEnabled="False" Text="{Binding FileName}"/>
+                <TextBox Width="410" VerticalContentAlignment="Center" FontSize="14" Text="{Binding FileName}"/>
             </DockPanel>
         </StackPanel>
 

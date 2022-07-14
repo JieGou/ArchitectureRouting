@@ -77,9 +77,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private string _fileName ;
 
+    private string _fileNameWithoutUserInput ;
+
     public string FileName
     {
-      get => _fileName ;
+      get => string.IsNullOrEmpty( _fileName ) ? _fileNameWithoutUserInput : $"{_fileName}_{_fileNameWithoutUserInput}" ;
       set
       {
         _fileName = value ;
@@ -122,6 +124,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       _pathName = string.Empty ;
       _fileName = string.Empty ;
+      _fileNameWithoutUserInput = String.Empty;
       fileNames = new List<string>() ;
       CreateCheckBoxList() ;
       InitPickUpModels() ;
@@ -223,7 +226,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         fileNames.Add( docon + fileName ) ;
       }
 
-      FileName = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
+      _fileNameWithoutUserInput = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
+      OnPropertyChanged( nameof(FileName) );
     }
 
     public void FileTypeChecked( object sender )
@@ -241,7 +245,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           break ;
       }
 
-      FileName = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
+      _fileNameWithoutUserInput = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
+      OnPropertyChanged( nameof(FileName) );
     }
 
     public void FileTypeUnchecked( object sender )
@@ -259,7 +264,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           break ;
       }
 
-      FileName = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
+      _fileNameWithoutUserInput = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
+      OnPropertyChanged(FileName);
     }
 
     private List<string> GetConstructionItemList()
