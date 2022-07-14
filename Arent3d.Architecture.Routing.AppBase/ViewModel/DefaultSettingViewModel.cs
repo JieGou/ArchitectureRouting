@@ -58,7 +58,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> { [ EcoNormalMode.NormalMode ] = NormalModeKey.GetAppStringByKeyOrDefault( NormalModeDefaultString ), [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault( EcoModeDefaultString ) } ;
 
-    public IReadOnlyDictionary<string, string> GradeModeTypes { get ; } = new Dictionary<string, string> { [ "1" ] = "1", [ "2" ] = "2",[ "3" ] = "3", } ;
+    public IReadOnlyDictionary<string, string> GradeModeTypes { get ; } = new Dictionary<string, string>
+    {
+      [ "1" ] = "1",
+      [ "2" ] = "2",
+      [ "3" ] = "3",
+      [ "4" ] = "4",
+      [ "5" ] = "5",
+      [ "6" ] = "6",
+      [ "7" ] = "7"
+    } ;
 
     public int SelectedEcoNormalModeIndex { get ; set ; }
     public EcoNormalMode SelectedEcoNormalMode => 0 == SelectedEcoNormalModeIndex ? EcoNormalMode.NormalMode : EcoNormalMode.EcoMode ;
