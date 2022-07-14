@@ -22,7 +22,6 @@ using Expression = System.Linq.Expressions.Expression;
 using System.Linq.Expressions;
 using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
-using MoreLinq ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -45,7 +44,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
     private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterNormalModels ;
     private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterEcoModels ;
-    private readonly List<ConduitsModel> _conduitsModels ;
     private Dictionary<int, string> _pickUpNumbers ;
     private int _pickUpNumber ;
 
@@ -155,11 +153,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _hiroiMasterModels = new List<HiroiMasterModel>() ;
       _hiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
       _hiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
-      _conduitsModels = new List<ConduitsModel>() ;
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
 
-      document.GetDetailSymbolStorable() ;
       _detailTableStorable = document.GetDetailTableStorable() ;
 
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
@@ -175,13 +171,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _hiroiMasterModels = csvStorable.HiroiMasterModelData ;
         _hiroiSetCdMasterNormalModels = csvStorable.HiroiSetCdMasterNormalModelData ;
         _hiroiSetCdMasterEcoModels = csvStorable.HiroiSetCdMasterEcoModelData ;
-        _conduitsModels = csvStorable.ConduitsModelData ;
       }
 
       _symbolInformationStorable = _document.GetSymbolInformationStorable() ;
       _ceedDetailStorable = _document.GetCeedDetailStorable() ;
       _pickUpModels = GetPickUpData(equipmentCategory) ;
-      var ls = _pickUpModels.Select( x => x.Quantity ) ;
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) {
         MessageBox.Show( "Don't have element.", "Result Message" ) ;
@@ -610,11 +604,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string?> isEcoModes, string? isEcoMode, List<string> constructionClassifications, string constructionClassification,
       string plumbingInfo, string? connectorId = null )
     {
-      var routeName = conduit.GetRouteName() ;
+      var routeName = conduit.GetRouteName()! ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
       var checkPickUp = string.IsNullOrEmpty( connectorId ) 
-        ? AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers, dictMaterialCode, conduit ) 
-        : AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers, connectorId!, conduit ) ;
+        ? AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, dictMaterialCode, conduit ) 
+        : AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, connectorId!, conduit ) ;
       if ( ! checkPickUp ) 
         return ;
       
@@ -634,7 +630,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       isEcoModes.Add( string.IsNullOrEmpty( isEcoMode ) ? string.Empty : isEcoMode ) ;
       constructionClassifications.Add( constructionClassification ) ;
       plumbingInfos.Add( plumbingInfo ) ;
-      if ( routeName != null && pullBoxs.Any() && ! routes.Contains( routeName )) {
+      if ( pullBoxs.Any() && ! routes.Contains( routeName ) ) {
         var lengthPullBox = GetLengthPullBox( routes, routeName ) ;
         if ( lengthPullBox != null ) {
           quantity += (double) lengthPullBox ;
@@ -780,7 +776,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private Element? GetConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName, bool isFrom )
     {
-      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
       foreach ( var conduit in conduitsOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
@@ -788,7 +784,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var toElementId = toEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( toElementId ) ) continue ;
         var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
-        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() || toConnector.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) continue ;
         return toConnector ;
       }
 
