@@ -174,13 +174,14 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
+    public bool UseCache( IAutoRoutingEndPoint endPoint ) => false ;
+
     public string LineId { get ; }
 
     public ICommonRoutingCondition Condition { get ; }
 
-    public int RouteCount => _fromEndPoints.Count + _toEndPoints.Count - 1 ;
-
     public Action<IEnumerable<(IAutoRoutingEndPoint, Vector3d)>> PositionInitialized => SyncTermPositions ;
+    public AutoRoutingMemo Memo { get ; } = new AutoRoutingMemo() ;
 
     private static void SyncTermPositions( IEnumerable<(IAutoRoutingEndPoint, Vector3d)> positions )
     {
@@ -246,6 +247,7 @@ namespace Arent3d.Architecture.Routing
       public IEnumerable<IAutoRoutingEndPoint> Starts { get ; }
 
       public IEnumerable<IAutoRoutingEndPoint> Destination { get ; }
+      public IReadOnlyCollection<IAutoRoutingEndPoint> CacheEnabledEndPoints { get ; } = Array.Empty<IAutoRoutingEndPoint>() ;
     }
 
     #endregion
