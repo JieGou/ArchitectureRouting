@@ -32,6 +32,7 @@ namespace Arent3d.Architecture.Routing
     {
       Route = route ;
       SubRouteIndex = index ;
+      AllowedTiltedPiping = true ;
     }
 
     internal void AddSegment( RouteSegment segment )
