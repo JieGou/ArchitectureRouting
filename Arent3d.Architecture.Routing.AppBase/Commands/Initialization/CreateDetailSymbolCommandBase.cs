@@ -320,7 +320,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       string deviceSymbol = string.Empty ;
       var routeNameArray = routeName.Split( '_' ) ;
       routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      var conduitsOfRoute = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
+      var conduitsOfRoute = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => {
+        if ( c.GetRouteName() is not { } rName ) return false ;
+        var rNameArray = rName.Split( '_' ) ;
+        var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+        return strRouteName == routeName ;
+      } ).ToList() ;
       foreach ( var conduit in conduitsOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
@@ -372,7 +377,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var routeNameArray = routeName.Split( '_' ) ;
       routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      var conduitOfRoute = allConduit.Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
+      var conduitOfRoute = allConduit.Where( c => {
+        if ( c.GetRouteName() is not { } rName ) return false ;
+        var rNameArray = rName.Split( '_' ) ;
+        var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+        return strRouteName == routeName ;
+      } ).ToList() ;
       if ( string.IsNullOrEmpty( ceedCode ) )
         ( ceedCode, deviceSymbol ) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName ) ;
       
@@ -388,7 +398,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       foreach ( var routeName in routeNames ) {
         var routeNameArray = routeName.Split( '_' ) ;
         var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-        var conduitsOfRouteName = allConduit.Where( c => c.GetRouteName() is { } rName && rName.Contains( mainRouteName ) ).ToList() ;
+        var conduitsOfRouteName = allConduit.Where( c => {
+          if ( c.GetRouteName() is not { } rName ) return false ;
+          var rNameArray = rName.Split( '_' ) ;
+          var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+          return strRouteName == mainRouteName ;
+        } ).ToList() ;
         if ( ! conduitRouteName.Any() ) continue ;
         var (ceedCode, deviceSymbol) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName! ) ;
         foreach ( var conduit in conduitsOfRouteName ) {
