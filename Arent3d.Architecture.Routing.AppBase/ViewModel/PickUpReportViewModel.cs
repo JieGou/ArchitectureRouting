@@ -72,16 +72,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged();
       }
     }
-    
-    private List<string> fileNames { get ; set ; }
+
+    private List<string> _fileNames ;
     
     private string _fileName ;
 
-    private string _fileNameWithoutUserInput ;
-
     public string FileName
     {
-      get => string.IsNullOrEmpty( _fileName ) ? _fileNameWithoutUserInput : $"{_fileName}_{_fileNameWithoutUserInput}" ;
+      get => _fileName ;
       set
       {
         _fileName = value ;
@@ -124,8 +122,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       _pathName = string.Empty ;
       _fileName = string.Empty ;
-      _fileNameWithoutUserInput = string.Empty;
-      fileNames = new List<string>() ;
+      _fileNames = new List<string>() ;
       CreateCheckBoxList() ;
       InitPickUpModels() ;
     }
@@ -147,17 +144,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Execute( Window window )
     {
-      if ( fileNames.Any() && ! string.IsNullOrEmpty( PathName ) ) {
+      if ( _fileNames.Any() && ! string.IsNullOrEmpty( PathName ) ) {
         CreateOutputFile() ;
         window.DialogResult = true ;
         window.Close() ;
       }
       else {
-        if ( ! fileNames.Any() && string.IsNullOrEmpty( PathName ) )
+        if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) )
           MessageBox.Show( "Please select the output folder and file type.", "Warning" ) ;
         else if ( string.IsNullOrEmpty( PathName ) )
           MessageBox.Show( "Please select the output folder.", "Warning" ) ;
-        else if ( ! fileNames.Any() )
+        else if ( ! _fileNames.Any() )
           MessageBox.Show( "Please select the output file type.", "Warning" ) ;
       }
     }
@@ -207,7 +204,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public void DoconItemChecked( object sender )
     {
-      fileNames = new List<string>() ;
+      _fileNames = new List<string>() ;
       var radioButton = sender as RadioButton ;
       var fileTypes = FileTypes.Where( f => f.TheValue == true ).Select( f => f.TheText ).ToList() ;
       var docon = radioButton!.Content.ToString() == OnText ? DoconOn : DoconOff ;
@@ -223,11 +220,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         if ( string.IsNullOrEmpty( fileName ) ) continue ;
-        fileNames.Add( docon + fileName ) ;
+        _fileNames.Add( docon + fileName ) ;
       }
-
-      _fileNameWithoutUserInput = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
-      OnPropertyChanged( nameof(FileName) );
+      
     }
 
     public void FileTypeChecked( object sender )
@@ -236,17 +231,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var docon = DoconTypes.First().TheValue ? DoconOn : DoconOff ;
       switch ( checkbox!.Content.ToString() ) {
         case SummaryFileType :
-          if ( ! fileNames.Contains( docon + SummaryFileName ) )
-            fileNames.Add( docon + SummaryFileName ) ;
+          if ( ! _fileNames.Contains( docon + SummaryFileName ) )
+            _fileNames.Add( docon + SummaryFileName ) ;
           break ;
         case ConfirmationFileType :
-          if ( ! fileNames.Contains( docon + ConfirmationFileName ) )
-            fileNames.Add( docon + ConfirmationFileName ) ;
+          if ( ! _fileNames.Contains( docon + ConfirmationFileName ) )
+            _fileNames.Add( docon + ConfirmationFileName ) ;
           break ;
       }
-
-      _fileNameWithoutUserInput = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
-      OnPropertyChanged( nameof(FileName) );
+      
     }
 
     public void FileTypeUnchecked( object sender )
@@ -255,17 +248,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var docon = DoconTypes.First().TheValue ? DoconOn : DoconOff ;
       switch ( checkbox!.Content.ToString() ) {
         case SummaryFileType :
-          if ( fileNames.Contains( docon + SummaryFileName ) )
-            fileNames.Remove( docon + SummaryFileName ) ;
+          if ( _fileNames.Contains( docon + SummaryFileName ) )
+            _fileNames.Remove( docon + SummaryFileName ) ;
           break ;
         case ConfirmationFileType :
-          if ( fileNames.Contains( docon + ConfirmationFileName ) )
-            fileNames.Remove( docon + ConfirmationFileName ) ;
+          if ( _fileNames.Contains( docon + ConfirmationFileName ) )
+            _fileNames.Remove( docon + ConfirmationFileName ) ;
           break ;
       }
+      
+    }
 
-      _fileNameWithoutUserInput = fileNames.Any() ? "\"" + string.Join( "\" \"", fileNames ) + "\"" : string.Empty ;
-      OnPropertyChanged(FileName);
+    private string GetFileName(string fileName)
+    {
+      return string.IsNullOrEmpty( _fileName ) ? fileName : $"{_fileName}_{fileName}" ;
     }
 
     private List<string> GetConstructionItemList()
@@ -286,7 +282,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         var constructionItemList = GetConstructionItemList() ;
         if ( ! constructionItemList.Any() ) constructionItemList.Add( DefaultConstructionItem ) ;
-        foreach ( var fileName in fileNames ) {
+        foreach ( var fileName in _fileNames ) {
           XSSFWorkbook workbook = new XSSFWorkbook() ;
 
           Dictionary<string, XSSFCellStyle> xssfCellStyles = new Dictionary<string, XSSFCellStyle>
@@ -318,7 +314,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               CreateSheet( SheetType.Confirmation, workbook, sheetName, xssfCellStyles ) ;
             }
 
-          FileStream fs = new FileStream( PathName + @"\" + fileName, FileMode.OpenOrCreate ) ;
+          var fileNameToOutPut = GetFileName(fileName) ;
+          FileStream fs = new FileStream( PathName + @"\" + fileNameToOutPut, FileMode.OpenOrCreate ) ;
           workbook.Write( fs ) ;
 
           workbook.Close() ;
