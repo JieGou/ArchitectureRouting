@@ -33,8 +33,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     private const string SummaryFileType = "拾い出し集計表" ;
     private const string ConfirmationFileType = "拾い根拠確認表" ;
-    private const string DoconOff = "拾い番号OFF" ;
-    private const string DoconOn = "拾い番号ON" ;
+    private string DoconOff => FileName + "OFF" ;
+    private string DoconOn => FileName + "ON" ;
     private const string OnText = "ON" ;
     private const string OffText = "OFF" ;
     private const string OutputItemAll = "全項目出力" ;
@@ -144,7 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Execute( Window window )
     {
-      if ( _fileNames.Any() && ! string.IsNullOrEmpty( PathName ) ) {
+      if ( _fileNames.Any() && ! string.IsNullOrEmpty( PathName ) && ! string.IsNullOrEmpty( FileName ) ) {
         CreateOutputFile() ;
         window.DialogResult = true ;
         window.Close() ;
@@ -156,6 +156,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           MessageBox.Show( "Please select the output folder.", "Warning" ) ;
         else if ( ! _fileNames.Any() )
           MessageBox.Show( "Please select the output file type.", "Warning" ) ;
+        else if (  string.IsNullOrEmpty( FileName ) )
+          MessageBox.Show( "出力ファイル名を入力してください。" ) ;
       }
     }
     
