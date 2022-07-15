@@ -3,7 +3,7 @@ using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-    [Schema("CF4DB4C2-71AF-4C23-B382-5CD8008D149C", nameof( LocationTypeModel ))]
+    [Schema("CF4DB4C2-71AF-4C23-B382-5CD8008D159C", nameof(LocationTypeModel) )]
     public class LocationTypeModel: IDataModel
     {
         [Field( Documentation = "Location Type" )]

@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var detailCurve = document.Create.NewDetailCurve( view, x.Key ) ;
         detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         if ( isLeakRoute ) view.SetElementOverrides( detailCurve.Id, ogs ) ;
-        conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels.Add( new ConduitAndDetailCurveItemModel
+        conduitAndDetailCurveModel.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
         {
           ConduitId = x.Value,
           DetailCurveId = detailCurve.UniqueId,
@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       {
         var line = document.Create.NewFamilyInstance( x.Key, familySymbol, view ) ;
         if ( isLeakRoute ) view.SetElementOverrides( line.Id, ogs ) ;
-        conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels.Add( new ConduitAndDetailCurveItemModel
+        conduitAndDetailCurveModel.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
         {
           ConduitId = x.Value,
           DetailCurveId = line.UniqueId,
@@ -239,29 +239,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )
     {
-      var dataStorages = document.GetAllData<ConduitAndDetailCurveModel>().Where(x => x.Data.ConduitAndDetailCurveItemModels.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
+      var dataStorages = document.GetAllData<ConduitAndDetailCurveModel>().Where(x => x.Data.ConduitAndDetailCurveData.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
       if ( ! dataStorages.Any() ) 
         return ( string.Empty, false ) ;
       
-      var familyInstanceName = dataStorages.First().Data.ConduitAndDetailCurveItemModels.First().WireType ;
-      var isLeakRoute = dataStorages.First().Data.ConduitAndDetailCurveItemModels.First().IsLeakRoute ;
+      var familyInstanceName = dataStorages[0].Data.ConduitAndDetailCurveData[0].WireType ;
+      var isLeakRoute = dataStorages[0].Data.ConduitAndDetailCurveData[0].IsLeakRoute ;
 
       using var transaction = new Transaction( document ) ;
       transaction.Start( "Remove Detail Curves" ) ;
       
       foreach ( var (owner, conduitAndDetailCurveModel) in dataStorages ) {
         try {
-          var conduitAndDetailCurveItems = new List<ConduitAndDetailCurveItemModel>() ;
-          foreach ( var conduitAndDetailCurveItem in conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels ) {
+          var conduitAndDetailCurveData = new List<ConduitAndDetailCurveItemModel>() ;
+          foreach ( var conduitAndDetailCurveItem in conduitAndDetailCurveModel.ConduitAndDetailCurveData ) {
             if ( conduitIds.Any( x => x == conduitAndDetailCurveItem.ConduitId ) ) {
               document.Delete( conduitAndDetailCurveItem.DetailCurveId ) ;
             }
             else {
-              conduitAndDetailCurveItems.Add( conduitAndDetailCurveItem ) ;
+              conduitAndDetailCurveData.Add( conduitAndDetailCurveItem ) ;
             }
           }
 
-          conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels = conduitAndDetailCurveItems ;
+          conduitAndDetailCurveModel.ConduitAndDetailCurveData = conduitAndDetailCurveData ;
           owner.SetData( conduitAndDetailCurveModel ) ;
         }
         catch {
