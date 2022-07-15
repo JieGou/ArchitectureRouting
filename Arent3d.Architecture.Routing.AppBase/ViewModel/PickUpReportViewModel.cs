@@ -33,6 +33,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     private const string SummaryFileType = "拾い出し集計表" ;
     private const string ConfirmationFileType = "拾い根拠確認表" ;
+    private const string DoconOffExcel = "拾い番号OFF" ;
+    private const string DoconOnExcel = "拾い番号ON" ;
     private string DoconOff => FileName + "OFF" ;
     private string DoconOn => FileName + "ON" ;
     private const string OnText = "ON" ;
@@ -150,14 +152,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         window.Close() ;
       }
       else {
-        if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) )
-          MessageBox.Show( "Please select the output folder and file type.", "Warning" ) ;
+        if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) && string.IsNullOrEmpty( FileName ) )
+          MessageBox.Show( "Please select the file type and input the file name.", "Warning" ) ;
+        else if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) && string.IsNullOrEmpty( FileName ) )
+          MessageBox.Show( "Please select the output folder, file type and and input the file name.", "Warning" ) ;
+        else if ( ! PickUpModels.Any() )
+          MessageBox.Show( "Don't have pick up data.", "Warning" ) ;
         else if ( string.IsNullOrEmpty( PathName ) )
           MessageBox.Show( "Please select the output folder.", "Warning" ) ;
         else if ( ! _fileNames.Any() )
           MessageBox.Show( "Please select the output file type.", "Warning" ) ;
         else if (  string.IsNullOrEmpty( FileName ) )
-          MessageBox.Show( "出力ファイル名を入力してください。" ) ;
+          MessageBox.Show( "Please input the file name.", "Warning" ) ;
       }
     }
     
@@ -263,7 +269,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private string GetFileName(string fileName)
     {
-      return string.IsNullOrEmpty( _fileName ) ? fileName : $"{_fileName}_{fileName}" ;
+      return string.IsNullOrEmpty( _fileName ) ? fileName : $"{_fileName}{fileName}" ;
     }
 
     private List<string> GetConstructionItemList()
@@ -280,7 +286,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void CreateOutputFile()
     {
       GetPickModels() ;
-      if ( ! PickUpModels.Any() ) MessageBox.Show( "Don't have pick up data.", "Message" ) ;
+      if ( ! PickUpModels.Any() ) return;
       try {
         var constructionItemList = GetConstructionItemList() ;
         if ( ! constructionItemList.Any() ) constructionItemList.Add( DefaultConstructionItem ) ;
@@ -365,7 +371,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       List<string> levels = _document.GetAllElements<Level>().Select( l => l.Name ).ToList() ;
       var codeList = GetCodeList() ;
-      var docon = DoconTypes.First().TheValue ? DoconOn : DoconOff ;
+      var docon = DoconTypes.First().TheValue ? DoconOnExcel : DoconOffExcel ;
 
       ISheet sheet = workbook.CreateSheet( sheetName ) ;
       IRow row0, row2 ;
