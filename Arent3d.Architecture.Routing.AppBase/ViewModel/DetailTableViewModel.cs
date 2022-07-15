@@ -19,6 +19,7 @@ using ComboBox = System.Windows.Controls.ComboBox ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Revit ;
+using Autodesk.Revit.UI ;
 using MoreLinq ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using TextBox = System.Windows.Controls.TextBox ;
@@ -194,7 +195,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void AddReferenceRows()
     {
       SelectionChangedReference() ;
-      if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
+      if ( ! _selectedReferenceDetailTableRows.Any() ) {
+        TaskDialog.Show( "Arent Inc", "Please select the row on the reference detail table." ) ;
+        return ;
+      }
       AddReferenceDetailTableRows(_selectedReferenceDetailTableRows ) ;
       DtReferenceGrid.SelectedItems.Clear();
     }
@@ -1919,13 +1923,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( DtGrid.SelectedItems.Count == 1 && selectedDetailTableModels.Count > 0)
         detailTableModel = (DetailTableModel) DtGrid.SelectedItems[ 0 ] ;
 
+      SelectionChanged() ;
+      if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) {
+        TaskDialog.Show( "Arent Inc", "Please select a row on the detail table." ) ;
+        return ;
+      }
+      
       if ( null == detailTableModel )
         return;
-      
-      SelectionChanged() ;
-      if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) 
-        return ;
-      
+
       var indexForSelectedDetailTableRow = _detailTableModelsOrigin.IndexOf( _selectedDetailTableRows.Last() );
       var indexForSelectedDetailTableRowSummary = DetailTableModels.IndexOf( _selectedDetailTableRowsSummary.Last() ) ;
       

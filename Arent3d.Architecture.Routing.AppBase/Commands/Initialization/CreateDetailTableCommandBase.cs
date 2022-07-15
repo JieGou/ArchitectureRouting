@@ -96,17 +96,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         while ( dialog.DialogResult is false && viewModel.IsAddReference ) {
           DetailSymbolPickFilter detailSymbolFilter = new() ;
           List<string> detailSymbolIds = new() ;
-          var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
-          foreach ( var pickedDetailSymbol in pickedDetailSymbols ) {
-            var detailSymbol = doc.GetAllElements<TextNote>().ToList().FirstOrDefault( x => x.Id == pickedDetailSymbol.ElementId ) ;
-            if ( detailSymbol != null && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
-              detailSymbolIds.Add( detailSymbol.UniqueId ) ;
+          
+          try {
+            var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
+            foreach ( var pickedDetailSymbol in pickedDetailSymbols ) {
+              var detailSymbol = doc.GetAllElements<TextNote>().ToList().FirstOrDefault( x => x.Id == pickedDetailSymbol.ElementId ) ;
+              if ( detailSymbol != null && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
+                detailSymbolIds.Add( detailSymbol.UniqueId ) ;
+              }
+            }
+
+            var ( referenceDetailTableModels, _, _) = CreateDetailTable( doc, csvStorable, detailSymbolStorable, new List<Element>(), detailSymbolIds, true, true ) ;
+            foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
+              viewModel.ReferenceDetailTableModelsOrigin.Add( referenceDetailTableModelRow ) ;
             }
           }
-
-          var ( referenceDetailTableModels, _, _) = CreateDetailTable( doc, csvStorable, detailSymbolStorable, new List<Element>(), detailSymbolIds, true, true ) ;
-          foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
-            viewModel.ReferenceDetailTableModelsOrigin.Add( referenceDetailTableModelRow ) ;
+          catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+            // Ignore
           }
           
           dialog = new DetailTableDialog( viewModel ) ;
