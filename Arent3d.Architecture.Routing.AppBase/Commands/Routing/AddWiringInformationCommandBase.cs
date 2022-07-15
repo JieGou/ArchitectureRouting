@@ -136,7 +136,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var routeName in routeNameSamePosition ) {
         var routeNameArray = routeName.Split( '_' ) ;
         var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-        var conduitOfRoutes = allConduit.Where( c => c.GetRouteName() is { } rName && rName.Contains( mainRouteName ) ).ToList() ;
+        var conduitOfRoutes = allConduit.Where( c => {
+          if ( c.GetRouteName() is not { } rName ) return false ;
+          var rNameArray = rName.Split( '_' ) ;
+          var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+          return strRouteName == mainRouteName ;
+        } ).ToList() ;
         var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName!, false ) ;
         if ( null == toConnector )
           continue ;
