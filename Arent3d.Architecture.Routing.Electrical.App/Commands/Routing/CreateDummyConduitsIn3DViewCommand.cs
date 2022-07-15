@@ -172,17 +172,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var routeName = conduit.GetRouteName()! ;
         var routeNameArray = routeName.Split( '_' ) ;
         var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-        var conduitOfBranchRoute = allConduitsOfBranchRoute.Where( c => c.GetRouteName() is { } rName 
-                                                                        && rName.Contains( mainRouteName ) 
-                                                                        && ( rName.Length == mainRouteName.Length || ( rName.Length > mainRouteName.Length && rName[ mainRouteName.Length ] == '_' ) ) ) ;
-        var minLength = double.MaxValue ;
+        var conduitOfBranchRoute = allConduitsOfBranchRoute.Where( c => {
+          if ( c.GetRouteName() is not { } rName ) return false ;
+          var rNameArray = rName.Split( '_' ) ;
+          var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+          return strRouteName == mainRouteName ;
+        } ).ToList() ;
+        var maxLength = double.MinValue ;
         var direction = new XYZ() ;
         foreach ( var otherConduit in conduitOfBranchRoute ) {
           var conduitLocation = ( otherConduit.Location as LocationCurve ) ! ;
           var conduitLine = ( conduitLocation.Curve as Line ) ! ;
           var conduitDirection = conduitLine.Direction ;
-          if ( ( conduitDirection.X is 1 or -1 || conduitDirection.Y is 1 or -1 ) && conduitLine.Length < minLength ) {
-            minLength = conduitLine.Length ;
+          if ( ( conduitDirection.X is 1 or -1 || conduitDirection.Y is 1 or -1 ) && conduitLine.Length > maxLength ) {
+            maxLength = conduitLine.Length ;
             direction = conduitDirection ;
           }
         }
@@ -210,13 +213,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         else {
           var number = 1 ;
           foreach ( var plusDirection in plusDirections ) {
-            conduitToleranceDic.Add( plusDirection.Key, - defaultTolerance * number ) ;
+            conduitToleranceDic.Add( plusDirection.Key, defaultTolerance * number ) ;
             number++ ;
           }
 
           number = 1 ;
           foreach ( var minusDirection in minusDirections ) {
-            conduitToleranceDic.Add( minusDirection.Key, defaultTolerance * number ) ;
+            conduitToleranceDic.Add( minusDirection.Key, - defaultTolerance * number ) ;
             number++ ;
           }
         }
@@ -246,8 +249,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     
     private void GenerateConduitsOfBranchRoute ( Document document, MEPCurveType arentConduitType, Dictionary<Element, string> newConduits, List<RouteInfo> routeDic )
     {
-      var defaultTolerance = ( 30.0 ).MillimetersToRevitUnits() ;
-
       var allConduitsOfBranchRoute = document.GetAllElements<Element>()
         .OfCategory( BuiltInCategory.OST_Conduit )
         .Where( c => c.GetRouteName() == c.GetRepresentativeRouteName() 
@@ -259,11 +260,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       var conduitsWithSamePosition = GroupConduitsOfBranchRouteWithSamePosition( allConduitsOfBranchRoute ).Where( g => g.Value.Count > 1 ) ;
       foreach ( var (_, conduits ) in conduitsWithSamePosition ) {
-        var count = 0 ;
         var index = 0 ;
         var endPoints = GetEndPointConduitByLength( conduits ) ;
-        var sortConduits = conduits.OrderBy( c => c.GetRouteName() ).Skip( 1 ).ToList() ;
-        var conduitDirections = GetConduitDirections( allConduitsOfBranchRoute, conduits.First().GetRouteName()! ) ;
+        var mainConduit = conduits.FirstOrDefault( c => ! routeDic.Exists( r => r.RouteName == c.GetRouteName()! ) ) ;
+        var sortConduits = mainConduit != null 
+          ? conduits.Where( c => routeDic.Exists( r => r.RouteName == c.GetRouteName()! ) ).OrderBy( c => c.GetRouteName() ).ToList() 
+          : conduits.OrderBy( c => c.GetRouteName() ).Skip( 1 ).ToList() ;
+        var conduitDirections = GetConduitDirections( allConduitsOfBranchRoute, sortConduits.First().GetRouteName()! ) ;
         foreach ( var conduit in sortConduits ) {
           var routeName = conduit.GetRouteName() ;
           var levelId = conduit.GetLevelId() ;
@@ -272,18 +275,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           var startPoint = conduitLine.GetEndPoint( 0 ) ;
           var endPoint = endPoints.ElementAt( index ) ;
           var direction = conduitLine.Direction ;
-          double tolerance ;
-          if ( ! string.IsNullOrEmpty( routeName ) && ! routeDic.Exists( r => r.RouteName == routeName! ) ) {
-            count++ ;
-            tolerance = defaultTolerance * count ;
-            var routeInfo = new RouteInfo( routeName!, tolerance, conduitDirections ) ;
-            routeDic.Add( routeInfo ) ;
-          }
-          else {
-            tolerance = routeDic.First( r => r.RouteName == routeName! ).Tolerance ;
+          if ( string.IsNullOrEmpty( routeName ) || ! routeDic.Exists( r => r.RouteName == routeName! ) ) continue ;
+          {
+            var tolerance = routeDic.First( r => r.RouteName == routeName! ).Tolerance ;
+            CreateConduit( document, arentConduitType, allConduitFittings, newConduits, conduitDirections, conduit, routeName!, direction, startPoint, endPoint, tolerance, levelId, true ) ;
           }
 
-          CreateConduit( document, arentConduitType, allConduitFittings, newConduits, conduitDirections, conduit, routeName!, direction, startPoint, endPoint, tolerance, levelId ) ;
           index++ ;
         }
       }
@@ -303,13 +300,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return endPoints ;
     }
 
-    private void CreateConduit( Document document, MEPCurveType arentConduitType, ICollection<FamilyInstance> allConduitFittings, Dictionary<Element, string> newConduits, ICollection<XYZ> conduitDirections, Element conduit, string routeName, XYZ direction, XYZ startPoint, XYZ endPoint, double tolerance, ElementId levelId )
+    private void CreateConduit( Document document, MEPCurveType arentConduitType, ICollection<FamilyInstance> allConduitFittings, Dictionary<Element, string> newConduits, ICollection<XYZ> conduitDirections, Element conduit, string routeName, XYZ direction, XYZ startPoint, XYZ endPoint, double tolerance, ElementId levelId, bool isBranchRoute = false )
     {
       if ( direction.X is 1 or -1 ) {
         var otherDirection = conduitDirections.FirstOrDefault( d => d.X is not 1 && d.X is not -1 ) ;
         if ( otherDirection != null ) {
-          startPoint = new XYZ( startPoint.X, startPoint.Y - direction.X * otherDirection.Y * tolerance, startPoint.Z ) ;
-          endPoint = new XYZ( endPoint.X, endPoint.Y - direction.X * otherDirection.Y * tolerance, endPoint.Z ) ;
+          if ( isBranchRoute ) {
+            startPoint = new XYZ( startPoint.X, startPoint.Y - otherDirection.Y * tolerance, startPoint.Z ) ;
+            endPoint = new XYZ( endPoint.X, endPoint.Y - otherDirection.Y * tolerance, endPoint.Z ) ;
+          }
+          else {
+            startPoint = new XYZ( startPoint.X, startPoint.Y - direction.X * otherDirection.Y * tolerance, startPoint.Z ) ;
+            endPoint = new XYZ( endPoint.X, endPoint.Y - direction.X * otherDirection.Y * tolerance, endPoint.Z ) ;
+          }
         }
         else {
           startPoint = new XYZ( startPoint.X, startPoint.Y + direction.X * tolerance, startPoint.Z ) ;
