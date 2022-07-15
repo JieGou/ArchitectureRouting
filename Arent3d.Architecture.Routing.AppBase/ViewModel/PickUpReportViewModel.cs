@@ -153,9 +153,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       else {
         if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) && string.IsNullOrEmpty( FileName ) )
-          MessageBox.Show( "Please select the file type and input the file name.", "Warning" ) ;
-        else if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) && string.IsNullOrEmpty( FileName ) )
           MessageBox.Show( "Please select the output folder, file type and and input the file name.", "Warning" ) ;
+        else if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) && string.IsNullOrEmpty( FileName ) )
+          MessageBox.Show( "Please select the file type and input the file name.", "Warning" ) ;
         else if ( ! PickUpModels.Any() )
           MessageBox.Show( "Don't have pick up data.", "Warning" ) ;
         else if ( string.IsNullOrEmpty( PathName ) )
