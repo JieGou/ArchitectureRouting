@@ -251,7 +251,7 @@
         <string>配線情報追加</string>
 
         <key>Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand</key>
-        <string>配線の３D表示モード追加</string>
+        <string>配線３D表示モード</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

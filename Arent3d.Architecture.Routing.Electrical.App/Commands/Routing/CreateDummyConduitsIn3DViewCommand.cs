@@ -33,6 +33,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       try {
         using var transaction = new Transaction( document, ( "TransactionName.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetAppStringByKeyOrDefault( "Create Dummy Conduits In 3D View" ) ) ) ;
         transaction.Start() ;
+        View? newView = null ;
+        if ( document.ActiveView is ViewPlan activeView ) {
+          newView = Create3DView( document, activeView ) ;
+        }
+        transaction.Commit() ;
+
+        if ( newView != null ) {
+          uiDocument.ActiveView = newView ;
+        }
+
+        transaction.Start() ;
         var isCreateDummyConduits = RemoveDummyConduits( document ) ;
         if ( isCreateDummyConduits ) {
           var arentConduitTypeName = "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
@@ -67,7 +78,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
             HideConduitsIn2DView( document, newConduits ) ;
           }
         }
-        
+
         transaction.Commit() ;
 
         return Result.Succeeded ;
@@ -96,6 +107,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           panel.IsEnabled = isEnable ;
         }
       }
+    }
+    
+    private static View? Create3DView( Document document, ViewPlan activeView )
+    {
+      var levelId = activeView.GenLevel.Id ;
+      var levelName = activeView.Name ;
+      var levels = new List<(ElementId Id, string Name)> { ( levelId, levelName ) } ;
+      var views = document.Create3DView( levels ) ;
+      return views.Any() ? views.First() : null ;
     }
 
     private List<RouteInfo> GenerateConduits( Document document, MEPCurveType arentConduitType, ICollection<Element> allConduits, Dictionary<Element, string> newConduits )
@@ -139,7 +159,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     private Dictionary<string, double> SetToleranceForConduit( Document document, IEnumerable<Element> conduits )
     {
-      var defaultTolerance = ( 30.0 ).MillimetersToRevitUnits() ;
+      var defaultTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
       Dictionary<string, double> conduitToleranceDic = new() ;
       Dictionary<string, XYZ> conduitDirectionDic = new() ;
       var allConduitsOfBranchRoute = document.GetAllElements<Element>()
