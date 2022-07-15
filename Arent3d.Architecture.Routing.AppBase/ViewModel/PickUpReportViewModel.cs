@@ -33,8 +33,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     private const string SummaryFileType = "拾い出し集計表" ;
     private const string ConfirmationFileType = "拾い根拠確認表" ;
-    private const string DoconOff = "ドーコンOFF" ;
-    private const string DoconOn = "ドーコンON" ;
+    private const string DoconOff = "拾い番号OFF" ;
+    private const string DoconOn = "拾い番号ON" ;
     private const string OnText = "ON" ;
     private const string OffText = "OFF" ;
     private const string OutputItemAll = "全項目出力" ;
@@ -124,7 +124,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       _pathName = string.Empty ;
       _fileName = string.Empty ;
-      _fileNameWithoutUserInput = String.Empty;
+      _fileNameWithoutUserInput = string.Empty;
       fileNames = new List<string>() ;
       CreateCheckBoxList() ;
       InitPickUpModels() ;
