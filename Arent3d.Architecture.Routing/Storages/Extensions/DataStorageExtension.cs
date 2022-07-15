@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
             if ( null != dataStorage )
                 return dataStorage ;
 
-            if ( !document.IsModifiable && ! document.IsReadOnly ) {
+            if ( !document.IsModifiable ) {
                 using var transaction = new Transaction( document ) ;
                 transaction.Start( "Create Storage" ) ;
                 
