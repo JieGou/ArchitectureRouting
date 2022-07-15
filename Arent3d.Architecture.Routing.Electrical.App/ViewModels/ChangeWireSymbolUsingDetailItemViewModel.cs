@@ -129,7 +129,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         {
           var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
           detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-          _conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels.Add( new ConduitAndDetailCurveItemModel
+          _conduitAndDetailCurveModel.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
           {
             ConduitId = x.Value,
             DetailCurveId = detailCurve.UniqueId,
@@ -140,7 +140,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         lines.ForEach( x =>
         {
           var line = _uiDocument.Document.Create.NewFamilyInstance( x.Key, familySymbol, _uiDocument.ActiveView ) ;
-          _conduitAndDetailCurveModel.ConduitAndDetailCurveItemModels.Add( new ConduitAndDetailCurveItemModel
+          _conduitAndDetailCurveModel.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
           {
             ConduitId = x.Value,
             DetailCurveId = line.UniqueId,
