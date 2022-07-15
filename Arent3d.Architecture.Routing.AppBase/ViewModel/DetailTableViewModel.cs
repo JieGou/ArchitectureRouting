@@ -1634,6 +1634,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           break;
         case EditedColumn.WireBook:
           detailTableModelRow.WireBook = changedValue ;
+          var mark = detailTableModelRow.Remark.Contains( MultiplicationSymbol ) ? detailTableModelRow.Remark.Split( MultiplicationSymbol )[ 0 ] : detailTableModelRow.Remark ;
+          var newRemark = int.TryParse( changedValue, out var value ) && value > 1 ? $"{mark}{MultiplicationSymbol}{value}" : mark ;
+          if ( detailTableModelRow.Remark != newRemark ) {
+            detailTableModelRow.Remark = newRemark ;
+            DetailTableModels = new ObservableCollection<DetailTableModel>( DetailTableModels ) ;
+          }
           break;
         case EditedColumn.EarthType:
           detailTableModelRow.EarthType = changedValue ;
