@@ -2060,7 +2060,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var wireBook = 0 ;
           var numberOfGrounds = 0 ;
           foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
-            // newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + MultiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
+            newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + MultiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
             foreach ( var detailTableRowWithSameRemark in detailTableRowsWithSameRemark ) {
               if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.WireBook ) ) {
                 wireBook += int.Parse( detailTableRowWithSameRemark.WireBook ) ;
@@ -2069,7 +2069,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 numberOfGrounds += int.Parse( detailTableRowWithSameRemark.NumberOfGrounds ) ;
               }
             }
-            newRemark.Add( wireBook == 1 ? remark : remark + MultiplicationSymbol + wireBook ) ;
           }
 
           var newDetailTableRow = new DetailTableModel( 
