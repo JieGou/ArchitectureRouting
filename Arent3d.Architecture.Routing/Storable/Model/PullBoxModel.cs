@@ -7,16 +7,18 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     private const string NumberPattern = @"\d+" ;
     public string Buzaicd { get ; }
     public string Kikaku { get ; }
+    
+    public string Hinmei { get ; }
     public int Width { get ; private set ; }
     public int Height { get ; private set ; }
     public int Depth { get ; private set ; }
-
     public string? Name { get ; private set ; }
 
     public PullBoxModel( HiroiMasterModel hiroiMasterModel )
     {
       Buzaicd = hiroiMasterModel.Buzaicd ;
       Kikaku = hiroiMasterModel.Kikaku ;
+      Hinmei = hiroiMasterModel.Hinmei ;
       InitPullBoxSizeFromString( Kikaku ) ;
     }
 
