@@ -225,6 +225,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var conduitOfFirstRoute = doc.GetElement( parentDetailSymbolModel!.ConduitId ) ;
             conduits = new List<Element> { conduitOfFirstRoute } ;
           }
+          
           AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, csvStorable.WiresAndCablesModelData, detailTableModels, conduits, parentDetailSymbolModel!, true, isMixConstructionItems ) ;
           var routeNameArray = parentRouteName.Split( '_' ) ;
           parentRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
@@ -234,6 +235,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var strRouteName = string.Join( "_", nameArray.First(), nameArray.ElementAt( 1 ) ) ;
             return strRouteName != parentRouteName ;
           } ).OrderByDescending( n => n ).ToList() ;
+          
         }
 
         var childDetailSymbolModels = from routeName in routeNames select onlyKeyRoutingOnDetailSymbolModel.DetailSymbolModels.FirstOrDefault( d => d.RouteName == routeName ) ;
@@ -444,7 +446,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static ObservableCollection<DetailTableModel> SortDetailTableModel( ObservableCollection<DetailTableModel> detailTableModels, bool isMixConstructionItems )
     {
-      var sortedDetailTableModelsList = detailTableModels.ToList() ;
+      List<DetailTableModel> sortedDetailTableModelsList = detailTableModels.ToList() ;
       var resultSortDetailModel = SortDetailModel( sortedDetailTableModelsList, isMixConstructionItems ) ;
       return new ObservableCollection<DetailTableModel>( resultSortDetailModel ) ;
     }
@@ -777,7 +779,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private Dictionary<ElementId, List<ElementId>> UpdateConnectorAndConduitConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )
     {
       Dictionary<ElementId, List<ElementId>> connectorGroups = new() ;
-      var allConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
+      List<Element> allConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
       using Transaction transaction = new( document, "Group connector" ) ;
       transaction.Start() ;
       foreach ( var (routeName, constructionItem) in routesChangedConstructionItem ) {
@@ -857,10 +859,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, ICollection<DetailTableModel> detailTableModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute, bool mixConstructionItems )
     {
       var element = pickedObjects.FirstOrDefault( p => p.UniqueId == detailSymbolModel.ConduitId ) ;
-      var floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
-      var constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
-      var isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
-      var plumbingType = detailSymbolModel.PlumbingType ;
+      string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
+      string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
+      string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
+      string plumbingType = detailSymbolModel.PlumbingType ;
 
       var ceedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == detailSymbolModel.Code && x.GeneralDisplayDeviceSymbol == detailSymbolModel.DeviceSymbol ) ;
       if ( ceedModel != null && ! string.IsNullOrEmpty( ceedModel.CeedSetCode ) && ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ) {
