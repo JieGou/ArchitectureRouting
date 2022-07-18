@@ -6,8 +6,10 @@ using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 
@@ -58,9 +60,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
+      Dictionary<string, List<string>> parentAndChildRoute = new() ;
       for ( int i = 0 ; i < 50 ; i++ ) {
         var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
-        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex ) ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
@@ -102,6 +105,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       #endregion
 
+      #region Change Representative Route Name
+
+      if ( ! parentAndChildRoute.Any() ) return executeResultValue ;
+      using Transaction transactionChangeRepresentativeRouteName = new( document ) ;
+      transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
+      foreach ( var (parentRouteName, childRouteNames ) in parentAndChildRoute ) {
+        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => childRouteNames.Contains(c.GetRouteName()! ) ).ToList() ;
+        foreach ( var conduit in conduits ) {
+          conduit.TrySetProperty( RoutingParameter.RepresentativeRouteName, parentRouteName ) ;
+        }
+      }
+
+      transactionChangeRepresentativeRouteName.Commit() ;
+
+      #endregion
+      
       return executeResultValue ;
     }
   }
