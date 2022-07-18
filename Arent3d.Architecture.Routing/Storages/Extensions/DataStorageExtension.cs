@@ -22,18 +22,18 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
                 using var transaction = new Transaction( document ) ;
                 transaction.Start( "Create Storage" ) ;
                 
-                dataStorage = CreateDataStorage( document ) ;
+                dataStorage = CreateDataStorageForUser( document ) ;
                 
                 transaction.Commit() ;
             }
             else {
-                dataStorage = CreateDataStorage( document ) ;
+                dataStorage = CreateDataStorageForUser( document ) ;
             }
             
             return dataStorage ;
         }
 
-        private static DataStorage CreateDataStorage( Document document )
+        private static DataStorage CreateDataStorageForUser( Document document )
         {
             var dataStorage = DataStorage.Create( document ) ;
             dataStorage.Name = $"{AppInfo.VendorId}-{document.Application.Username}-{document.Application.LoginUserId}" ;
