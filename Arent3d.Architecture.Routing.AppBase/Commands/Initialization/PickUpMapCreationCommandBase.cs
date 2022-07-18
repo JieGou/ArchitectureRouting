@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Autodesk.Revit.DB.Electrical ;
+using MoreLinq.Extensions ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -67,12 +68,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var textNotePickUpModels = new List<TextNoteMapCreationModel>() ;
       var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().ToList() ;
       var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      var notSeenConduitsOfRoutes = new Dictionary<string, List<Conduit>>() ;
+      var allConduitsOfRoutes = new Dictionary<string, List<Conduit>>() ;
       foreach ( var route in routeCache ) {
-        var notSeenConduits = allConduits.Where( conduit =>
+        var conduitsOfRoute = allConduits.Where( conduit =>
           conduit.GetRouteName() is { } rName && rName == route.Key ).ToList() ;
-        if( notSeenConduits.Count > 0 )
-          notSeenConduitsOfRoutes.Add( route.Key, notSeenConduits );
+        if( conduitsOfRoute.Count > 0 )
+          allConduitsOfRoutes.Add( route.Key, conduitsOfRoute );
       }
 
       foreach ( var route in routes ) {
@@ -82,12 +83,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           .FirstOrDefault() ;
         if ( conduitPickUpModel == null ) continue ;
 
-        ShowPickUp( document, routeCache, allConduits, isDisplayPickUpNumber, conduitPickUpModel.PickUpModels,
+        ShowPickUp( document, routeCache, allConduitsOfRoutes, isDisplayPickUpNumber, conduitPickUpModel.PickUpModels,
           seenTextNotePickUps, notSeenTextNotePickUps ) ;
       }
 
       foreach ( var notSeenTextNotePickUp in notSeenTextNotePickUps ) {
-        SetPositionForNotSeenTextNotePickUp( document, routeCache, notSeenConduitsOfRoutes, notSeenTextNotePickUp ) ;
+        SetPositionForNotSeenTextNotePickUp( document, routeCache, allConduitsOfRoutes, notSeenTextNotePickUp ) ;
       }
 
       #region Set size of text note in entangled case
@@ -199,7 +200,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyCollection<Conduit> allConduits, bool isDisplayPickUpNumber, 
+    private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, bool isDisplayPickUpNumber, 
       List<PickUpModel> pickUpModels, List<TextNoteMapCreationModel> seenTextNotePickUps, List<TextNoteMapCreationModel> notSeenTextNotePickUps )
     {
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
@@ -248,7 +249,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         // Seen quantity
-        var conduitsOfRoute = allConduits.Where( conduit => conduit.GetRouteName() is { } rName && rName == lastRoute.Key ).ToList() ;
+        if ( ! allConduitsOfRoutes.ContainsKey( lastRoute.Key ) ) continue ;
+        
+        var conduitsOfRoute = allConduitsOfRoutes[lastRoute.Key] ;
         var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
 
         var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
@@ -262,8 +265,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           
           int counter;
           XYZ? position;
-          var positionSeenTextNote = seenTextNotePickUps.FirstOrDefault( x => x.TextNotePosition != null &&
-            Math.Abs( x.TextNotePosition.X - point.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePosition.Y - point.Y ) < MaxToleranceOfTextNotePosition ) ;
+          var positionSeenTextNote = seenTextNotePickUps.Where( x => x.TextNotePosition != null &&
+            Math.Abs( x.TextNotePositionRef.X - point.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - point.Y ) < MaxToleranceOfTextNotePosition )
+            .OrderBy( x => x.TextNoteCounter ).LastOrDefault();
           if ( positionSeenTextNote == default ) {
             counter = 1 ;
             position = point ;
@@ -276,14 +280,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               point = new XYZ( point.X, isLeftOrTop ? point.Y - 1.7 - 1.5 * ( positionSeenTextNote.TextNoteCounter - 1 ) / 2 : point.Y + 1.5 * positionSeenTextNote.TextNoteCounter / 2, point.Z ) ;
 
             counter = positionSeenTextNote.TextNoteCounter + 1 ;
-            position = positionSeenTextNote.TextNotePosition ;
-            seenTextNotePickUps.Remove( positionSeenTextNote ) ;
+            position = positionSeenTextNote.TextNotePositionRef ;
           }
 
           var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
           var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
           var textNote = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
-          var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, counter, point, position, null ) ;
+          var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, counter, position, point, null ) ;
           seenTextNotePickUps.Add( textNotePickUpModel ) ;
         }
       }
@@ -379,6 +382,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       textNotePickUpStorable.TextNotePickUpData = new List<TextNotePickUpModel>() ;
+      textNotePickUpStorable.Save() ;
     }
     
     private static List<string> GetPickUpNumbersList( List<PickUpModel> pickUpModels )
