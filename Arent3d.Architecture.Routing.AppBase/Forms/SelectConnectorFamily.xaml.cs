@@ -6,7 +6,8 @@ using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using MessageBox = System.Windows.Forms.MessageBox ;
@@ -17,13 +18,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     public ObservableCollection<ConnectorFamilyInfo> ConnectorFamilyList { get ; } = new() ;
     private readonly Document _document ;
-    private readonly CeedStorable _ceedStorable ;
 
     public SelectConnectorFamily( Document document )
     {
       InitializeComponent() ;
       _document = document ;
-      _ceedStorable = _document.GetCeedStorable() ;
+      _document.GetCeedStorable() ;
       LoadConnectorFamilyList() ;
     }
 
@@ -54,11 +54,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           connectorFamilyUploadFiles.Add( fileName ) ;
         }
 
-        var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! _ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
-        _ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
+        var ceedUserStorage = _document.FindOrCreateDataStorageForUser() ;
+        var ceedUserData = ceedUserStorage.GetData<CeedUserModel>() ?? new CeedUserModel();
+        var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! ceedUserData.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
+        ceedUserData.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
         using Transaction t = new( _document, "Save connector family upload data" ) ;
         t.Start() ;
-        _ceedStorable.Save() ;
+        ceedUserStorage.SetData(ceedUserData) ;
         t.Commit() ;
       }
       catch {
@@ -110,11 +112,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void LoadConnectorFamilyList()
     {
-      foreach ( string fileName in _ceedStorable.ConnectorFamilyUploadData ) {
+      var ceedUserData = _document.FindOrCreateDataStorageForUser().GetData<CeedUserModel>() ?? new CeedUserModel();
+      foreach ( var fileName in  ceedUserData.ConnectorFamilyUploadData ) {
         ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
       }
 
-      if ( ConnectorFamilyList.Any() ) ConnectorFamilyList.First().IsSelected = true ;
+      if ( ConnectorFamilyList.Any() ) 
+        ConnectorFamilyList.First().IsSelected = true ;
     }
 
     public class ConnectorFamilyInfo

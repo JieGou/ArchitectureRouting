@@ -15,9 +15,12 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 using MoreLinq ;
 using Button = System.Windows.Controls.Button ;
@@ -38,8 +41,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly ExternalCommandData _commandData ;
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
-    private List<CeedModel> _usedCeedModels ;
     private List<CeedModel> _previousCeedModels ;
+    private DataStorage _CeedUserStorage ;
+    private CeedUserModel _ceedUserModel ;
 
     public DataGrid DtGrid ;
 
@@ -244,13 +248,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       _commandData = commandData ;
       _document = commandData.Application.ActiveUIDocument.Document ;
-      CeedModels = new() ;
+      CeedModels = new ObservableCollection<CeedModel>() ;
       DtGrid = new DataGrid() ;
+      
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      _CeedUserStorage = _document.FindOrCreateDataStorageForUser() ;
+      _ceedUserModel = _CeedUserStorage.GetData<CeedUserModel>() ?? new CeedUserModel() ;
+      
       if ( oldCeedStorable is null ) {
-        _ceedModels = new() ;
+        _ceedModels = new List<CeedModel>() ;
         _usingCeedModel = new List<CeedModel>() ;
-        _usedCeedModels = new List<CeedModel>() ;
         _previousCeedModels = new List<CeedModel>() ;
         _previewList = new ObservableCollection<CeedModel>() ;
       }
@@ -258,16 +265,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CeedStorable = oldCeedStorable ;
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
-        _usedCeedModels = oldCeedStorable.CeedModelData ;
-        _previousCeedModels = new List<CeedModel>( _usedCeedModels ) ;
-        IsShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
-        IsShowCondition = oldCeedStorable.IsShowCondition ;
-        IsShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
+        _previousCeedModels = new List<CeedModel>( oldCeedStorable.CeedModelData ) ;
+        IsShowCeedModelNumber = _ceedUserModel.IsShowCeedModelNumber ;
+        IsShowCondition = _ceedUserModel.IsShowCondition ;
+        IsShowOnlyUsingCode = _ceedUserModel.IsShowOnlyUsingCode ;
         AddModelNumber( CeedModels ) ;
         if ( _usingCeedModel.Any() )
           IsExistUsingCode = true ;
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
-        else IsShowDiff = oldCeedStorable.IsDiff ;
+        else IsShowDiff = _ceedUserModel.IsDiff ;
         _previewList = CeedModels ;
       }
 
@@ -395,7 +401,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CheckChangeColor( ceedModelData ) ;
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-        ceedStorable.IsShowOnlyUsingCode = false ;
+        _ceedUserModel.IsShowOnlyUsingCode = false ;
         LoadData( ceedStorable ) ;
         checkBox.Visibility = Visibility.Hidden ;
         checkBox.IsChecked = false ;
@@ -407,6 +413,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           t.Start() ;
           using ( var progressData = progress?.Reserve( 0.5 ) ) {
             ceedStorable.Save() ;
+            _CeedUserStorage.SetData(_ceedUserModel);
             progressData?.ThrowIfCanceled() ;
           }
 
@@ -428,11 +435,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         using Transaction t = new( _document, "Save data" ) ;
         t.Start() ;
-        ceedStorable.IsShowCeedModelNumber = IsShowCeedModelNumber ;
-        ceedStorable.IsShowCondition = IsShowCondition ;
-        ceedStorable.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
-        ceedStorable.IsDiff = IsShowDiff ;
-        ceedStorable.Save() ;
+        _ceedUserModel.IsShowCeedModelNumber = IsShowCeedModelNumber ;
+        _ceedUserModel.IsShowCondition = IsShowCondition ;
+        _ceedUserModel.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
+        _ceedUserModel.IsDiff = IsShowDiff ;
+        _CeedUserStorage.SetData(_ceedUserModel) ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -496,8 +503,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
           ceedStorable.CeedModelUsedData = _usingCeedModel ;
-          ceedStorable.IsShowOnlyUsingCode = true ;
+          _ceedUserModel.IsShowOnlyUsingCode = true ;
           ceedStorable.Save() ;
+          _CeedUserStorage.SetData(_ceedUserModel);
           t.Commit() ;
         }
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -784,13 +792,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ceedStorable.CeedModelUsedData = usingCeedModel ;
       }
 
-      var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
-      ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
+      var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! _ceedUserModel.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
+      _ceedUserModel.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
 
       try {
         using Transaction t = new( document, "Save CeeD data" ) ;
         t.Start() ;
         ceedStorable.Save() ;
+        _CeedUserStorage.SetData(_ceedUserModel);
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
