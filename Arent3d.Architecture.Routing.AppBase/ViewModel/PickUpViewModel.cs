@@ -839,7 +839,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private Element? GetConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName, bool isFrom )
     {
-      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
+      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => {
+        if ( c.GetRouteName() is not { } rName ) return false ;
+        var rNameArray = rName.Split( '_' ) ;
+        var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+        return strRouteName == routeName ;
+      } ).ToList() ;
       foreach ( var conduit in conduitsOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;

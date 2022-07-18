@@ -514,6 +514,9 @@
 
         <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
         <string>拾い番号設定</string>
+
+        <key>Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
+        <string>印刷モード切替</string>
     </dict>
 </plist>
 
