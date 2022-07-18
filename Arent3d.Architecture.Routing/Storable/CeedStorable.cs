@@ -30,14 +30,12 @@ namespace Arent3d.Architecture.Routing.Storable
     
     public bool IsDiff { get ; set ; }
     
-    public List<CeedModel> OldCeedModelData { get ; set ; }
 
     public CeedStorable( DataStorage owner ) : base( owner, false )
     {
       CeedModelData = new List<CeedModel>() ;
       CeedModelUsedData = new List<CeedModel>() ;
       ConnectorFamilyUploadData = new List<string>() ;
-      OldCeedModelData = new List<CeedModel>() ;
       IsShowCondition = true ;
     }
 
@@ -46,7 +44,6 @@ namespace Arent3d.Architecture.Routing.Storable
       CeedModelData = new List<CeedModel>() ;
       CeedModelUsedData = new List<CeedModel>() ;
       ConnectorFamilyUploadData = new List<string>() ;
-      OldCeedModelData = new List<CeedModel>() ;
       IsShowCondition = true ;
     }
 
