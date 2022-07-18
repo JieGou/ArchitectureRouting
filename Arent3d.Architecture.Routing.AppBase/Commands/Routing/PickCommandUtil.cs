@@ -10,6 +10,7 @@ using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using CsvHelper ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
 
@@ -319,33 +320,129 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     #region Preview Lines
 
-    public static ( List<ElementId>, List<ElementId> ) CreatePreviewLines( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    public static List<(List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping)> CreatePreviewLines( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
+      var previewLines = new List<(List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping)>() ;
+      
       if ( fromPickResult.PickedConnector == null || toPickResult.PickedConnector == null ) {
-        return ( new List<ElementId>(), new List<ElementId>() ) ;
+        return previewLines ;
       }
       using Transaction trans = new( document, "Create preview lines" ) ;
       trans.Start() ;
       var firstPoint = fromPickResult.GetOrigin() ;
       var lastPoint = toPickResult.GetOrigin() ;
-      if ( Math.Abs( firstPoint.X - lastPoint.X ) < MinToleranceOfConnector || Math.Abs( firstPoint.Y - lastPoint.Y ) < MinToleranceOfConnector ) 
-        return ( new List<ElementId>(), new List<ElementId>() ) ;
+      if ( Math.Abs( firstPoint.X - lastPoint.X ) < MinToleranceOfConnector ||
+           Math.Abs( firstPoint.Y - lastPoint.Y ) < MinToleranceOfConnector )
+        return previewLines ;
       
-      var (secondPoint, thirdPoint, isDirectionXOrY ) = GetPoints( fromPickResult, toPickResult ) ;
+      // var (secondPoint, thirdPoint, isDirectionXOrY ) = GetPoints( fromPickResult, toPickResult ) ;
       
-      List<ElementId> previewLineIds = new() ;
-      List<ElementId> allLineIds = new() ;
+      var (secondPoint,thirdPoint) = GetPointsForPreviewLines( fromPickResult,toPickResult );
+      
       var redColor = new Color( 255, 0, 0 ) ;
       var blueColor = new Color( 0, 0, 255 ) ;
       var redLineCategory = GetLineStyle( document, redColor, "Red" ) ;
       var blueLineCategory = GetLineStyle( document, blueColor, "Blue" ) ;
 
-      CreateLines( document, redLineCategory, isDirectionXOrY, firstPoint, lastPoint, secondPoint, allLineIds, previewLineIds ) ;
-      CreateLines( document, blueLineCategory, isDirectionXOrY, firstPoint, lastPoint, thirdPoint, allLineIds, previewLineIds ) ;
+      if ( secondPoint != null && thirdPoint != null ) {
+        (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) firstLines = (new List<ElementId>(),new List<ElementId>(),false) ;
+        CreateLine( document, redLineCategory, firstPoint, secondPoint!,firstLines.allLineIds ,firstLines.previewLineIds);
+        CreateLine( document, redLineCategory, secondPoint, lastPoint ,firstLines.allLineIds ,firstLines.previewLineIds);
+        previewLines.Add( firstLines );
+        
+        (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) secondLines = (new List<ElementId>(),new List<ElementId>(),false) ;
+        CreateLine( document, blueLineCategory, firstPoint, thirdPoint!,secondLines.allLineIds ,secondLines.previewLineIds);
+        CreateLine( document, blueLineCategory, thirdPoint, lastPoint ,secondLines.allLineIds ,secondLines.previewLineIds);
+        previewLines.Add( secondLines );
+        
+      }
+      else if (secondPoint !=null) {
+        (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) routeLines = (new List<ElementId>(),new List<ElementId>(),true) ;
+        CreateLine( document, redLineCategory, firstPoint, secondPoint!,routeLines.allLineIds ,routeLines.previewLineIds);
+        CreateLine( document, redLineCategory, secondPoint!, lastPoint ,routeLines.allLineIds ,routeLines.previewLineIds);
+        previewLines.Add( routeLines );
+      }
 
+      // CreateLines( document, redLineCategory, isDirectionXOrY, firstPoint, lastPoint, secondPoint, allLineIds, previewLineIds ) ;
+      // CreateLines( document, blueLineCategory, isDirectionXOrY, firstPoint, lastPoint, thirdPoint, allLineIds, previewLineIds ) ;
+      
       trans.Commit() ;
 
-      return ( previewLineIds, allLineIds ) ;
+      return previewLines;
+    }
+
+    private static void CreateLine(Document document,Category lineCategory,XYZ firstPoint, XYZ secondPoint,ICollection<ElementId> allLineIds, ICollection<ElementId> previewLineIds)
+    {
+      var curve = Line.CreateBound( firstPoint, secondPoint ) ;
+      var detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+      detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      previewLineIds.Add( detailCurve.Id ) ;
+      allLineIds.Add( detailCurve.Id ) ;
+    }
+
+    private static (XYZ? secondPoint,XYZ? thirdPoint) GetPointsForPreviewLines(ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult)
+    {
+      var fromOrigin = fromPickResult.GetOrigin() ;
+      var toOrigin = toPickResult.GetOrigin() ;
+
+      var fromConnectorOwner = fromPickResult.PickedConnector?.Owner as FamilyInstance ;
+      var fromFaceDirection = fromConnectorOwner?.FacingOrientation ;
+      var fromHandDirection = fromConnectorOwner?.HandOrientation ;
+
+      var toConnectorOwner = toPickResult.PickedConnector?.Owner as FamilyInstance ;
+      var toFaceDirection = toConnectorOwner?.FacingOrientation ;
+      var toHandDirection = toConnectorOwner?.HandOrientation ;
+
+      TryGetIntersectionOfVectors( fromOrigin, toOrigin, fromFaceDirection, toFaceDirection, out var intersectionPoint1 ) ;
+      TryGetIntersectionOfVectors( fromOrigin, toOrigin, fromHandDirection, toHandDirection, out var intersectionPoint2 ) ;
+      TryGetIntersectionOfVectors( fromOrigin, toOrigin, fromFaceDirection, toHandDirection, out var intersectionPoint3 ) ;
+      TryGetIntersectionOfVectors( fromOrigin, toOrigin, fromHandDirection, toFaceDirection, out var intersectionPoint4 ) ;
+
+      var allIntersectionPoint = new[] { intersectionPoint1, intersectionPoint2, intersectionPoint3, intersectionPoint4 }.Where( xyz => xyz is not null ) .ToList();
+      
+     return allIntersectionPoint.Count() == 2 ? new ValueTuple<XYZ?, XYZ?>(allIntersectionPoint[0],allIntersectionPoint[1]) : new ValueTuple<XYZ?, XYZ? >( GetPointForShortestRoute(allIntersectionPoint,fromOrigin,toOrigin),null ) ;
+
+    }
+
+    private static XYZ? GetPointForShortestRoute(IEnumerable<XYZ?> allPoints, XYZ fromPoint,XYZ toPoint )
+    {
+      XYZ? passPointForShortestRoute = null ;
+      double minDistance = 0 ;
+      foreach ( var point in allPoints ) {
+        var distance = fromPoint.DistanceTo( point ) + toPoint.DistanceTo( point ) ;
+        if ( passPointForShortestRoute == null ) {
+          passPointForShortestRoute = point ;
+          minDistance = distance;
+        }
+        else if (distance < minDistance){
+          passPointForShortestRoute = point ;
+          minDistance = distance;
+        }
+      }
+
+      return passPointForShortestRoute! ;
+    }
+
+    private static bool TryGetIntersectionOfVectors(XYZ fromPoint,XYZ toPoint,XYZ? fromDirection, XYZ? toDirection,out XYZ? intersectionPoint)
+    {
+      if ( fromDirection == null || toDirection == null ) {
+        intersectionPoint = null ;
+        return false ;
+      }
+
+      var newLine1 = Line.CreateUnbound( fromPoint, fromDirection ) ;
+      var newLine2 = Line.CreateUnbound( toPoint, toDirection ) ;
+
+      newLine1.Intersect( newLine2, out var intersectionResultArray ) ;
+
+      if ( intersectionResultArray != null ) {
+        intersectionPoint = intersectionResultArray.get_Item( 0 ).XYZPoint ;
+        return true ;
+      }
+
+      intersectionPoint = null ;
+      return false ;
+      
     }
 
     private static ( XYZ, XYZ, bool ) GetPoints( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
