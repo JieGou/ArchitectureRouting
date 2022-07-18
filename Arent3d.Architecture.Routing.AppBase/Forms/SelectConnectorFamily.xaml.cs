@@ -6,6 +6,7 @@ using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
@@ -54,13 +55,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           connectorFamilyUploadFiles.Add( fileName ) ;
         }
 
-        var ceedUserStorage = _document.FindOrCreateDataStorageForUser() ;
-        var ceedUserData = ceedUserStorage.GetData<CeedUserModel>() ?? new CeedUserModel();
-        var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! ceedUserData.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
-        ceedUserData.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
+        var storageService = new StorageService<CeedUserModel>(_document, true) ;
+        var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
+        storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
         using Transaction t = new( _document, "Save connector family upload data" ) ;
         t.Start() ;
-        ceedUserStorage.SetData(ceedUserData) ;
+        storageService.SaveChange() ;
         t.Commit() ;
       }
       catch {
@@ -112,8 +112,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void LoadConnectorFamilyList()
     {
-      var ceedUserData = _document.FindOrCreateDataStorageForUser().GetData<CeedUserModel>() ?? new CeedUserModel();
-      foreach ( var fileName in  ceedUserData.ConnectorFamilyUploadData ) {
+      var storageService = new StorageService<CeedUserModel>(_document, true) ;
+      foreach ( var fileName in  storageService.Data.ConnectorFamilyUploadData ) {
         ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
       }
 

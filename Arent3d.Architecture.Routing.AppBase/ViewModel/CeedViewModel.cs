@@ -15,12 +15,11 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 using MoreLinq ;
 using Button = System.Windows.Controls.Button ;
@@ -42,8 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
     private List<CeedModel> _previousCeedModels ;
-    private DataStorage _CeedUserStorage ;
-    private CeedUserModel _ceedUserModel ;
+    private StorageService<CeedUserModel> _storageService ;
 
     public DataGrid DtGrid ;
 
@@ -252,8 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       DtGrid = new DataGrid() ;
       
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      _CeedUserStorage = _document.FindOrCreateDataStorageForUser() ;
-      _ceedUserModel = _CeedUserStorage.GetData<CeedUserModel>() ?? new CeedUserModel() ;
+      _storageService = new StorageService<CeedUserModel>(_document, true) ;
       
       if ( oldCeedStorable is null ) {
         _ceedModels = new List<CeedModel>() ;
@@ -266,14 +263,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
         _previousCeedModels = new List<CeedModel>( oldCeedStorable.CeedModelData ) ;
-        IsShowCeedModelNumber = _ceedUserModel.IsShowCeedModelNumber ;
-        IsShowCondition = _ceedUserModel.IsShowCondition ;
-        IsShowOnlyUsingCode = _ceedUserModel.IsShowOnlyUsingCode ;
+        IsShowCeedModelNumber = _storageService.Data.IsShowCeedModelNumber ;
+        IsShowCondition = _storageService.Data.IsShowCondition ;
+        IsShowOnlyUsingCode = _storageService.Data.IsShowOnlyUsingCode ;
         AddModelNumber( CeedModels ) ;
         if ( _usingCeedModel.Any() )
           IsExistUsingCode = true ;
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
-        else IsShowDiff = _ceedUserModel.IsDiff ;
+        else IsShowDiff = _storageService.Data.IsDiff ;
         _previewList = CeedModels ;
       }
 
@@ -401,7 +398,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CheckChangeColor( ceedModelData ) ;
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-        _ceedUserModel.IsShowOnlyUsingCode = false ;
+        _storageService.Data.IsShowOnlyUsingCode = false ;
         LoadData( ceedStorable ) ;
         checkBox.Visibility = Visibility.Hidden ;
         checkBox.IsChecked = false ;
@@ -413,7 +410,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           t.Start() ;
           using ( var progressData = progress?.Reserve( 0.5 ) ) {
             ceedStorable.Save() ;
-            _CeedUserStorage.SetData(_ceedUserModel);
+            _storageService.SaveChange();
             progressData?.ThrowIfCanceled() ;
           }
 
@@ -435,11 +432,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         using Transaction t = new( _document, "Save data" ) ;
         t.Start() ;
-        _ceedUserModel.IsShowCeedModelNumber = IsShowCeedModelNumber ;
-        _ceedUserModel.IsShowCondition = IsShowCondition ;
-        _ceedUserModel.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
-        _ceedUserModel.IsDiff = IsShowDiff ;
-        _CeedUserStorage.SetData(_ceedUserModel) ;
+        _storageService.Data.IsShowCeedModelNumber = IsShowCeedModelNumber ;
+        _storageService.Data.IsShowCondition = IsShowCondition ;
+        _storageService.Data.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
+        _storageService.Data.IsDiff = IsShowDiff ;
+        _storageService.SaveChange() ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -503,9 +500,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
           ceedStorable.CeedModelUsedData = _usingCeedModel ;
-          _ceedUserModel.IsShowOnlyUsingCode = true ;
+          _storageService.Data.IsShowOnlyUsingCode = true ;
           ceedStorable.Save() ;
-          _CeedUserStorage.SetData(_ceedUserModel);
+          _storageService.SaveChange();
           t.Commit() ;
         }
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -792,14 +789,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ceedStorable.CeedModelUsedData = usingCeedModel ;
       }
 
-      var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! _ceedUserModel.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
-      _ceedUserModel.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
+      var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! _storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
+      _storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
 
       try {
         using Transaction t = new( document, "Save CeeD data" ) ;
         t.Start() ;
         ceedStorable.Save() ;
-        _CeedUserStorage.SetData(_ceedUserModel);
+        _storageService.SaveChange() ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {

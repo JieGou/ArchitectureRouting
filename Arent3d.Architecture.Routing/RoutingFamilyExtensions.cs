@@ -1,8 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -272,8 +271,11 @@ namespace Arent3d.Architecture.Routing
     public static void EraseAllConnectorFamilies( this Document document )
     {
       document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
+      
       var connectorFamilyIds = new List<ElementId>() ;
-      var connectorFamilyUploadDatas = document.GetAllData<CeedUserModel>().Select(x => x.Data.ConnectorFamilyUploadData)
+      var storageService = new StorageService<CeedUserModel>( document, true ) ;
+      
+      var connectorFamilyUploadDatas = storageService.DataStorages.Select(x => x.Data.ConnectorFamilyUploadData)
         .SelectMany(x => x).Distinct().ToList();
       if ( ! connectorFamilyUploadDatas.Any() ) 
         return ;
