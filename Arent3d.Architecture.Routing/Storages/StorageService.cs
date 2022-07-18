@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.Storages
         public TDataModel Data { get ;  }
 
         private IEnumerable<(Element Owner, TDataModel Data)>? _dataStorages ;
-        private IEnumerable<(Element Owner, TDataModel Data)> DataStorages
+        public IEnumerable<(Element Owner, TDataModel Data)> DataStorages
         {
             get { return _dataStorages ??= Owner.Document.GetAllDataStorage<TDataModel>() ; }
         }
