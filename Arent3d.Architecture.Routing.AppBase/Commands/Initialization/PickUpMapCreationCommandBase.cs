@@ -10,11 +10,11 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Autodesk.Revit.DB.Electrical ;
-using MoreLinq.Extensions ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -394,24 +394,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return pickUpNumberList ;
-    }
-  }
-  
-  public class TextNoteMapCreationModel
-  {
-    public string TextNoteId { get ; set ; }
-    public int TextNoteCounter { get ; set ; }
-    public XYZ TextNotePositionRef { get ; set ; }
-    public XYZ? TextNotePosition { get ; set ; }
-    public XYZ? TextNoteDirection { get ; set ; }
-
-    public TextNoteMapCreationModel( string textNoteId, int textNoteCounter, XYZ textNotePositionRef, XYZ? textNotePosition, XYZ? textNoteDirection)
-    {
-      TextNoteId = textNoteId ;
-      TextNoteCounter = textNoteCounter ;
-      TextNotePositionRef = textNotePositionRef ;
-      TextNotePosition = textNotePosition ;
-      TextNoteDirection = textNoteDirection ;
     }
   }
 }
