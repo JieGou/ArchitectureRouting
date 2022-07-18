@@ -62,11 +62,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var isDisplayPickUpNumber = textNotePickUpStorable.IsPickUpNumberSetting ;
       var level = document.ActiveView.GenLevel.Name ;
       var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
-      var textNoteSeenPositions = new List<(string TextNoteId, int TextNoteCounter, XYZ TextNotePosition)>() ;
-      var textNoteNotSeenPositions = new List<(string TextNoteId, int TextNoteCounter, XYZ TextNotePosition)>() ;
-      var textNoteIdsPickUpModels = new List<TextNotePickUpModel>() ;
+      var seenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
+      var notSeenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
+      var textNotePickUpModels = new List<TextNoteMapCreationModel>() ;
       var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().ToList() ;
       var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var notSeenConduitsOfRoutes = new Dictionary<string, List<Conduit>>() ;
+      foreach ( var route in routeCache ) {
+        var notSeenConduits = allConduits.Where( conduit =>
+          conduit.GetRouteName() is { } rName && rName == route.Key ).ToList() ;
+        if( notSeenConduits.Count > 0 )
+          notSeenConduitsOfRoutes.Add( route.Key, notSeenConduits );
+      }
 
       foreach ( var route in routes ) {
         var conduitPickUpModel = pickUpModels
@@ -74,31 +81,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } )
           .FirstOrDefault() ;
         if ( conduitPickUpModel == null ) continue ;
-        
-        textNoteIdsPickUpModels.AddRange( ShowPickUp( document, routeCache, allConduits, isDisplayPickUpNumber, conduitPickUpModel.PickUpModels, textNoteSeenPositions, textNoteNotSeenPositions ) ) ;
+
+        ShowPickUp( document, routeCache, allConduits, isDisplayPickUpNumber, conduitPickUpModel.PickUpModels,
+          seenTextNotePickUps, notSeenTextNotePickUps ) ;
       }
 
-      foreach ( var textNoteNotSeenPosition in textNoteNotSeenPositions ) {
-        SetPositionForNotSeenTextNotePickUp( document, routeCache, allConduits, textNoteNotSeenPosition ) ;
+      foreach ( var notSeenTextNotePickUp in notSeenTextNotePickUps ) {
+        SetPositionForNotSeenTextNotePickUp( document, routeCache, notSeenConduitsOfRoutes, notSeenTextNotePickUp ) ;
       }
 
       #region Set size of text note in entangled case
 
-      var textNotePositions = new List<(string TextNoteId, int TextNoteCounter, XYZ TextNotePosition)>() ;
-      textNotePositions.AddRange( textNoteNotSeenPositions ) ;
-      textNotePositions.AddRange( textNoteSeenPositions ) ;
-      foreach ( var textNotePosition in textNotePositions ) {
-        var textNote = document.GetAllElements<TextNote>().First( x => x.UniqueId == textNotePosition.TextNoteId ) ;
+      textNotePickUpModels.AddRange( notSeenTextNotePickUps ) ;
+      textNotePickUpModels.AddRange( seenTextNotePickUps ) ;
+      foreach ( var textNotePickUpModel in textNotePickUpModels ) {
+        if ( textNotePickUpModel.TextNotePosition == null ) continue ;
+        
+        var textNote = document.GetAllElements<TextNote>().First( x => x.UniqueId == textNotePickUpModel.TextNoteId ) ;
         var angle = textNote.BaseDirection.AngleTo( new XYZ( 1, 0, 0 ) ) ;
-        var isRotated = angle != 0 ;
 
-        if ( ! textNotePositions.Any( x =>
+        if ( ! textNotePickUpModels.Any( x =>
             {
-              if ( x.TextNoteId == textNotePosition.TextNoteId ) return false ;
-              var xDistance = Math.Abs( x.TextNotePosition.X - textNotePosition.TextNotePosition.X ) ;
-              var yDistance = Math.Abs( x.TextNotePosition.Y - textNotePosition.TextNotePosition.Y ) ;
-              if ( isRotated )
-                return xDistance < 2 && yDistance < 2 ;
+              if ( x.TextNoteId == textNotePickUpModel.TextNoteId || x.TextNotePosition == null ) return false ;
+              var xDistance = Math.Abs( x.TextNotePosition.X - textNotePickUpModel.TextNotePosition.X ) ;
+              var yDistance = Math.Abs( x.TextNotePosition.Y - textNotePickUpModel.TextNotePosition.Y ) ;
               return xDistance < 1.5 && yDistance < 1.5 ;
             } ) ) continue ;
 
@@ -110,57 +116,72 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         if ( Math.Abs( angle - Math.PI / 2 ) < AngleTolerance )
           textNote.Coord = new XYZ( textNote.Coord.X + 0.7, textNote.Coord.Y, textNote.Coord.Z ) ;
-        else if ( Math.Abs( angle - Math.PI / 4 ) < AngleTolerance )
-          textNote.Coord = new XYZ( textNote.Coord.X + 0.7, textNote.Coord.Y - 0.3, textNote.Coord.Z ) ;
+        else if ( Math.Abs( angle - Math.PI / 4 ) < AngleTolerance ) {
+          var textNoteDirection = textNotePickUpModel.TextNoteDirection ;
+          if ( textNoteDirection == null )
+            textNote.Coord = new XYZ( textNote.Coord.X, textNote.Coord.Y, textNote.Coord.Z ) ;
+          else if ( textNoteDirection.Y is 1 )
+            textNote.Coord = new XYZ( textNote.Coord.X, textNote.Coord.Y - 0.8, textNote.Coord.Z ) ;
+          else if ( textNoteDirection.Y is -1 )
+            textNote.Coord = new XYZ( textNote.Coord.X, textNote.Coord.Y + 0.5, textNote.Coord.Z ) ;
+          else if ( textNoteDirection.X is 1 )
+            textNote.Coord = new XYZ( textNote.Coord.X - 0.1, textNote.Coord.Y, textNote.Coord.Z ) ;
+          else if ( textNoteDirection.X is -1 )
+            textNote.Coord = new XYZ( textNote.Coord.X + 1.3, textNote.Coord.Y, textNote.Coord.Z ) ;
+        }
         else
           textNote.Coord = new XYZ( textNote.Coord.X, textNote.Coord.Y - 0.8, textNote.Coord.Z ) ;
       }
 
       #endregion
 
-      SaveTextNotePickUpModel( document, textNoteIdsPickUpModels ) ;
+      SaveTextNotePickUpModel( document, textNotePickUpModels.Select( x => new TextNotePickUpModel( x.TextNoteId ) ).ToList() ) ;
     }
 
-    private static void SetPositionForNotSeenTextNotePickUp( Document document, RouteCache routeCache, IReadOnlyCollection<Conduit> allConduits,
-      (string TextNoteId, int TextNoteCounter, XYZ TextNotePosition) textNoteNotSeenPosition )
+    private static void SetPositionForNotSeenTextNotePickUp( Document document, RouteCache routeCache, Dictionary<string, List<Conduit>> notSeenConduitsOfRoutes,
+      TextNoteMapCreationModel notSeenTextNotePickUp )
     {
       var conduitDirections = new List<XYZ>() ;
-      var textNotePosition = textNoteNotSeenPosition.TextNotePosition ;
+      var textNotePositionRef = notSeenTextNotePickUp.TextNotePositionRef ;
+      var textNotePosition = notSeenTextNotePickUp.TextNotePosition ;
 
       foreach ( var route in routeCache ) {
         var routeSegments = route.Value.RouteSegments ;
-        var notSeenConduitsOfRoute = allConduits.Where( conduit => conduit.GetRouteName() is { } rName && rName == route.Key ).ToList() ;
-
-        conduitDirections.AddRange( GetConduitDirectionsOfNotSeenTextNotePickUp( routeSegments, textNotePosition, notSeenConduitsOfRoute, true ) ) ;
-        conduitDirections.AddRange( GetConduitDirectionsOfNotSeenTextNotePickUp( routeSegments, textNotePosition, notSeenConduitsOfRoute ) ) ;
+        if ( ! notSeenConduitsOfRoutes.ContainsKey( route.Key ) ) continue ;
+        
+        var notSeenConduits = notSeenConduitsOfRoutes[ route.Key ] ;
+        GetConduitDirectionsOfNotSeenTextNotePickUp( conduitDirections, routeSegments, textNotePositionRef, notSeenConduits, true ) ;
+        GetConduitDirectionsOfNotSeenTextNotePickUp( conduitDirections, routeSegments, textNotePositionRef, notSeenConduits ) ;
       }
 
-      var defaultDirections = new List<XYZ> { new(0, 1, 0), new(1, 0, 0), new(-1, 0, 0), new(0, -1, 0) } ;
+      var defaultDirections = new List<XYZ> { new(-1, 0, 0), new(1, 0, 0), new(0, -1, 0), new(0, 1, 0) } ;
       var textNoteDirection = defaultDirections.FirstOrDefault( d => ! conduitDirections.Any( cd => cd.IsAlmostEqualTo( d ) ) ) ;
 
       if ( textNoteDirection == null )
-        textNotePosition = new XYZ( textNotePosition.X + 1, textNotePosition.Y + 2, textNotePosition.Z ) ;
+        textNotePosition = new XYZ( textNotePositionRef.X + 1, textNotePositionRef.Y + 2, textNotePositionRef.Z ) ;
       else if ( textNoteDirection.Y is 1 )
-        textNotePosition = new XYZ( textNotePosition.X, textNotePosition.Y + 2, textNotePosition.Z ) ;
+        textNotePosition = new XYZ( textNotePositionRef.X - 0.2, textNotePositionRef.Y + 1.8, textNotePositionRef.Z ) ;
       else if ( textNoteDirection.Y is -1 )
-        textNotePosition = new XYZ( textNotePosition.X, textNotePosition.Y - 1.5, textNotePosition.Z ) ;
+        textNotePosition = new XYZ( textNotePositionRef.X, textNotePositionRef.Y - 1.2, textNotePositionRef.Z ) ;
       else if ( textNoteDirection.X is 1 )
-        textNotePosition = new XYZ( textNotePosition.X + 1, textNotePosition.Y, textNotePosition.Z ) ;
+        textNotePosition = new XYZ( textNotePositionRef.X + 0.5, textNotePositionRef.Y, textNotePositionRef.Z ) ;
       else if ( textNoteDirection.X is -1 )
-        textNotePosition = new XYZ( textNotePosition.X - 2.5, textNotePosition.Y, textNotePosition.Z ) ;
+        textNotePosition = new XYZ( textNotePositionRef.X - 2.5, textNotePositionRef.Y, textNotePositionRef.Z ) ;
 
-      var textNote = document.GetAllElements<TextNote>().First( x => x.UniqueId == textNoteNotSeenPosition.TextNoteId ) ;
+      var textNote = document.GetAllElements<TextNote>().First( x => x.UniqueId == notSeenTextNotePickUp.TextNoteId ) ;
       textNote.Coord = textNotePosition ;
+      
+      notSeenTextNotePickUp.TextNotePosition = textNotePosition ;
+      notSeenTextNotePickUp.TextNoteDirection = textNoteDirection ;
     }
 
-    private static IEnumerable<XYZ> GetConduitDirectionsOfNotSeenTextNotePickUp( IEnumerable<RouteSegment> routeSegments, XYZ notSeenTextNotePosition, List<Conduit> notSeenConduitsOfRoute, bool isFrom = false )
+    private static void GetConduitDirectionsOfNotSeenTextNotePickUp(List<XYZ> conduitDirections, IEnumerable<RouteSegment> routeSegments, XYZ notSeenTextNotePosition, List<Conduit> notSeenConduitsOfRoute, bool isFrom = false )
     {
-      var conduitDirections = new List<XYZ>() ;
       var routingStartPosition = isFrom ? routeSegments.First().FromEndPoint.RoutingStartPosition : routeSegments.Last().ToEndPoint.RoutingStartPosition ;
 
       if ( ! ( Math.Abs( routingStartPosition.X - notSeenTextNotePosition.X ) < MaxToleranceOfTextNotePosition ) ||
            ! ( Math.Abs( routingStartPosition.Y - notSeenTextNotePosition.Y ) < MaxToleranceOfTextNotePosition ) )
-        return conduitDirections ;
+        return ;
 
       foreach ( var conduitOfRoute in notSeenConduitsOfRoute ) {
         if ( conduitOfRoute.Location is not LocationCurve conduitLocation ) continue ;
@@ -169,20 +190,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var direction = isFrom ? line.Direction : line.Direction.Negate() ;
         if ( direction.Z is 1 or -1 ) continue ;
 
-        if( !conduitDirections.Any( cd => cd.IsAlmostEqualTo( direction )) )
+        var toPoint = line.GetEndPoint( 1 ) ;
+        var distance = routingStartPosition.DistanceTo( toPoint ) ;
+        
+        if( !conduitDirections.Any( cd => cd.IsAlmostEqualTo( direction )) && distance < 4 )
           conduitDirections.Add( direction ) ;
+        if ( conduitDirections.Count == 4 ) break ;
       }
-
-      return conduitDirections ;
     }
 
-    private static IEnumerable<TextNotePickUpModel> ShowPickUp(Document document, RouteCache routes, IReadOnlyCollection<Conduit> allConduits, bool isDisplayPickUpNumber, 
-      List<PickUpModel> pickUpModels, List<(string TextNoteId,int TextNoteCounter, XYZ TextNotePosition)> positionsSeenTextNote, List<(string TextNoteId, int TextNoteCounter, XYZ TextNotePosition)> positionsNotSeenTextNote )
+    private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyCollection<Conduit> allConduits, bool isDisplayPickUpNumber, 
+      List<PickUpModel> pickUpModels, List<TextNoteMapCreationModel> seenTextNotePickUps, List<TextNoteMapCreationModel> notSeenTextNotePickUps )
     {
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
       var routeName = pickUpModel.RouteName ;
-      var textNoteIds = new List<TextNotePickUpModel>() ;
       var lastRoute = routes.LastOrDefault( r =>
       {
         if ( r.Key is not { } rName ) return false ;
@@ -215,14 +237,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var xPoint = double.Parse( points.First() ) ;
           var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
 
-          if ( positionsNotSeenTextNote.Any( x => Math.Abs( x.TextNotePosition.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePosition.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
+          if ( notSeenTextNotePickUps.Any( x => Math.Abs( x.TextNotePositionRef.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
             continue ;
 
           var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
           var txtPosition = new XYZ( xPoint, yPoint, 0 ) ;
           var textNote = CreateTextNote( document, txtPosition , notSeenQuantityStr, true ) ;
-          textNoteIds.Add( new TextNotePickUpModel( textNote.UniqueId ) ) ;
-          positionsNotSeenTextNote.Add( (textNote.UniqueId, 0, txtPosition) );
+          var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, 0, txtPosition, txtPosition, null ) ;
+          notSeenTextNotePickUps.Add( textNotePickUpModel );
         }
 
         // Seen quantity
@@ -240,7 +262,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           
           int counter;
           XYZ? position;
-          var positionSeenTextNote = positionsSeenTextNote.FirstOrDefault( x =>
+          var positionSeenTextNote = seenTextNotePickUps.FirstOrDefault( x => x.TextNotePosition != null &&
             Math.Abs( x.TextNotePosition.X - point.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePosition.Y - point.Y ) < MaxToleranceOfTextNotePosition ) ;
           if ( positionSeenTextNote == default ) {
             counter = 1 ;
@@ -255,18 +277,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
             counter = positionSeenTextNote.TextNoteCounter + 1 ;
             position = positionSeenTextNote.TextNotePosition ;
-            positionsSeenTextNote.Remove( positionSeenTextNote ) ;
+            seenTextNotePickUps.Remove( positionSeenTextNote ) ;
           }
 
           var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
           var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
           var textNote = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
-          positionsSeenTextNote.Add( (textNote.UniqueId, counter, position ) ) ;
-          textNoteIds.Add( new TextNotePickUpModel( textNote.UniqueId ) ) ;
+          var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, counter, point, position, null ) ;
+          seenTextNotePickUps.Add( textNotePickUpModel ) ;
         }
       }
-
-      return textNoteIds ;
     }
 
     private static Conduit? FindConduitNearest(Document document,List<Conduit> conduitsOfRoute, XYZ toPosition)
@@ -370,6 +390,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return pickUpNumberList ;
+    }
+  }
+  
+  public class TextNoteMapCreationModel
+  {
+    public string TextNoteId { get ; set ; }
+    public int TextNoteCounter { get ; set ; }
+    public XYZ TextNotePositionRef { get ; set ; }
+    public XYZ? TextNotePosition { get ; set ; }
+    public XYZ? TextNoteDirection { get ; set ; }
+
+    public TextNoteMapCreationModel( string textNoteId, int textNoteCounter, XYZ textNotePositionRef, XYZ? textNotePosition, XYZ? textNoteDirection)
+    {
+      TextNoteId = textNoteId ;
+      TextNoteCounter = textNoteCounter ;
+      TextNotePositionRef = textNotePositionRef ;
+      TextNotePosition = textNotePosition ;
+      TextNoteDirection = textNoteDirection ;
     }
   }
 }
