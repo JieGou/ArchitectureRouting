@@ -18,7 +18,7 @@ using RibbonButton = Autodesk.Windows.RibbonButton ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand", DefaultString = "Create Dummy Conduits\nIn 3D View" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand", DefaultString = "Show\nConduits in 3D" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateDummyConduitsIn3DViewCommand : IExternalCommand
   {
@@ -50,8 +50,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
             List<ElementId> conduitsHideIn3DView = new() ;
 
             var routeDic = GenerateConduits( document, arentConduitType!, allConduits, newConduits, conduitsHideIn3DView ) ;
-
-            //GenerateConduitsOfBranchRoute( document, arentConduitType!, newConduits, routeDic, conduitsHideIn3DView ) ;
 
             var removedConduitIds = GenerateConduitFittings( uiDocument, arentConduitType!, routeDic, newConduits, conduitsHideIn3DView ) ;
             transaction.Commit() ;
@@ -98,9 +96,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       if ( selectionTab == null ) return ;
       
       foreach ( var panel in selectionTab.Panels ) {
-        if ( panel.Source.Title == "Electrical.App.Panels.Routing.Drawing".GetAppStringByKeyOrDefault( "Drawing" ) ) {
+        if ( panel.Source.Title == "Electrical.App.Panels.Routing.Confirmation".GetAppStringByKeyOrDefault( "Confirmation" ) ) {
           foreach ( var item in panel.Source.Items ) {
-            if ( ! ( item is RibbonButton ribbonButton && ribbonButton.Text == "Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetDocumentStringByKeyOrDefault( document, "Create Dummy Conduits\nIn 3D View" ) ) ) {
+            if ( ! ( item is RibbonButton ribbonButton && ribbonButton.Text == "Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetDocumentStringByKeyOrDefault( document, "Show\nConduits in 3D" ) ) ) {
               item.IsEnabled = isEnable ;
             }
           }

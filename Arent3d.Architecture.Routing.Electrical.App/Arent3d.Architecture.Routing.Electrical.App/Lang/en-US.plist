@@ -248,7 +248,7 @@
         <string>Electrical Symbol&#xA;Aggregation All</string>
 
         <key>Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand</key>
-        <string>Create Dummy Conduits&#xA;In 3D View</string>
+        <string>Show&#xA;Conduits in 3D</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

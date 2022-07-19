@@ -157,6 +157,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
         }
+        
+        [Button( typeof( CreateDummyConduitsIn3DViewCommand ), OnlyInitialized = true )]
+        private static class CreateDummyConduitsIn3DViewCommandButton
+        {
+        }
       }
 
       [Panel( "arent3d.architecture.routing.drawing", TitleKey = "Electrical.App.Panels.Routing.Drawing" )]
@@ -302,11 +307,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class CreateRoomCommandButton
           {
           }
-        }
-
-        [Button( typeof( CreateDummyConduitsIn3DViewCommand ), OnlyInitialized = true )]
-        private static class CreateDummyConduitsIn3DViewCommandButton
-        {
         }
       }
 
