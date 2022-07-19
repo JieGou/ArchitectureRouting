@@ -192,9 +192,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( direction.Z is 1 or -1 ) continue ;
 
         var toPoint = line.GetEndPoint( 1 ) ;
-        var distance = routingStartPosition.DistanceTo( toPoint ) ;
+        var toPoint2D = new XYZ( toPoint.X, toPoint.Y, routingStartPosition.Z ) ;
+        var distance = routingStartPosition.DistanceTo( toPoint2D ) ;
         
-        if( !conduitDirections.Any( cd => cd.IsAlmostEqualTo( direction )) && distance < 4 )
+        if( !conduitDirections.Any( cd => cd.IsAlmostEqualTo( direction )) && distance < 1.5 )
           conduitDirections.Add( direction ) ;
         if ( conduitDirections.Count == 4 ) break ;
       }
