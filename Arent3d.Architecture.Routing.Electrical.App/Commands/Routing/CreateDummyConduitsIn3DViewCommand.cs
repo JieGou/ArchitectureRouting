@@ -627,7 +627,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
             y = endPointY - directionY * otherDirection.X * length ;
           }
           else {
-            y = endPointY + directionY * length ;
+            y = fromConduitInfo.IsOppositeDirection ? endPointY + directionY * length : endPointY - directionY * length ;
           }
           fromEndPoint = new XYZ( endPointX, y, endPointZ ) ;
         }
