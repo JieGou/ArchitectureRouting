@@ -103,6 +103,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class ShowHeightSettingCommandButton
           {
           }
+          
+          [Button( typeof( PickUpNumberSettingCommand ), OnlyInitialized = true )]
+          private static class PickUpNumberSettingCommandButton
+          {
+          }
         }
       }
 
@@ -154,6 +159,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( SwitchPrintModeCommand ), OnlyInitialized = true )]
           private static class SwitchPrintModeCommandButton
+          {
+          }
+          
+          [Button( typeof( PickUpMapCreationCommand ), OnlyInitialized = true )]
+          private static class PickUpMapCreationCommandButton
           {
           }
         }
@@ -318,16 +328,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( PickUpReportCommand ), OnlyInitialized = true )]
           private static class PickUpReportCommandButton
-          {
-          }
-          
-          [Button( typeof( PickUpMapCreationCommand ), OnlyInitialized = true )]
-          private static class PickUpMapCreationCommandButton
-          {
-          }
-          
-          [Button( typeof( PickUpNumberSettingCommand ), OnlyInitialized = true )]
-          private static class PickUpNumberSettingCommandButton
           {
           }
 

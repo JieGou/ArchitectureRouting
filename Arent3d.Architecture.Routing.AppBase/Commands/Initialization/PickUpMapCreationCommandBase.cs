@@ -228,22 +228,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
           }
 
-          // Not seen quantity
-          foreach ( var notSeenQuantity in notSeenQuantities ) {
-            var points = notSeenQuantity.Key.Split( ',' ) ;
-            var xPoint = double.Parse( points.First() ) ;
-            var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
-
-            if ( notSeenTextNotePickUps.Any( x => Math.Abs( x.TextNotePositionRef.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
-              continue ;
-
-            var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
-            var txtPosition = new XYZ( xPoint, yPoint, 0 ) ;
-            var textNote = CreateTextNote( document, txtPosition , notSeenQuantityStr, true ) ;
-            var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, 0, txtPosition, txtPosition, null ) ;
-            notSeenTextNotePickUps.Add( textNotePickUpModel );
-          }
-
           // Seen quantity
           if ( ! allConduitsOfRoutes.ContainsKey( lastRoute.Key ) ) continue ;
           
@@ -293,6 +277,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, counter, position, point, null ) ;
             seenTextNotePickUps.Add( textNotePickUpModel ) ;
           }
+        }
+        
+        // Not seen quantity
+        foreach ( var notSeenQuantity in notSeenQuantities ) {
+          var points = notSeenQuantity.Key.Split( ',' ) ;
+          var xPoint = double.Parse( points.First() ) ;
+          var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
+
+          if ( notSeenTextNotePickUps.Any( x => Math.Abs( x.TextNotePositionRef.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
+            continue ;
+
+          var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
+          var txtPosition = new XYZ( xPoint, yPoint, 0 ) ;
+          var textNote = CreateTextNote( document, txtPosition , notSeenQuantityStr, true ) ;
+          var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, 0, txtPosition, txtPosition, null ) ;
+          notSeenTextNotePickUps.Add( textNotePickUpModel );
         }
       }
     }
