@@ -409,15 +409,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           
           foreach ( var level in levels ) {
             if( PickUpModels.All( x => x.Floor != level ) ) continue;
+            if( PickUpModels.Where( x => x.Floor == level ).All( p => p.ConstructionItems != sheetName ) ) continue;
             var height = settingStorables.HeightSettingsData.Values.FirstOrDefault( x => x.LevelName == level )?.Elevation ?? 0 ;
-            
             row0 = sheet.CreateRow( rowStart ) ;
             var row1 = sheet.CreateRow( rowStart + 1 ) ;
             row2 = sheet.CreateRow( rowStart + 2 ) ;
             CreateMergeCell( sheet, row0, rowStart, rowStart, 2, 6, docon, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 13, $"縮尺:1/{scale}", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 14, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
-            CreateCell( row0, 15, $"階高:{height}", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
+            CreateCell( row0, 15, $"階高:{height}m", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 16, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
 
             CreateCell( row1, 1, "【入力確認表】", xssfCellStyles[ "headerNoneBorderedCellStyle" ] ) ;
