@@ -248,19 +248,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return conduitToleranceDic ;
     }
 
-    private void CreateConduit( Document document, MEPCurveType arentConduitType, ICollection<FamilyInstance> allConduitFittings, Dictionary<Element, string> newConduits, ICollection<XYZ> conduitDirections, Element conduit, string routeName, XYZ direction, XYZ startPoint, XYZ endPoint, double tolerance, ElementId levelId, bool isBranchRoute = false )
+    private void CreateConduit( Document document, MEPCurveType arentConduitType, ICollection<FamilyInstance> allConduitFittings, Dictionary<Element, string> newConduits, ICollection<XYZ> conduitDirections, Element conduit, string routeName, XYZ direction, XYZ startPoint, XYZ endPoint, double tolerance, ElementId levelId )
     {
       if ( direction.X is 1 or -1 ) {
         var otherDirection = conduitDirections.FirstOrDefault( d => d.X is not 1 && d.X is not -1 ) ;
         if ( otherDirection != null ) {
-          if ( isBranchRoute ) {
-            startPoint = new XYZ( startPoint.X, startPoint.Y - otherDirection.Y * tolerance, startPoint.Z ) ;
-            endPoint = new XYZ( endPoint.X, endPoint.Y - otherDirection.Y * tolerance, endPoint.Z ) ;
-          }
-          else {
-            startPoint = new XYZ( startPoint.X, startPoint.Y - direction.X * otherDirection.Y * tolerance, startPoint.Z ) ;
-            endPoint = new XYZ( endPoint.X, endPoint.Y - direction.X * otherDirection.Y * tolerance, endPoint.Z ) ;
-          }
+          startPoint = new XYZ( startPoint.X, startPoint.Y - direction.X * otherDirection.Y * tolerance, startPoint.Z ) ;
+          endPoint = new XYZ( endPoint.X, endPoint.Y - direction.X * otherDirection.Y * tolerance, endPoint.Z ) ;
         }
         else {
           startPoint = new XYZ( startPoint.X, startPoint.Y + direction.X * tolerance, startPoint.Z ) ;
@@ -268,11 +262,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
       }
       else if ( direction.Y is 1 or -1 ) {
-        startPoint = new XYZ( startPoint.X + tolerance, startPoint.Y, startPoint.Z ) ;
-        endPoint = new XYZ( endPoint.X + tolerance, endPoint.Y, endPoint.Z ) ;
+        var isBranchConduit = CheckConduitOfBranchRoute( conduit ) ;
+        if ( isBranchConduit ) {
+          startPoint = new XYZ( startPoint.X - direction.Y * Math.Abs( tolerance ), startPoint.Y, startPoint.Z ) ;
+          endPoint = new XYZ( endPoint.X - direction.Y * Math.Abs( tolerance ), endPoint.Y, endPoint.Z ) ;
+        }
+        else {
+          startPoint = new XYZ( direction.Y is 1 ? startPoint.X - tolerance : startPoint.X + tolerance, startPoint.Y, startPoint.Z ) ;
+          endPoint = new XYZ( direction.Y is 1 ? endPoint.X - tolerance : endPoint.X + tolerance, endPoint.Y, endPoint.Z ) ;
+        }
       }
       else {
-        var (x, _, _) = GetConduitFittingDirection( allConduitFittings, startPoint, direction, routeName ) ;
+        var (x, y, _) = GetConduitFittingDirection( allConduitFittings, startPoint, direction, routeName ) ;
         if ( x is 1 or -1 ) {
           var otherDirection = conduitDirections.FirstOrDefault( d => d.X is not 1 && d.X is not -1 ) ;
           if ( otherDirection != null ) {
@@ -285,8 +286,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           }
         }
         else {
-          startPoint = new XYZ( startPoint.X + tolerance, startPoint.Y, startPoint.Z ) ;
-          endPoint = new XYZ( endPoint.X + tolerance, endPoint.Y, endPoint.Z ) ;
+          var isBranchConduit = CheckConduitOfBranchRoute( conduit ) ;
+          if ( isBranchConduit ) {
+            startPoint = new XYZ( startPoint.X - y * Math.Abs( tolerance ), startPoint.Y, startPoint.Z ) ;
+            endPoint = new XYZ( endPoint.X - y * Math.Abs( tolerance ), endPoint.Y, endPoint.Z ) ;
+          }
+          else {
+            startPoint = new XYZ( y is 1 ? startPoint.X - tolerance : startPoint.X + tolerance, startPoint.Y, startPoint.Z ) ;
+            endPoint = new XYZ( y is 1 ? endPoint.X - tolerance : endPoint.X + tolerance, endPoint.Y, endPoint.Z ) ;
+          }
         }
       }
 
@@ -353,9 +361,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return direction ;
     }
 
-    private bool CheckConduitFittingOfBranchRoute ( Element conduitFitting )
+    private bool CheckConduitOfBranchRoute ( Element conduit )
     {
-      var fromEndPoint = conduitFitting.GetNearestEndPoints( true ).ToList() ;
+      var fromEndPoint = conduit.GetNearestEndPoints( true ).ToList() ;
       if ( ! fromEndPoint.Any() ) return false ;
       var fromEndPointType = fromEndPoint.First().Key.GetTypeName() ;
       return fromEndPointType == PassPointBranchEndPoint.Type ;
@@ -370,7 +378,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var routeName = routeInfo.RouteName ;
         var conduitFittings = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ConduitFitting ).Where( c => c.GetRouteName() == routeName ).ToList() ;
         foreach ( var conduitFitting in conduitFittings ) {
-          var isBranchConduitFitting = CheckConduitFittingOfBranchRoute( conduitFitting ) ;
+          var isBranchConduitFitting = CheckConduitOfBranchRoute( conduitFitting ) ;
           if ( isBranchConduitFitting ) {
             conduitsHideIn3DView.Add( conduitFitting.Id ) ;
           }
@@ -380,31 +388,46 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           var origin = location.Point ;
           var handOrientation = conduitFitting.HandOrientation ;
           var facingOrientation = conduitFitting.FacingOrientation ;
+          var (fromConduitInfo, toConduitInfo) = GetFromAndToConduitsOfCConduitFitting( newConduits, DummyName + "_" + routeName, handOrientation, facingOrientation, origin ) ;
           double x, y ;
           if ( handOrientation.X is 1 or -1 ) {
             if ( facingOrientation.Y is 1 or -1 ) {
-              x = handOrientation.X is 1 ? origin.X + facingOrientation.Y * tolerance : origin.X + tolerance ;
-              y = handOrientation.X is 1 ? origin.Y - tolerance : origin.Y + facingOrientation.Y * tolerance ;
               if ( isBranchConduitFitting ) {
-                var otherDirection = routeInfo.Directions.FirstOrDefault( d => d.X is not 1 && d.X is not -1 ) ;
-                if ( otherDirection != null ) {
-                  y = otherDirection.Y is 1 ? origin.Y + tolerance : origin.Y - facingOrientation.Y * tolerance ;
+                if ( handOrientation.X is -1 && facingOrientation.Y is -1 ) {
+                  x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X - tolerance : origin.X + tolerance ;
+                  y = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.Y + tolerance : origin.Y - tolerance ;
                 }
                 else {
+                  x = origin.X + handOrientation.X * facingOrientation.Y * tolerance ;
                   y = origin.Y + handOrientation.X * tolerance ;
                 }
+              }
+              else {
+                x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X + handOrientation.X * facingOrientation.Y * tolerance : origin.X - tolerance ;
+                y = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.Y - handOrientation.X * facingOrientation.Y * tolerance : origin.Y + tolerance ;
               }
             }
             else {
               x = origin.X ;
-              y = origin.Y - tolerance ;
+              y = origin.Y + handOrientation.X * tolerance ;
             }
           }
           else if ( handOrientation.Y is 1 or -1 ) {
             if ( facingOrientation.X is 1 or -1 ) {
-              x = handOrientation.Y is 1 ? origin.X + tolerance : origin.X + facingOrientation.X * tolerance ;
-              y = handOrientation.Y is 1 ? origin.Y - facingOrientation.X * tolerance : origin.Y + tolerance ;
-              if ( isBranchConduitFitting ) y = origin.Y + handOrientation.Y * tolerance ;
+              if ( isBranchConduitFitting ) {
+                x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X - facingOrientation.X * Math.Abs( tolerance ) : origin.X + facingOrientation.X * tolerance ;
+                y = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.Y + handOrientation.Y * tolerance : origin.Y - handOrientation.Y * tolerance ;
+              }
+              else {
+                if ( toConduitInfo is { IsOppositeDirection: true } ) {
+                  x = origin.X + handOrientation.Y * tolerance ;
+                  y = origin.Y + handOrientation.Y * tolerance ;
+                }
+                else {
+                  x = handOrientation.Y is 1 ? origin.X - tolerance : origin.X + tolerance ;
+                  y = handOrientation.Y is 1 ? origin.Y - tolerance : origin.Y + tolerance ;
+                }
+              }
             }
             else {
               x = origin.X + tolerance ;
@@ -418,7 +441,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
               y = otherDirection != null ? origin.Y - otherDirection.Y * facingOrientation.X * tolerance : origin.Y + facingOrientation.X * tolerance ;
             }
             else {
-              x = origin.X + tolerance ;
+              x = origin.X - tolerance ;
               y = origin.Y ;
             }
           }
@@ -465,10 +488,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           }
 
           if ( ( handOrientation.X is 1 && facingOrientation.Y is 1 or -1 ) || ( handOrientation.Y is 1 or -1 && facingOrientation.X is -1 ) ) {
-            UpdateConduitLenght( document, arentConduitType, newConduits, DummyName + "_" + routeName, tolerance, handOrientation, facingOrientation, origin, routeInfo.Directions, ref removedConduitIds ) ;
+            UpdateConduitLenght( document, arentConduitType, newConduits, DummyName + "_" + routeName, tolerance, routeInfo.Directions, ref removedConduitIds, fromConduitInfo, toConduitInfo ) ;
           }
           else if ( ( handOrientation.X is -1 && facingOrientation.Y is 1 or -1 ) || ( handOrientation.Y is 1 or -1 && facingOrientation.X is 1 ) ) {
-            UpdateConduitLenght( document, arentConduitType, newConduits, DummyName + "_" + routeName, tolerance, handOrientation, facingOrientation, origin, routeInfo.Directions, ref removedConduitIds ) ;
+            UpdateConduitLenght( document, arentConduitType, newConduits, DummyName + "_" + routeName, tolerance, routeInfo.Directions, ref removedConduitIds, fromConduitInfo, toConduitInfo ) ;
           }
           
           if ( false == instance.TryGetProperty( RoutingParameter.RouteName, out string? _ ) ) continue ;
@@ -521,7 +544,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return false ;
     }
 
-    private void UpdateConduitLenght( Document document, MEPCurveType arentConduitType, Dictionary<Element, string> newConduits, string routeName, double lenght, XYZ handOrientation, XYZ facingOrientation, XYZ origin, List<XYZ> directions, ref List<string> removedConduitIds )
+    private ( ConduitInfo?, ConduitInfo? ) GetFromAndToConduitsOfCConduitFitting( Dictionary<Element, string> newConduits, string routeName, XYZ handOrientation, XYZ facingOrientation, XYZ origin )
     {
       var conduits = newConduits.Where( c => c.Key is Conduit && c.Value == routeName ) ;
       ConduitInfo? fromConduitInfo = null ;
@@ -572,22 +595,27 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
       }
 
+      return ( fromConduitInfo, toConduitInfo ) ;
+    }
+
+    private void UpdateConduitLenght( Document document, MEPCurveType arentConduitType, Dictionary<Element, string> newConduits, string routeName, double length, List<XYZ> directions, ref List<string> removedConduitIds, ConduitInfo? fromConduitInfo, ConduitInfo? toConduitInfo )
+    {
       if ( fromConduitInfo != null ) {
         var (directionX, directionY, _) = fromConduitInfo.Direction ;
         var (endPointX, endPointY, endPointZ) = fromConduitInfo.EndPoint ;
         XYZ? fromEndPoint = null ;
         if ( directionX is 1 or -1 ) {
-          var x = endPointX + lenght ;
+          var x = fromConduitInfo.IsOppositeDirection ? endPointX + length : endPointX - directionX * length ;
           fromEndPoint = new XYZ( x, endPointY, endPointZ ) ;
         }
         else if ( directionY is 1 or -1 ) {
           double y ;
           var otherDirection = directions.FirstOrDefault( d => d.Y is not 1 && d.Y is not -1 ) ;
           if ( otherDirection != null ) {
-            y = endPointY - directionY * otherDirection.X * lenght ;
+            y = endPointY - directionY * otherDirection.X * length ;
           }
           else {
-            y = fromConduitInfo.IsOppositeDirection ? endPointY + directionY * lenght : endPointY - directionY * lenght ;
+            y = endPointY + directionY * length ;
           }
           fromEndPoint = new XYZ( endPointX, y, endPointZ ) ;
         }
@@ -614,17 +642,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var (startPointX, startPointY, startPointZ) = toConduitInfo.StartPoint ;
         XYZ? toStartPoint = null ;
         if ( directionX is 1 or -1 ) {
-          var x = startPointX + lenght ;
+          var x = toConduitInfo.IsOppositeDirection ? startPointX - directionX * length : startPointX + directionX * length ;
           toStartPoint = new XYZ( x, startPointY, startPointZ ) ;
         }
         else if ( directionY is 1 or -1 ) {
           double y ;
           var otherDirection = directions.FirstOrDefault( d => d.Y is not 1 && d.Y is not -1 ) ;
           if ( otherDirection != null ) {
-            y = startPointY - directionY * otherDirection.X * lenght ;
+            y = startPointY - directionY * otherDirection.X * length ;
           }
           else {
-            y = toConduitInfo.IsOppositeDirection ? startPointY - directionY * lenght : startPointY + directionY * lenght ;
+            y = toConduitInfo.IsOppositeDirection ? startPointY - directionY * length : startPointY + directionY * length ;
           }
 
           toStartPoint = new XYZ( startPointX, y, startPointZ ) ;
