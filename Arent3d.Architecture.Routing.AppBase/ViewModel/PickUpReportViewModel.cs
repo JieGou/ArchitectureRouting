@@ -266,7 +266,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             _fileNames.Remove( docon + ConfirmationFileName ) ;
           break ;
       }
-      
     }
 
     private string GetFileName(string fileName)
@@ -373,7 +372,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       List<string> levels = _document.GetAllElements<Level>().Select( l => l.Name ).ToList() ;
       var codeList = GetCodeList() ;
-      var docon = DoconTypes.First().TheValue ? DoconOnExcel : DoconOffExcel ;
+      var docon = FileName ;
 
       ISheet sheet = workbook.CreateSheet( sheetName ) ;
       IRow row0, row2 ;
@@ -388,9 +387,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var printSetup = sheet.PrintSetup;
       printSetup.PaperSize = (short) 9 ;
       printSetup.FitWidth = 1; //fit width onto 1 page
-      printSetup.FitHeight = 2; //don't care about height
+      printSetup.FitHeight = 0; //don't care about height
       printSetup.Landscape = true;
-      sheet.FitToPage = (true);
+      sheet.FitToPage = true;
       switch ( sheetType ) {
         case SheetType.Confirmation :
           sheet.SetColumnWidth( 0, 500 ) ;
@@ -400,25 +399,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           sheet.SetColumnWidth( 4, 1200 ) ;
           sheet.SetColumnWidth( 5, 4000 ) ;
           sheet.SetColumnWidth( 7, 3000 ) ;
+          sheet.SetColumnWidth( 13, 3300 );
+          sheet.SetColumnWidth( 15, 3300 );
           sheet.SetColumnWidth( 16, 2500 ) ;
           rowStart = 0 ;
+          var view = _document.ActiveView ;
+          var scale = view.Scale ;
+          HeightSettingStorable settingStorables = _document.GetHeightSettingStorable() ;
+          
           foreach ( var level in levels ) {
             if( PickUpModels.All( x => x.Floor != level ) ) continue;
+            var height = settingStorables.HeightSettingsData.Values.FirstOrDefault( x => x.LevelName == level )?.Elevation ?? 0 ;
+            
             row0 = sheet.CreateRow( rowStart ) ;
             var row1 = sheet.CreateRow( rowStart + 1 ) ;
             row2 = sheet.CreateRow( rowStart + 2 ) ;
             CreateMergeCell( sheet, row0, rowStart, rowStart, 2, 6, docon, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
-            CreateCell( row0, 13, "縮尺 :", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
+            CreateCell( row0, 13, $"縮尺:1/{scale}", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 14, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
-            CreateCell( row0, 15, "階高 :", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
+            CreateCell( row0, 15, $"階高:{height}", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 16, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
 
             CreateCell( row1, 1, "【入力確認表】", xssfCellStyles[ "headerNoneBorderedCellStyle" ] ) ;
             CreateCell( row1, 2, "工事階層 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 3, 6, sheetName, xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateCell( row1, 7, "図面番号 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
-            CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 8, 9, level, xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
-            CreateCell( row1, 10, "階数 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 8, 9, "", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateCell( row1, 10, $"階数 : {level}", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateCell( row1, 12, "区間 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 13, 16, "", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
 
@@ -452,7 +459,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, xssfCellStyles ) ;
             }
             
-            while ( rowStart <= 60 ) {
+            while ( rowStart % 61 != 0 ) {
               var rowTemp = sheet.CreateRow( rowStart ) ;
               CreateCell( rowTemp, 1, "", xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
               CreateCell( rowTemp, 2, "", xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
@@ -460,9 +467,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               CreateCell( rowTemp, 4, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
               CreateMergeCell( sheet, rowTemp, rowStart, rowStart, 5, 15, "", xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
               CreateCell( rowTemp, 16,  "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMediumThin" ] ) ;
+             
               rowStart++ ;
             }
-            
+
             var lastRow = sheet.CreateRow( rowStart ) ;
             CreateCell( lastRow, 1, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMedium" ] ) ;
             CreateMergeCell( sheet, lastRow, rowStart, rowStart, 2, 3, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMedium" ], true ) ;
@@ -470,8 +478,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateMergeCell( sheet, lastRow, rowStart, rowStart, 5, 15, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMedium" ], true ) ;
             CreateCell( lastRow, 16, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMedium" ] ) ;
 
-            rowStart += 2 ;
             sheet.SetRowBreak( rowStart );
+            rowStart += 1 ;
           }
 
           break ;
