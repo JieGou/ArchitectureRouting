@@ -204,91 +204,95 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, bool isDisplayPickUpNumber, 
       List<PickUpModel> pickUpModels, List<TextNoteMapCreationModel> seenTextNotePickUps, List<TextNoteMapCreationModel> notSeenTextNotePickUps )
     {
-      var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
-      var pickUpModel = pickUpModels.First() ;
-      var routeName = pickUpModel.RouteName ;
-      var lastRoute = routes.LastOrDefault( r =>
-      {
-        if ( r.Key is not { } rName ) return false ;
-        var routeNameArray = rName.Split( '_' ) ;
-        var strRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-        return strRouteName == routeName ;
-      } ) ;
-      var lastSegment = lastRoute.Value.RouteSegments.Last() ;
-      
-      double seenQuantity = 0 ;
+      var pickUpModelsGroupsByRouteNameRef = pickUpModels.GroupBy( p => p.RouteNameRef ) ;
       var notSeenQuantities = new Dictionary<string, double>() ;
-      foreach ( var pickUpNumber in pickUpNumbers ) {
-        var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
+      foreach ( var pickUpModelsGroup in pickUpModelsGroupsByRouteNameRef ) {
+        var routeName = pickUpModelsGroup.Key ;
+        var pickUpNumbers = GetPickUpNumbersList( pickUpModelsGroup.AsEnumerable().ToList() ) ;
+        var lastRoute = routes.LastOrDefault( r => r.Key == routeName ) ;
+        var lastSegment = lastRoute.Value.RouteSegments.Last() ;
         
-        foreach ( var item in items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ) ) {
-          double.TryParse( item.Quantity, out var quantity ) ;
-          if ( string.IsNullOrEmpty( item.Direction ) )
-            seenQuantity += quantity ;
-          else {
-            if ( ! notSeenQuantities.Keys.Contains( item.Direction ) )
-              notSeenQuantities.Add( item.Direction, 0 ) ;
-
-            notSeenQuantities[ item.Direction ] += quantity ;
-          }
-        }
-
-        // Not seen quantity
-        foreach ( var notSeenQuantity in notSeenQuantities ) {
-          var points = notSeenQuantity.Key.Split( ',' ) ;
-          var xPoint = double.Parse( points.First() ) ;
-          var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
-
-          if ( notSeenTextNotePickUps.Any( x => Math.Abs( x.TextNotePositionRef.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
-            continue ;
-
-          var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
-          var txtPosition = new XYZ( xPoint, yPoint, 0 ) ;
-          var textNote = CreateTextNote( document, txtPosition , notSeenQuantityStr, true ) ;
-          var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, 0, txtPosition, txtPosition, null ) ;
-          notSeenTextNotePickUps.Add( textNotePickUpModel );
-        }
-
-        // Seen quantity
-        if ( ! allConduitsOfRoutes.ContainsKey( lastRoute.Key ) ) continue ;
-        
-        var conduitsOfRoute = allConduitsOfRoutes[lastRoute.Key] ;
-        var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
-
-        var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
-
-        if ( conduitNearest is { Location: LocationCurve location } ) {
-          var line = ( location.Curve as Line )! ;
-          var fromPoint = line.GetEndPoint( 0 ) ;
-          var toPoint = line.GetEndPoint( 1 ) ;
-          var direction = line.Direction ;
-          var point = GetMiddlePoint( fromPoint, toPoint, direction ) ;
+        double seenQuantity = 0 ;
+        foreach ( var pickUpNumber in pickUpNumbers ) {
+          var items = pickUpModelsGroup.AsEnumerable().Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
           
-          int counter;
-          XYZ? position;
-          var positionSeenTextNote = seenTextNotePickUps.Where( x => x.TextNotePosition != null &&
-            Math.Abs( x.TextNotePositionRef.X - point.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - point.Y ) < MaxToleranceOfTextNotePosition )
-            .OrderBy( x => x.TextNoteCounter ).LastOrDefault();
-          if ( positionSeenTextNote == default ) {
-            counter = 1 ;
-            position = point ;
-          }
-          else {
-            var isLeftOrTop = positionSeenTextNote.TextNoteCounter % 2 != 0 ;
-            if ( direction.Y is 1 or -1 )
-              point = new XYZ( isLeftOrTop ? point.X + 1.7 + 1.5 * ( positionSeenTextNote.TextNoteCounter - 1 ) / 2 :  point.X - 1.5 * positionSeenTextNote.TextNoteCounter / 2, point.Y, point.Z ) ;
-            else if ( direction.X is 1 or -1 )
-              point = new XYZ( point.X, isLeftOrTop ? point.Y - 1.7 - 1.5 * ( positionSeenTextNote.TextNoteCounter - 1 ) / 2 : point.Y + 1.5 * positionSeenTextNote.TextNoteCounter / 2, point.Z ) ;
+          foreach ( var item in items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ) ) {
+            double.TryParse( item.Quantity, out var quantity ) ;
+            if ( string.IsNullOrEmpty( item.Direction ) )
+              seenQuantity += quantity ;
+            else {
+              if ( ! notSeenQuantities.Keys.Contains( item.Direction ) )
+                notSeenQuantities.Add( item.Direction, 0 ) ;
 
-            counter = positionSeenTextNote.TextNoteCounter + 1 ;
-            position = positionSeenTextNote.TextNotePositionRef ;
+              notSeenQuantities[ item.Direction ] += quantity ;
+            }
           }
 
-          var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumber + "]" : string.Empty ;
-          var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
-          var textNote = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
-          var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, counter, position, point, null ) ;
-          seenTextNotePickUps.Add( textNotePickUpModel ) ;
+          // Not seen quantity
+          foreach ( var notSeenQuantity in notSeenQuantities ) {
+            var points = notSeenQuantity.Key.Split( ',' ) ;
+            var xPoint = double.Parse( points.First() ) ;
+            var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
+
+            if ( notSeenTextNotePickUps.Any( x => Math.Abs( x.TextNotePositionRef.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
+              continue ;
+
+            var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
+            var txtPosition = new XYZ( xPoint, yPoint, 0 ) ;
+            var textNote = CreateTextNote( document, txtPosition , notSeenQuantityStr, true ) ;
+            var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, 0, txtPosition, txtPosition, null ) ;
+            notSeenTextNotePickUps.Add( textNotePickUpModel );
+          }
+
+          // Seen quantity
+          if ( ! allConduitsOfRoutes.ContainsKey( lastRoute.Key ) ) continue ;
+          
+          var conduitsOfRoute = allConduitsOfRoutes[lastRoute.Key] ;
+          var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
+          
+          var toEndPointKey = lastSegment.ToEndPoint.Key ;
+          var toElementId = toEndPointKey.GetElementUniqueId() ;
+          if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+          var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).FirstOrDefault( c => c.UniqueId == toElementId ) ;
+          var isToPullBox = toConnector!.GetConnectorFamilyType() == ConnectorFamilyType.PullBox;
+          
+          var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
+
+          if ( conduitNearest is { Location: LocationCurve location } ) {
+            var line = ( location.Curve as Line )! ;
+            var fromPoint = line.GetEndPoint( 0 ) ;
+            var toPoint = line.GetEndPoint( 1 ) ;
+            var direction = line.Direction ;
+            var point = GetMiddlePoint( fromPoint, toPoint, direction ) ;
+            
+            int counter;
+            XYZ? position;
+            var positionSeenTextNote = seenTextNotePickUps.Where( x => x.TextNotePosition != null &&
+              Math.Abs( x.TextNotePositionRef.X - point.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - point.Y ) < MaxToleranceOfTextNotePosition )
+              .OrderBy( x => x.TextNoteCounter ).LastOrDefault();
+            if ( positionSeenTextNote == default ) {
+              counter = 1 ;
+              position = point ;
+            }
+            else if ( ! isToPullBox ) {
+              var isLeftOrTop = positionSeenTextNote.TextNoteCounter % 2 != 0 ;
+              
+              if ( direction.Y is 1 or -1 )
+                point = new XYZ( isLeftOrTop ? point.X + 1.7 + 1.5 * ( positionSeenTextNote.TextNoteCounter - 1 ) / 2 : point.X - 1.5 * positionSeenTextNote.TextNoteCounter / 2, point.Y, point.Z ) ;
+              else if ( direction.X is 1 or -1 )
+                point = new XYZ( point.X, isLeftOrTop ? point.Y - 1.7 - 1.5 * ( positionSeenTextNote.TextNoteCounter - 1 ) / 2 : point.Y + 1.5 * positionSeenTextNote.TextNoteCounter / 2, point.Z ) ;
+
+              counter = positionSeenTextNote.TextNoteCounter + 1 ;
+              position = positionSeenTextNote.TextNotePositionRef ;
+            }
+            else continue ;
+
+            var textPickUpNumber = isDisplayPickUpNumber && !isToPullBox ? "[" + pickUpNumber + "]" : string.Empty ;
+            var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
+            var textNote = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
+            var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, counter, position, point, null ) ;
+            seenTextNotePickUps.Add( textNotePickUpModel ) ;
+          }
         }
       }
     }
@@ -308,7 +312,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var toPoint = line.GetEndPoint( 1 ) ;
         var distance = toPosition.DistanceTo( toPoint ) ;
         var lengthConduit = conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
-        if ( distance >= minDistance || lengthConduit <= 1.0 ) continue ;
+        if ( distance >= minDistance ) continue ;
         
         minDistance = distance ;
         result = conduitOfRoute ;

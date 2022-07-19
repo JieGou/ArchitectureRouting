@@ -424,8 +424,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void PickUpModelBaseOnMaterialCode( Dictionary<string, string> materialCodes, string specification, string productName, string size, string tani, string standard, ProductType productType, List<PickUpModel> pickUpModels, string? floor, string constructionItems, string construction,
       string modelNumber, string specification2, string item, string equipmentType, string use, string usageName, string quantity, string supplement, string supplement2, string group, string layer, string classification, string pickUpNumber, string direction,
-      string ceedSetCode, string deviceSymbol, string condition, string routeName)
+      string ceedSetCode, string deviceSymbol, string condition, string routeNameRef)
     {
+      if ( string.IsNullOrEmpty( routeNameRef ) ) return ;
+      var routeNameArray = routeNameRef.Split( '_' ) ;
+      var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
       const string defaultConduitTani = "m" ;
       foreach ( var (materialCode, name) in materialCodes ) {
         specification = name ;
@@ -444,14 +447,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             pickUpModel.Quantity = ( int.Parse( pickUpModel.Quantity ) + 1 ).ToString() ;
           else {
             pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction, materialCode,
-              ceedSetCode, deviceSymbol, condition, routeName) ;
+              ceedSetCode, deviceSymbol, condition, routeName, routeNameRef) ;
             pickUpModels.Add( pickUpModel ) ;
           }
         }
         else {
           if ( ! string.IsNullOrEmpty( tani ) && tani != defaultConduitTani ) tani = defaultConduitTani ;
           PickUpModel pickUpModel = new( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction,
-            materialCode, ceedSetCode, deviceSymbol, condition, routeName ) ;
+            materialCode, ceedSetCode, deviceSymbol, condition, routeName, routeNameRef ) ;
           pickUpModels.Add( pickUpModel ) ;
         }
       }
@@ -670,11 +673,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string?> isEcoModes, string? isEcoMode, List<string> constructionClassifications, string constructionClassification,
       string plumbingInfo, List<string> routeNames, string? connectorId = null )
     {
-      var routeName = conduit.GetRouteName()! ;
-      if ( string.IsNullOrEmpty( routeName ) ) return ;
-      var routeNameArray = routeName.Split( '_' ) ;
-      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      routeNames.Add( routeName! );
+      var rName = conduit.GetRouteName()! ;
+      if ( string.IsNullOrEmpty( rName ) ) return ;
+      var routeNameArray = rName.Split( '_' ) ;
+      var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      routeNames.Add( rName! );
       var checkPickUp = string.IsNullOrEmpty( connectorId ) 
         ? AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, dictMaterialCode ) 
         : AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, connectorId! ) ;
@@ -695,8 +698,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       isEcoModes.Add( string.IsNullOrEmpty( isEcoMode ) ? string.Empty : isEcoMode ) ;
       constructionClassifications.Add( constructionClassification ) ;
       plumbingInfos.Add( plumbingInfo ) ;
-      if ( pullBoxs.Any() && ! routes.Contains( routeName ) ) {
-        var lengthPullBox = GetLengthPullBox( routes, routeName ) ;
+      if ( pullBoxs.Any() && ! routes.Contains( rName ) ) {
+        var lengthPullBox = GetLengthPullBox( routes, rName ) ;
         if ( lengthPullBox != null ) {
           quantity += (double) lengthPullBox ;
         }
