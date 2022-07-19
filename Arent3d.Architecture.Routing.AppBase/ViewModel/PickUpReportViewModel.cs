@@ -25,6 +25,8 @@ using RadioButton = System.Windows.Controls.RadioButton ;
 using Arent3d.Architecture.Routing.Extensions ;
 using MoreLinq ;
 using MoreLinq.Extensions ;
+using NPOI.OpenXmlFormats.Spreadsheet ;
+using MarginType = NPOI.SS.UserModel.MarginType ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -376,12 +378,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ISheet sheet = workbook.CreateSheet( sheetName ) ;
       IRow row0, row2 ;
       int rowStart ;
+      sheet.SetMargin(MarginType.BottomMargin ,0.078740157480315 );
+      sheet.SetMargin(MarginType.TopMargin ,0.551181102362205);
+      sheet.SetMargin(MarginType.LeftMargin ,0.275590551181102 );
+      sheet.SetMargin(MarginType.RightMargin ,0.275590551181102 );
+      sheet.SetMargin(MarginType.HeaderMargin ,0.196850393700787 );
+      sheet.SetMargin(MarginType.FooterMargin ,0.196850393700787 );
+      
+      var printSetup = sheet.PrintSetup;
+      printSetup.PaperSize = (short) 9 ;
+      printSetup.FitWidth = 1; //fit width onto 1 page
+      printSetup.FitHeight = 2; //don't care about height
+      printSetup.Landscape = true;
+      sheet.FitToPage = (true);
       switch ( sheetType ) {
         case SheetType.Confirmation :
           sheet.SetColumnWidth( 0, 500 ) ;
-          sheet.SetColumnWidth( 1, 8000 ) ;
-          sheet.SetColumnWidth( 2, 8000 ) ;
-          sheet.SetColumnWidth( 3, 4000 ) ;
+          sheet.SetColumnWidth( 1, 7500 ) ;
+          sheet.SetColumnWidth( 2, 7500 ) ;
+          sheet.SetColumnWidth( 3, 3500 ) ;
           sheet.SetColumnWidth( 4, 1200 ) ;
           sheet.SetColumnWidth( 5, 4000 ) ;
           sheet.SetColumnWidth( 7, 3000 ) ;
@@ -436,7 +451,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrder ) {
               rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, xssfCellStyles ) ;
             }
-
+            
+            while ( rowStart <= 60 ) {
+              var rowTemp = sheet.CreateRow( rowStart ) ;
+              CreateCell( rowTemp, 1, "", xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
+              CreateCell( rowTemp, 2, "", xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
+              CreateCell( rowTemp, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
+              CreateCell( rowTemp, 4, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
+              CreateMergeCell( sheet, rowTemp, rowStart, rowStart, 5, 15, "", xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
+              CreateCell( rowTemp, 16,  "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMediumThin" ] ) ;
+              rowStart++ ;
+            }
+            
             var lastRow = sheet.CreateRow( rowStart ) ;
             CreateCell( lastRow, 1, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMedium" ] ) ;
             CreateMergeCell( sheet, lastRow, rowStart, rowStart, 2, 3, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMedium" ], true ) ;
@@ -445,6 +471,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateCell( lastRow, 16, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMedium" ] ) ;
 
             rowStart += 2 ;
+            sheet.SetRowBreak( rowStart );
           }
 
           break ;
