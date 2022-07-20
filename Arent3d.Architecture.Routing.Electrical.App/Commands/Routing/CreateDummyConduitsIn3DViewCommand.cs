@@ -23,7 +23,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   public class CreateDummyConduitsIn3DViewCommand : IExternalCommand
   {
     private const string DummyName = "Dummy";
-    private const string CommentsParameter = "Comments";
     private const string HiddenValue = "Hidden";
     
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -529,7 +528,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     
     private void HideConduitsIn3DView( Document document, ICollection<ElementId> conduitIds )
     {
-      document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => conduitIds.Contains(c.Id ) && c.ParametersMap.Contains( CommentsParameter ) ).ForEach( c => c.ParametersMap.get_Item( CommentsParameter ).Set( HiddenValue ) );
+      document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
+        .Where( c => conduitIds.Contains( c.Id ) && c.HasParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) )
+        .ForEach( c => c.TrySetProperty( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS, HiddenValue ) ) ;
       var views = document.GetAllElements<View>().Where( v => v is View3D ) ;
       foreach ( var view in views ) {
         view.HideElements( conduitIds ) ;
@@ -551,8 +552,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
       
       var hiddenConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
-        .Where( c => c.ParametersMap.Contains( CommentsParameter ) && c.ParametersMap.get_Item( CommentsParameter ).AsString() == HiddenValue ).ToList();
-      hiddenConduits.ForEach( c => c.ParametersMap.get_Item( CommentsParameter ).ClearProperty() );  
+        .Where( c => c.HasParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) && c.GetParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS )?.AsString() == HiddenValue ).ToList();
+      hiddenConduits.ForEach( c => c.GetParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS )?.ClearProperty() );  
       var hiddenConduitIds = hiddenConduits.Select( c => c.Id ).ToList() ;
       var views = document.GetAllElements<View>().Where( v => v is View3D ) ;
       foreach ( var view in views ) {
