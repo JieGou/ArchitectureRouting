@@ -9,7 +9,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string Buzaicd { get ; }
     public string Kikaku { get ; }
     public string? PullBoxCategoryName { get ; private set ; }
-    public string Hinmei { get ; }
     public int Width { get ; private set ; }
     public int Height { get ; private set ; }
     public int Depth { get ; private set ; }
@@ -19,7 +18,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     {
       Buzaicd = hiroiMasterModel.Buzaicd ;
       Kikaku = hiroiMasterModel.Kikaku ;
-      Hinmei = hiroiMasterModel.Hinmei ;
       InitPullBoxSizeFromString( Kikaku ) ;
     }
 
@@ -48,7 +46,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       return int.TryParse( match.Value, out var result ) ? result : 0 ;
     }
 
-    private string GetPullBoxCategoryName( string value )
+    private static string GetPullBoxCategoryName( string value )
     {
       var regex = new Regex( StringPattern ) ;
       var match = regex.Match( value ) ;
