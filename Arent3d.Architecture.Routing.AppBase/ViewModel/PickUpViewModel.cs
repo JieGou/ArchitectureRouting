@@ -73,6 +73,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             using var transaction = new Transaction( _document, "Delete Data" ) ;
             transaction.Start() ;
             _pickUpStorable.AllPickUpModelData = new List<PickUpModel>() ;
+            _pickUpModels = new List<PickUpModel>() ;
             _pickUpStorable.Save() ;
             transaction.Commit() ;
             OriginPickUpModels = new List<PickUpModel>() ;
