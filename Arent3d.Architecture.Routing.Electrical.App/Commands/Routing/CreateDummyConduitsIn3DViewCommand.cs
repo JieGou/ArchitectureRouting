@@ -264,8 +264,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       else if ( direction.Y is 1 or -1 ) {
         var isBranchConduit = CheckConduitOfBranchRoute( conduit ) ;
         if ( isBranchConduit ) {
-          startPoint = new XYZ( startPoint.X - direction.Y * Math.Abs( tolerance ), startPoint.Y, startPoint.Z ) ;
-          endPoint = new XYZ( endPoint.X - direction.Y * Math.Abs( tolerance ), endPoint.Y, endPoint.Z ) ;
+          startPoint = new XYZ( startPoint.X - direction.Y * tolerance, startPoint.Y, startPoint.Z ) ;
+          endPoint = new XYZ( endPoint.X - direction.Y * tolerance, endPoint.Y, endPoint.Z ) ;
         }
         else {
           startPoint = new XYZ( direction.Y is 1 ? startPoint.X - tolerance : startPoint.X + tolerance, startPoint.Y, startPoint.Z ) ;
@@ -288,8 +288,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         else {
           var isBranchConduit = CheckConduitOfBranchRoute( conduit ) ;
           if ( isBranchConduit ) {
-            startPoint = new XYZ( startPoint.X - y * Math.Abs( tolerance ), startPoint.Y, startPoint.Z ) ;
-            endPoint = new XYZ( endPoint.X - y * Math.Abs( tolerance ), endPoint.Y, endPoint.Z ) ;
+            startPoint = new XYZ( startPoint.X - y * tolerance, startPoint.Y, startPoint.Z ) ;
+            endPoint = new XYZ( endPoint.X - y * tolerance, endPoint.Y, endPoint.Z ) ;
           }
           else {
             startPoint = new XYZ( y is 1 ? startPoint.X - tolerance : startPoint.X + tolerance, startPoint.Y, startPoint.Z ) ;
@@ -397,14 +397,24 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
                   x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X - tolerance : origin.X + tolerance ;
                   y = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.Y + tolerance : origin.Y - tolerance ;
                 }
+                else if ( handOrientation.X is 1 && facingOrientation.Y is 1 ) {
+                  x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X + tolerance : origin.X - tolerance ;
+                  y = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.Y - tolerance : origin.Y + tolerance ;
+                }
                 else {
-                  x = origin.X + handOrientation.X * facingOrientation.Y * tolerance ;
+                  x = origin.X - handOrientation.X * facingOrientation.Y * tolerance ;
                   y = origin.Y + handOrientation.X * tolerance ;
                 }
               }
               else {
-                x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X + handOrientation.X * facingOrientation.Y * tolerance : origin.X - tolerance ;
-                y = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.Y - handOrientation.X * facingOrientation.Y * tolerance : origin.Y + tolerance ;
+                if ( toConduitInfo != null && toConduitInfo!.IsOppositeDirection && handOrientation.X is -1 && facingOrientation.Y is -1 ) {
+                  x = origin.X - tolerance ;
+                  y = origin.Y + tolerance ;
+                }
+                else {
+                  x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X + handOrientation.X * facingOrientation.Y * tolerance : origin.X - handOrientation.X * tolerance ;
+                  y = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.Y - handOrientation.X * facingOrientation.Y * tolerance : origin.Y + facingOrientation.Y * tolerance ;
+                }
               }
             }
             else {
@@ -415,7 +425,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           else if ( handOrientation.Y is 1 or -1 ) {
             if ( facingOrientation.X is 1 or -1 ) {
               if ( isBranchConduitFitting ) {
-                x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X - facingOrientation.X * Math.Abs( tolerance ) : origin.X + facingOrientation.X * tolerance ;
+                x = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.X - facingOrientation.X * tolerance : origin.X + facingOrientation.X * tolerance ;
                 y = toConduitInfo != null && toConduitInfo!.IsOppositeDirection ? origin.Y + handOrientation.Y * tolerance : origin.Y - handOrientation.Y * tolerance ;
               }
               else {
@@ -430,18 +440,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
               }
             }
             else {
-              x = origin.X + tolerance ;
+              x = handOrientation.Y is 1 ? origin.X - tolerance : origin.X + tolerance ;
               y = origin.Y ;
             }
           }
           else {
             if ( facingOrientation.X is 1 or -1 ) {
-              var otherDirection = routeInfo.Directions.FirstOrDefault( d => d.X is not 1 && d.X is not -1 ) ;
               x = origin.X ;
-              y = otherDirection != null ? origin.Y - otherDirection.Y * facingOrientation.X * tolerance : origin.Y + facingOrientation.X * tolerance ;
+              y = origin.Y + facingOrientation.X * tolerance ;
             }
             else {
-              x = origin.X - tolerance ;
+              x = origin.X - facingOrientation.Y * tolerance ;
               y = origin.Y ;
             }
           }
@@ -615,7 +624,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var (endPointX, endPointY, endPointZ) = fromConduitInfo.EndPoint ;
         XYZ? fromEndPoint = null ;
         if ( directionX is 1 or -1 ) {
-          var x = fromConduitInfo.IsOppositeDirection ? endPointX + length : endPointX - directionX * length ;
+          var x = fromConduitInfo.IsOppositeDirection ? endPointX + directionX * length : endPointX - directionX * length ;
           fromEndPoint = new XYZ( x, endPointY, endPointZ ) ;
         }
         else if ( directionY is 1 or -1 ) {
