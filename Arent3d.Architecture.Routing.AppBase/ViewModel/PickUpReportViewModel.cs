@@ -624,6 +624,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles )
     {
+      var detailSymbolStorable =  _document.GetDetailTableStorable() ;
+      var dataDetailTable = detailSymbolStorable.DetailTableModelData ;
+      
       if ( ! pickUpModels.Any() ) return rowStart ;
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
@@ -641,7 +644,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
         var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RouteNameRef ) ;
         var listSeenQuantity = new List<double>() ;
+        var valueDetailTableStr = string.Empty ;
+        var countTest = 0 ;
         foreach ( var itemGroupByRoute in itemsGroupByRoute ) {
+          var dataDetail = dataDetailTable.FirstOrDefault( x => x.RouteName == itemGroupByRoute.Key ) ;
+          if ( dataDetail != null && dataDetail.WireBook.Trim() != "1") {
+            valueDetailTableStr = dataDetail.WireBook ;
+            countTest++ ;
+          }
           double seenQuantity = 0 ;
           foreach ( var item in itemGroupByRoute ) {
             double.TryParse( item.Quantity, out var quantity ) ;
@@ -673,7 +683,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           notSeenQuantityStr += value > 0 ? " + ↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
         }
 
-        var key = isTani ? ( "( " + seenQuantityStr + notSeenQuantityStr + " )" ) : ( seenQuantityStr + notSeenQuantityStr ) ;
+        var key = isTani ? ( "( " + seenQuantityStr + notSeenQuantityStr + " )" ) + (countTest <= 1 ? string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $" X {valueDetailTableStr}" : " X N")  : ( seenQuantityStr + notSeenQuantityStr ) ;
         var itemKey = trajectory.FirstOrDefault( t => t.Key.Contains( key ) ).Key ;
 
         if ( string.IsNullOrEmpty( itemKey ) )
