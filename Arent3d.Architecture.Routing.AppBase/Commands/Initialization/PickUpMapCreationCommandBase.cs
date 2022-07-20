@@ -34,10 +34,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any() ;
 
           if ( ! isDisplay ) {
-            var pickUpViewModel = new PickUpViewModel( document ) ;
-            var pickUpModels = pickUpViewModel.DataPickUpModels ;
+            var pickUpStorable = document.GetPickUpStorable() ;
+            var pickUpModels = pickUpStorable.AllPickUpModelData ;
             if ( ! pickUpModels.Any() ) {
-              MessageBox.Show( "Don't have pick up data.", "Message" ) ;
+              MessageBox.Show( "Don't have pick up data.", "Message Warning" ) ;
               return Result.Cancelled ;
             }
             
