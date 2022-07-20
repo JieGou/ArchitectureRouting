@@ -12,8 +12,8 @@ namespace Arent3d.Architecture.Routing.Storages
     /// </summary>
     public class SchemaCreator : ISchemaCreator
     {
-        private readonly AttributeExtractor<SchemaAttribute> _schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
-        private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new AttributeExtractor<FieldAttribute>() ;
+        private readonly AttributeExtractor<SchemaAttribute> _schemaAttributeExtractor = new() ;
+        private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new() ;
         private readonly IFieldFactory _fieldFactory = new FieldFactory() ;
 
         public Schema FindOrCreate( Type type )

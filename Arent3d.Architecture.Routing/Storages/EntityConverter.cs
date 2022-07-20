@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.Storages
     public class EntityConverter : IEntityConverter
     {
         private readonly ISchemaCreator _schemaCreator ;
-        private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new AttributeExtractor<FieldAttribute>() ;
+        private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new() ;
 
         public EntityConverter( ISchemaCreator schemaCreator )
         {
@@ -287,5 +287,6 @@ namespace Arent3d.Architecture.Routing.Storages
         }
 
         #endregion
+        
     }
 }

@@ -201,7 +201,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             conduits = new List<Element>() { conduitOfFirstRoute } ;
           }
           AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, csvStorable.WiresAndCablesModelData, detailTableModelsData, detailTableModels, conduits, parentDetailSymbolModel!, true, isMixConstructionItems ) ;
-          routeNames = routeNames.Where( n => n != parentRouteName ).OrderByDescending( n => n ).ToList() ;
+          var routeNameArray = parentRouteName.Split( '_' ) ;
+          parentRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+          routeNames = routeNames.Where( n =>
+          {
+            var nameArray = n.Split( '_' ) ;
+            var strRouteName = string.Join( "_", nameArray.First(), nameArray.ElementAt( 1 ) ) ;
+            return strRouteName != parentRouteName ;
+          } ).OrderByDescending( n => n ).ToList() ;
         }
 
         foreach ( var childDetailSymbolModel in from routeName in routeNames select detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == routeName ) ) {
