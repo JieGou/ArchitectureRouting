@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Architecture.Routing.Utils ;
@@ -41,8 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! familySymbol.IsActive )
         familySymbol.Activate() ;
 
-      var dataStorage = document.FindOrCreateDataStorageForUser() ;
-      var conduitAndDetailCurveModel = dataStorage.GetData<ConduitAndDetailCurveModel>() ?? new ConduitAndDetailCurveModel() ;
+      var storageService = new StorageService<ConduitAndDetailCurveModel>(document, true) ;
       var color = new Color( 255, 215, 0 ) ;
       var lineStyle = GetLineStyle( document, color ) ;
       OverrideGraphicSettings ogs = new() ;
@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var detailCurve = document.Create.NewDetailCurve( view, x.Key ) ;
         detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         if ( isLeakRoute ) view.SetElementOverrides( detailCurve.Id, ogs ) ;
-        conduitAndDetailCurveModel.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
+        storageService.Data.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
         {
           ConduitId = x.Value,
           DetailCurveId = detailCurve.UniqueId,
@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       {
         var line = document.Create.NewFamilyInstance( x.Key, familySymbol, view ) ;
         if ( isLeakRoute ) view.SetElementOverrides( line.Id, ogs ) ;
-        conduitAndDetailCurveModel.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
+        storageService.Data.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
         {
           ConduitId = x.Value,
           DetailCurveId = line.UniqueId,
@@ -73,7 +73,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         } ) ;
       } ) ;
       
-      dataStorage.SetData(conduitAndDetailCurveModel) ;
+      storageService.SaveChange() ;
 
       transaction.Commit() ;
       
@@ -239,7 +239,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )
     {
-      var dataStorages = document.GetAllData<ConduitAndDetailCurveModel>().Where(x => x.Data.ConduitAndDetailCurveData.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
+      var storageService = new StorageService<ConduitAndDetailCurveModel>( document, true ) ;
+      var dataStorages = storageService.DataStorages.Where(x => x.Data.ConduitAndDetailCurveData.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
       if ( ! dataStorages.Any() ) 
         return ( string.Empty, false ) ;
       

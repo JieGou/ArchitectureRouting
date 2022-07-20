@@ -9,10 +9,9 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using MoreLinq ; 
@@ -22,9 +21,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class ChangeWireSymbolUsingDetailItemViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly DataStorage _dataStorable ;
-    private readonly LocationTypeModel _locationTypeModel ;
-    private readonly ConduitAndDetailCurveModel _conduitAndDetailCurveModel ;
+    private readonly StorageService<LocationTypeModel> _locationTypeStorage;
+    private readonly StorageService<ConduitAndDetailCurveModel> _conduitAndDetailCurveStorage;
 
     private static Dictionary<string, string>? _wireSymbolOptions ;
 
@@ -58,7 +56,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public string TypeNameSelected
     {
-      get { return _typeNameSelected ??= TypeNames.FirstOrDefault( x => x == _locationTypeModel.LocationType ) ?? TypeNames.First() ; }
+      get { return _typeNameSelected ??= TypeNames.FirstOrDefault( x => x == _locationTypeStorage.Data.LocationType ) ?? TypeNames.First() ; }
       set
       {
         _typeNameSelected = value ;
@@ -78,9 +76,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public ChangeWireSymbolUsingDetailItemViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _dataStorable = _uiDocument.Document.FindOrCreateDataStorageForUser() ;
-      _locationTypeModel = _dataStorable.GetData<LocationTypeModel>() ?? new LocationTypeModel();
-      _conduitAndDetailCurveModel = _dataStorable.GetData<ConduitAndDetailCurveModel>() ?? new ConduitAndDetailCurveModel() ;
+      _locationTypeStorage = new StorageService<LocationTypeModel>(_uiDocument.Document, true) ;
+      _conduitAndDetailCurveStorage = new StorageService<ConduitAndDetailCurveModel>(_uiDocument.Document, true) ;
     }
 
     #region Commands
@@ -129,7 +126,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         {
           var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
           detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-          _conduitAndDetailCurveModel.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
+          _conduitAndDetailCurveStorage.Data.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
           {
             ConduitId = x.Value,
             DetailCurveId = detailCurve.UniqueId,
@@ -140,7 +137,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         lines.ForEach( x =>
         {
           var line = _uiDocument.Document.Create.NewFamilyInstance( x.Key, familySymbol, _uiDocument.ActiveView ) ;
-          _conduitAndDetailCurveModel.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
+          _conduitAndDetailCurveStorage.Data.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
           {
             ConduitId = x.Value,
             DetailCurveId = line.UniqueId,
@@ -149,7 +146,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           }) ;
         } ) ;
         
-        _dataStorable.SetData(_conduitAndDetailCurveModel) ;
+        _conduitAndDetailCurveStorage.SaveChange() ;  
 
         transaction.Commit() ;
       }
@@ -193,8 +190,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if(null != dropCategory)
         _uiDocument.ActiveView.SetCategoryHidden(dropCategory.Id, true);
         
-      _locationTypeModel.LocationType = TypeNameSelected ;
-      _dataStorable.SetData(_locationTypeModel);
+      _locationTypeStorage.Data.LocationType = TypeNameSelected ;
+      _locationTypeStorage.SaveChange() ;
       trans.Commit() ;
       
       transactionGroup.Assimilate() ;

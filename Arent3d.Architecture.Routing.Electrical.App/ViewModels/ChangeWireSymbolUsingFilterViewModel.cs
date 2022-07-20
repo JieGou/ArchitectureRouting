@@ -7,10 +7,9 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 
@@ -19,8 +18,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class ChangeWireSymbolUsingFilterViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly DataStorage _dataStorable ;
-    private readonly LocationTypeModel _locationTypeModel ;
+    private readonly StorageService<LocationTypeModel> _storageService ;
 
     private ObservableCollection<string>? _typeNames ;
 
@@ -38,7 +36,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public string TypeNameSelected
     {
-      get { return _typeNameSelected ??= TypeNames.FirstOrDefault( x => x == _locationTypeModel.LocationType ) ?? TypeNames.First() ; }
+      get { return _typeNameSelected ??= TypeNames.FirstOrDefault( x => x == _storageService.Data.LocationType ) ?? TypeNames.First() ; }
       set
       {
         _typeNameSelected = value ;
@@ -58,8 +56,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public ChangeWireSymbolUsingFilterViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _dataStorable = _uiDocument.Document.FindOrCreateDataStorageForUser() ;
-      _locationTypeModel = _dataStorable.GetData<LocationTypeModel>() ?? new LocationTypeModel() ;
+      _storageService = new StorageService<LocationTypeModel>( _uiDocument.Document, true ) ;
     }
 
     #region Commands
@@ -97,8 +94,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         parameter.Set( TypeNameSelected ) ;
       }
 
-      _locationTypeModel.LocationType = TypeNameSelected ;
-      _dataStorable.SetData(_locationTypeModel) ;
+      _storageService.Data.LocationType = TypeNameSelected ;
+      _storageService.SaveChange();
       transaction.Commit() ;
     }
 
