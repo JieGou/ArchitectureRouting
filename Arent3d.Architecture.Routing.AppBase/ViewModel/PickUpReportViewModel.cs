@@ -691,12 +691,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var valueOfCell = string.Empty ;
       var trajectoryStrCount = trajectoryStr.Count ;
       var count = 0 ;
-      if ( trajectoryStrCount > 3 ) {
+      if ( trajectoryStrCount > 2 ) {
         for ( var i = 0 ; i < trajectoryStrCount ; i++ ) {
           valueOfCell += trajectoryStr[ i ] + " + ";
-          if ( valueOfCell.Length * 1.5  < lengthOfCellMerge/256.0  ) continue;
+          if ( valueOfCell.Length * 1.5  < lengthOfCellMerge/256.0 && i < trajectoryStrCount - 1 ) continue;
           if ( count == 0 ) {
-            CreateMergeCell( sheet, row, rowStart, rowStart, 5, 15, string.Join( " + ", valueOfCell ), xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
+            CreateMergeCell( sheet, row, rowStart, rowStart, firstCellIndex, lastCellIndex, valueOfCell , xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
             count++ ;
           }
           else {
@@ -706,7 +706,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateCell( rowTrajectory, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
             CreateCell( rowTrajectory, 4, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
             CreateCell( rowTrajectory, 16, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMediumThin" ] ) ;
-            CreateMergeCell( sheet, rowTrajectory, rowStart, rowStart, 5, 15, string.Join( " + ", valueOfCell ), xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
+            if(i != trajectoryStrCount - 1)
+              CreateMergeCell( sheet, rowTrajectory, rowStart, rowStart, firstCellIndex, lastCellIndex, valueOfCell , xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
+            else 
+              CreateMergeCell( sheet, rowTrajectory, rowStart, rowStart, firstCellIndex, lastCellIndex, valueOfCell.TrimEnd().Remove(valueOfCell.TrimEnd().Length - 1),  xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
           }
 
           valueOfCell = string.Empty ;
