@@ -372,7 +372,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       List<string> levels = _document.GetAllElements<Level>().Select( l => l.Name ).ToList() ;
       var codeList = GetCodeList() ;
-      var docon = FileName ;
+      var fileName = FileName ;
 
       ISheet sheet = workbook.CreateSheet( sheetName ) ;
       IRow row0, row2 ;
@@ -414,7 +414,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             row0 = sheet.CreateRow( rowStart ) ;
             var row1 = sheet.CreateRow( rowStart + 1 ) ;
             row2 = sheet.CreateRow( rowStart + 2 ) ;
-            CreateMergeCell( sheet, row0, rowStart, rowStart, 2, 6, docon, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
+            CreateMergeCell( sheet, row0, rowStart, rowStart, 2, 6, fileName, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 13, $"縮尺:1/{scale}", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 14, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 15, $"階高:{height}m", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
@@ -492,7 +492,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           row2 = sheet.CreateRow( 2 ) ;
           var row3 = sheet.CreateRow( 3 ) ;
           CreateCell( row0, 2, "【拾い出し集計表】", xssfCellStyles[ "headerNoneBorderedCellStyle" ] ) ;
-          CreateMergeCell( sheet, row0, 0, 0, 6, 7, docon, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
+          CreateMergeCell( sheet, row0, 0, 0, 6, 7, fileName, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
           for ( var i = 7 ; i < 19 ; i++ ) {
             CreateCell( row0, i, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
           }
