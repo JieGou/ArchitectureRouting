@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation ;
-using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
@@ -28,7 +27,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
         var uiDocument = new UIDocument( document ) ;
         var selection = uiDocument.Selection ;
 
-        var dataStorage = document.FindOrCreateDataStorageForUser() ;
+        var storageService = new StorageService<BorderTextNoteModel>( document, true ) ;
         List<ElementId>? borderIds = null;
         TextNote? textNote ;
 
@@ -49,7 +48,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
           if ( null == borderIds || null == textNote ) 
             return ;
 
-          SetDataForTextNote( dataStorage, textNote, borderIds ) ;
+          SetDataForTextNote( storageService, textNote, borderIds ) ;
         }
         else if ( data.GetModifiedElementIds().Count == 1 && selection.GetElementIds().Count == 1 && data.GetModifiedElementIds().First() == selection.GetElementIds().First() ) {
           textNote = GetTextNote( document, data.GetModifiedElementIds().First(), DoubleBorderCommand.TextNoteTypeName ) ;
@@ -66,34 +65,31 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
           }
 
           if ( null != borderIds && null != textNote ) {
-            SetDataForTextNote( dataStorage, textNote, borderIds ) ;
+            SetDataForTextNote( storageService, textNote, borderIds ) ;
           }
           else {
             textNote = (TextNote) document.GetElement( data.GetModifiedElementIds().First() ) ;
-            var borderTextNoteModel = dataStorage.GetData<BorderTextNoteModel>() ;
-            if (  null != borderTextNoteModel && borderTextNoteModel.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue)) {
-              var detailLines = borderTextNoteModel.BorderTextNotes[ textNote.Id.IntegerValue ] .BorderIds.Where(x => x != ElementId.InvalidElementId).ToList();
-              if ( detailLines.Any() )
-                document.Delete( detailLines ) ;
-
-              borderTextNoteModel.BorderTextNotes.Remove( textNote.Id.IntegerValue ) ;
-            }
+            if ( ! storageService.Data.BorderTextNotes.ContainsKey( textNote.Id.IntegerValue ) )
+              return ;
             
-            if(null != borderTextNoteModel)
-              dataStorage.SetData(borderTextNoteModel);
+            var detailLines = storageService.Data.BorderTextNotes[ textNote.Id.IntegerValue ] .BorderIds.Where(x => x != ElementId.InvalidElementId).ToList();
+            if ( detailLines.Any() )
+              document.Delete( detailLines ) ;
+
+            storageService.Data.BorderTextNotes.Remove( textNote.Id.IntegerValue ) ;
+            storageService.SaveChange();
           }
         }
         else if ( data.GetDeletedElementIds().Count == 1 ) {
           var elementId = data.GetDeletedElementIds().First().IntegerValue ;
-          var dataModel = dataStorage.GetData<BorderTextNoteModel>() ;
-          if ( null == dataModel || ! dataModel.BorderTextNotes.ContainsKey( elementId ) || ! dataModel.BorderTextNotes[ elementId ].BorderIds.Any() )
+          if ( ! storageService.Data.BorderTextNotes.ContainsKey( elementId ) || ! storageService.Data.BorderTextNotes[ elementId ].BorderIds.Any() )
             return ;
           
-          var oldDetailCurveIds = dataModel.BorderTextNotes[ elementId ].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
+          var oldDetailCurveIds = storageService.Data.BorderTextNotes[ elementId ].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
           document.Delete( oldDetailCurveIds ) ;
 
-          dataModel.BorderTextNotes.Remove( elementId ) ;
-          dataStorage.SetData(dataModel);
+          storageService.Data.BorderTextNotes.Remove( elementId ) ;
+          storageService.SaveChange();
         }
       }
       catch ( Exception exception ) {
@@ -101,22 +97,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       }
     }
 
-    private void SetDataForTextNote(DataStorage dataStorage, TextNote textNote, List<ElementId> newDetailLineIds )
+    private static void SetDataForTextNote(StorageService<BorderTextNoteModel> storageService, TextNote textNote, List<ElementId> newDetailLineIds )
     {
-      if ( dataStorage.GetData<BorderTextNoteModel>() is not { } data )
-        data = new BorderTextNoteModel() ;
-      
-      if ( data.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue) ) {
-        var oldDetailCurveIds = data.BorderTextNotes[textNote.Id.IntegerValue].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
+      if ( storageService.Data.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue) ) {
+        var oldDetailCurveIds = storageService.Data.BorderTextNotes[textNote.Id.IntegerValue].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
         if( oldDetailCurveIds.Any() )
-          dataStorage.Document.Delete( oldDetailCurveIds ) ;
+          textNote.Document.Delete( oldDetailCurveIds ) ;
 
-        data.BorderTextNotes[ textNote.Id.IntegerValue ] = new BorderModel { BorderIds = newDetailLineIds } ;
-        dataStorage.SetData(data);
+        storageService.Data.BorderTextNotes[ textNote.Id.IntegerValue ] = new BorderModel { BorderIds = newDetailLineIds } ;
+        storageService.SaveChange();
       }
       else {
-        data.BorderTextNotes.Add( textNote.Id.IntegerValue, new BorderModel { BorderIds = newDetailLineIds } );
-        dataStorage.SetData(data);
+        storageService.Data.BorderTextNotes.Add( textNote.Id.IntegerValue, new BorderModel { BorderIds = newDetailLineIds } );
+        storageService.SaveChange();
       }
     }
 
@@ -140,7 +133,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       return "Arent, " + "https://arent3d.com" ;
     }
 
-    private TextNote? GetTextNote(Document document, ElementId elementId, string textNoteTypeName )
+    private static TextNote? GetTextNote(Document document, ElementId elementId, string textNoteTypeName )
     {
       if(document.GetElement(elementId) is not TextNote textNote)
         return null;
@@ -151,13 +144,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       return textNoteType.Name != textNoteTypeName ? null : textNote ;
     }
 
-    private IEnumerable<Curve> GetSingleBorderTextNote( TextNote textNote )
+    private static IEnumerable<Curve> GetSingleBorderTextNote( TextNote textNote )
     {
       var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
       return curveLoop.OfType<Curve>().ToList() ;
     }
 
-    private IEnumerable<Curve> GetDoubleBorderTextNote(TextNote textNote)
+    private static IEnumerable<Curve> GetDoubleBorderTextNote(TextNote textNote)
     {
       var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
       var curves = curveLoop.OfType<Curve>().ToList() ;
@@ -166,7 +159,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       return curves ;
     }
 
-    private List<ElementId> CreateDetailCurve( Document document, TextNote textNote, IEnumerable<Curve> curves )
+    private static List<ElementId> CreateDetailCurve( Document document, TextNote textNote, IEnumerable<Curve> curves )
     {
       var curveIds = new List<ElementId>() ;
       var graphicStyle = document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;

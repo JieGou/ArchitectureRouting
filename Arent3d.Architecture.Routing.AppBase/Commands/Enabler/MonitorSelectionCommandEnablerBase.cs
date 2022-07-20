@@ -42,6 +42,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Enabler
       }
 
       if ( routeNameLst.Count > 1 ) {
+        if ( selectedRoutes.Any( r => r.GetSystemClassificationInfo().AddInType == AddInType.Electrical ) )
+          return false ;
         FromToTreeViewModel.ClearSelection() ;
         _previousSelectedRouteElementId = null ;
       }

@@ -151,6 +151,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class ElectricalSymbolAggregationAllCommandButton
           {
           }
+          
+          [Button( typeof( SwitchPrintModeCommand ), OnlyInitialized = true )]
+          private static class SwitchPrintModeCommandButton
+          {
+          }
         }
       }
 

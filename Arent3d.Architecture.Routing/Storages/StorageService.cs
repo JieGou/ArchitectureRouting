@@ -1,0 +1,38 @@
+﻿using System ;
+using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.ExtensibleStorage ;
+
+namespace Arent3d.Architecture.Routing.Storages
+{
+    public class StorageService<TDataModel> where TDataModel : class, IDataModel
+    {
+        public Element Owner { get ; }
+        public TDataModel Data { get ;  }
+
+        private IEnumerable<(Element Owner, TDataModel Data)>? _dataStorages ;
+        public IEnumerable<(Element Owner, TDataModel Data)> DataStorages
+        {
+            get { return _dataStorages ??= Owner.Document.GetAllDataStorage<TDataModel>() ; }
+        }
+
+        public StorageService(Document document, bool isForUser)
+        {
+            Owner = document.FindOrCreateDataStorage<TDataModel>( isForUser ) ;
+            Data = Owner.GetData<TDataModel>() ?? Activator.CreateInstance<TDataModel>() ;
+        }
+
+        public StorageService( Element owner )
+        {
+            Owner = owner ;
+            Data = Owner.GetData<TDataModel>() ?? Activator.CreateInstance<TDataModel>() ;
+        }
+
+        public void SaveChange()
+        {
+            Owner.SetData(Data);
+        }
+        
+    }
+}
