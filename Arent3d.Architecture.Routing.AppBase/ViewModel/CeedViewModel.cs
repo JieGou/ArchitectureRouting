@@ -41,15 +41,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
     private List<CeedModel> _previousCeedModels ;
-    private StorageService<CeedUserModel> _storageService ;
+    private readonly StorageService<CeedUserModel> _storageService ;
 
     public DataGrid DtGrid ;
 
     public IReadOnlyCollection<CeedModel> OriginCeedModels => new ReadOnlyCollection<CeedModel>( _ceedModels );
 
     public ObservableCollection<CeedModel> CeedModels { get ; set ; }
-
-    private CeedStorable? CeedStorable { get ; set ; }
 
     public ObservableCollection<string> CeedSetCodes { get ; } = new() ;
 
@@ -259,7 +257,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _previewList = new ObservableCollection<CeedModel>() ;
       }
       else {
-        CeedStorable = oldCeedStorable ;
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
         _previousCeedModels = new List<CeedModel>( oldCeedStorable.CeedModelData ) ;
@@ -281,7 +278,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void LoadData( CeedStorable ceedStorable )
     {
-      CeedStorable = ceedStorable ;
       _ceedModels = ceedStorable.CeedModelData ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
@@ -295,10 +291,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _usingCeedModel = ceedStorable.CeedModelUsedData ;
     }
 
-    private void LoadData( List<CeedModel> ceedModels, CeedStorable? ceedStorable = null )
+    private void LoadData( List<CeedModel> ceedModels )
     {
-      if ( ceedStorable != null )
-        CeedStorable = ceedStorable ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
       foreach ( var dataModel in ceedModels ) {
@@ -345,12 +339,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       categoryModels.Add( categoryModel2 ) ;
 
       return categoryModels ;
-    }
-
-    private enum CategoryType
-    {
-      ModelNumberOrSetCodePreview,
-      DeviceSymbolPreview
     }
 
     private CategoryModel? FindSelectedCategory( IEnumerable<CategoryModel> categories )
@@ -408,15 +396,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         try {
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
-          using ( var progressData = progress?.Reserve( 0.5 ) ) {
+          using ( var progressData = progress.Reserve( 0.5 ) ) {
             ceedStorable.Save() ;
             _storageService.SaveChange();
-            progressData?.ThrowIfCanceled() ;
+            progressData.ThrowIfCanceled() ;
           }
 
-          using ( var progressData = progress?.Reserve( 0.9 ) ) {
+          using ( var progressData = progress.Reserve( 0.9 ) ) {
             _document.MakeCertainAllConnectorFamilies() ;
-            progressData?.ThrowIfCanceled() ;
+            progressData.ThrowIfCanceled() ;
           }
 
           t.Commit() ;
@@ -428,7 +416,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public void Save()
     {
-      var ceedStorable = _document.GetCeedStorable() ;
       try {
         using Transaction t = new( _document, "Save data" ) ;
         t.Start() ;
@@ -491,7 +478,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         usingCeedModel = usingCeedModel.Distinct().ToList() ;
         _usingCeedModel = usingCeedModel ;
-        LoadData( _usingCeedModel, ceedStorable ) ;
+        LoadData( _usingCeedModel ) ;
         checkBox.Visibility = Visibility.Visible ;
         checkBox.IsChecked = true ;
 
@@ -546,7 +533,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName )
     {
-      var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
+      var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable == null ) return ;
       if ( _ceedModels.Any() ) {
         var ceedModel = _ceedModels.First( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == SelectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == SelectedCeedModel.ModelNumber ) ;
@@ -577,7 +564,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void UpdateDataGridAfterReplaceFloorPlanSymbol( DataGrid dataGrid, string floorPlanType )
     {
-      if ( dataGrid.ItemsSource is not ObservableCollection<CeedModel> newCeedModels ) {
+      if ( dataGrid.ItemsSource is not ObservableCollection<CeedModel> ) {
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
         return ;
       }
@@ -731,7 +718,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private Family? LoadFamily( Document document, string filePath, ref bool isLoadFamilySuccessfully )
     {
       try {
-        document.LoadFamily( filePath, new CeedViewModel.FamilyOption( true ), out var family ) ;
+        document.LoadFamily( filePath, new FamilyOption( true ), out var family ) ;
         if ( family == null ) return family ;
         foreach ( ElementId familySymbolId in family.GetFamilySymbolIds() ) {
           document.GetElementById<FamilySymbol>( familySymbolId ) ;
@@ -748,7 +735,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private bool IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( Document document, List<CeedModel>? allCeedModels, List<CeedModel>? usingCeedModel, IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
     {
       List<string> deviceSymbolsNotHaveConnectorFamily = new() ;
-      var ceedStorable = document.GetAllStorables<CeedStorable>().First() ;
+      var ceedStorable = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable == null ) return false ;
       if ( allCeedModels != null ) {
         foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
