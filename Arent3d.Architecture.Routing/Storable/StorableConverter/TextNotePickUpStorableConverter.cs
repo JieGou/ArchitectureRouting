@@ -11,15 +11,17 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
   {
     private enum SerializeField
     {
-      TextNoteId
+      TextNoteId,
+      Level
     }
   
     protected override TextNotePickUpModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
       var textNoteId = deserializer.GetString( SerializeField.TextNoteId ) ;
+      var level = deserializer.GetString( SerializeField.Level ) ;
 
-      return new TextNotePickUpModel( textNoteId ) ;
+      return new TextNotePickUpModel( textNoteId, level ) ;
     }
   
     protected override ISerializerObject Serialize( Element storedElement, TextNotePickUpModel customTypeValue )
@@ -27,6 +29,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var serializerObject = new SerializerObject<SerializeField>() ;
   
       serializerObject.AddNonNull( SerializeField.TextNoteId, customTypeValue.TextNoteId ) ;
+      serializerObject.AddNonNull( SerializeField.Level, customTypeValue.Level ) ;
 
       return serializerObject ;
     }

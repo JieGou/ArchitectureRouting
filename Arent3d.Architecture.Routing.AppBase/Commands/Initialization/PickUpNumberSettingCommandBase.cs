@@ -26,19 +26,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           "TransactionName.Commands.Initialization.PickUpNumberSetting".GetAppStringByKeyOrDefault(
             "Pick Up Number Setting" ), _ =>
           {
+            var level = document.ActiveView.GenLevel.Name ;
             var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
-            var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any() ;
+            var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any( t => t.Level == level ) ;
 
             if ( !isDisplay ) return Result.Cancelled ;
             
-            var pickUpStorable = document.GetPickUpStorable() ;
-            var pickUpModels = pickUpStorable.AllPickUpModelData ;
+            var pickUpViewModel = new PickUpViewModel( document ) ;
+            var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level ).ToList() ;
             if ( !pickUpModels.Any() ) {
-              MessageBox.Show( "Don't have pick up data.", "Message" ) ;
+              MessageBox.Show( "Don't have pick up data on this view.", "Message" ) ;
               return Result.Cancelled ;
             }
-            PickUpMapCreationCommandBase.RemoveTextNotePickUp( document ) ;
-            PickUpMapCreationCommandBase.ShowTextNotePickUp( textNotePickUpStorable, document, pickUpModels ) ;
+            PickUpMapCreationCommandBase.RemoveTextNotePickUp( document, level ) ;
+            PickUpMapCreationCommandBase.ShowTextNotePickUp( textNotePickUpStorable, document, level, pickUpModels ) ;
 
             return Result.Succeeded ;
           } ) ;

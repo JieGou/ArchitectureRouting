@@ -15,6 +15,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Autodesk.Revit.DB.Electrical ;
+using Autodesk.Windows ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -30,21 +31,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         var result = document.Transaction( "TransactionName.Commands.Initialization.PickUpMapCreation".GetAppStringByKeyOrDefault( "Pick Up Map Creation" ), _ =>
         {
+          var level = document.ActiveView.GenLevel.Name ;
           var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
-          var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any() ;
+          var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any(tp => tp.Level == level ) ;
 
           if ( ! isDisplay ) {
-            var pickUpStorable = document.GetPickUpStorable() ;
-            var pickUpModels = pickUpStorable.AllPickUpModelData ;
+            var pickUpViewModel = new PickUpViewModel( document ) ;
+            var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level ).ToList() ;
             if ( ! pickUpModels.Any() ) {
-              MessageBox.Show( "Don't have pick up data.", "Message Warning" ) ;
+              MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
               return Result.Cancelled ;
             }
             
-            ShowTextNotePickUp( textNotePickUpStorable, document, pickUpModels ) ;
+            ShowTextNotePickUp( textNotePickUpStorable, document, level, pickUpModels ) ;
           }
           else {
-            RemoveTextNotePickUp( document ) ;
+            RemoveTextNotePickUp( document, level ) ;
           }
         
           return Result.Succeeded ;
@@ -58,10 +60,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, List<PickUpModel> pickUpModels )
+    public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, string level, List<PickUpModel> pickUpModels )
     {
-      var isDisplayPickUpNumber = textNotePickUpStorable.IsPickUpNumberSetting ;
-      var level = document.ActiveView.GenLevel.Name ;
+      var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingOfLevels.FirstOrDefault( pn => pn.Level == level )?.IsPickUpNumberSetting ?? false ;
       var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
       var seenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
       var notSeenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
@@ -78,7 +79,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       foreach ( var route in routes ) {
         var conduitPickUpModel = pickUpModels
-          .Where( p => p.RouteName == route && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
+          .Where( p => p.RouteName == route && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
           .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } )
           .FirstOrDefault() ;
         if ( conduitPickUpModel == null ) continue ;
@@ -136,7 +137,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       #endregion
 
-      SaveTextNotePickUpModel( document, textNotePickUpModels.Select( x => new TextNotePickUpModel( x.TextNoteId ) ).ToList() ) ;
+      SaveTextNotePickUpModel( textNotePickUpStorable, textNotePickUpModels.Select( x => new TextNotePickUpModel( x.TextNoteId, level ) ).ToList() ) ;
     }
 
     private static void SetPositionForNotSeenTextNotePickUp( Document document, RouteCache routeCache, Dictionary<string, List<Conduit>> notSeenConduitsOfRoutes,
@@ -240,8 +241,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).FirstOrDefault( c => c.UniqueId == toElementId ) ;
           var isToPullBox = toConnector!.GetConnectorFamilyType() == ConnectorFamilyType.PullBox;
           
-          var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
-
+          var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition, true ) ??
+                               FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
           if ( conduitNearest is { Location: LocationCurve location } ) {
             var line = ( location.Curve as Line )! ;
             var fromPoint = line.GetEndPoint( 0 ) ;
@@ -297,7 +298,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private static Conduit? FindConduitNearest(Document document,List<Conduit> conduitsOfRoute, XYZ toPosition)
+    private static Conduit? FindConduitNearest(Document document,List<Conduit> conduitsOfRoute, XYZ toPosition, bool isCheckLengthConduit = false)
     {
       Conduit? result = null ;
       
@@ -312,7 +313,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var toPoint = line.GetEndPoint( 1 ) ;
         var distance = toPosition.DistanceTo( toPoint ) ;
         var lengthConduit = conduitOfRoute.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
-        if ( distance >= minDistance ) continue ;
+        if ( distance >= minDistance || ( isCheckLengthConduit && lengthConduit < 1.0 ) ) continue ;
         
         minDistance = distance ;
         result = conduitOfRoute ;
@@ -363,9 +364,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return textNote ;
     }
 
-    private static void SaveTextNotePickUpModel(Document document, List<TextNotePickUpModel> textNotePickUpModels)
+    private static void SaveTextNotePickUpModel(TextNotePickUpModelStorable textNotePickUpStorable, List<TextNotePickUpModel> textNotePickUpModels)
     {
-      var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
       try {
         textNotePickUpStorable.TextNotePickUpData.AddRange(textNotePickUpModels) ;
         textNotePickUpStorable.Save() ;
@@ -374,19 +374,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
-    public static void RemoveTextNotePickUp( Document document )
+    public static void RemoveTextNotePickUp( Document document, string level )
     {
       var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
-      var textNotePickUpData = textNotePickUpStorable.TextNotePickUpData;
-      var textNotes = document.GetAllElements<TextNote>() ;
+      var textNotePickUpData = textNotePickUpStorable.TextNotePickUpData.Where( tp => tp.Level == level );
+      var textNoteIds = document.GetAllElements<TextNote>().Where( t => textNotePickUpData.Any( tp => tp.TextNoteId == t.UniqueId ) ).Select( t => t.Id ).ToList() ;
       
-      foreach ( var textNotePickUp in textNotePickUpData ) {
-        var textNote = textNotes.FirstOrDefault( t => t.UniqueId == textNotePickUp.TextNoteId) ;
-        if( textNote == null ) continue ;
-        document.Delete( textNote.Id ) ;
-      }
+      document.Delete( textNoteIds ) ;
 
-      textNotePickUpStorable.TextNotePickUpData = new List<TextNotePickUpModel>() ;
+      textNotePickUpStorable.TextNotePickUpData.RemoveAll( tp => tp.Level == level );
       textNotePickUpStorable.Save() ;
     }
     
@@ -399,6 +395,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return pickUpNumberList ;
+    }
+    
+    private static void UpdateIsEnableButton( bool isEnable )
+    {
+      var targetTabName = "Electrical.App.Routing.TabName".GetAppStringByKey() ;
+      var selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
+      if ( selectionTab == null ) return ;
+
+      var selectionPanel =
+        UIHelper.GetRibbonPanelFromName( "Settings", selectionTab ) ;
+      var selectionSplitButton =
+        UIHelper.GetRibbonSplitButtonFromName( "arent3d.architecture.routing.settings.all", selectionPanel ) ;
+      
+      var selectionButton = UIHelper.GetRibbonButtonFromName( "arent3d.architecture.routing.electrical.app.commands.initialization.pick_up_number_setting_command", selectionSplitButton ) ;
+      selectionButton!.IsEnabled = isEnable ;
     }
   }
 }
