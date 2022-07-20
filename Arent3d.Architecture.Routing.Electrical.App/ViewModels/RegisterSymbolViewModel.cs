@@ -16,13 +16,12 @@ using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
@@ -34,8 +33,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class RegisterSymbolViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly DataStorage _dataStorable ;
-    private readonly RegisterSymbolModel _registerSymbolModel ;
+    private readonly StorageService<RegisterSymbolModel> _storageService ;
     private readonly SetupPrintStorable _setupPrintStorable ;
     private readonly bool _isExistBrowseFolderPath ;
     private readonly bool _isExistFolderSelectedPath ;
@@ -60,7 +58,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if ( null != _folders )
           return _folders ;
 
-        var folderModel = GetFolderModel( _registerSymbolModel.BrowseFolderPath ) ;
+        var folderModel = GetFolderModel( _storageService.Data.BrowseFolderPath ) ;
         var folderModelList = new List<FolderModel>() ;
         if ( null != folderModel ) folderModelList.Add( folderModel ) ;
         _folders = new ObservableCollection<FolderModel>( folderModelList ) ;
@@ -113,11 +111,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public RegisterSymbolViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _dataStorable = _uiDocument.Document.FindOrCreateDataStorageForUser() ;
-      _registerSymbolModel = _dataStorable.GetData<RegisterSymbolModel>() ?? new RegisterSymbolModel() ;
+      _storageService = new StorageService<RegisterSymbolModel>(_uiDocument.Document, true) ;
       _setupPrintStorable = _uiDocument.Document.GetSetupPrintStorable() ;
-      _isExistBrowseFolderPath = Directory.Exists( _registerSymbolModel.BrowseFolderPath ) ;
-      _isExistFolderSelectedPath = Directory.Exists( _registerSymbolModel.FolderSelectedPath ) ;
+      _isExistBrowseFolderPath = Directory.Exists( _storageService.Data.BrowseFolderPath ) ;
+      _isExistFolderSelectedPath = Directory.Exists( _storageService.Data.FolderSelectedPath ) ;
     }
 
     #region Commands
@@ -136,11 +133,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             folderBrowserDialog.Reset() ;
             folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer ;
             folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
-            folderBrowserDialog.SelectedPath = string.IsNullOrEmpty(_registerSymbolModel.BrowseFolderPath) ? ReadFileTxtIncludePath(path) : _registerSymbolModel.BrowseFolderPath ;
+            folderBrowserDialog.SelectedPath = string.IsNullOrEmpty(_storageService.Data.BrowseFolderPath) ? ReadFileTxtIncludePath(path) : _storageService.Data.BrowseFolderPath ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
-              _registerSymbolModel.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
+              _storageService.Data.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
               WriteFileTxtIncludePath(path, folderBrowserDialog.SelectedPath ) ;
-              var folderModel = GetFolderModel( _registerSymbolModel.BrowseFolderPath ) ;
+              var folderModel = GetFolderModel( _storageService.Data.BrowseFolderPath ) ;
               var folderModelList = new List<FolderModel>() ;
               if ( null != folderModel ) folderModelList.Add( folderModel ) ;
               Folders = new ObservableCollection<FolderModel>( folderModelList ) ;
@@ -257,10 +254,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if ( ! _isExistFolderSelectedPath )
         return ( false, false ) ;
 
-      if ( directoryInfo.FullName.Length > _registerSymbolModel.FolderSelectedPath.Length || ! _registerSymbolModel.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
+      if ( directoryInfo.FullName.Length > _storageService.Data.FolderSelectedPath.Length || ! _storageService.Data.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
         return ( false, false ) ;
 
-      return directoryInfo.FullName.Length < _registerSymbolModel.FolderSelectedPath.Length ? ( true, false ) : ( true, true ) ;
+      return directoryInfo.FullName.Length < _storageService.Data.FolderSelectedPath.Length ? ( true, false ) : ( true, true ) ;
     }
 
     private static FolderModel? FindSelectedFolder( IEnumerable<FolderModel> folders )
@@ -304,8 +301,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     {
       using var transaction = new Transaction( _uiDocument.Document ) ;
       transaction.Start( "Save Setting Data" ) ;
-      _registerSymbolModel.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
-      _dataStorable.SetData(_registerSymbolModel) ;
+      _storageService.Data.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
+      _storageService.SaveChange();
       transaction.Commit() ;
     }
 
@@ -542,5 +539,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     }
     
     #endregion
+    
   }
 }
