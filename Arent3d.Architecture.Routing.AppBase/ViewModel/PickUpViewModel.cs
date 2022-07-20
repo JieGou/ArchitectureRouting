@@ -427,9 +427,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       string modelNumber, string specification2, string item, string equipmentType, string use, string usageName, string quantity, string supplement, string supplement2, string group, string layer, string classification, string pickUpNumber, string direction,
       string ceedSetCode, string deviceSymbol, string condition, string routeNameRef)
     {
-      if ( string.IsNullOrEmpty( routeNameRef ) ) return ;
-      var routeNameArray = routeNameRef.Split( '_' ) ;
-      var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      var routeName = string.Empty ;
+      if ( !string.IsNullOrEmpty( routeNameRef ) ) {
+        var routeNameArray = routeNameRef.Split( '_' ) ;
+        routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      }
       const string defaultConduitTani = "m" ;
       foreach ( var (materialCode, name) in materialCodes ) {
         specification = name ;
