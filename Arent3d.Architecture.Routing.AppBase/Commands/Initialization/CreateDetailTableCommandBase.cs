@@ -29,6 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private const string DefaultChildPlumbingSymbol = "↑" ;
     private const string NoPlumping = "配管なし" ;
     private const string NoPlumbingSize = "（なし）" ;
+    public const double Percentage = 0.32 ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
@@ -533,7 +534,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType )
     {
-      const double percentage = 0.32 ;
       var newDetailTableRows = new List<DetailTableModel>() ;
       foreach ( var detailTableRow in detailTableModels ) {
         const int plumbingCount = 1 ;
@@ -544,7 +544,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             continue;
           
           var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
-          var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage ;
+          var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / Percentage ;
           if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
             var plumbing = conduitsModels.Last() ;
             detailTableRow.PlumbingType = plumbingType ;
@@ -590,7 +590,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     protected internal static void SetPlumbingDataForOneSymbol( List<ConduitsModel> conduitsModelData, List<DetailTableModel> detailTableModelsByDetailSymbolId, string plumbingType, bool isPlumbingTypeHasBeenChanged, bool isMixConstructionItems)
     {
       const string noPlumpingConstructionClassification = "冷媒管共巻配線" ;
-      const double percentage = 0.32 ;
       var isParentDetailRowHasTypeNoPlumbing = false ;
 
       var parentDetailRow = detailTableModelsByDetailSymbolId.First() ;
@@ -625,7 +624,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         foreach ( var currentDetailTableRow in detailTableRows ) {
           var wireBook = string.IsNullOrEmpty( currentDetailTableRow.WireBook ) ? 1 : int.Parse( currentDetailTableRow.WireBook ) ;
           if ( currentDetailTableRow.ConstructionClassification != noPlumpingConstructionClassification ) {
-            currentPlumbingCrossSectionalArea += ( currentDetailTableRow.WireCrossSectionalArea / percentage * wireBook ) ;
+            currentPlumbingCrossSectionalArea += ( currentDetailTableRow.WireCrossSectionalArea / Percentage * wireBook ) ;
 
             if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
               var plumbing = conduitsModels.Last() ;
@@ -655,19 +654,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
               childDetailRows = new List<DetailTableModel>() ;
               var parentWireBook = string.IsNullOrEmpty( parentDetailRow.WireBook ) ? 1 : int.Parse( parentDetailRow.WireBook ) ;
-              if ( parentWireBook > 1 && parentDetailRow.WireCrossSectionalArea / percentage * wireBook > maxInnerCrossSectionalArea ) {
-                var wireCountInPlumbing = (int) ( maxInnerCrossSectionalArea / ( currentDetailTableRow.WireCrossSectionalArea / percentage ) ) ;
+              if ( parentWireBook > 1 && parentDetailRow.WireCrossSectionalArea / Percentage * wireBook > maxInnerCrossSectionalArea ) {
+                var wireCountInPlumbing = (int) ( maxInnerCrossSectionalArea / ( currentDetailTableRow.WireCrossSectionalArea / Percentage ) ) ;
                 plumbingCount += (int) Math.Ceiling( (double) wireBook / wireCountInPlumbing ) ;
               }
               else {
                 plumbingCount++ ;
               }
               parentDetailRow = currentDetailTableRow ;
-              currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea / percentage * wireBook ;
+              currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea / Percentage * wireBook ;
               if ( currentDetailTableRow != detailTableRows.Last( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
               if ( wireBook > 1 && currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
                 plumbing = conduitsModels.LastOrDefault() ;
-                var wireCountInPlumbing = (int) ( maxInnerCrossSectionalArea / ( currentDetailTableRow.WireCrossSectionalArea / percentage ) ) ;
+                var wireCountInPlumbing = (int) ( maxInnerCrossSectionalArea / ( currentDetailTableRow.WireCrossSectionalArea / Percentage ) ) ;
                 plumbingCount += (int) Math.Ceiling( (double) wireBook / wireCountInPlumbing ) ;
               }
               else {

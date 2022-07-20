@@ -1459,7 +1459,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if( selectedWireBook == null ) return ;
       
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
-        ComboboxSelectionChanged( editedDetailTableRow, EditedColumn.WireBook, comboBox.SelectedValue.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+        var wireBook = int.TryParse($"{comboBox.SelectedValue}", out var value) ? value : int.Parse( editedDetailTableRow.WireBook ) ;
+        var plumbing = _conduitsModelData.First( x => x.PipingType == editedDetailTableRow.PlumbingType && x.Size.Replace( "mm", "" ) == editedDetailTableRow.PlumbingSize ) ;
+        if ( editedDetailTableRow.WireCrossSectionalArea / CreateDetailTableCommandBase.Percentage * wireBook > double.Parse( plumbing.InnerCrossSectionalArea ) ) {
+          MessageBox.Show( "The number of wires exceeds the size of the plumbing.", "Arent Inc" ) ;
+          comboBox.SelectedItem = Numbers.SingleOrDefault(x => x.Name == editedDetailTableRow.WireBook ) ;
+        }
+        else {
+          ComboboxSelectionChanged( editedDetailTableRow, EditedColumn.WireBook, $"{comboBox.SelectedValue}", new List<DetailTableModel.ComboboxItemType>() ) ;
+        }
       }
       
       UpdateDataGridAndRemoveSelectedRow() ;
