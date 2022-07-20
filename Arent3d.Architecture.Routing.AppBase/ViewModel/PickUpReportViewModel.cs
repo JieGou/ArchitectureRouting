@@ -421,7 +421,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateCell( row0, 16, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
 
             CreateCell( row1, 1, "【入力確認表】", xssfCellStyles[ "headerNoneBorderedCellStyle" ] ) ;
-            CreateCell( row1, 2, "工事階層 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateCell( row1, 2, "工事項目 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 3, 6, sheetName, xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateCell( row1, 7, "図面番号 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 8, 9, "", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
