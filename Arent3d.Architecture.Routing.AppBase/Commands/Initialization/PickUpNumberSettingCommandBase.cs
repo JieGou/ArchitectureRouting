@@ -31,8 +31,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
             if ( !isDisplay ) return Result.Cancelled ;
             
-            var pickUpViewModel = new PickUpViewModel( document ) ;
-            var pickUpModels = pickUpViewModel.DataPickUpModels ;
+            var pickUpStorable = document.GetPickUpStorable() ;
+            var pickUpModels = pickUpStorable.AllPickUpModelData ;
             if ( !pickUpModels.Any() ) {
               MessageBox.Show( "Don't have pick up data.", "Message" ) ;
               return Result.Cancelled ;
