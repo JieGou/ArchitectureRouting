@@ -108,7 +108,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var pullBoxModels = from hiroiMasterModel in allPullBoxHiroiMasterModel
         select new PullBoxModel( hiroiMasterModel ) ;
 
-      return pullBoxModels.OrderBy( pb => pb.Width ).ThenBy( pb => pb.Height ).ThenBy( pb => pb.Hinmei ).ToList() ;
+      return pullBoxModels.OrderBy( pb => pb.PullBoxCategoryName ).ThenBy( pb => pb.Width ).ThenBy( pb => pb.Height ).ToList() ;
     }
 
     public ICommand OkCommand

@@ -5,9 +5,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
   public class PullBoxModel
   {
     private const string NumberPattern = @"\d+" ;
+    private const string StringPattern = @"[a-zA-Z]+" ;
     public string Buzaicd { get ; }
     public string Kikaku { get ; }
-    
+    public string? PullBoxCategoryName { get ; private set ; }
     public string Hinmei { get ; }
     public int Width { get ; private set ; }
     public int Height { get ; private set ; }
@@ -32,6 +33,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Height = TryConvertStringToInt( kikakuStrings[ 2 ] ) ;
       var subName = GetPullBoxName( Width, Height ) ;
       Name = string.IsNullOrEmpty( subName )? kikaku: $"{kikaku} ({subName})" ;
+      PullBoxCategoryName = GetPullBoxCategoryName( kikakuStrings[ 2 ] ) ;
+      if ( string.IsNullOrEmpty( PullBoxCategoryName ) ) {
+        PullBoxCategoryName = GetPullBoxCategoryName( kikakuStrings[ 0 ] ) ;
+      }
     }
 
     private static int TryConvertStringToInt( string value )
@@ -41,6 +46,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
       if ( ! match.Success ) return 0 ;
       return int.TryParse( match.Value, out var result ) ? result : 0 ;
+    }
+
+    private string GetPullBoxCategoryName( string value )
+    {
+      var regex = new Regex( StringPattern ) ;
+      var match = regex.Match( value ) ;
+
+      return ! match.Success ? string.Empty : match.Value ;
     }
 
     private static string GetPullBoxName( int width, int height ) =>
