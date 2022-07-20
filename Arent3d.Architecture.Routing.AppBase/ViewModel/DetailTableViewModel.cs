@@ -196,7 +196,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       SelectionChangedReference() ;
       if ( ! _selectedReferenceDetailTableRows.Any() ) {
-        TaskDialog.Show( "Arent Inc", "Please select the row on the reference detail table." ) ;
+        MessageBox.Show( "Please select the row on the reference detail table.", "Arent Inc" ) ;
         return ;
       }
       AddReferenceDetailTableRows(_selectedReferenceDetailTableRows ) ;
@@ -1932,7 +1932,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       SelectionChanged() ;
       if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) {
-        TaskDialog.Show( "Arent Inc", "Please select a row on the detail table." ) ;
+        MessageBox.Show( "Please select a row on the detail table.", "Arent Inc" ) ;
         return ;
       }
       
