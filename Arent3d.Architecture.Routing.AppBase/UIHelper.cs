@@ -36,6 +36,18 @@ namespace Arent3d.Architecture.Routing.AppBase
       var targetItemName = "CustomCtrl_%" + targetRibbonPanel?.Source.Id + "%arent3d.architecture.routing.appbase.commands.routing." + targetButtonCommand ;
       return targetRibbonPanel?.Source.Items.OfType<RibbonButton>().FirstOrDefault( item => item.Id == targetItemName ) ;
     }
+    
+    public static RibbonSplitButton? GetRibbonSplitButtonFromName( string targetSplitButtonCommand, RibbonPanel? targetRibbonPanel )
+    {
+      var targetItemName = "CustomCtrl_%" + targetRibbonPanel?.Source.Id + "%" + targetSplitButtonCommand ;
+      return targetRibbonPanel?.Source.Items.OfType<RibbonSplitButton>().FirstOrDefault( item => item.Id == targetItemName ) ;
+    }
+    
+    public static RibbonButton? GetRibbonButtonFromName( string targetButtonCommand, RibbonSplitButton? targetRibbonSplitButton )
+    {
+      var targetItemName = "CustomCtrl_%" + targetRibbonSplitButton?.Id + "%" + targetButtonCommand ;
+      return targetRibbonSplitButton?.Items.OfType<RibbonButton>().FirstOrDefault( item => item.Id == targetItemName ) ;
+    }
 
     public static int GetPositionAfterButton( string s )
     {
