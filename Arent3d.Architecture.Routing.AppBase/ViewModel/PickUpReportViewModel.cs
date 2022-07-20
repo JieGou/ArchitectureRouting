@@ -639,13 +639,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         string stringNotTani = string.Empty ;
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
         var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
-        var routes = items.Select( x => x.RouteNameRef ).Distinct() ;
         var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RouteNameRef ) ;
-        var seenQuantityStrTemp = string.Empty ;
         var listSeenQuantity = new List<double>() ;
         foreach ( var itemGroupByRoute in itemsGroupByRoute ) {
           double seenQuantity = 0 ;
-          foreach ( var item in  itemGroupByRoute) {
+          foreach ( var item in itemGroupByRoute ) {
             double.TryParse( item.Quantity, out var quantity ) ;
             if ( ! string.IsNullOrEmpty( item.Direction ) ) {
               if ( ! notSeenQuantities.Keys.Contains( item.Direction ) ) {
@@ -663,12 +661,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
 
           if ( seenQuantity > 0 ) {
-            listSeenQuantity.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ));
+            listSeenQuantity.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ) ) ;
           }
         }
 
-        var number = DoconTypes.First().TheValue && !string.IsNullOrEmpty(pickUpNumber) ? "[" + pickUpNumber + "]" : string.Empty ;
-        var seenQuantityStr = isTani ? string.Join(" + ", listSeenQuantity ) : stringNotTani ;
+        var number = DoconTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
+        var seenQuantityStr = isTani ? string.Join( " + ", listSeenQuantity ) : stringNotTani ;
 
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
