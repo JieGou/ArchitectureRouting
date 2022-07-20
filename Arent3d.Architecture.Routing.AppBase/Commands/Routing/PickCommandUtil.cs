@@ -335,22 +335,45 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
            Math.Abs( firstPoint.Y - lastPoint.Y ) < MinToleranceOfConnector )
         return previewLines ;
       
-      // var (secondPoint, thirdPoint, isDirectionXOrY ) = GetPoints( fromPickResult, toPickResult ) ;
-      
-      var (secondPoint,thirdPoint) = GetPointsForPreviewLines( fromPickResult,toPickResult );
-      
       var redColor = new Color( 255, 0, 0 ) ;
       var blueColor = new Color( 0, 0, 255 ) ;
       var redLineCategory = GetLineStyle( document, redColor, "Red" ) ;
       var blueLineCategory = GetLineStyle( document, blueColor, "Blue" ) ;
 
+      if ( IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ) {
+        GeneratePreviewLinesWhenRouteAllowedTiltedPiping(document,fromPickResult,toPickResult,firstPoint,lastPoint,previewLines,redLineCategory,blueLineCategory);
+      }
+      else {
+        GeneratePreviewLinesWhenRouteNotAllowedTiltedPiping(document,fromPickResult,toPickResult,firstPoint,lastPoint,previewLines,redLineCategory,blueLineCategory);
+      }
+
+      trans.Commit() ;
+
+      return previewLines;
+    }
+
+    private static void GeneratePreviewLinesWhenRouteNotAllowedTiltedPiping(Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult,XYZ firstPoint,XYZ lastPoint, List<(List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping)> previewLines, Category redLineCategory,Category blueLineCategory)
+    {
+      var (secondPoint, thirdPoint, isDirectionXOrY ) = GetPoints( fromPickResult, toPickResult ) ;
+      (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) firstLines = (new List<ElementId>(),new List<ElementId>(),false) ;
+      CreateLines( document, redLineCategory, isDirectionXOrY, firstPoint, lastPoint, secondPoint, firstLines.allLineIds, firstLines.previewLineIds ) ;
+      previewLines.Add( firstLines );
+      (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) secondLines = (new List<ElementId>(),new List<ElementId>(),false) ;
+      CreateLines( document, blueLineCategory, isDirectionXOrY, firstPoint, lastPoint, thirdPoint, secondLines.allLineIds, secondLines.previewLineIds ) ;
+      previewLines.Add( secondLines );
+    }
+
+    private static void GeneratePreviewLinesWhenRouteAllowedTiltedPiping(Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult,XYZ firstPoint,XYZ lastPoint, List<(List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping)> previewLines, Category redLineCategory,Category blueLineCategory)
+    {
+      var (secondPoint,thirdPoint) = GetPointsForPreviewLines( fromPickResult,toPickResult );
+      
       if ( secondPoint != null && thirdPoint != null ) {
-        (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) firstLines = (new List<ElementId>(),new List<ElementId>(),false) ;
+        (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) firstLines = (new List<ElementId>(),new List<ElementId>(),true) ;
         CreateLine( document, redLineCategory, firstPoint, secondPoint!,firstLines.allLineIds ,firstLines.previewLineIds);
         CreateLine( document, redLineCategory, secondPoint, lastPoint ,firstLines.allLineIds ,firstLines.previewLineIds);
         previewLines.Add( firstLines );
         
-        (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) secondLines = (new List<ElementId>(),new List<ElementId>(),false) ;
+        (List<ElementId> previewLineIds, List<ElementId> allLineIds,bool allowedTiltedPiping) secondLines = (new List<ElementId>(),new List<ElementId>(),true) ;
         CreateLine( document, blueLineCategory, firstPoint, thirdPoint!,secondLines.allLineIds ,secondLines.previewLineIds);
         CreateLine( document, blueLineCategory, thirdPoint, lastPoint ,secondLines.allLineIds ,secondLines.previewLineIds);
         previewLines.Add( secondLines );
@@ -362,13 +385,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         CreateLine( document, redLineCategory, secondPoint!, lastPoint ,routeLines.allLineIds ,routeLines.previewLineIds);
         previewLines.Add( routeLines );
       }
-
-      // CreateLines( document, redLineCategory, isDirectionXOrY, firstPoint, lastPoint, secondPoint, allLineIds, previewLineIds ) ;
-      // CreateLines( document, blueLineCategory, isDirectionXOrY, firstPoint, lastPoint, thirdPoint, allLineIds, previewLineIds ) ;
-      
-      trans.Commit() ;
-
-      return previewLines;
     }
 
     private static void CreateLine(Document document,Category lineCategory,XYZ firstPoint, XYZ secondPoint,ICollection<ElementId> allLineIds, ICollection<ElementId> previewLineIds)
@@ -378,6 +394,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       detailCurve.LineStyle = lineCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
       previewLineIds.Add( detailCurve.Id ) ;
       allLineIds.Add( detailCurve.Id ) ;
+    }
+
+    public static bool IsAnyConnectorNotDirectionAsXOrY( ConnectorPicker.IPickResult fromPickResult,
+      ConnectorPicker.IPickResult toPickResult )
+    {
+
+      var fromConnectorOwner = fromPickResult.PickedConnector?.Owner as FamilyInstance ;
+      var fromFaceDirection = fromConnectorOwner?.FacingOrientation.Normalize() ;
+
+      var toConnectorOwner = toPickResult.PickedConnector?.Owner as FamilyInstance ;
+      var toFaceDirection = toConnectorOwner?.FacingOrientation.Normalize() ;
+
+      return !(IsDirectionXOrY( fromFaceDirection ) && IsDirectionXOrY( toFaceDirection ) );
+    }
+
+    private static bool IsDirectionXOrY(XYZ? direction)
+    {
+      const double epsilon = 0.01 ;
+      var dotProductAbs = Math.Abs( (double)direction?.DotProduct( XYZ.BasisX )! ) ;
+
+      if ( dotProductAbs < epsilon ) return true ;
+
+      return Math.Abs( 1 - dotProductAbs ) < epsilon ;
     }
 
     private static (XYZ? secondPoint,XYZ? thirdPoint) GetPointsForPreviewLines(ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult)

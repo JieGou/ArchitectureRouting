@@ -67,7 +67,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         if ( previewLineIds.Any() && allLineIds.Any() ) {
 
-          if ( allRouteLines.Any( rl => rl.allowedTiltedPiping ) ) {
+          if ( allRouteLines.Any( rl => rl.allowedTiltedPiping ) && allRouteLines.Count() == 1) {
             var routeLines = allRouteLines.First( rl => rl.allowedTiltedPiping ) ;
             var firstPasPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 0 ], document ) ;
             passPointPosition = firstPasPoint.passPointPosition ;
@@ -84,6 +84,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var passPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[0], document ) ;
             passPointPosition = passPoint.passPointPosition ;
             passPointDirection = passPoint.passPointDirection ;
+            
+            if ( PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ) {
+              var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document ) ;
+              secondPassPointPosition = secondPassPoint.passPointPosition ;
+              secondPassPointDirection = secondPassPoint.passPointDirection ;
+            }
           }
 
           PickCommandUtil.RemovePreviewLines( document, allLineIds ) ;
@@ -181,7 +187,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return CreateNewSegmentListForRoutePick( toPickResult, fromPickResult, true, routeProperty, classificationInfo ) ;
       }
 
-      return CreateNewSegmentList( document, fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection,secondPassPointPosition,secondPassPointDirection ) ;
+      return CreateNewSegmentList( document, fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) ;
     }
 
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, XYZ? passPointPosition, XYZ? passPointDirection , XYZ? secondPassPointPosition, XYZ? secondPassPointDirection)
@@ -200,8 +206,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo, passPointPosition, passPointDirection! ) ;
       }
 
-      return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo,
-        passPointPosition, passPointDirection!, secondPassPointPosition, secondPassPointDirection !) ;
+      return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo, passPointPosition, passPointDirection!, secondPassPointPosition, secondPassPointDirection ) ;
 
     }
 
@@ -260,7 +265,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document,
       IEndPoint fromEndPoint, IEndPoint toEndPoint, IRouteProperty routeProperty,
       MEPSystemClassificationInfo classificationInfo, XYZ passPointPosition, XYZ passPointDirection,
-      XYZ secondPassPointPosition, XYZ secondPassPointDirection )
+      XYZ? secondPassPointPosition, XYZ? secondPassPointDirection )
     {
        var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
@@ -280,25 +285,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var results = new List<(string RouteName, RouteSegment Segment)>() ;
       var passPointPositionZ = PassPointEndPoint.GetForcedFixedHeight( document, fromFixedHeight, fromEndPoint.GetLevelId( document ) ) ?? passPointPosition.Z ;
-      var secondPassPointPositionZ = PassPointEndPoint.GetForcedFixedHeight( document, fromFixedHeight, fromEndPoint.GetLevelId( document ) ) ?? secondPassPointPosition.Z ;
       passPointPosition = new XYZ( passPointPosition.X, passPointPosition.Y, passPointPositionZ ) ;
-      secondPassPointPosition = new XYZ( secondPassPointPosition.X, secondPassPointPosition.Y, secondPassPointPositionZ ) ;
       var passPoint = document.AddPassPoint( name, passPointPosition, passPointDirection!, diameter * 0.5, fromEndPoint.GetLevelId( document ) ) ;
-      var secondPassPoint = document.AddPassPoint( name, secondPassPointPosition, secondPassPointDirection!, diameter * 0.5, fromEndPoint.GetLevelId( document ) ) ;
-      
       passPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toEndPoint.Key.GetElementUniqueId() ) ;
       passPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromEndPoint.Key.GetElementUniqueId() ) ;
-      
-      secondPassPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toEndPoint.Key.GetElementUniqueId() ) ;
-      secondPassPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromEndPoint.Key.GetElementUniqueId() ) ;
-      
       var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
-      var secondPassPointEndPoint = new PassPointEndPoint( secondPassPoint ) ; 
-      // results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, secondPassPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-      // results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, secondPassPointEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-      results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-      results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPointEndPoint, secondPassPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-      results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, secondPassPointEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+
+      if ( secondPassPointPosition != null ) {
+        var secondPassPointPositionZ = PassPointEndPoint.GetForcedFixedHeight( document, fromFixedHeight, fromEndPoint.GetLevelId( document ) ) ?? secondPassPointPosition.Z ;
+        secondPassPointPosition = new XYZ( secondPassPointPosition.X, secondPassPointPosition.Y, secondPassPointPositionZ ) ;
+        var secondPassPoint = document.AddPassPoint( name, secondPassPointPosition, secondPassPointDirection!, diameter * 0.5, fromEndPoint.GetLevelId( document ) ) ;
+        secondPassPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toEndPoint.Key.GetElementUniqueId() ) ;
+        secondPassPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromEndPoint.Key.GetElementUniqueId() ) ;
+        var secondPassPointEndPoint = new PassPointEndPoint( secondPassPoint ) ;
+      
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPointEndPoint, secondPassPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, secondPassPointEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+      }
+      else {
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPointEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+      }
 
       return results ;
     }
