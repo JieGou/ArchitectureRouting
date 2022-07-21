@@ -17,6 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public static class PickCommandUtil
   {
+    private static readonly double MinToleranceOfConnector = ( 350.0 ).MillimetersToRevitUnits();
     public static IDisposable SetTempColor( this UIDocument uiDocument, ConnectorPicker.IPickResult pickResult )
     {
       return new TempColorWrapper( uiDocument, pickResult.GetAllRelatedElements() ) ;
@@ -327,7 +328,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       trans.Start() ;
       var firstPoint = fromPickResult.GetOrigin() ;
       var lastPoint = toPickResult.GetOrigin() ;
-      if ( Math.Abs( firstPoint.X - lastPoint.X ) == 0 || Math.Abs( firstPoint.Y - lastPoint.Y ) == 0 ) 
+      if ( Math.Abs( firstPoint.X - lastPoint.X ) < MinToleranceOfConnector || Math.Abs( firstPoint.Y - lastPoint.Y ) < MinToleranceOfConnector ) 
         return ( new List<ElementId>(), new List<ElementId>() ) ;
       
       var (secondPoint, thirdPoint, isDirectionXOrY ) = GetPoints( fromPickResult, toPickResult ) ;
