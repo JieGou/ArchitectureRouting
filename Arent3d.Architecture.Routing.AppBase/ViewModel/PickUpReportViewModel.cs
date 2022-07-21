@@ -53,6 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string BoardItem  = "盤搬入据付" ;
     private const string InteriorRepairEquipmentItem = "内装・補修・設備" ;
     private const string OtherItem = "その他" ;
+    private const string Wire = "電線" ;
     
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
     private readonly Document _document ;
@@ -632,6 +633,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var pickUpModel = pickUpModels.First() ;
       var row = sheet.CreateRow( rowStart ) ;
       var isTani = IsTani( pickUpModel ) ;
+      var isWire = IsWire( pickUpModel ) ;
       CreateCell( row, 1, pickUpModel.ProductName, xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
       CreateCell( row, 2, pickUpModel.Standard, xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
       CreateCell( row, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
@@ -645,12 +647,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RouteNameRef ) ;
         var listSeenQuantity = new List<double>() ;
         var valueDetailTableStr = string.Empty ;
-        var countTest = 0 ;
         foreach ( var itemGroupByRoute in itemsGroupByRoute ) {
           var dataDetail = dataDetailTable.FirstOrDefault( x => x.RouteName == itemGroupByRoute.Key ) ;
-          if ( dataDetail != null && dataDetail.WireBook.Trim() != "1") {
+          if ( dataDetail != null && dataDetail.WireBook.Trim() != "1" && isWire) {
             valueDetailTableStr = dataDetail.WireBook ;
-            countTest++ ;
           }
           double seenQuantity = 0 ;
           foreach ( var item in itemGroupByRoute ) {
@@ -683,7 +683,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           notSeenQuantityStr += value > 0 ? " + ↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
         }
 
-        var key = isTani ? ( "( " + seenQuantityStr + notSeenQuantityStr + " )" ) + (countTest <= 1 ? string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $" X {valueDetailTableStr}" : " X N")  : ( seenQuantityStr + notSeenQuantityStr ) ;
+        var key = isTani ? ( "( " + seenQuantityStr + notSeenQuantityStr + " )" ) + (string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $" X {valueDetailTableStr}")  : ( seenQuantityStr + notSeenQuantityStr ) ;
         var itemKey = trajectory.FirstOrDefault( t => t.Key.Contains( key ) ).Key ;
 
         if ( string.IsNullOrEmpty( itemKey ) )
@@ -833,6 +833,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private bool IsTani( PickUpModel pickUpModel )
     {
       return pickUpModel.Tani == "m" ;
+    }
+    
+    private bool IsWire( PickUpModel pickUpModel )
+    {
+      var hiroiMaster = _hiroiMasterModels.SingleOrDefault( h => ( int.Parse( h.Buzaicd ) == int.Parse( pickUpModel.ProductCode.Split( '-' ).First() ) ) ) ;
+      return hiroiMaster != null && hiroiMaster.Buzaisyu == Wire ;
     }
     
     public class ListBoxItem
