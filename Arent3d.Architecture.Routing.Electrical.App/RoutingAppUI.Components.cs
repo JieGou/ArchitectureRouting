@@ -104,7 +104,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
-          [Button( typeof( PickUpNumberSettingCommand ), OnlyInitialized = true )]
+          [Button( typeof( PickUpNumberSettingCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
           private static class PickUpNumberSettingCommandButton
           {
           }
@@ -162,7 +162,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
-          [Button( typeof( PickUpMapCreationCommand ), OnlyInitialized = true )]
+          [Button( typeof( PickUpMapCreationCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
           private static class PickUpMapCreationCommandButton
           {
           }
