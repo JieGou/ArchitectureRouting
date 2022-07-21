@@ -399,7 +399,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public static bool IsAnyConnectorNotDirectionAsXOrY( ConnectorPicker.IPickResult fromPickResult,
       ConnectorPicker.IPickResult toPickResult )
     {
-
       var fromConnectorOwner = fromPickResult.PickedConnector?.Owner as FamilyInstance ;
       var fromFaceDirection = fromConnectorOwner?.FacingOrientation.Normalize() ;
 
@@ -413,13 +412,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       const double epsilon = 0.01 ;
       var dotProductAbs = Math.Abs( (double)direction?.DotProduct( XYZ.BasisX )! ) ;
-
       if ( dotProductAbs < epsilon ) return true ;
-
       return Math.Abs( 1 - dotProductAbs ) < epsilon ;
     }
 
-    private static (XYZ? secondPoint,XYZ? thirdPoint) GetPointsForPreviewLines(ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult)
+    private static (XYZ? secondPoint, XYZ? thirdPoint) GetPointsForPreviewLines(
+      ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
       var fromOrigin = fromPickResult.GetOrigin() ;
       var toOrigin = toPickResult.GetOrigin() ;
@@ -437,23 +435,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       TryGetIntersectionOfVectors( fromOrigin, toOrigin, fromFaceDirection, toHandDirection, out var intersectionPoint3 ) ;
       TryGetIntersectionOfVectors( fromOrigin, toOrigin, fromHandDirection, toFaceDirection, out var intersectionPoint4 ) ;
 
-      var allIntersectionPoint = new[] { intersectionPoint1, intersectionPoint2, intersectionPoint3, intersectionPoint4 }.Where( xyz => xyz is not null ) .ToList();
-      
-     return allIntersectionPoint.Count() == 2 ? new ValueTuple<XYZ?, XYZ?>(allIntersectionPoint[0],allIntersectionPoint[1]) : new ValueTuple<XYZ?, XYZ? >( GetPointForShortestRoute(allIntersectionPoint,fromOrigin,toOrigin),null ) ;
+      var allIntersectionPoint = new[] { intersectionPoint1, intersectionPoint2, intersectionPoint3, intersectionPoint4 }.Where( xyz => xyz is not null ).ToList() ;
 
+      return allIntersectionPoint.Count() == 2 ? ( allIntersectionPoint[ 0 ], allIntersectionPoint[ 1 ] ) : ( GetPointForShortestRoute( allIntersectionPoint, fromOrigin, toOrigin ), null ) ;
     }
 
     private static XYZ? GetPointForShortestRoute(IEnumerable<XYZ?> allPoints, XYZ fromPoint,XYZ toPoint )
     {
       XYZ? passPointForShortestRoute = null ;
       double minDistance = 0 ;
+      
       foreach ( var point in allPoints ) {
         var distance = fromPoint.DistanceTo( point ) + toPoint.DistanceTo( point ) ;
+        
         if ( passPointForShortestRoute == null ) {
           passPointForShortestRoute = point ;
           minDistance = distance;
         }
-        else if (distance < minDistance){
+        else if ( distance < minDistance ) {
           passPointForShortestRoute = point ;
           minDistance = distance;
         }
@@ -481,7 +480,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       intersectionPoint = null ;
       return false ;
-      
     }
 
     private static ( XYZ, XYZ, bool ) GetPoints( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )

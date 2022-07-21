@@ -104,14 +104,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection,secondPassPointPosition,secondPassPointDirection ) ) ;
     }
 
-    private static (XYZ? passPointPosition, XYZ? passPointDirection) GetPassPointPositionAndDirection(ElementId lineId,Document document)
+    private static (XYZ? passPointPosition, XYZ? passPointDirection) GetPassPointPositionAndDirection(ElementId lineId,Document document,double ratioToPutPassPointLocation = 2, bool isFromStartPoint = true)
     {
       var passPointLine = ( (DetailLine)document.GetElement( lineId ) ).GeometryCurve as Line ;
       var (x0, y0, z0) = passPointLine!.GetEndPoint( 0 ) ;
       var (x1, y1, z1) = passPointLine!.GetEndPoint( 1 ) ;
-      var passPointPosition = new XYZ( ( x0 + x1 ) / 2, ( y0 + y1 ) / 2, ( z0 + z1 ) / 2 ) ;
+
+      var fromStartRatio = isFromStartPoint ? ratioToPutPassPointLocation - 1 : 1 ;
+      var fromEndRatio = isFromStartPoint ? 1 : ratioToPutPassPointLocation - 1 ;
+
+      var passPointPosition = new XYZ( ( fromStartRatio * x0 + fromEndRatio * x1 ) / ratioToPutPassPointLocation, ( fromStartRatio * y0 + fromEndRatio * y1 ) / ratioToPutPassPointLocation, ( fromStartRatio * z0 + fromEndRatio * z1 ) / ratioToPutPassPointLocation ) ;
       var passPointDirection = passPointLine.Direction ;
-      return new ValueTuple<XYZ?, XYZ?>( passPointPosition, passPointDirection ) ;
+      return ( passPointPosition, passPointDirection ) ;
     }
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, MEPSystemType? systemType )
@@ -262,12 +266,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return results ;
     }
 
-    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document,
-      IEndPoint fromEndPoint, IEndPoint toEndPoint, IRouteProperty routeProperty,
-      MEPSystemClassificationInfo classificationInfo, XYZ passPointPosition, XYZ passPointDirection,
-      XYZ? secondPassPointPosition, XYZ? secondPassPointDirection )
+    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, IRouteProperty routeProperty,
+      MEPSystemClassificationInfo classificationInfo, XYZ passPointPosition, XYZ passPointDirection, XYZ? secondPassPointPosition, XYZ? secondPassPointDirection )
     {
-       var systemType = routeProperty.GetSystemType() ;
+      var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
 
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
