@@ -285,7 +285,6 @@
                                       SelectedValuePath="Name"
                                       ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                       SelectionChanged="WireBookSelectionChanged" 
-                                      LostFocus="WireBookLostFocus"
                                       IsEditable="True"
                                       IsReadOnly="{Binding IsReadOnlyParameters}"/>
                         </DataTemplate>
