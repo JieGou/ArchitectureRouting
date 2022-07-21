@@ -148,7 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Execute( Window window )
     {
-      if ( _fileNames.Any() && ! string.IsNullOrEmpty( PathName ) && ! string.IsNullOrEmpty( FileName ) ) {
+      if ( _fileNames.Any() && ! string.IsNullOrEmpty( PathName ) && ! string.IsNullOrEmpty( FileName ) && PickUpModels.Any()  ) {
         CreateOutputFile() ;
         window.DialogResult = true ;
         window.Close() ;
