@@ -362,6 +362,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private void RowDoubleClick()
     {
+      if ( DtGrid.SelectedValue == null ) return ;
       var selectedItem = (DetailTableModel) DtGrid.SelectedValue ;
       if ( string.IsNullOrEmpty( selectedItem.GroupId ) ) return ;
       UnGroupDetailTableRows( selectedItem.GroupId ) ;
