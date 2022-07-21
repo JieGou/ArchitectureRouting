@@ -62,6 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, string level, List<PickUpModel> pickUpModels )
     {
+      var pickUpNumberOfPullBox = pickUpModels.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) + 1 ;
       var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingOfLevels.FirstOrDefault( pn => pn.Level == level )?.IsPickUpNumberSetting ?? false ;
       var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
       var seenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
@@ -85,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( conduitPickUpModel == null ) continue ;
 
         ShowPickUp( document, routeCache, allConduitsOfRoutes, isDisplayPickUpNumber, conduitPickUpModel.PickUpModels,
-          seenTextNotePickUps, notSeenTextNotePickUps ) ;
+          seenTextNotePickUps, notSeenTextNotePickUps, pickUpNumberOfPullBox ) ;
       }
 
       foreach ( var notSeenTextNotePickUp in notSeenTextNotePickUps ) {
@@ -203,7 +204,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     }
 
     private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, bool isDisplayPickUpNumber, 
-      List<PickUpModel> pickUpModels, List<TextNoteMapCreationModel> seenTextNotePickUps, List<TextNoteMapCreationModel> notSeenTextNotePickUps )
+      List<PickUpModel> pickUpModels, List<TextNoteMapCreationModel> seenTextNotePickUps, List<TextNoteMapCreationModel> notSeenTextNotePickUps, int pickUpNumberOfPullBox )
     {
       var pickUpModelsGroupsByRouteNameRef = pickUpModels.GroupBy( p => p.RouteNameRef ) ;
       var notSeenQuantities = new Dictionary<string, double>() ;
@@ -268,7 +269,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
             else continue ;
 
-            var textPickUpNumber = isDisplayPickUpNumber && !isToPullBox ? "[" + pickUpNumber + "]" : string.Empty ;
+            var textPickUpNumber = isDisplayPickUpNumber ? "[" + ( isToPullBox ? pickUpNumberOfPullBox : pickUpNumber ) + "]" : string.Empty ;
             var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
             var textNote = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
             var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, counter, position, point, null ) ;
