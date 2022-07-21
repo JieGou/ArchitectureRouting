@@ -2,38 +2,59 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
+using Arent3d.Architecture.Routing.CollisionTree ;
+using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
+using MoreLinq ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class EraseSelectedLimitRacksCommandBase : EraseLimitRackCommandBase
   {
-    protected override (IEnumerable<string> rackIds, IEnumerable<string>? detailCurverIds) GetLimitRackIds(
-      UIDocument ui, Document doc )
+    protected override IEnumerable<string> GetLimitRackIds( UIDocument ui, Document doc )
     {
-      var selectedConduitAndConduitFittings = ui.Selection
-        .PickElementsByRectangle( ConduitAndConduitFittingSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).ToList() ;
+      var selectedLimitRackRefElements = ui.Selection.PickElementsByRectangle( ConduitAndConduitFittingSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).ToList() ;
 
       var allRackInstances = GetAllLimitRackInstance( doc ).ToList() ;
 
       var allRackIds = new HashSet<string>() ;
 
-      foreach ( var rackId in from selectedElement in selectedConduitAndConduitFittings
+      foreach ( var rackIds in from selectedElement in selectedLimitRackRefElements
                where ConduitAndConduitFittingSelectionFilter.IsConduitOrConduitFitting( selectedElement )
                select GetRackIdAtConduitOrConduitFittings( selectedElement, allRackInstances )
-               into rackIds
-               where rackIds.Any()
-               select rackIds ) {
-        allRackIds.AddRange( rackId ) ;
+               into selectedRackIds
+               where selectedRackIds.Any()
+               select selectedRackIds ) {
+        allRackIds.AddRange( rackIds ) ;
       }
 
-      var detailLineIds = selectedConduitAndConduitFittings.Where( detailLine => detailLine is DetailLine )
-        .Select( detailLine => detailLine.UniqueId ).ToList() ;
+      return allRackIds ;
+    }
 
-      return new ValueTuple<IEnumerable<string>, IEnumerable<string>>( allRackIds, detailLineIds ) ;
+    protected override IEnumerable<string> GetBoundaryCableTraysFromLimitRacks( Document doc, IEnumerable<string> limitRackIds )
+    {
+      var boundaryCableTrays = new FilteredElementCollector( doc )
+        .OfClass( typeof( CurveElement ) )
+        .OfType<CurveElement>()
+        .Where( x => null != x.LineStyle && ( x.LineStyle as GraphicsStyle )!.GraphicsStyleCategory.Name == BoundaryCableTrayLineStyleName )
+        .Select( x => x )
+        .ToList() ;
+
+      var limitRacks = limitRackIds.Select( doc.GetElement ) ;
+
+      foreach ( var boundaryCableTray in from boundaryCableTray in boundaryCableTrays from limitRack in limitRacks where IsCableTrayAndBoundaryCableTrayCollisionTogether( boundaryCableTray, limitRack ) select boundaryCableTray ) {
+        yield return boundaryCableTray.UniqueId ;
+      }
+    }
+
+    private static bool IsCableTrayAndBoundaryCableTrayCollisionTogether(CurveElement cableTrayBoundary, Element limitRackElement)
+    {
+      var cableTraySolids = limitRackElement.GetFineSolids();
+
+      return false ;
     }
 
     private static IEnumerable<string> GetRackIdAtConduitOrConduitFittings( Element element,
@@ -53,16 +74,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static IList<Connector> GetConnectorsOfConduitOrConduitFitting( Element element )
     {
       if ( element is Conduit conduit ) {
-        var conduitConnectors = conduit.ConnectorManager.Connectors.Cast<Connector>().ToList() ;
-        return conduitConnectors ;
+        return  conduit.ConnectorManager.Connectors.Cast<Connector>().ToList() ;
       }
 
-      if ( element is not FamilyInstance conduitFittingInstance )
-        return new List<Connector>() ;
-
-      var conduitFittingConnectors =
-        conduitFittingInstance.MEPModel.ConnectorManager.Connectors.Cast<Connector>().ToList() ;
-      return conduitFittingConnectors ;
+      return element is not FamilyInstance conduitFittingInstance ? new List<Connector>() : conduitFittingInstance.MEPModel.ConnectorManager.Connectors.Cast<Connector>().ToList() ;
     }
 
     private static IEnumerable<string> GetRackIdAtConnector( Connector connector,
@@ -79,5 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       const double epsilon = 0.1d ;
       return ! ( firstConnector.Origin.DistanceTo( anotherConnector.Origin ) > epsilon ) ;
     }
+    
+    
   }
 }

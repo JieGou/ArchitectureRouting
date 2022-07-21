@@ -6,6 +6,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -21,13 +22,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       
-      var allLimitRackIds = GetLimitRackIds( uiDocument, document ) ;
+      var limitRackIds = GetLimitRackIds( uiDocument, document ).EnumerateAll() ;
+      var boundaryCableTrayIds = GetBoundaryCableTraysFromLimitRacks( document, limitRackIds ).EnumerateAll() ;
 
       try {
         using var transaction = new Transaction( document, EraseLimitRackTransactionName ) ;
         transaction.Start() ;
-        RemoveLimitRacks( document, allLimitRackIds.rackIds ) ;
-        RemoveBoundaryCableTray( document, allLimitRackIds.detailCurverIds ) ;
+        RemoveLimitRacks( document, limitRackIds ) ;
+        RemoveBoundaryCableTray( document, boundaryCableTrayIds ) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -37,7 +39,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected abstract (IEnumerable<string> rackIds, IEnumerable<string>? detailCurverIds) GetLimitRackIds( UIDocument ui, Document doc ) ;
+    protected abstract IEnumerable<string> GetLimitRackIds( UIDocument ui, Document doc ) ;
+
+    protected abstract IEnumerable<string> GetBoundaryCableTraysFromLimitRacks( Document doc, IEnumerable<string> limitRackIds ) ;
 
     private static void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
     {
