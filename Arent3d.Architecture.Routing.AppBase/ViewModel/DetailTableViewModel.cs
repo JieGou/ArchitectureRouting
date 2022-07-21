@@ -1953,9 +1953,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       var indexForSelectedDetailTableRow = _detailTableModelsOrigin.IndexOf( _selectedDetailTableRows.Last() );
       var indexForSelectedDetailTableRowSummary = DetailTableModels.IndexOf( _selectedDetailTableRowsSummary.Last() ) ;
-      
+
+      var random = new Random() ;
       foreach ( var detailTableRow in selectedDetailTableModels ) {
-        var extendValue = $"{DetailTableModels.Count + 1}" ;
+        var extendValue = $"{Guid.NewGuid()}" ;
         indexForSelectedDetailTableRow++ ;
         indexForSelectedDetailTableRowSummary++ ;
         var groupId = string.IsNullOrEmpty( detailTableRow.GroupId ) ? string.Empty : detailTableRow.GroupId + "-" + extendValue ;
