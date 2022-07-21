@@ -104,6 +104,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             // Ignore
           }
           
+          uiDocument.Selection.SetElementIds(new List<ElementId>());
+          
           dialog = new DetailTableDialog( viewModel ) ;
           dialog.ShowDialog() ;
         }

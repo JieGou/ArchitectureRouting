@@ -38,6 +38,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public bool IsReadOnly { get ; set ; }
     public string PlumbingIdentityInfo { get ; set ; }
     public string GroupId { get ; set ; }
+    public bool IsGrouped { get ; set ; }
     public bool IsReadOnlyPlumbingItems { get ; set ; }
     public bool IsMixConstructionItems { get ; set ; }
     public string CopyIndex { get ; set ; }

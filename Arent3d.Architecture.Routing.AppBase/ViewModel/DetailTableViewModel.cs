@@ -268,6 +268,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void PlumbingSum()
     {
       SelectionChanged() ;
+      SetGroup( _selectedDetailTableRows, true ) ;
       PlumbingSummary( _conduitsModelData, _detailSymbolStorable, _selectedDetailTableRows, _isMixConstructionItems, DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
       CreateDetailTableViewModelByGroupId() ;
       ResetSelectedItems() ;
@@ -277,10 +278,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void SplitPlumbing()
     {
       SelectionChanged() ;
+      SetGroup(_detailTableModelsOrigin, false);
       SplitPlumbing( _conduitsModelData, _detailSymbolStorable, DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
       CreateDetailTableViewModelByGroupId() ;
       ResetSelectedItems() ;
       DtGrid.SelectedItems.Clear() ;
+    }
+
+    private static void SetGroup(IEnumerable<DetailTableModel> detailTableModels, bool isGrouped)
+    {
+      foreach ( var detailTableModel in detailTableModels ) {
+        detailTableModel.IsGrouped = isGrouped ;
+      }
     }
 
     private void MoveUp()
@@ -755,8 +764,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public static void SetPlumbingItemsForDetailTableRows( IEnumerable<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
     {
       foreach ( var detailTableRow in detailTableRowsWithSameDetailSymbolId ) {
-        detailTableRow.PlumbingItems = detailTableRow.ConstructionItems ;
         detailTableRow.PlumbingItemTypes = new List<DetailTableModel.ComboboxItemType> { new( detailTableRow.ConstructionItems, detailTableRow.ConstructionItems ) } ;
+        detailTableRow.PlumbingItems = detailTableRow.ConstructionItems ;
       }
     }
 
@@ -771,8 +780,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var plumbingItems = detailTableRows.Select( d => d.ConstructionItems ).Distinct() ;
         var plumbingItemTypes = ( from plumbingItem in plumbingItems select new DetailTableModel.ComboboxItemType( plumbingItem, plumbingItem ) ).ToList() ;
         foreach ( var detailTableRow in detailTableRows ) {
-          detailTableRow.PlumbingItems = parentDetailRow ;
           detailTableRow.PlumbingItemTypes = plumbingItemTypes ;
+          detailTableRow.PlumbingItems = parentDetailRow ;
         }
       }
     }
@@ -892,6 +901,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           deletedDetailTableRows.Add( selectedItem ) ;
         }
       }
+
+      using var transaction = new Transaction( _document ) ;
+      transaction.Start( "Delete Detail Table" ) ;
+      var detailTableStorable = _document.GetDetailTableStorable() ;
+      detailTableStorable.DetailTableModelData.RemoveAll( x => deletedDetailTableRows.Any( y => CreateDetailTableCommandBase.GetKeyRouting( y ) == CreateDetailTableCommandBase.GetKeyRouting( x ) ) ) ;
+      detailTableStorable.Save();
+      transaction.Commit() ;
       
       var detailTableRows = _detailTableModelsOrigin.Where( d => ! deletedDetailTableRows.Contains( d ) ) ;
       _detailTableModelsOrigin = new ObservableCollection<DetailTableModel>( detailTableRows ) ;
@@ -1370,6 +1386,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         return ;
       
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        if ( editedDetailTableRow.IsGrouped && $"{selectedWireBook}" != editedDetailTableRow.WireBook) {
+          MessageBox.Show( "Not allowed to change the number of wires after the grouping.", "Arent Inc" ) ;
+          comboBox.SelectedItem = Numbers.SingleOrDefault(x => x.Name == editedDetailTableRow.WireBook ) ;
+          return;
+        }
+        
         var wireBook = int.TryParse($"{selectedWireBook}", out var value) ? value : int.Parse( editedDetailTableRow.WireBook ) ;
         var plumbingModel = FindPlumbingModel(editedDetailTableRow.PlumbingType, editedDetailTableRow.PlumbingSize) ;
         if( null == plumbingModel )
@@ -1594,7 +1616,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           comboBox.SelectedValue = detailTableRow.PlumbingType ;
         }
         else {
-          List<DetailTableModel> detailTableModels = _detailTableModelsOrigin.Where( c => CreateDetailTableCommandBase.GetKeyRouting(c) == CreateDetailTableCommandBase.GetKeyRouting(detailTableRow) ).ToList() ;
+          var detailTableModels = _detailTableModelsOrigin.Where( c => CreateDetailTableCommandBase.GetKeyRouting(c) == CreateDetailTableCommandBase.GetKeyRouting(detailTableRow) ).ToList() ;
       
           if ( plumbingType.ToString() == NoPlumping ) {
             CreateDetailTableCommandBase.SetNoPlumbingDataForOneSymbol( detailTableModels, _isMixConstructionItems ) ;
@@ -2161,7 +2183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             detailTableRow.IsParentRoute, 
             detailTableRow.IsReadOnly, 
             detailTableRow.PlumbingIdentityInfo, 
-            detailTableRow.GroupId, 
+            detailTableRow.GroupId,
             detailTableRow.IsReadOnlyPlumbingItems, 
             detailTableRow.IsMixConstructionItems,
             detailTableRow.CopyIndex, 
@@ -2172,7 +2194,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             detailTableRow.WireStrips,
             detailTableRow.EarthSizes, 
             detailTableRow.PlumbingSizes, 
-            detailTableRow.PlumbingItemTypes ) ;
+            detailTableRow.PlumbingItemTypes ) { IsGrouped = detailTableRow.IsGrouped };
           newDetailTableModels.Add( newDetailTableRow ) ;
           existedGroupIds.Add( detailTableRow.GroupId ) ;
         }

@@ -116,6 +116,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             // Ignore
           }
           
+          uiDoc.Selection.SetElementIds(new List<ElementId>());
+          
           dialog = new DetailTableDialog( viewModel ) ;
           dialog.ShowDialog() ;
         }
@@ -542,20 +544,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
           if(!conduitsModels.Any())
             continue;
-          
-          var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
-          var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / Percentage ;
-          if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
-            var plumbing = conduitsModels.Last() ;
-            detailTableRow.PlumbingType = plumbingType ;
-            detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-          }
-          else {
-            var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
-            detailTableRow.PlumbingType = plumbingType ;
-            detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-          }
 
+          var wireBook = int.TryParse( detailTableRow.WireBook, out var value ) ? value : 1 ;
+          var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / Percentage * wireBook;
+          var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ?? conduitsModels.Last() ;
+
+          detailTableRow.PlumbingType = plumbing.PipingType ;
           detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
           detailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( detailTableRow, false ) ;
           detailTableRow.IsParentRoute = true ;
@@ -563,11 +557,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           detailTableRow.IsReadOnlyPlumbingItems = true ;
           var plumbingSizesOfPlumbingType = conduitsModels.Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
           detailTableRow.PlumbingSizes = ( from plumbingSizeType in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSizeType, plumbingSizeType ) ).ToList() ;
+          detailTableRow.PlumbingSize = plumbing.Size.Replace("mm", "") ;
         }
         else {
           var oldDetailTableRow = oldDetailTableRows.First() ;
           detailTableRow.PlumbingType = oldDetailTableRow.PlumbingType ;
-          detailTableRow.PlumbingSize = oldDetailTableRow.PlumbingSize ;
           detailTableRow.NumberOfPlumbing = oldDetailTableRow.NumberOfPlumbing ;
           detailTableRow.PlumbingIdentityInfo = oldDetailTableRow.PlumbingIdentityInfo ;
           detailTableRow.IsParentRoute = oldDetailTableRow.IsParentRoute ;
@@ -576,6 +570,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           detailTableRow.IsReadOnlyPlumbingSize = oldDetailTableRow.IsReadOnlyPlumbingSize ;
           var plumbingSizesOfPlumbingType = conduitsModelData.Where( c => c.PipingType == detailTableRow.PlumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
           detailTableRow.PlumbingSizes = ( from plumbingSizeType in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSizeType, plumbingSizeType ) ).ToList() ;
+          detailTableRow.PlumbingSize = oldDetailTableRow.PlumbingSize ;
           if ( oldDetailTableRows.Count <= 1 ) continue ;
           oldDetailTableRows.Remove( oldDetailTableRow ) ;
           newDetailTableRows.AddRange( oldDetailTableRows ) ;
