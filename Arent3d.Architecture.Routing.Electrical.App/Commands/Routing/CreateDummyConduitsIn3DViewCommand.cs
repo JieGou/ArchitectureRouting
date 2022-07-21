@@ -83,6 +83,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return Result.Succeeded ;
       }
       catch ( Exception exception ) {
+        using var transaction = new Transaction( document, "Enable buttons" ) ;
+        transaction.Start() ;
+        UpdateIsEnableButton( document, true ) ;
+        transaction.Commit() ;
+        
         message = exception.Message ;
         return Result.Failed ;
       }
@@ -537,8 +542,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
     
-    public static bool RemoveDummyConduits( Document document )
+    private static bool RemoveDummyConduits( Document document )
     {
+      UpdateIsEnableButton( document, true ) ;
       var allConduitIds = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
         .Where( c => ! string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName()!.Contains( DummyName ) )
         .Select( c => c.UniqueId ).ToList() ;
@@ -560,7 +566,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         view.UnhideElements( hiddenConduitIds ) ;
       }
 
-      UpdateIsEnableButton( document, true ) ;
       return false ;
     }
 
@@ -620,6 +625,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     private void UpdateConduitLenght( Document document, MEPCurveType arentConduitType, Dictionary<Element, string> newConduits, string routeName, double length, List<XYZ> directions, ref List<string> removedConduitIds, ConduitInfo? fromConduitInfo, ConduitInfo? toConduitInfo )
     {
+      var minTolerance = ( 2.54 ).MillimetersToRevitUnits() ;
       if ( fromConduitInfo != null ) {
         var (directionX, directionY, _) = fromConduitInfo.Direction ;
         var (endPointX, endPointY, endPointZ) = fromConduitInfo.EndPoint ;
@@ -642,17 +648,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
         newConduits.Remove( fromConduitInfo.Conduit ) ;
         removedConduitIds.Add( fromConduitInfo.Conduit.UniqueId ) ;
+
+        if ( fromConduitInfo.StartPoint.DistanceTo( fromEndPoint ) > minTolerance ) {
+          var newConduit = Conduit.Create( document, arentConduitType.Id, fromConduitInfo.StartPoint, fromEndPoint, fromConduitInfo.LevelId ) ;
+          newConduits.Add( newConduit, routeName ) ;
         
-        var newConduit = Conduit.Create( document, arentConduitType.Id, fromConduitInfo.StartPoint, fromEndPoint, fromConduitInfo.LevelId ) ;
-        newConduits.Add( newConduit, routeName ) ;
-        
-        if ( newConduit.HasParameter( RoutingParameter.RouteName ) ) {
-          newConduit.SetProperty( RoutingParameter.RouteName, routeName ) ;
-        }
+          if ( newConduit.HasParameter( RoutingParameter.RouteName ) ) {
+            newConduit.SetProperty( RoutingParameter.RouteName, routeName ) ;
+          }
           
-        var diameter = ( fromConduitInfo.Conduit as Conduit )!.Diameter ;
-        if ( newConduit.HasParameter( BuiltInParameter.RBS_CONDUIT_DIAMETER_PARAM ) ) {
-          newConduit.SetProperty( BuiltInParameter.RBS_CONDUIT_DIAMETER_PARAM, diameter ) ;
+          var diameter = ( fromConduitInfo.Conduit as Conduit )!.Diameter ;
+          if ( newConduit.HasParameter( BuiltInParameter.RBS_CONDUIT_DIAMETER_PARAM ) ) {
+            newConduit.SetProperty( BuiltInParameter.RBS_CONDUIT_DIAMETER_PARAM, diameter ) ;
+          }
         }
       }
 
@@ -680,14 +688,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
         newConduits.Remove( toConduitInfo.Conduit ) ;
         removedConduitIds.Add( toConduitInfo.Conduit.UniqueId ) ;
-        
+
+        if ( ! ( toConduitInfo.EndPoint.DistanceTo( toStartPoint ) > minTolerance ) ) return ;
         var newConduit = Conduit.Create( document, arentConduitType.Id, toStartPoint, toConduitInfo.EndPoint, toConduitInfo.LevelId ) ;
         newConduits.Add( newConduit, routeName ) ;
-        
+
         if ( newConduit.HasParameter( RoutingParameter.RouteName ) ) {
           newConduit.SetProperty( RoutingParameter.RouteName, routeName ) ;
         }
-          
+
         var diameter = ( toConduitInfo.Conduit as Conduit )!.Diameter ;
         if ( newConduit.HasParameter( BuiltInParameter.RBS_CONDUIT_DIAMETER_PARAM ) ) {
           newConduit.SetProperty( BuiltInParameter.RBS_CONDUIT_DIAMETER_PARAM, diameter ) ;
