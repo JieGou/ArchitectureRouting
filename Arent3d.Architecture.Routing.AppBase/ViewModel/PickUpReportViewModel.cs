@@ -4,6 +4,7 @@ using Autodesk.Revit.DB ;
 using System ;
 using System.Collections.ObjectModel ;
 using System.Collections.Specialized ;
+using System.Globalization ;
 using System.IO ;
 using System.Linq ;
 using System.Windows ;
@@ -23,9 +24,11 @@ using CheckBox = System.Windows.Controls.CheckBox ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using RadioButton = System.Windows.Controls.RadioButton ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using MoreLinq ;
 using MoreLinq.Extensions ;
 using NPOI.OpenXmlFormats.Spreadsheet ;
+using FillPattern = NPOI.SS.UserModel.FillPattern ;
 using MarginType = NPOI.SS.UserModel.MarginType ;
 
 
@@ -401,7 +404,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           sheet.SetColumnWidth( 5, 4000 ) ;
           sheet.SetColumnWidth( 7, 3000 ) ;
           sheet.SetColumnWidth( 13, 3300 );
-          sheet.SetColumnWidth( 15, 3300 );
+          sheet.SetColumnWidth( 15, 4000 );
           sheet.SetColumnWidth( 16, 2500 ) ;
           rowStart = 0 ;
           var view = _document.ActiveView ;
@@ -456,8 +459,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
 
             var dictionaryDataPickUpModelOrder = dictionaryDataPickUpModel.OrderBy( x => x.Value.First().Tani == "m" ? 1 : 2).ThenBy( c => c.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard ) ; ;
+            var maxNumberPickUp = FindMaxPickUpNumber( dictionaryDataPickUpModel.SelectMany(x=>x.Value).ToList()) ;
             foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrder ) {
-              rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, xssfCellStyles ) ;
+              rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, xssfCellStyles, maxNumberPickUp ) ;
             }
             
             while ( rowStart % 61 != 0 ) {
@@ -623,14 +627,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return pickUpNumberList ;
     }
 
-    private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles )
+    private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles, int maxPickUpNumber )
     {
       var detailSymbolStorable =  _document.GetDetailTableStorable() ;
       var dataDetailTable = detailSymbolStorable.DetailTableModelData ;
-      
       if ( ! pickUpModels.Any() ) return rowStart ;
+      
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
+      var a = pickUpModels.Any( x => x.ProductCode != pickUpModel.ProductCode ) ;
       var row = sheet.CreateRow( rowStart ) ;
       var isTani = IsTani( pickUpModel ) ;
       var isWire = IsWire( pickUpModel ) ;
@@ -640,12 +645,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CreateCell( row, 4, pickUpModel.Tani, xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
       double total = 0 ;
       Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
+      var inforDisplays = GetInforDisplays( pickUpModels ) ;
       foreach ( var pickUpNumber in pickUpNumbers ) {
         string stringNotTani = string.Empty ;
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
         var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
         var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RouteNameRef ) ;
         var listSeenQuantity = new List<double>() ;
+        var listSeenQuantityPullBox = new List<string>() ;
         var valueDetailTableStr = string.Empty ;
         foreach ( var itemGroupByRoute in itemsGroupByRoute ) {
           var dataDetail = dataDetailTable.FirstOrDefault( x => x.RouteName == itemGroupByRoute.Key ) ;
@@ -653,6 +660,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             valueDetailTableStr = dataDetail.WireBook ;
           }
           double seenQuantity = 0 ;
+
+          var lastSegment = GetLastSegment( itemGroupByRoute.Key ) ;
+          var isSegmentConnectedToPullBox = IsSegmentConnectedToPullBox( lastSegment ) ;
+          
           foreach ( var item in itemGroupByRoute ) {
             double.TryParse( item.Quantity, out var quantity ) ;
             if ( ! string.IsNullOrEmpty( item.Direction ) ) {
@@ -669,21 +680,39 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
             total += quantity ;
           }
-
+          
           if ( seenQuantity > 0 ) {
-            listSeenQuantity.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ) ) ;
+            if ( isSegmentConnectedToPullBox ) {
+              var countStr = string.Empty ;
+              var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
+              if ( inforDisplay != null && inforDisplay.IsDisplay ) {
+                countStr = inforDisplay.NumberDisplay == 1 ? string.Empty : $" X {inforDisplay.NumberDisplay}" ;
+                inforDisplay.IsDisplay = false ;
+                listSeenQuantityPullBox.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr);
+              }
+            }
+            else {
+              listSeenQuantity.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ) ) ;
+            }
+             
           }
         }
 
         var number = DoconTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
+        var numberPullBox = DoconTypes.First().TheValue ? $"[" + (maxPickUpNumber + 1) + "]" : string.Empty;
         var seenQuantityStr = isTani ? string.Join( " + ", listSeenQuantity ) : stringNotTani ;
 
+        var seenQuantityPullBoxStr = string.Empty ;
+        if ( listSeenQuantityPullBox.Any() ) {
+          seenQuantityPullBoxStr = numberPullBox + " " + string.Join($" + {numberPullBox} ", listSeenQuantityPullBox ) ;
+        }
+        
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
           notSeenQuantityStr += value > 0 ? " + ↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
         }
 
-        var key = isTani ? ( "( " + seenQuantityStr + notSeenQuantityStr + " )" ) + (string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $" X {valueDetailTableStr}")  : ( seenQuantityStr + notSeenQuantityStr ) ;
+        var key = isTani ? ( "( " + seenQuantityStr + notSeenQuantityStr + " )" ) + (string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $" X {valueDetailTableStr}") + (string.IsNullOrEmpty( seenQuantityPullBoxStr ) ? string.Empty : $" + {seenQuantityPullBoxStr}" )  : ( seenQuantityStr + notSeenQuantityStr ) ;
         var itemKey = trajectory.FirstOrDefault( t => t.Key.Contains( key ) ).Key ;
 
         if ( string.IsNullOrEmpty( itemKey ) )
@@ -701,10 +730,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var valueOfCell = string.Empty ;
       var trajectoryStrCount = trajectoryStr.Count ;
       var count = 0 ;
-      if ( trajectoryStrCount > 2 ) {
+      if ( trajectoryStrCount > 1 ) {
         for ( var i = 0 ; i < trajectoryStrCount ; i++ ) {
           valueOfCell += trajectoryStr[ i ] + " + ";
-          if ( valueOfCell.Length * 1.5  < lengthOfCellMerge/256.0 && i < trajectoryStrCount - 1 ) continue;
+          if ( valueOfCell.Length * 2  < lengthOfCellMerge/256.0 && i < trajectoryStrCount - 1 ) continue;
           if ( count == 0 ) {
             CreateMergeCell( sheet, row, rowStart, rowStart, firstCellIndex, lastCellIndex, valueOfCell , xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
             count++ ;
@@ -840,11 +869,82 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var hiroiMaster = _hiroiMasterModels.SingleOrDefault( h => ( int.Parse( h.Buzaicd ) == int.Parse( pickUpModel.ProductCode.Split( '-' ).First() ) ) ) ;
       return hiroiMaster != null && hiroiMaster.Buzaisyu == Wire ;
     }
+
+    private RouteSegment? GetLastSegment( string routeName )
+    {
+      if ( string.IsNullOrEmpty( routeName ) ) return null ;
+      var routes = RouteCache.Get( DocumentKey.Get( _document ) ) ;
+      var route = routes.SingleOrDefault( x => x.Key == routeName ) ;
+      return route.Value.RouteSegments.LastOrDefault();
+    }
+    
+    private bool IsSegmentConnectedToPullBox( RouteSegment? lastSegment )
+    {
+      if ( lastSegment == null ) return false ;
+      var toEndPointKey = lastSegment.ToEndPoint.Key ;
+      var toElementId = toEndPointKey.GetElementUniqueId() ;
+      if ( string.IsNullOrEmpty( toElementId ) ) 
+        return false ;
+      var toConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .FirstOrDefault( c => c.UniqueId == toElementId ) ;
+      return toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ;
+    }
+
+    private int FindMaxPickUpNumber(List<PickUpModel> pickUpModels)
+    {
+      int result = int.MinValue ;
+      foreach ( var pickUpModel in pickUpModels.Where( x=>! string.IsNullOrEmpty( x.PickUpNumber ) ) ) {
+        int pickUpNumber = int.Parse( pickUpModel.PickUpNumber );
+        if ( pickUpNumber > result ) result = pickUpNumber ;
+      }
+
+      return result ;
+    }
+
+    private List<InforDisplay> GetInforDisplays(List<PickUpModel> pickUpModels)
+    {
+      var routesNameRef = pickUpModels.Select( x => x.RouteNameRef ).Distinct() ;
+      var inforDisplays = new List<InforDisplay>() ;
+      foreach ( var routeNameRef in routesNameRef ) {
+        var lastSegment = GetLastSegment( routeNameRef ) ;
+        if ( lastSegment == null ) continue ;
+        if ( IsSegmentConnectedToPullBox( lastSegment ) ) {
+          var idPullBox = lastSegment.FromEndPoint.Key.GetElementUniqueId() ;
+          if ( inforDisplays.Any( x => x.IdPullBox == idPullBox ) ) {
+            var inforDisplay = inforDisplays.SingleOrDefault( x => x.IdPullBox == idPullBox ) ;
+            if ( inforDisplay == null ) continue;
+            inforDisplay.NumberDisplay += 1 ;
+            inforDisplay.RouteNameRef = routeNameRef ;
+          }
+          else {
+            inforDisplays.Add( new InforDisplay(true, idPullBox, 1, routeNameRef) );
+          }
+        }
+      }
+
+      return inforDisplays ;
+    }
     
     public class ListBoxItem
     {
       public string? TheText { get ; set ; }
       public bool TheValue { get ; set ; }
+    }
+
+    private class InforDisplay
+    {
+      public bool IsDisplay { get ; set ; }
+      public string? IdPullBox { get ; set ; }
+      public int NumberDisplay { get ; set ; }
+      public string? RouteNameRef { get ; set ; }
+
+      public InforDisplay( bool isDisplay, string? idPullBox, int numberDisplay, string? routeNameRef )
+      {
+        IsDisplay = isDisplay ;
+        IdPullBox = idPullBox??string.Empty ;
+        NumberDisplay = numberDisplay ;
+        RouteNameRef = routeNameRef??string.Empty ; ;
+      }
     }
   }
 }
