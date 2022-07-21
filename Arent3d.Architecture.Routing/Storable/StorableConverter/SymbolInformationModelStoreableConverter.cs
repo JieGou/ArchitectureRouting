@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       SymbolKind,
       SymbolCoordinate,
       Height,
-      Percent,
+      Percent,    
       Color,
       Description,
       CharacterHeight,
