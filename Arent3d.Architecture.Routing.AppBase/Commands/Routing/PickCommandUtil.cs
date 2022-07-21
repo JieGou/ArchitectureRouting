@@ -10,7 +10,6 @@ using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using CsvHelper ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
 
