@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
 using System.Windows ;
+using System.Windows.Data ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
@@ -1362,6 +1363,70 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       UpdateDataGridAndRemoveSelectedRow() ;
     }
     
+    public void WireBookSelection( ComboBox comboBox )
+    {
+      var selectedWireBook = comboBox.SelectedValue ;
+      if( selectedWireBook == null ) 
+        return ;
+      
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        var wireBook = int.TryParse($"{selectedWireBook}", out var value) ? value : int.Parse( editedDetailTableRow.WireBook ) ;
+        var plumbingModel = FindPlumbingModel(editedDetailTableRow.PlumbingType, editedDetailTableRow.PlumbingSize) ;
+        if( null == plumbingModel )
+          return;
+
+        var wireAreas = editedDetailTableRow.WireCrossSectionalArea / CreateDetailTableCommandBase.Percentage * wireBook ;
+        if ( wireAreas > double.Parse( plumbingModel.InnerCrossSectionalArea ) ) {
+          var maxPlumbingSize = GetMaxPlumbingSize( wireAreas, editedDetailTableRow ) ;
+          if ( null == maxPlumbingSize ) {
+            MessageBox.Show( "The number of wires exceeds the size of the plumbing.", "Arent Inc" ) ;
+            comboBox.SelectedItem = Numbers.SingleOrDefault(x => x.Name == editedDetailTableRow.WireBook ) ;
+          }
+          else {
+            ChangeRow( editedDetailTableRow, $"{selectedWireBook}", maxPlumbingSize ) ;
+          }
+        }
+        else {
+          var maxPlumbingSize = GetMaxPlumbingSize( wireAreas, editedDetailTableRow ) ;
+          if ( null == maxPlumbingSize ) {
+            MessageBox.Show( "Not found the plumbing size.", "Arent Inc" ) ;
+          }
+          else {
+            ChangeRow( editedDetailTableRow, $"{selectedWireBook}", maxPlumbingSize ) ;
+          }
+        }
+      }
+      
+      UpdateDataGridAndRemoveSelectedRow() ;
+    }
+
+    private void ChangeRow(DetailTableModel editedDetailTableRow, string selectedWireBook, string maxPlumbingSize )
+    {
+      ComboboxSelectionChanged( editedDetailTableRow, EditedColumn.WireBook, selectedWireBook, new List<DetailTableModel.ComboboxItemType>() ) ;
+      editedDetailTableRow.PlumbingSize = maxPlumbingSize ;
+      DetailTableModels = new ObservableCollection<DetailTableModel>( DetailTableModels ) ;
+    }
+
+    private ConduitsModel? FindPlumbingModel( string plumbingType, string plumbingSize )
+    {
+      var plumbingTypeModels = _conduitsModelData.Where( x => x.PipingType == plumbingType.Replace( DefaultChildPlumbingSymbol, "" ) ).ToList() ;
+      return plumbingTypeModels.Any() ? plumbingTypeModels.FirstOrDefault( x => x.Size.Replace( "mm", "" ) == plumbingSize ) : null;
+    }
+
+    private string? GetMaxPlumbingSize( double wireAreas, DetailTableModel editedDetailTableRow )
+    {
+      foreach ( var plumbingSize in editedDetailTableRow.PlumbingSizes ) {
+        var plumbingModel = FindPlumbingModel( editedDetailTableRow.PlumbingType, plumbingSize.Name ) ;
+        if(null == plumbingModel)
+          continue;
+
+        if ( double.Parse( plumbingModel.InnerCrossSectionalArea ) >= wireAreas )
+          return plumbingSize.Name ;
+      }
+
+      return null ;
+    }
+    
     public void PlumbingSizeSelectionChanged( ComboBox comboBox )
     {
       var selectedPlumbingSize = comboBox.SelectedValue ;
@@ -1452,31 +1517,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       UpdateDataGridAndRemoveSelectedRow() ;
     }
-    
-    public void WireBookSelection( ComboBox comboBox )
-    {
-      var selectedWireBook = comboBox.SelectedValue ;
-      if( selectedWireBook == null ) return ;
-      
-      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
-        var wireBook = int.TryParse($"{comboBox.SelectedValue}", out var value) ? value : int.Parse( editedDetailTableRow.WireBook ) ;
-        var plumbing = _conduitsModelData.FirstOrDefault( x => x.PipingType == editedDetailTableRow.PlumbingType.Replace(DefaultChildPlumbingSymbol, "") 
-                                                               && x.Size.Replace( "mm", "" ) == editedDetailTableRow.PlumbingSize ) ;
-        if(null == plumbing)
-          return;
-        
-        if ( editedDetailTableRow.WireCrossSectionalArea / CreateDetailTableCommandBase.Percentage * wireBook > double.Parse( plumbing.InnerCrossSectionalArea ) ) {
-          MessageBox.Show( "The number of wires exceeds the size of the plumbing.", "Arent Inc" ) ;
-          comboBox.SelectedItem = Numbers.SingleOrDefault(x => x.Name == editedDetailTableRow.WireBook ) ;
-        }
-        else {
-          ComboboxSelectionChanged( editedDetailTableRow, EditedColumn.WireBook, $"{comboBox.SelectedValue}", new List<DetailTableModel.ComboboxItemType>() ) ;
-        }
-      }
-      
-      UpdateDataGridAndRemoveSelectedRow() ;
-    }
-    
+
     public void WireStripSelection( ComboBox comboBox )
     {
       var selectedWireStrip = comboBox.SelectedValue ;
