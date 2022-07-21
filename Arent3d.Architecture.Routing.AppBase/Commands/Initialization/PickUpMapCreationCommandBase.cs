@@ -234,13 +234,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           
           var conduitsOfRoute = allConduitsOfRoutes[lastRoute.Key] ;
           var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
-          
-          var toEndPointKey = lastSegment.ToEndPoint.Key ;
-          var toElementId = toEndPointKey.GetElementUniqueId() ;
-          if ( string.IsNullOrEmpty( toElementId ) ) continue ;
-          var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).FirstOrDefault( c => c.UniqueId == toElementId ) ;
-          var isToPullBox = toConnector!.GetConnectorFamilyType() == ConnectorFamilyType.PullBox;
-          
+
+          var isToPullBox = IsSegmentConnectedToPoPullBox( document, lastSegment ) ;
+
           var conduitNearest = FindConduitNearest( document, conduitsOfRoute, toConnectorPosition, true ) ??
                                FindConduitNearest( document, conduitsOfRoute, toConnectorPosition ) ;
           if ( conduitNearest is { Location: LocationCurve location } ) {
@@ -296,6 +292,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           notSeenTextNotePickUps.Add( textNotePickUpModel );
         }
       }
+    }
+
+    private static bool IsSegmentConnectedToPoPullBox( Document document, RouteSegment lastSegment )
+    {
+      var toEndPointKey = lastSegment.ToEndPoint.Key ;
+      var toElementId = toEndPointKey.GetElementUniqueId() ;
+      if ( string.IsNullOrEmpty( toElementId ) ) 
+        return false ;
+      var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .FirstOrDefault( c => c.UniqueId == toElementId ) ;
+      return toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ;
     }
 
     private static Conduit? FindConduitNearest(Document document,List<Conduit> conduitsOfRoute, XYZ toPosition, bool isCheckLengthConduit = false)
