@@ -210,18 +210,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       
       var isMixConstructionItems = keyRoutingOnDetailSymbolModels.Any() && CheckMixConstructionItems( detailTableModelsData, keyRoutingOnDetailSymbolModels ) ;
       
-      var onlyKeyRoutingOnDetailSymbolModels = detailSymbolModels
+      var detailSymbolModelsByKeyRouting = detailSymbolModels
             .Where( x => elementUniqueIds.Contains( isReferenceDetailTableModels ? x.DetailSymbolUniqueId : x.ConduitId ) 
                          && ! keyRoutingOnDetailTableModels.Contains( GetKeyRouting(x.DetailSymbolUniqueId, x.FromConnectorUniqueId, x.ToConnectorUniqueId) ) )
             .OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.IsParentSymbol )
             .GroupBy( x => GetKeyRouting(x.DetailSymbolUniqueId, x.FromConnectorUniqueId, x.ToConnectorUniqueId), ( key, p ) => new { KeyRouting = key, DetailSymbolModels = p.ToList() } ) ;
       
-      foreach ( var onlyKeyRoutingOnDetailSymbolModel in onlyKeyRoutingOnDetailSymbolModels ) {
-        var firstDetailSymbolModel = onlyKeyRoutingOnDetailSymbolModel.DetailSymbolModels.FirstOrDefault() ;
-        var routeNames = onlyKeyRoutingOnDetailSymbolModel.DetailSymbolModels.Select( d => d.RouteName ).Distinct().ToList() ;
+      foreach ( var detailSymbolModelByKeyRouting in detailSymbolModelsByKeyRouting ) {
+        var firstDetailSymbolModel = detailSymbolModelByKeyRouting.DetailSymbolModels.FirstOrDefault() ;
+        var routeNames = detailSymbolModelByKeyRouting.DetailSymbolModels.Select( d => d.RouteName ).Distinct().ToList() ;
         var parentRouteName = firstDetailSymbolModel!.CountCableSamePosition == 1 ? firstDetailSymbolModel.RouteName : GetParentRouteName( doc, routeNames ) ;
         if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
-          var parentDetailSymbolModel = onlyKeyRoutingOnDetailSymbolModel.DetailSymbolModels.FirstOrDefault( d => d.RouteName == parentRouteName ) ;
+          var parentDetailSymbolModel = detailSymbolModelByKeyRouting.DetailSymbolModels.FirstOrDefault( d => d.RouteName == parentRouteName ) ;
           if ( isReferenceDetailTableModels ) {
             var conduitOfFirstRoute = doc.GetElement( parentDetailSymbolModel!.ConduitId ) ;
             conduits = new List<Element> { conduitOfFirstRoute } ;
@@ -239,7 +239,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           
         }
 
-        var childDetailSymbolModels = from routeName in routeNames select onlyKeyRoutingOnDetailSymbolModel.DetailSymbolModels.FirstOrDefault( d => d.RouteName == routeName ) ;
+        var childDetailSymbolModels = from routeName in routeNames select detailSymbolModelByKeyRouting.DetailSymbolModels.FirstOrDefault( d => d.RouteName == routeName ) ;
         foreach ( var childDetailSymbolModel in childDetailSymbolModels ) {
           if ( isReferenceDetailTableModels ) {
             var conduitOfFirstRoute = doc.GetElement( childDetailSymbolModel.ConduitId ) ;
