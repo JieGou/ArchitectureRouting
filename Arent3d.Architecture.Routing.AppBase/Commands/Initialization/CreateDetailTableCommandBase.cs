@@ -663,7 +663,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               }
               parentDetailRow = currentDetailTableRow ;
               currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea / Percentage * wireBook ;
-              if ( currentDetailTableRow != detailTableRows.Last( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
+              if ( currentDetailTableRow != detailTableRows.Last( d => d.ConstructionClassification != noPlumpingConstructionClassification ) )
+                continue ;
               if ( wireBook > 1 && currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
                 plumbing = conduitsModels.LastOrDefault() ;
                 var wireCountInPlumbing = (int) ( maxInnerCrossSectionalArea / ( currentDetailTableRow.WireCrossSectionalArea / Percentage ) ) ;
@@ -771,8 +772,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public static string GetDetailTableRowPlumbingIdentityInfo( DetailTableModel detailTableRow, bool mixConstructionItems )
     {
       return mixConstructionItems ? 
-        string.Join( "-", detailTableRow.PlumbingType + detailTableRow.PlumbingSize, detailTableRow.SignalType, detailTableRow.RouteName, detailTableRow.DetailSymbolUniqueId, detailTableRow.FromConnectorUniqueId, detailTableRow.ToConnectorUniqueId, detailTableRow.CopyIndex ) : 
-        string.Join( "-", detailTableRow.PlumbingType + detailTableRow.PlumbingSize, detailTableRow.SignalType, detailTableRow.RouteName, detailTableRow.DetailSymbolUniqueId, detailTableRow.FromConnectorUniqueId, detailTableRow.ToConnectorUniqueId, detailTableRow.CopyIndex, detailTableRow.ConstructionItems ) ;
+        string.Join( "-", detailTableRow.PlumbingType + detailTableRow.PlumbingSize, detailTableRow.SignalType, detailTableRow.RouteName, GetKeyRouting(detailTableRow), detailTableRow.CopyIndex ) : 
+        string.Join( "-", detailTableRow.PlumbingType + detailTableRow.PlumbingSize, detailTableRow.SignalType, detailTableRow.RouteName, GetKeyRouting(detailTableRow), detailTableRow.CopyIndex, detailTableRow.ConstructionItems ) ;
     }
 
     private Dictionary<ElementId, List<ElementId>> UpdateConnectorAndConduitConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )

@@ -1460,7 +1460,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
         var wireBook = int.TryParse($"{comboBox.SelectedValue}", out var value) ? value : int.Parse( editedDetailTableRow.WireBook ) ;
-        var plumbing = _conduitsModelData.First( x => x.PipingType == editedDetailTableRow.PlumbingType && x.Size.Replace( "mm", "" ) == editedDetailTableRow.PlumbingSize ) ;
+        var plumbing = _conduitsModelData.FirstOrDefault( x => x.PipingType == editedDetailTableRow.PlumbingType.Replace(DefaultChildPlumbingSymbol, "") 
+                                                               && x.Size.Replace( "mm", "" ) == editedDetailTableRow.PlumbingSize ) ;
+        if(null == plumbing)
+          return;
+        
         if ( editedDetailTableRow.WireCrossSectionalArea / CreateDetailTableCommandBase.Percentage * wireBook > double.Parse( plumbing.InnerCrossSectionalArea ) ) {
           MessageBox.Show( "The number of wires exceeds the size of the plumbing.", "Arent Inc" ) ;
           comboBox.SelectedItem = Numbers.SingleOrDefault(x => x.Name == editedDetailTableRow.WireBook ) ;
@@ -1950,8 +1954,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var indexForSelectedDetailTableRow = _detailTableModelsOrigin.IndexOf( _selectedDetailTableRows.Last() );
       var indexForSelectedDetailTableRowSummary = DetailTableModels.IndexOf( _selectedDetailTableRowsSummary.Last() ) ;
       
-      var extendValue = DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
       foreach ( var detailTableRow in selectedDetailTableModels ) {
+        var extendValue = $"{DetailTableModels.Count + 1}" ;
         indexForSelectedDetailTableRow++ ;
         indexForSelectedDetailTableRowSummary++ ;
         var groupId = string.IsNullOrEmpty( detailTableRow.GroupId ) ? string.Empty : detailTableRow.GroupId + "-" + extendValue ;
