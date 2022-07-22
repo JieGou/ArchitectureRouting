@@ -26,21 +26,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           "TransactionName.Commands.Initialization.PickUpNumberSetting".GetAppStringByKeyOrDefault(
             "Pick Up Number Setting" ), _ =>
           {
-            var level = document.ActiveView.GenLevel.Name ;
+            var level = document.ActiveView.GenLevel ;
             var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
-            var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any( t => t.Level == level ) ;
+            var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any( t => t.Level == level.Name ) ;
 
             if ( !isDisplay ) return Result.Succeeded ;
             
             var pickUpViewModel = new PickUpViewModel( document ) ;
             if ( ! pickUpViewModel.DataPickUpModels.Any() ) return Result.Succeeded ;
             
-            var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level ).ToList() ;
+            var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level.Name ).ToList() ;
             if ( !pickUpModels.Any() ) {
               MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
               return Result.Succeeded ;
             }
-            PickUpMapCreationCommandBase.RemoveTextNotePickUp( document, level ) ;
+            PickUpMapCreationCommandBase.RemoveTextNotePickUp( document, level.Name ) ;
             PickUpMapCreationCommandBase.ShowTextNotePickUp( textNotePickUpStorable, document, level, pickUpModels ) ;
 
             return Result.Succeeded ;

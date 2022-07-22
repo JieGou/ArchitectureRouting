@@ -15,7 +15,6 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Autodesk.Revit.DB.Electrical ;
-using Autodesk.Windows ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -31,15 +30,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         var result = document.Transaction( "TransactionName.Commands.Initialization.PickUpMapCreation".GetAppStringByKeyOrDefault( "Pick Up Map Creation" ), _ =>
         {
-          var level = document.ActiveView.GenLevel.Name ;
+          var level = document.ActiveView.GenLevel ;
           var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
-          var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any(tp => tp.Level == level ) ;
+          var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any(tp => tp.Level == level.Name ) ;
 
           if ( ! isDisplay ) {
             var pickUpViewModel = new PickUpViewModel( document ) ;
             if ( ! pickUpViewModel.DataPickUpModels.Any() ) return Result.Cancelled ;
             
-            var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level ).ToList() ;
+            var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level.Name ).ToList() ;
             if ( ! pickUpModels.Any() ) {
               MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
               return Result.Cancelled ;
@@ -48,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             ShowTextNotePickUp( textNotePickUpStorable, document, level, pickUpModels ) ;
           }
           else {
-            RemoveTextNotePickUp( document, level ) ;
+            RemoveTextNotePickUp( document, level.Name ) ;
           }
         
           return Result.Succeeded ;
@@ -62,10 +61,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, string level, List<PickUpModel> pickUpModels )
+    public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, Level level, List<PickUpModel> pickUpModels )
     {
       var pickUpNumberOfPullBox = pickUpModels.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) + 1 ;
-      var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingData.FirstOrDefault( pn => pn.Level == level )?.IsPickUpNumberSetting ?? false ;
+      var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingData[level.Id.IntegerValue]?.IsPickUpNumberSetting ?? false ;
       var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
       var seenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
       var notSeenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
@@ -140,7 +139,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       #endregion
 
-      SaveTextNotePickUpModel( textNotePickUpStorable, textNotePickUpModels.Select( x => new TextNotePickUpModel( x.TextNoteId, level ) ).ToList() ) ;
+      SaveTextNotePickUpModel( textNotePickUpStorable, textNotePickUpModels.Select( x => new TextNotePickUpModel( x.TextNoteId, level.Name ) ).ToList() ) ;
     }
 
     private static void SetPositionForNotSeenTextNotePickUp( Document document, RouteCache routeCache, Dictionary<string, List<Conduit>> notSeenConduitsOfRoutes,
@@ -405,21 +404,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return pickUpNumberList ;
-    }
-    
-    private static void UpdateIsEnableButton( bool isEnable )
-    {
-      var targetTabName = "Electrical.App.Routing.TabName".GetAppStringByKey() ;
-      var selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
-      if ( selectionTab == null ) return ;
-
-      var selectionPanel =
-        UIHelper.GetRibbonPanelFromName( "Settings", selectionTab ) ;
-      var selectionSplitButton =
-        UIHelper.GetRibbonSplitButtonFromName( "arent3d.architecture.routing.settings.all", selectionPanel ) ;
-      
-      var selectionButton = UIHelper.GetRibbonButtonFromName( "arent3d.architecture.routing.electrical.app.commands.initialization.pick_up_number_setting_command", selectionSplitButton ) ;
-      selectionButton!.IsEnabled = isEnable ;
     }
   }
 }

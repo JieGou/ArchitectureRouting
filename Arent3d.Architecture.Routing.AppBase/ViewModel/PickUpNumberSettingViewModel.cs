@@ -1,5 +1,4 @@
-﻿using System.Linq ;
-using System.Windows ;
+﻿using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -17,8 +16,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       _document = document ;
       var textNotePickUpModelStorable = _document.GetTextNotePickUpStorable() ;
-      var level = _document.ActiveView.GenLevel.Name ;
-      IsPickUpNumberSetting = textNotePickUpModelStorable.PickUpNumberSettingData.FirstOrDefault(pn => pn.Level == level)?.IsPickUpNumberSetting ?? false ;
+      var levelId = _document.ActiveView.GenLevel.Id.IntegerValue ;
+      IsPickUpNumberSetting = textNotePickUpModelStorable.PickUpNumberSettingData[levelId]?.IsPickUpNumberSetting ?? false ;
     }
 
     public bool IsPickUpNumberSetting
@@ -43,11 +42,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void Execute( Window window )
     {
       var textNotePickUpModelStorable = _document.GetTextNotePickUpStorable() ;
-      var level = _document.ActiveView.GenLevel.Name ;
+      var level = _document.ActiveView.GenLevel ;
+      var levelId = level.Id.IntegerValue ;
       
-      var pickUpNumberSettingModel = textNotePickUpModelStorable.PickUpNumberSettingData.FirstOrDefault( pn => pn.Level == level ) ;
+      var pickUpNumberSettingModel = textNotePickUpModelStorable.PickUpNumberSettingData[levelId] ;
       if ( pickUpNumberSettingModel == null )
-        textNotePickUpModelStorable.PickUpNumberSettingData.Add( new PickUpNumberSettingModel( level, IsPickUpNumberSetting ) );
+        textNotePickUpModelStorable.PickUpNumberSettingData.Add( levelId, new PickUpNumberSettingModel( level, IsPickUpNumberSetting ) );
       else pickUpNumberSettingModel.IsPickUpNumberSetting = IsPickUpNumberSetting ;
       
       using Transaction transaction = new(_document, "Save Pick Up Number Setting") ;
