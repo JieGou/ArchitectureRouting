@@ -89,13 +89,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
 
-    public static Dictionary<string, double> SetToleranceForConduit( Document document, ICollection<Element> conduits, List<ElementId> conduitsHideIn3DView )
+    public static Dictionary<string, double> SetOffsetForConduit( Document document, ICollection<Element> conduits, List<ElementId> conduitsHideIn3DView )
     {
-      var defaultTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
       Dictionary<string, double> conduitToleranceDic = new() ;
       Dictionary<string, XYZ> conduitDirectionDic = new() ;
       var allConduitsOfBranchRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == c.GetRepresentativeRouteName() && ( c.GetNearestEndPoints( true ).FirstOrDefault()?.Key.GetTypeName() == PassPointBranchEndPoint.Type || c.GetNearestEndPoints( true ).FirstOrDefault()?.Key.GetTypeName() == PassPointEndPoint.Type ) && c.GetNearestEndPoints( false ).FirstOrDefault()?.Key.GetTypeName() == ConnectorEndPoint.Type ).ToList() ;
       List<Element> conduitOfBranchRoutes = new() ;
+      var offset = ( conduits.First() as Conduit )!.Diameter ;
       foreach ( var conduit in conduits ) {
         var routeName = conduit.GetRouteName()! ;
         var routeNameArray = routeName.Split( '_' ) ;
@@ -135,25 +135,25 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         if ( ! plusDirections.Any() || ! minusDirections.Any() ) {
           var count = conduitDirectionDic.Count / 2 ;
           for ( var i = 0 ; i <= count ; i++ ) {
-            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, -defaultTolerance * ( i + 1 ) ) ;
+            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, -offset * ( i + 1 ) ) ;
           }
 
           var number = 1 ;
           for ( var i = count + 1 ; i < conduitDirectionDic.Count ; i++ ) {
-            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, defaultTolerance * number ) ;
+            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, offset * number ) ;
             number++ ;
           }
         }
         else {
           var number = 1 ;
           foreach ( var plusDirection in plusDirections ) {
-            conduitToleranceDic.Add( plusDirection.Key, -defaultTolerance * number ) ;
+            conduitToleranceDic.Add( plusDirection.Key, -offset * number ) ;
             number++ ;
           }
 
           number = 1 ;
           foreach ( var minusDirection in minusDirections ) {
-            conduitToleranceDic.Add( minusDirection.Key, defaultTolerance * number ) ;
+            conduitToleranceDic.Add( minusDirection.Key, offset * number ) ;
             number++ ;
           }
         }
@@ -349,15 +349,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     public class RouteInfo
     {
       public string RouteName { get ; }
-      public double Tolerance { get ; }
+      public MEPCurveType CurveType { get ; }
+      public double Offset { get ; }
       public List<XYZ> Directions { get ; }
       public List<Element> ConduitsOfBranch { get ; }
       public XYZ PassPointDirection { get ; }
 
-      public RouteInfo( string routeName, double tolerance, List<XYZ> directions, List<Element> conduitsOfBranch, XYZ passPointDirection )
+      public RouteInfo( string routeName, MEPCurveType curveType, double offset, List<XYZ> directions, List<Element> conduitsOfBranch, XYZ passPointDirection )
       {
         RouteName = routeName ;
-        Tolerance = tolerance ;
+        CurveType = curveType ;
+        Offset = offset ;
         Directions = directions ;
         ConduitsOfBranch = conduitsOfBranch ;
         PassPointDirection = passPointDirection ;
