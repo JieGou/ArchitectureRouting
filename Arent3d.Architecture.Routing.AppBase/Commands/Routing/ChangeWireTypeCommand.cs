@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! familySymbol.IsActive )
         familySymbol.Activate() ;
 
-      var storageService = new StorageService<ConduitAndDetailCurveModel>(document, true) ;
+      var storageService = new StorageService<Level, ConduitAndDetailCurveModel>(((ViewPlan)document.ActiveView).GenLevel) ;
       var color = new Color( 255, 215, 0 ) ;
       var lineStyle = GetLineStyle( document, color ) ;
       OverrideGraphicSettings ogs = new() ;
@@ -239,8 +239,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )
     {
-      var storageService = new StorageService<ConduitAndDetailCurveModel>( document, true ) ;
-      var dataStorages = storageService.DataStorages.Where(x => x.Data.ConduitAndDetailCurveData.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
+      var storageService = new StorageService<Level, ConduitAndDetailCurveModel>( ((ViewPlan)document.ActiveView).GenLevel ) ;
+      var dataStorages = storageService.AllDatas.Where(x => x.Data.ConduitAndDetailCurveData.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
       if ( ! dataStorages.Any() ) 
         return ( string.Empty, false ) ;
       

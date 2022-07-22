@@ -21,8 +21,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class ChangeWireSymbolUsingDetailItemViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly StorageService<LocationTypeModel> _locationTypeStorage;
-    private readonly StorageService<ConduitAndDetailCurveModel> _conduitAndDetailCurveStorage;
+    private readonly StorageService<Level, LocationTypeModel> _locationTypeStorage;
+    private readonly StorageService<Level, ConduitAndDetailCurveModel> _conduitAndDetailCurveStorage;
 
     private static Dictionary<string, string>? _wireSymbolOptions ;
 
@@ -76,8 +76,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public ChangeWireSymbolUsingDetailItemViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _locationTypeStorage = new StorageService<LocationTypeModel>(_uiDocument.Document, true) ;
-      _conduitAndDetailCurveStorage = new StorageService<ConduitAndDetailCurveModel>(_uiDocument.Document, true) ;
+      _locationTypeStorage = new StorageService<Level, LocationTypeModel>(((ViewPlan)uiDocument.ActiveView).GenLevel) ;
+      _conduitAndDetailCurveStorage = new StorageService<Level, ConduitAndDetailCurveModel>(((ViewPlan)uiDocument.ActiveView).GenLevel) ;
     }
 
     #region Commands

@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class ChangeWireSymbolUsingFilterViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly StorageService<LocationTypeModel> _storageService ;
+    private readonly StorageService<Level, LocationTypeModel> _storageService ;
 
     private ObservableCollection<string>? _typeNames ;
 
@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public ChangeWireSymbolUsingFilterViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _storageService = new StorageService<LocationTypeModel>( _uiDocument.Document, true ) ;
+      _storageService = new StorageService<Level, LocationTypeModel>( ((ViewPlan)_uiDocument.ActiveView).GenLevel ) ;
     }
 
     #region Commands
