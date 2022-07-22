@@ -375,7 +375,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     private List<string> GenerateConduitFittings( UIDocument uiDocument, MEPCurveType arentConduitType, List<RouteInfo> routeInfos, Dictionary<Element, string> newConduits, List<ElementId> conduitsHideIn3DView )
     {
-      List<string> removedConduitIds = new() ;
+      List<ElementId> removedConduitIds = new() ;
       var document = uiDocument.Document ;
       foreach ( var routeInfo in routeInfos ) {
         var tolerance = routeInfo.Tolerance ;
