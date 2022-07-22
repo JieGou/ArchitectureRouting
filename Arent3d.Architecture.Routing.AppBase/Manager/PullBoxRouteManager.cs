@@ -10,6 +10,8 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -700,7 +702,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     public static void ChangeDimensionOfPullBoxAndSetLabel( Document document, FamilyInstance pullBox,
-      CsvStorable? csvStorable, DetailSymbolStorable detailSymbolStorable, PullBoxInfoStorable pullBoxInfoStorable,
+      CsvStorable? csvStorable, StorageService<Level, DetailSymbolModel> storageService, PullBoxInfoStorable pullBoxInfoStorable,
       List<ConduitsModel>? conduitsModelData, List<HiroiMasterModel>? hiroiMasterModels, double scale, string textLabel,
       XYZ? positionLabel, bool isAutoCalculatePullBoxSize, PullBoxModel? selectedPullBoxModel = null )
     {
@@ -711,7 +713,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       //Case 1: Automatically calculate dimension of pull box
       if ( isAutoCalculatePullBoxSize && csvStorable != null && conduitsModelData != null &&
            hiroiMasterModels != null ) {
-        var pullBoxModel = GetPullBoxWithAutoCalculatedDimension( document, pullBox, csvStorable, detailSymbolStorable,
+        var pullBoxModel = GetPullBoxWithAutoCalculatedDimension( document, pullBox, csvStorable, storageService,
           conduitsModelData, hiroiMasterModels ) ;
         if ( pullBoxModel != null ) {
           buzaiCd = pullBoxModel.Buzaicd ;
@@ -733,7 +735,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if (!string.IsNullOrEmpty( buzaiCd ))
         pullBox.ParametersMap.get_Item( MaterialCodeParameter )?.Set( buzaiCd ) ;
       pullBox.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
-      detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
+      storageService.Data.DetailSymbolData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
 
       if(positionLabel != null)
         CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
@@ -1065,7 +1067,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     private static HiroiMasterModel? GetPullBoxWithAutoCalculatedDimension( Document document, Element pullBoxElement, CsvStorable csvStorable,
-      DetailSymbolStorable detailSymbolStorable, List<ConduitsModel> conduitsModelData, List<HiroiMasterModel> hiroiMasterModels )
+      StorageService<Level, DetailSymbolModel> storageService, List<ConduitsModel> conduitsModelData, List<HiroiMasterModel> hiroiMasterModels )
     {
       var conduitsFromPullBox = GetFromConnectorOfPullBox( document, pullBoxElement, true ) ;
       var conduitsToPullBox = GetFromConnectorOfPullBox( document, pullBoxElement ) ;
@@ -1078,15 +1080,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       conduitsFromPullBox = conduitsFromPullBox.Where( c => c is Conduit ).ToList() ;
       var groupConduits = conduitsFromPullBox.GroupBy( c => c.GetRepresentativeRouteName() ).Select( c => c.First() ) ;
       foreach ( var conduit in groupConduits )
-        AddWiringInformationCommandBase.CreateDetailSymbolModel( document, conduit, csvStorable, detailSymbolStorable,
+        AddWiringInformationCommandBase.CreateDetailSymbolModel( document, conduit, csvStorable, storageService,
           pullBoxElement.UniqueId ) ;
 
       var elementIds = conduitsFromPullBox.Select( c => c.UniqueId ).ToList() ;
       var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable,
-        detailSymbolStorable, conduitsFromPullBox, elementIds, false ) ;
+        storageService, conduitsFromPullBox, elementIds, false ) ;
 
       var newDetailTableModels = DetailTableViewModel.SummarizePlumbing( detailTableModels, conduitsModelData,
-        detailSymbolStorable, new List<DetailTableModel>(), false, new Dictionary<string, string>() ) ;
+        storageService, new List<DetailTableModel>(), false, new Dictionary<string, string>() ) ;
 
       var plumbingSizes = newDetailTableModels.Where( p => int.TryParse( p.PlumbingSize, out _ ) )
         .Select( p => Convert.ToInt32( p.PlumbingSize ) ).ToArray() ;

@@ -12,6 +12,8 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Autodesk.Revit.Attributes ;
 using static Arent3d.Architecture.Routing.AppBase.Commands.Initialization.CreateDetailTableCommandBase ;
 using static Arent3d.Architecture.Routing.AppBase.Commands.Initialization.ShowElectricSymbolsCommandBase ;
@@ -55,7 +57,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       if ( ! allConduits.Any() ) return Result.Cancelled ;
       var csvStorable = doc.GetCsvStorable() ;
-      var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
+      var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) doc.ActiveView ).GenLevel ) ;
       List<DetailTableModel> detailTableModelsOfAllFloors = new() ;
       try {
         return doc.Transaction( "TransactionName.Commands.Routing.ShowDialogCreateTableByFloorCommand".GetAppStringByKeyOrDefault( "Create detail table" ), _ =>
@@ -65,7 +67,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             var conduitsByFloor = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
             var elementsByFloor = conduitsByFloor.Cast<Element>().ToList() ;
             var conduitsByFloorIds = conduitsByFloor.Select( p => p.UniqueId ).ToList() ;
-            var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTable( doc, csvStorable, detailSymbolStorable, elementsByFloor, conduitsByFloorIds, false ) ;
+            var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTable( doc, csvStorable, storageService, elementsByFloor, conduitsByFloorIds, false ) ;
             if ( ! detailTableModels.Any() ) continue ;
             if ( isCreateTableEachFloors ) {
               var level = detailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Floor ) )?.Floor ?? string.Empty ;

@@ -8,6 +8,8 @@ using Arent3d.Architecture.Routing.Electrical.App.ViewModels ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -15,7 +17,6 @@ using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using Autodesk.Revit.UI.Selection ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
@@ -136,7 +137,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       const double percentage = 0.32 ;
       const string outDoorCondition = "屋外" ; 
       var ceedModels = doc.GetCeedStorable().CeedModelData ;
-      var detailSymbolStorable = doc.GetDetailSymbolStorable() ;
+      var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) doc.ActiveView ).GenLevel ) ;
       var csvStorable = doc.GetCsvStorable() ;
       var conduitsModelData = csvStorable.ConduitsModelData ;
       var registrationOfBoardDataModels = doc.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
@@ -156,7 +157,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var connectorInfos = new List<ChangePlumbingInformationViewModel.ConnectorInfo>() ;
       foreach ( var (conduit, connector) in conduitAndConnectorDic ) {
         var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
-        var detailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.ConduitId == conduit.UniqueId ) ;
+        var detailSymbolModel = storageService.Data.DetailSymbolData.FirstOrDefault( s => s.ConduitUniqueId == conduit.UniqueId ) ;
         var plumbingType = oldChangePlumbingInformationModel != null 
           ? oldChangePlumbingInformationModel.PlumbingType 
           : ( detailSymbolModel?.PlumbingType ?? DefaultParentPlumbingType ) ;

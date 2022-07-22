@@ -155,19 +155,6 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
-    /// Get detail symbol data from snoop DB.
-    /// </summary>
-    public static DetailSymbolStorable GetDetailSymbolStorable( this Document document )
-    {
-      try {
-        return DetailSymbolStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailSymbolStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new DetailSymbolStorable( document ) ;
-      }
-    }
-    
-    /// <summary>
     /// Get pull box data from snoop DB.
     /// </summary>
     public static PullBoxInfoStorable GetPullBoxInfoStorable( this Document document )

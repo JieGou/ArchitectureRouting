@@ -8,6 +8,9 @@ using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Routing ;
@@ -272,46 +275,51 @@ namespace Arent3d.Architecture.Routing
 
     private static void RemoveRouteDetailSymbol( Document document, List<string> elementIds )
     {
-      var detailSymbolStorable = document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? document.GetDetailSymbolStorable() ;
-      if ( ! detailSymbolStorable.DetailSymbolModelData.Any() ) return ;
-      var detailSymbolModels = new List<DetailSymbolModel>() ;
-      foreach ( var detailSymbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => elementIds.Contains( d.ConduitId ) ).ToList() ) {
+      var allDatas = document.GetAllDatas<Level, DetailSymbolModel>().ToList() ;
+      if ( ! allDatas.Any() ) 
+        return ;
+      
+      var detailSymbolItemModels = new List<DetailSymbolItemModel>() ;
+      foreach ( var detailSymbolItemModel in allDatas.Select(x => x.Data.DetailSymbolData).SelectMany(x => x).Where( d => elementIds.Contains( d.ConduitUniqueId ) ).ToList() ) {
         // delete symbol
-        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == detailSymbolModel.DetailSymbolUniqueId ).Select( t => t.Id ).FirstOrDefault() ;
+        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == detailSymbolItemModel.DetailSymbolUniqueId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( symbolId != null ) document.Delete( symbolId ) ;
-        foreach ( var lineId in detailSymbolModel.LineIds.Split( ',' ) ) {
+        foreach ( var lineId in detailSymbolItemModel.LineUniqueIds.Split( ',' ) ) {
           var id = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.UniqueId == lineId ).Select( e => e.Id ).FirstOrDefault() ;
           if ( id != null ) document.Delete( id ) ;
         }
 
-        detailSymbolModels.Add( detailSymbolModel ) ;
+        detailSymbolItemModels.Add( detailSymbolItemModel ) ;
       }
 
-      if ( ! detailSymbolModels.Any() ) return ;
-      foreach ( var detailSymbolModel in detailSymbolModels ) {
-        detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+      if ( ! detailSymbolItemModels.Any() ) 
+        return ;
+      foreach ( var (level, data) in allDatas ) {
+        foreach ( var detailSymbolModel in detailSymbolItemModels ) {
+          if(data.DetailSymbolData.Contains(detailSymbolModel))
+            data.DetailSymbolData.Remove( detailSymbolModel ) ;
+        }
+        level.SetData(data);
       }
-
-      var detailSymbols = detailSymbolModels.Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
-      if ( detailSymbolStorable.DetailSymbolModelData.Any() && detailSymbols.Count == 1 ) {
-        var detailSymbolModel = detailSymbolModels.FirstOrDefault() ;
+      
+      var detailSymbols = detailSymbolItemModels.Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
+      if ( allDatas.Select(x => x.Data.DetailSymbolData).SelectMany(x => x).Any() && detailSymbols.Count == 1 ) {
+        var detailSymbolModel = detailSymbolItemModels.FirstOrDefault() ;
         if ( detailSymbolModel!.IsParentSymbol ) {
-          var detailSymbolModelParent = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == detailSymbolModel.DetailSymbol && d.Code == detailSymbolModel.Code && d.IsParentSymbol ) ;
+          var detailSymbolModelParent = allDatas.Select(x => x.Data.DetailSymbolData).SelectMany(x => x).FirstOrDefault( d => d.DetailSymbol == detailSymbolModel.DetailSymbol && d.Code == detailSymbolModel.Code && d.IsParentSymbol ) ;
           if ( detailSymbolModelParent == null ) {
-            UpdateSymbolOfConduitSameSymbolAndDifferentCode( document, detailSymbolStorable.DetailSymbolModelData, detailSymbolModel.DetailSymbol, detailSymbolModel.Code ) ;
+            UpdateSymbolOfConduitSameSymbolAndDifferentCode( document, allDatas.Select(x => x.Data.DetailSymbolData).SelectMany(x => x).ToList(), detailSymbolModel.DetailSymbol, detailSymbolModel.Code ) ;
           }
         }
       }
-
-      detailSymbolStorable.Save() ;
     }
 
-    private static void UpdateSymbolOfConduitSameSymbolAndDifferentCode( Document doc, List<DetailSymbolModel> detailSymbolModels, string detailSymbol, string code )
+    private static void UpdateSymbolOfConduitSameSymbolAndDifferentCode( Document doc, List<DetailSymbolItemModel> detailSymbolItemModels, string detailSymbol, string code )
     {
-      var firstChildSymbol = detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != code ) ;
+      var firstChildSymbol = detailSymbolItemModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != code ) ;
       if ( firstChildSymbol == null ) return ;
       {
-        var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
+        var detailSymbolIds = detailSymbolItemModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
         foreach ( var id in detailSymbolIds ) {
           var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == id ) ;
           if ( textElement == null ) continue ;
@@ -319,7 +327,7 @@ namespace Arent3d.Architecture.Routing
           CreateNewTextNoteType( doc, textNote, 0 ) ;
         }
 
-        foreach ( var detailSymbolModel in detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).ToList() ) {
+        foreach ( var detailSymbolModel in detailSymbolItemModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).ToList() ) {
           detailSymbolModel.IsParentSymbol = true ;
         }
       }

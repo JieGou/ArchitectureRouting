@@ -4,14 +4,12 @@ using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
 using System.Windows ;
-using System.Windows.Data ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -19,8 +17,8 @@ using Autodesk.Revit.DB ;
 using ComboBox = System.Windows.Controls.ComboBox ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Revit ;
-using Autodesk.Revit.UI ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using MoreLinq ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using TextBox = System.Windows.Controls.TextBox ;
@@ -46,7 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly List<WiresAndCablesModel> _wiresAndCablesModelData ;
-    private readonly DetailSymbolStorable _detailSymbolStorable ;
+    private readonly StorageService<Level, DetailSymbolModel> _storageService ;
     private List<DetailTableModel> _selectedDetailTableRows ;
     private List<DetailTableModel> _selectedDetailTableRowsSummary ;
     private List<DetailTableModel> _selectedReferenceDetailTableRows ;
@@ -108,8 +106,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       {
         _pickInfo = value ;
         var conduit = _pickInfo?.Element ;
-        var detailSymbolStorable = _document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? _document.GetDetailSymbolStorable() ;
-        var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( x => !string.IsNullOrEmpty(x.DetailSymbolUniqueId) && x.ConduitId == conduit?.UniqueId && x.DetailSymbol == AddWiringInformationCommandBase.SpecialSymbol).EnumerateAll() ;
+        var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) _document.ActiveView ).GenLevel ) ;
+        var detailSymbolModels = storageService.Data.DetailSymbolData.Where( x => !string.IsNullOrEmpty(x.DetailSymbolUniqueId) && x.ConduitUniqueId == conduit?.UniqueId && x.DetailSymbol == AddWiringInformationCommandBase.SpecialSymbol).EnumerateAll() ;
         IsShowSymbol = detailSymbolModels.Any() ;
       }
     }
@@ -269,7 +267,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       SelectionChanged() ;
       SetGroup( _selectedDetailTableRows, true ) ;
-      PlumbingSummary( _conduitsModelData, _detailSymbolStorable, _selectedDetailTableRows, _isMixConstructionItems, DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
+      PlumbingSummary( _conduitsModelData, _storageService, _selectedDetailTableRows, _isMixConstructionItems, DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
       CreateDetailTableViewModelByGroupId() ;
       ResetSelectedItems() ;
       DtGrid.SelectedItems.Clear() ;
@@ -279,7 +277,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       SelectionChanged() ;
       SetGroup(_detailTableModelsOrigin, false);
-      SplitPlumbing( _conduitsModelData, _detailSymbolStorable, DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
+      SplitPlumbing( _conduitsModelData, _storageService, DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
       CreateDetailTableViewModelByGroupId() ;
       ResetSelectedItems() ;
       DtGrid.SelectedItems.Clear() ;
@@ -440,7 +438,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _isMixConstructionItems = mixConstructionItems ;
       RoutesWithConstructionItemHasChanged = new Dictionary<string, string>() ;
       DetailSymbolIdsWithPlumbingTypeHasChanged = new Dictionary<string, string>() ;
-      _detailSymbolStorable = document.GetDetailSymbolStorable() ;
+      _storageService = new StorageService<Level, DetailSymbolModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
       _selectedDetailTableRows = new List<DetailTableModel>() ;
       _selectedDetailTableRowsSummary = new List<DetailTableModel>() ;
       _copyDetailTableRow = null ;
@@ -468,7 +466,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       else {
         SaveData( _document, _detailTableModelsOrigin ) ;
-        SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
+        SaveDetailSymbolData( _document, _storageService ) ;
         window.DialogResult = true ;
         window.Close();
       
@@ -534,7 +532,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       else {
         SaveData( _document, _detailTableModelsOrigin ) ;
-        SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
+        SaveDetailSymbolData( _document, _storageService ) ;
         window.DialogResult = true ;
         window.Close() ;
         IsCreateDetailTableOnFloorPlanView = true ;
@@ -593,7 +591,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void Completed(Window window)
     {
       SaveData( _document, _detailTableModelsOrigin ) ;
-      SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
+      SaveDetailSymbolData( _document, _storageService ) ;
       ShowDetailSymbol() ;
       window.DialogResult = true ;
       window.Close() ;
@@ -604,52 +602,52 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ! _isCallFromAddWiringInformationCommand && null == PickInfo )
         return ;
 
-      var detailSymbolStorable = _document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? _document.GetDetailSymbolStorable() ;
+      var storageService = new StorageService<Level, DetailSymbolModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
       var conduit = PickInfo!.Element ;
       if ( IsShowSymbol ) {
-        var removeDetailSymbols = detailSymbolStorable.DetailSymbolModelData.Where( x => x.ConduitId == conduit.UniqueId && ! string.IsNullOrEmpty( x.DetailSymbolUniqueId ) ).EnumerateAll() ;
+        var removeDetailSymbols = storageService.Data.DetailSymbolData.Where( x => x.ConduitUniqueId == conduit.UniqueId && ! string.IsNullOrEmpty( x.DetailSymbolUniqueId ) ).EnumerateAll() ;
         if ( removeDetailSymbols.Any() )
           return ;
 
         using var transaction = new Transaction( _document ) ;
         transaction.Start( "Create Detail Symbol" ) ;
 
-        var (symbols, angle, defaultSymbol) = CreateDetailSymbolCommandBase.CreateValueForCombobox( detailSymbolStorable.DetailSymbolModelData, conduit ) ;
+        var (symbols, angle, defaultSymbol) = CreateDetailSymbolCommandBase.CreateValueForCombobox( storageService.Data.DetailSymbolData, conduit ) ;
         var detailSymbolSettingDialog = new DetailSymbolSettingDialog( symbols, angle, defaultSymbol ) ;
         detailSymbolSettingDialog.GetValues() ;
         detailSymbolSettingDialog.DetailSymbol = AddWiringInformationCommandBase.SpecialSymbol ;
 
-        var isParentSymbol = CreateDetailSymbolCommandBase.CheckDetailSymbolOfConduitDifferentCode( _document, conduit, detailSymbolStorable.DetailSymbolModelData, detailSymbolSettingDialog.DetailSymbol ) ;
+        var isParentSymbol = CreateDetailSymbolCommandBase.CheckDetailSymbolOfConduitDifferentCode( _document, conduit, storageService.Data.DetailSymbolData, detailSymbolSettingDialog.DetailSymbol ) ;
         var firstPoint = PickInfo.Position ;
         var (textNote, lineIds) = CreateDetailSymbolCommandBase.CreateDetailSymbol( _document, detailSymbolSettingDialog, firstPoint, detailSymbolSettingDialog.Angle, isParentSymbol ) ;
 
-        CreateDetailSymbolCommandBase.SaveDetailSymbol( _document, detailSymbolStorable, conduit, textNote, detailSymbolSettingDialog.DetailSymbol, lineIds, isParentSymbol ) ;
+        CreateDetailSymbolCommandBase.SaveDetailSymbol( _document, storageService, conduit, textNote, detailSymbolSettingDialog.DetailSymbol, lineIds, isParentSymbol ) ;
 
         transaction.Commit() ;
       }
       else {
-        var detailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.ConduitId == conduit.UniqueId && x.DetailSymbol == AddWiringInformationCommandBase.SpecialSymbol ) ;
+        var detailSymbolModel = storageService.Data.DetailSymbolData.FirstOrDefault( x => x.ConduitUniqueId == conduit.UniqueId && x.DetailSymbol == AddWiringInformationCommandBase.SpecialSymbol ) ;
         if ( null == detailSymbolModel )
           return ;
         
         using var transaction = new Transaction( _document ) ;
         transaction.Start( "Remove Detail Symbol" ) ;
 
-        var removeDetailSymbols = detailSymbolStorable.DetailSymbolModelData
+        var removeDetailSymbols = storageService.Data.DetailSymbolData
           .Where( x => CreateDetailTableCommandBase.GetKeyRouting(x) == CreateDetailTableCommandBase.GetKeyRouting( detailSymbolModel ) )
           .EnumerateAll() ;
 
         foreach ( var removeDetailSymbol in removeDetailSymbols ) {
-          detailSymbolStorable.DetailSymbolModelData.Remove( removeDetailSymbol ) ;
+          storageService.Data.DetailSymbolData.Remove( removeDetailSymbol ) ;
         }
 
         removeDetailSymbols = removeDetailSymbols.DistinctBy( x => x.DetailSymbolUniqueId ).EnumerateAll() ;
         foreach ( var removeDetailSymbol in removeDetailSymbols ) {
-          CreateDetailSymbolCommandBase.DeleteDetailSymbol( _document, removeDetailSymbol.DetailSymbolUniqueId, removeDetailSymbol.LineIds ) ;
+          CreateDetailSymbolCommandBase.DeleteDetailSymbol( _document, removeDetailSymbol.DetailSymbolUniqueId, removeDetailSymbol.LineUniqueIds ) ;
         }
 
         if ( removeDetailSymbols.Any() )
-          detailSymbolStorable.Save() ;
+          storageService.SaveChange() ;
         
         var detailTableStorable = _document.GetDetailTableStorable();
         foreach ( var detailTableModel in detailTableStorable.DetailTableModelData ) {
@@ -858,12 +856,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
     
-    private void SaveDetailSymbolData( Document document, DetailSymbolStorable detailSymbolStorable )
+    private void SaveDetailSymbolData( Document document, StorageService<Level, DetailSymbolModel> symbolStorable )
     {
       try {
         using Transaction t = new( document, "Save data" ) ;
         t.Start() ;
-        detailSymbolStorable.Save() ;
+        symbolStorable.SaveChange() ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -883,7 +881,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             var countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName = _detailTableModelsOrigin
               .Count( d => CreateDetailTableCommandBase.GetKeyRouting( d ) == CreateDetailTableCommandBase.GetKeyRouting( item ) && d.RouteName == item.RouteName && d != item ) ;
             if ( countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName == 0 ) {
-              _detailSymbolStorable.DetailSymbolModelData.RemoveAll(  s => CreateDetailTableCommandBase.GetKeyRouting(s) == CreateDetailTableCommandBase.GetKeyRouting( item ) && s.RouteName == item.RouteName ) ;
+              _storageService.Data.DetailSymbolData.RemoveAll(  s => CreateDetailTableCommandBase.GetKeyRouting(s) == CreateDetailTableCommandBase.GetKeyRouting( item ) && s.RouteName == item.RouteName ) ;
             }
           }
         }
@@ -891,10 +889,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName = _detailTableModelsOrigin
             .Count( d => CreateDetailTableCommandBase.GetKeyRouting(d) == CreateDetailTableCommandBase.GetKeyRouting(selectedItem) && d.RouteName == selectedItem.RouteName && d != selectedItem ) ;
           if ( countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName == 0 ) {
-            var detailSymbolModels = _detailSymbolStorable.DetailSymbolModelData
+            var detailSymbolModels = _storageService.Data.DetailSymbolData
               .Where( s => CreateDetailTableCommandBase.GetKeyRouting(s) == CreateDetailTableCommandBase.GetKeyRouting(selectedItem) && s.RouteName == selectedItem.RouteName ).ToList() ;
             foreach ( var detailSymbolModel in detailSymbolModels ) {
-              _detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+              _storageService.Data.DetailSymbolData.Remove( detailSymbolModel ) ;
             }
           }
 
@@ -992,14 +990,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
 
-    private void PlumbingSummary( List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
+    private void PlumbingSummary( List<ConduitsModel> conduitsModelData, StorageService<Level, DetailSymbolModel> symbolStorable, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
-      _detailTableModelsOrigin = SummarizePlumbing( _detailTableModelsOrigin, conduitsModelData, detailSymbolStorable, selectedDetailTableRows,
+      _detailTableModelsOrigin = SummarizePlumbing( _detailTableModelsOrigin, conduitsModelData, symbolStorable, selectedDetailTableRows,
         isMixConstructionItems, detailSymbolIdsWithPlumbingTypeHasChanged ) ;
     }
     
     public static ObservableCollection<DetailTableModel> SummarizePlumbing(ObservableCollection<DetailTableModel> detailTableModels, List<ConduitsModel> conduitsModelData, 
-      DetailSymbolStorable detailSymbolStorable, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
+      StorageService<Level, DetailSymbolModel> storageService, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
       Dictionary<DetailTableModel, List<DetailTableModel>> sortDetailTableModel = new() ;
       var detailTableModelsGroupByDetailSymbolId = 
@@ -1027,7 +1025,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             plumbingType = selectedDetailTableRows.FirstOrDefault( s => CreateDetailTableCommandBase.GetKeyRouting(s) == keyRouting && s.PlumbingType != DefaultChildPlumbingSymbol )?.PlumbingType ?? DefaultParentPlumbingType ;
           }
           else {
-            plumbingType = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => CreateDetailTableCommandBase.GetKeyRouting(s) == keyRouting )?.PlumbingType ?? DefaultParentPlumbingType ;
+            plumbingType = storageService.Data.DetailSymbolData.FirstOrDefault( s => CreateDetailTableCommandBase.GetKeyRouting(s) == keyRouting )?.PlumbingType ?? DefaultParentPlumbingType ;
           }
         }
 
@@ -1173,7 +1171,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return true ;
     }
 
-    private void SplitPlumbing( List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
+    private void SplitPlumbing( List<ConduitsModel> conduitsModelData, StorageService<Level, DetailSymbolModel> symbolStorable, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
       var detailTableModels = _detailTableModelsOrigin
         .Where( d => 
@@ -1198,17 +1196,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       foreach ( var detailTableRow in detailTableModels ) {
-        SetPlumbingDataForEachWiring( conduitsModelData, detailSymbolStorable, detailTableRow, detailSymbolIdsWithPlumbingTypeHasChanged ) ;
+        SetPlumbingDataForEachWiring( conduitsModelData, symbolStorable, detailTableRow, detailSymbolIdsWithPlumbingTypeHasChanged ) ;
       }
     }
 
-    private void SetPlumbingDataForEachWiring( List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, DetailTableModel detailTableRow, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
+    private void SetPlumbingDataForEachWiring( List<ConduitsModel> conduitsModelData, StorageService<Level, DetailSymbolModel> symbolStorable, DetailTableModel detailTableRow, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
       const double percentage = 0.32 ;
       const int plumbingCount = 1 ;
       var plumbingType = detailSymbolIdsWithPlumbingTypeHasChanged.SingleOrDefault( d => d.Key ==  CreateDetailTableCommandBase.GetKeyRouting(detailTableRow) ).Value ;
       if ( string.IsNullOrEmpty( plumbingType ) ) {
-        plumbingType = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => CreateDetailTableCommandBase.GetKeyRouting(s) == CreateDetailTableCommandBase.GetKeyRouting( detailTableRow ) )?.PlumbingType ?? DefaultParentPlumbingType ;
+        plumbingType = symbolStorable.Data.DetailSymbolData.FirstOrDefault( s => CreateDetailTableCommandBase.GetKeyRouting(s) == CreateDetailTableCommandBase.GetKeyRouting( detailTableRow ) )?.PlumbingType ?? DefaultParentPlumbingType ;
       }
       var wireBook = string.IsNullOrEmpty( detailTableRow.WireBook ) ? 1 : int.Parse( detailTableRow.WireBook ) ;
       if ( plumbingType == NoPlumping ) {
@@ -2003,7 +2001,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var indexForSelectedDetailTableRow = _detailTableModelsOrigin.IndexOf( _selectedDetailTableRows.Last() );
       var indexForSelectedDetailTableRowSummary = DetailTableModels.IndexOf( _selectedDetailTableRowsSummary.Last() ) ;
 
-      var random = new Random() ;
       foreach ( var detailTableRow in selectedDetailTableModels ) {
         var extendValue = $"{Guid.NewGuid()}" ;
         indexForSelectedDetailTableRow++ ;

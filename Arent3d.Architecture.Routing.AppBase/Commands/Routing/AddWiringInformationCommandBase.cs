@@ -9,6 +9,8 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -35,14 +37,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduitsModelData = csvStorable.ConduitsModelData ;
         var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
         var cnsStorable = document.GetCnsSettingStorable() ;
-        var detailSymbolStorable = document.GetDetailSymbolStorable() ;
+        var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) document.ActiveView ).GenLevel ) ;
         
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical ) ;
         
-        CreateDetailSymbolModel( document, pickInfo.Element, csvStorable, detailSymbolStorable) ;
+        CreateDetailSymbolModel( document, pickInfo.Element, csvStorable, storageService) ;
         var conduits = new List<Element> { pickInfo.Element } ;
         var elementIds = new List<string> { pickInfo.Element.UniqueId } ;
-        var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, conduits, elementIds, false ) ;
+        var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, storageService, conduits, elementIds, false ) ;
         
         if ( IsExistSymBol( detailTableModels ) ) {
           MessageBox.Show(@"You must select route don't have symbol", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -95,7 +97,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               }
             }
         
-            var ( referenceDetailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, new List<Element>(), detailSymbolIds, true ) ;
+            var ( referenceDetailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, storageService, new List<Element>(), detailSymbolIds, true ) ;
             foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
               viewModel.ReferenceDetailTableModelsOrigin.Add( referenceDetailTableModelRow ) ;
             }
@@ -126,9 +128,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return detailTableModels.Any( x => x.DetailSymbol != SpecialSymbol ) ;
     }
 
-    public static void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, string? uniqueId = null )
+    public static void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, StorageService<Level, DetailSymbolModel> storageService, string? uniqueId = null )
     {
-      if ( detailSymbolStorable.DetailSymbolModelData.Any( x => x.ConduitId.Equals( pickConduit.UniqueId ) ) )
+      if ( storageService.Data.DetailSymbolData.Any( x => x.ConduitUniqueId.Equals( pickConduit.UniqueId ) ) )
         return ;
 
       var allConduit = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
@@ -144,11 +146,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
           return strRouteName == mainRouteName ;
         } ).ToList() ;
-        var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName!, false ) ;
+        var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, false ) ;
         if ( null == toConnector )
           continue ;
         
-        var fromConnector = ConduitUtil.GetConnectorOfRoute( document, routeName!, true ) ;
+        var fromConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, true ) ;
         if(null == fromConnector)
           continue;
 
@@ -171,9 +173,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var plumbingType = GetPlumpingType( hiroiSetMasterModel, csvStorable.ConduitsModelData ) ;
 
         foreach ( var conduitOfRoute in conduitOfRoutes ) {
-          var detailSymbolModel = new DetailSymbolModel( SpecialSymbol, ! string.IsNullOrEmpty( uniqueId ) ? uniqueId : string.Empty, fromConnector.UniqueId, toConnector.UniqueId , conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count > 2 ? ceedSetCode[ 1 ] : string.Empty, plumbingType ) ;
-          if ( null == detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.DetailSymbolUniqueId == detailSymbolModel.DetailSymbolUniqueId && x.ConduitId == detailSymbolModel.ConduitId ) )
-            detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel ) ;
+          var detailSymbolModel = new DetailSymbolItemModel( SpecialSymbol, ! string.IsNullOrEmpty( uniqueId ) ? uniqueId : string.Empty, fromConnector.UniqueId, toConnector.UniqueId , conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count > 2 ? ceedSetCode[ 1 ] : string.Empty, plumbingType ) ;
+          if ( null == storageService.Data.DetailSymbolData.FirstOrDefault( x => x.DetailSymbolUniqueId == detailSymbolModel.DetailSymbolUniqueId && x.ConduitUniqueId == detailSymbolModel.ConduitUniqueId ) )
+            storageService.Data.DetailSymbolData.Add( detailSymbolModel ) ;
         }
       }
     }

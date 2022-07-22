@@ -6,6 +6,8 @@ using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -87,8 +89,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
       
       #region Change dimension of pullbox and set new label
-      
-      var detailSymbolStorable = document.GetDetailSymbolStorable() ;
+
+      var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) document.ActiveView ).GenLevel ) ;
       var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
       var csvStorable = document.GetCsvStorable() ;
       var conduitsModelData = csvStorable.ConduitsModelData ;
@@ -99,7 +101,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       foreach ( var pullBoxElement in pullBoxElements ) {
         var (pullBox, position) = pullBoxElement ;
         var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
-        PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, detailSymbolStorable, pullBoxInfoStorable,
+        PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageService, pullBoxInfoStorable,
           conduitsModelData, hiroiMasterModels, scale, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
       }
 
