@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
             trans.Start( "Set Data" ) ;
 
             var element = document.GetElement( selection.PickObject( ObjectType.Element ) ) ;
+            
             var model = new ComplexModel
             {
                 IntProperty = int.MaxValue,
@@ -114,7 +115,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
                 GuidDeepModelMap = new Dictionary<Guid, DeepModel> { { new Guid( "A85D94A3-162D-4611-BA9B-C268700ECDB1" ), new() { Count = 23, ElementId = new ElementId( 24 ) } } },
                 StringDoubleMap = new SortedDictionary<string, double> { { "one point zero five", 0.05 }, { "one hundred and sixty six point one two three", 166.123 } }
             } ;
-            element.SetData( model ) ;
+            
             
             trans.Commit() ;
 
