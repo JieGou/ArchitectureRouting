@@ -1,100 +1,51 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
-using Arent3d.Architecture.Routing.CollisionTree ;
-using Arent3d.Revit ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
-using MoreLinq ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class EraseSelectedLimitRacksCommandBase : EraseLimitRackCommandBase
   {
-    protected override IEnumerable<string> GetLimitRackIds( UIDocument ui, Document doc )
+    protected override (IReadOnlyCollection<string> limitRackIds, IReadOnlyCollection<LimitRackModel> limitRackModels) GetLimitRackIds( UIDocument ui, Document doc, LimitRackStorable limitRackStorable )
     {
-      var selectedLimitRackRefElements = ui.Selection.PickElementsByRectangle( ConduitAndConduitFittingSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).ToList() ;
+      if ( ! limitRackStorable.LimitRackModels.Any() ) return ( new List<string>(), new List<LimitRackModel>() ) ;
+      
+      var selectedLimitRackRefElements = ui.Selection
+        .PickElementsByRectangle( LimitRackReferenceSelectionFilter.Instance, "Please select any rack or rack detail curve by mouse drag." ).ToList() ;
+      if ( ! selectedLimitRackRefElements.Any() ) return ( new List<string>(), new List<LimitRackModel>() ) ;
 
-      var allRackInstances = GetAllLimitRackInstance( doc ).ToList() ;
-
-      var allRackIds = new HashSet<string>() ;
-
-      foreach ( var rackIds in from selectedElement in selectedLimitRackRefElements
-               where ConduitAndConduitFittingSelectionFilter.IsConduitOrConduitFitting( selectedElement )
-               select GetRackIdAtConduitOrConduitFittings( selectedElement, allRackInstances )
-               into selectedRackIds
-               where selectedRackIds.Any()
-               select selectedRackIds ) {
-        allRackIds.AddRange( rackIds ) ;
+      var selectedLimitRackModelsByAnyRack = limitRackStorable.LimitRackModels
+        .Where( lmb => lmb.RackIds
+          .Any( rackId => selectedLimitRackRefElements
+            .Any( r => r.UniqueId == rackId ) ) )
+        .EnumerateAll() ;
+      if ( selectedLimitRackModelsByAnyRack.Any() ) {
+        var allRacks = selectedLimitRackModelsByAnyRack.SelectMany( lm => lm.RackIds ).Distinct().EnumerateAll() ;
+        return ( allRacks, selectedLimitRackModelsByAnyRack ) ;
       }
 
-      return allRackIds ;
-    }
-
-    protected override IEnumerable<string> GetBoundaryCableTraysFromLimitRacks( Document doc, IEnumerable<string> limitRackIds )
-    {
-      var boundaryCableTrays = new FilteredElementCollector( doc )
-        .OfClass( typeof( CurveElement ) )
-        .OfType<CurveElement>()
-        .Where( x => null != x.LineStyle && ( x.LineStyle as GraphicsStyle )!.GraphicsStyleCategory.Name == BoundaryCableTrayLineStyleName )
-        .Select( x => x )
-        .ToList() ;
-
-      var limitRacks = limitRackIds.Select( doc.GetElement ) ;
-
-      foreach ( var boundaryCableTray in from boundaryCableTray in boundaryCableTrays from limitRack in limitRacks where IsCableTrayAndBoundaryCableTrayCollisionTogether( boundaryCableTray, limitRack ) select boundaryCableTray ) {
-        yield return boundaryCableTray.UniqueId ;
+      var selectedLimitRackModelsByAnyDetailCurve = limitRackStorable.LimitRackModels
+        .Where( lmb => lmb.RackDetailLineIds
+          .Any( dtlId => selectedLimitRackRefElements
+            .Any( r => r.UniqueId == dtlId ) ) )
+        .EnumerateAll() ;
+      if ( ! selectedLimitRackModelsByAnyDetailCurve.Any() ) return ( new List<string>(), new List<LimitRackModel>() ) ;
+      {
+        var allRacks = selectedLimitRackModelsByAnyDetailCurve.SelectMany( lm => lm.RackIds ).Distinct()
+          .EnumerateAll() ;
+        return ( allRacks, selectedLimitRackModelsByAnyDetailCurve ) ;
       }
     }
 
-    private static bool IsCableTrayAndBoundaryCableTrayCollisionTogether(CurveElement cableTrayBoundary, Element limitRackElement)
+    protected override IEnumerable<string> GetBoundaryCableTrays( Document doc,IReadOnlyCollection<LimitRackModel> limitRackModels )
     {
-      var cableTraySolids = limitRackElement.GetFineSolids();
-
-      return false ;
+      return limitRackModels.SelectMany( lm => lm.RackDetailLineIds ).Distinct().EnumerateAll() ;
     }
 
-    private static IEnumerable<string> GetRackIdAtConduitOrConduitFittings( Element element,
-      IReadOnlyCollection<FamilyInstance> allRackInstances )
-    {
-      var connectors = GetConnectorsOfConduitOrConduitFitting( element ) ;
-      if ( ! connectors.Any() ) yield break ;
-      foreach ( var connector in connectors ) {
-        var rackIds = GetRackIdAtConnector( connector, allRackInstances ).ToList() ;
-        if ( ! rackIds.Any() ) continue ;
-        foreach ( var rackId in rackIds ) {
-          yield return rackId ;
-        }
-      }
-    }
-
-    private static IList<Connector> GetConnectorsOfConduitOrConduitFitting( Element element )
-    {
-      if ( element is Conduit conduit ) {
-        return  conduit.ConnectorManager.Connectors.Cast<Connector>().ToList() ;
-      }
-
-      return element is not FamilyInstance conduitFittingInstance ? new List<Connector>() : conduitFittingInstance.MEPModel.ConnectorManager.Connectors.Cast<Connector>().ToList() ;
-    }
-
-    private static IEnumerable<string> GetRackIdAtConnector( Connector connector,
-      IEnumerable<FamilyInstance> allRackInstances )
-    {
-      return from rackInstance in allRackInstances
-        let connectors = rackInstance.MEPModel.ConnectorManager.Connectors.Cast<Connector>()
-        where connectors.Any( c => IsTwoConnectorSamePlace( connector, c ) )
-        select rackInstance.UniqueId ;
-    }
-
-    private static bool IsTwoConnectorSamePlace( Connector firstConnector, Connector anotherConnector )
-    {
-      const double epsilon = 0.1d ;
-      return ! ( firstConnector.Origin.DistanceTo( anotherConnector.Origin ) > epsilon ) ;
-    }
-    
-    
   }
 }

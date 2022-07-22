@@ -22,26 +22,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       
-      var limitRackIds = GetLimitRackIds( uiDocument, document ).EnumerateAll() ;
-      var boundaryCableTrayIds = GetBoundaryCableTraysFromLimitRacks( document, limitRackIds ).EnumerateAll() ;
-
+      var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable() ;
+      var limitRacks = GetLimitRackIds( uiDocument, document,limitRackStorable ) ;
+      var boundaryCableTrayIds = GetBoundaryCableTrays( document, limitRacks.limitRackModels ).EnumerateAll() ;
+      
+      using var transaction = new Transaction( document, EraseLimitRackTransactionName ) ;
       try {
-        using var transaction = new Transaction( document, EraseLimitRackTransactionName ) ;
         transaction.Start() ;
-        RemoveLimitRacks( document, limitRackIds ) ;
+        RemoveLimitRacks( document, limitRacks.limitRackIds ) ;
         RemoveBoundaryCableTray( document, boundaryCableTrayIds ) ;
+        RemoveLimitRackModelInStorable( limitRackStorable, limitRacks.limitRackModels ) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
       catch ( Exception e ) {
+        transaction.RollBack() ;
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
     }
 
-    protected abstract IEnumerable<string> GetLimitRackIds( UIDocument ui, Document doc ) ;
+    protected abstract (IReadOnlyCollection<string> limitRackIds,IReadOnlyCollection<LimitRackModel> limitRackModels) GetLimitRackIds( UIDocument ui, Document doc, LimitRackStorable limitRackStorable ) ;
 
-    protected abstract IEnumerable<string> GetBoundaryCableTraysFromLimitRacks( Document doc, IEnumerable<string> limitRackIds ) ;
+    protected abstract IEnumerable<string> GetBoundaryCableTrays( Document doc,IReadOnlyCollection<LimitRackModel> limitRackModels ) ;
 
     private static void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
     {
@@ -116,6 +119,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       document.Delete( limitRackDetailIds.Select( document.GetElement ).Select( x => x.Id ).ToList() ) ;
+    }
+
+    private static void RemoveLimitRackModelInStorable( LimitRackStorable limitRackStorable, IReadOnlyCollection<LimitRackModel> limitRackModelsToRemove )
+    {
+      if ( ! limitRackStorable.LimitRackModels.Any() ) return ;
+      foreach ( var limitRackModel in limitRackModelsToRemove ) {
+        limitRackStorable.LimitRackModels.Remove( limitRackModel ) ;
+      }
+      limitRackStorable.Save();
     }
 
     protected static IEnumerable<FamilyInstance> GetAllLimitRackInstance(Document doc)
