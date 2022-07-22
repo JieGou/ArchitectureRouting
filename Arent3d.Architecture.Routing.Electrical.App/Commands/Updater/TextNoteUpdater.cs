@@ -4,9 +4,11 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation ;
 using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
@@ -27,7 +29,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
         var uiDocument = new UIDocument( document ) ;
         var selection = uiDocument.Selection ;
 
-        var storageService = new StorageService<BorderTextNoteModel>( document, true ) ;
+        var dataStorage = document.FindOrCreateDataStorage<BorderTextNoteModel>( true ) ;
+        var storageService = new StorageService<DataStorage, BorderTextNoteModel>( dataStorage ) ;
         List<ElementId>? borderIds = null;
         TextNote? textNote ;
 
@@ -97,7 +100,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       }
     }
 
-    private static void SetDataForTextNote(StorageService<BorderTextNoteModel> storageService, TextNote textNote, List<ElementId> newDetailLineIds )
+    private static void SetDataForTextNote(StorageService<DataStorage, BorderTextNoteModel> storageService, TextNote textNote, List<ElementId> newDetailLineIds )
     {
       if ( storageService.Data.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue) ) {
         var oldDetailCurveIds = storageService.Data.BorderTextNotes[textNote.Id.IntegerValue].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;

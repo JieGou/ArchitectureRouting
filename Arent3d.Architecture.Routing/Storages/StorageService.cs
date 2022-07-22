@@ -6,24 +6,18 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storages
 {
-    public class StorageService<TDataModel> where TDataModel : class, IDataModel
+    public class StorageService<TOwner, TDataModel> where TOwner : Element where TDataModel : class, IDataModel
     {
-        public Element Owner { get ; }
+        public TOwner Owner { get ; }
         public TDataModel Data { get ;  }
 
-        private IEnumerable<(Element Owner, TDataModel Data)>? _dataStorages ;
-        public IEnumerable<(Element Owner, TDataModel Data)> DataStorages
+        private IEnumerable<(TOwner Owner, TDataModel Data)>? _allDatas ;
+        public IEnumerable<(TOwner Owner, TDataModel Data)> AllDatas
         {
-            get { return _dataStorages ??= Owner.Document.GetAllDataStorage<TDataModel>() ; }
+            get { return _allDatas ??= Owner.Document.GetAllDatas<TOwner, TDataModel>() ; }
         }
 
-        public StorageService(Document document, bool isForUser)
-        {
-            Owner = document.FindOrCreateDataStorage<TDataModel>( isForUser ) ;
-            Data = Owner.GetData<TDataModel>() ?? Activator.CreateInstance<TDataModel>() ;
-        }
-
-        public StorageService( Element owner )
+        public StorageService( TOwner owner )
         {
             Owner = owner ;
             Data = Owner.GetData<TDataModel>() ?? Activator.CreateInstance<TDataModel>() ;
