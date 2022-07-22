@@ -1,4 +1,5 @@
 ﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.StorableConverter ;
@@ -10,6 +11,41 @@ namespace Arent3d.Architecture.Routing.Extensions
 {
   public static class DocumentExtensions
   {
+
+    #region Filters
+
+    public static List<T> GetAllInstances<T>(this Document document) where T : Element
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().ToList();
+    }
+    
+    public static List<T> GetAllInstances<T>(this Document document, Func<T, bool> func ) where T : Element
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().Where(func).ToList();
+    }
+    
+    public static List<T> GetAllInstances<T>(this Document document, View view) where T : Element
+    {
+      var filter = new FilteredElementCollector( document, view.Id ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().ToList();
+    }
+    
+    public static List<T> GetAllTypes<T>(this Document document) where T : ElementType
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).WhereElementIsElementType().OfType<T>().ToList();
+    }
+    
+    public static List<T> GetAllTypes<T>(this Document document, Func<T, bool> func ) where T : ElementType
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass( typeof( T ) ).WhereElementIsElementType().OfType<T>().Where(func).ToList();
+    }
+
+    #endregion
+    
     /// <summary>
     /// Get Height settings data from snoop DB. <br />
     /// If there is no data, it is returned default settings
@@ -173,19 +209,6 @@ namespace Arent3d.Architecture.Routing.Extensions
     /// <summary>
     /// Get text note data from snoop DB.
     /// </summary>
-    public static BorderTextNoteStorable GetBorderTextNoteStorable( this Document document )
-    {
-      try {
-        return BorderTextNoteStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( BorderTextNoteStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new BorderTextNoteStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get text note data from snoop DB.
-    /// </summary>
     public static RegistrationOfBoardDataStorable GetRegistrationOfBoardDataStorable( this Document document )
     {
       try {
@@ -322,5 +345,6 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new ChangePlumbingInformationStorable( document ) ;
       }
     }
+
   }
 }

@@ -79,9 +79,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         // If last point is null. Return failed to end command
         if ( lastPoint == null || checkEx ) return Result.Failed ;
 
-        using Transaction trans = new Transaction( document, "Create Arent Room" ) ;
+        using var trans = new Transaction( document, "Create Arent Room" ) ;
+        
         trans.Start() ;
-
         var mpt = ( firstPoint + lastPoint ) * 0.5 ;
         var currView = document.ActiveView ;
         var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
