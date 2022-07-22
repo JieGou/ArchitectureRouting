@@ -448,10 +448,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         //Wiring
         var wireStrip = Regex.IsMatch( detailTableModel.WireStrip, @"^\d" ) ? $"x{detailTableModel.WireStrip}" : "" ;
         var wiringKey = $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ;
-        var hiroiMasterModelForWoring = _hiroiMasterModels.FirstOrDefault( x => x.Ryakumeicd.Replace( " ", "" ).Replace("*", "").Replace("600V_", "") == wiringKey ) ;
-        if ( null != hiroiMasterModelForWoring ) {
+        // TODO: 600V_はハードコードしているため、このハードコード部分を解消する必要がある。600V_と3kV_の種類、サイズが重なっているため現状場合分けが必要
+        var hiroiMasterModelForWiring = _hiroiMasterModels.FirstOrDefault( x => x.Ryakumeicd.Replace( " ", "" ).Replace("*", "").Replace("600V_", "") == wiringKey ) ;
+        if ( null != hiroiMasterModelForWiring ) {
           for ( var i = 0 ; i < int.Parse(detailTableModel.WireBook) ; i++ ) {
-            materialCodes.Add(hiroiMasterModelForWoring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWoring.Kikaku);
+            materialCodes.Add(hiroiMasterModelForWiring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWiring.Kikaku);
           }
         }
       }

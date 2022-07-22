@@ -195,7 +195,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       SelectionChangedReference() ;
       if ( ! _selectedReferenceDetailTableRows.Any() ) {
-        MessageBox.Show( "Please select the row on the reference detail table.", "Arent Inc" ) ;
+        MessageBox.Show( "Arent3d.Architecture.Routing.AppBase.ViewModel.Select.ReferenceTable".GetAppStringByKeyOrDefault( "Please select the row on the reference detail table." ), "Arent Inc" ) ;
         return ;
       }
       AddReferenceDetailTableRows(_selectedReferenceDetailTableRows ) ;
@@ -1388,7 +1388,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       if ( editedDetailTableRow.IsGrouped ) {
         if ( $"{selectedWireBook}" != editedDetailTableRow.WireBook ) {
-          MessageBox.Show( "Not allowed to change the number of wires after the grouping.", "Arent Inc" ) ;
+          MessageBox.Show( "Arent3d.Architecture.Routing.AppBase.ViewModel.Select.AfterGrouping".GetAppStringByKeyOrDefault( "Not allowed to change the number of wires after the grouping." ), "Arent Inc" ) ;
         }
         comboBox.SelectedItem = Numbers.SingleOrDefault(x => x.Name == editedDetailTableRow.WireBook ) ;
         return;
@@ -1767,7 +1767,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ReadCtlFile( List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData )
     {
-      MessageBox.Show( @"Please select ctl file.", @"Message" ) ;
+      MessageBox.Show( "Arent3d.Architecture.Routing.AppBase.ViewModel.Select.CTLFile".GetAppStringByKeyOrDefault( "Please select ctl file." ), "Message" ) ;
       OpenFileDialog openFileDialog = new() { Filter = @"Ctl files (*.ctl)|*.ctl", Multiselect = false } ;
       var filePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
@@ -1991,7 +1991,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       SelectionChanged() ;
       if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) {
-        MessageBox.Show( "Please select a row on the detail table.", "Arent Inc" ) ;
+        MessageBox.Show( "Arent3d.Architecture.Routing.AppBase.ViewModel.Select.Table".GetAppStringByKeyOrDefault( "Please select a row on the detail table." ), "Arent Inc" ) ;
         return ;
       }
       
