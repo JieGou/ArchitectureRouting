@@ -1,8 +1,6 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase ;
-using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -13,7 +11,6 @@ using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
-using RibbonButton = Autodesk.Windows.RibbonButton ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -22,9 +19,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateDummyConduitsIn3DViewCommand : IExternalCommand
   {
-    private const string DummyName = "Dummy";
-    private const string HiddenValue = "Hidden";
-    
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var app = commandData.Application ;
@@ -33,7 +27,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       try {
         View? newView = null ;
-        var isCreateDummyConduits = RemoveDummyConduits( document ) ;
+        var isCreateDummyConduits = ShowConduitsIn3DUtil.RemoveDummyConduits( document ) ;
         if ( isCreateDummyConduits ) {
           var arentConduitTypeName = "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
           FilteredElementCollector collector = new( document ) ;
@@ -42,21 +36,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
           var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => ! string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName() != c.GetRepresentativeRouteName() ).ToList() ;
           if ( allConduits.Any() ) {
-            UpdateIsEnableButton( document, false ) ;
+            ShowConduitsIn3DUtil.UpdateIsEnableButton( document, false ) ;
             Dictionary<Element, string> newConduits = new() ;
             List<ElementId> conduitsHideIn3DView = new() ;
 
             using var transaction = new Transaction( document, ( "TransactionName.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetAppStringByKeyOrDefault( "Create Dummy Conduits In 3D View" ) ) ) ;
             transaction.Start() ;
             if ( document.ActiveView is ViewPlan activeView ) {
-              newView = Create3DView( document, activeView ) ;
+              newView = ShowConduitsIn3DUtil.Create3DView( document, activeView ) ;
             }
             
             var routeDic = GenerateConduits( document, arentConduitType!, allConduits, newConduits, conduitsHideIn3DView ) ;
             var removedConduitIds = GenerateConduitFittings( uiDocument, arentConduitType!, routeDic, newConduits, conduitsHideIn3DView ) ;
             transaction.Commit() ;
 
-            RemoveAndHideUnusedConduits( document, removedConduitIds, newConduits, conduitsHideIn3DView ) ;
+            ShowConduitsIn3DUtil.RemoveAndHideUnusedConduits( document, removedConduitIds, newConduits, conduitsHideIn3DView ) ;
           }
         }
         
@@ -67,64 +61,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return Result.Succeeded ;
       }
       catch ( Exception exception ) {
-        UpdateIsEnableButton( document, true ) ;
+        ShowConduitsIn3DUtil.UpdateIsEnableButton( document, true ) ;
         message = exception.Message ;
         return Result.Failed ;
       }
     }
 
-    private void RemoveAndHideUnusedConduits( Document document, List<ElementId> removedConduitIds, Dictionary<Element, string> newConduits, List<ElementId> conduitsHideIn3DView )
+    private List<ShowConduitsIn3DUtil.RouteInfo> GenerateConduits( Document document, MEPCurveType arentConduitType, ICollection<Element> allConduits, Dictionary<Element, string> newConduits, List<ElementId> conduitsHideIn3DView )
     {
-      using var removedTransaction = new Transaction( document, "Remove and hide unused conduits" ) ;
-      removedTransaction.Start() ;
-
-      if ( removedConduitIds.Any() ) {
-        removedConduitIds = removedConduitIds.Distinct().ToList() ;
-        document.Delete( removedConduitIds ) ;
-      }
-        
-      HideConduitsIn2DView( document, newConduits ) ;
-      HideConduitsIn3DView( document, conduitsHideIn3DView ) ;
-            
-      removedTransaction.Commit() ;
-    }
-    
-    private static void UpdateIsEnableButton( Document document, bool isEnable )
-    {
-      var targetTabName = "Electrical.App.Routing.TabName".GetAppStringByKey() ;
-      var selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
-      if ( selectionTab == null ) return ;
-      
-      using var transaction = new Transaction( document, "Enable buttons" ) ;
-      transaction.Start() ;
-      foreach ( var panel in selectionTab.Panels ) {
-        if ( panel.Source.Title == "Electrical.App.Panels.Routing.Confirmation".GetAppStringByKeyOrDefault( "Confirmation" ) ) {
-          foreach ( var item in panel.Source.Items ) {
-            if ( ! ( item is RibbonButton ribbonButton && ribbonButton.Text == "Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetDocumentStringByKeyOrDefault( document, "Show\nConduits in 3D" ) ) ) {
-              item.IsEnabled = isEnable ;
-            }
-          }
-        }
-        else {
-          panel.IsEnabled = isEnable ;
-        }
-      }
-
-      transaction.Commit() ;
-    }
-    
-    private static View? Create3DView( Document document, ViewPlan activeView )
-    {
-      var levelId = activeView.GenLevel.Id ;
-      var levelName = activeView.Name ;
-      var levels = new List<(ElementId Id, string Name)> { ( levelId, levelName ) } ;
-      var views = document.Create3DView( levels ) ;
-      return views.Any() ? views.First() : null ;
-    }
-
-    private List<RouteInfo> GenerateConduits( Document document, MEPCurveType arentConduitType, ICollection<Element> allConduits, Dictionary<Element, string> newConduits, List<ElementId> conduitsHideIn3DView )
-    {
-      var routeDic = new List<RouteInfo>() ;
+      var routeDic = new List<ShowConduitsIn3DUtil.RouteInfo>() ;
 
       var allRouteName = allConduits.Select( c => c.GetRouteName() ! ).ToHashSet() ;
       var allConduitFittings = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ConduitFitting ).Where( c => allRouteName.Contains( c.GetRouteName() ! ) ).ToList() ;
@@ -143,10 +88,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
       
       foreach ( var ( mainRouteName, conduits ) in conduitGroupByMainRoute ) {
-        var toleranceDic = new List<RouteInfo>() ;
         var sortConduits = conduits.OrderByDescending( c => c.GetRouteName() ).ToList() ;
-        var conduitDirections = GetConduitDirections( allConduits, mainRouteName ) ;
-        var conduitToleranceDic = SetToleranceForConduit( document, sortConduits, conduitsHideIn3DView ) ;
+        var conduitDirections = ShowConduitsIn3DUtil.GetConduitDirections( allConduits, mainRouteName ) ;
+        var conduitToleranceDic = ShowConduitsIn3DUtil.SetToleranceForConduit( document, sortConduits, conduitsHideIn3DView ) ;
         foreach ( var conduit in sortConduits ) {
           var routeName = ( conduit.GetRouteName() ) ! ;
           var routeNameArray = routeName.Split( '_' ) ;
@@ -303,9 +247,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
 
       var newConduit = Conduit.Create( document, arentConduitType.Id, startPoint, endPoint, levelId ) ;
-      newConduits.Add( newConduit, DummyName + "_" + routeName ) ;
+      newConduits.Add( newConduit, ShowConduitsIn3DUtil.DummyName + "_" + routeName ) ;
       if ( newConduit.HasParameter( RoutingParameter.RouteName ) ) {
-        newConduit.SetProperty( RoutingParameter.RouteName, DummyName + "_" + routeName ) ;
+        newConduit.SetProperty( RoutingParameter.RouteName, ShowConduitsIn3DUtil.DummyName + "_" + routeName ) ;
       }
 
       var diameter = ( conduit as Conduit )!.Diameter ;
@@ -314,66 +258,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
 
-    private List<XYZ> GetConduitDirections( ICollection<Element> conduits, string routeName )
-    {
-      var routeNameArray = routeName.Split( '_' ) ;
-      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      var conduitsOfRoute = conduits.Where( c => {
-        if ( c.GetRouteName() is not { } rName ) return false ;
-        var rNameArray = rName.Split( '_' ) ;
-        var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
-        return strRouteName == routeName ;
-      } ).ToList() ;
-      var conduitDirection = new List<XYZ>() ;
-      foreach ( var conduitLine in from conduit in conduitsOfRoute select ( conduit.Location as LocationCurve ) ! into conduitLocation select ( conduitLocation.Curve as Line ) ! ) {
-        var (x, y, z) = conduitLine.Direction ;
-        if ( z is 1 or -1 ) continue ;
-        if ( x is 1 or -1 && ! conduitDirection.Exists( d => d.X - x == 0 ) ) {
-          conduitDirection.Add( new XYZ( x, 0, 0 ) ) ;
-        }
-        else if ( y is 1 or -1 && ! conduitDirection.Exists( d => d.Y - y == 0 ) ) {
-          conduitDirection.Add( new XYZ( 0, y, 0 ) ) ;
-        }
-      }
-
-      return conduitDirection ;
-    }
-    
-    private XYZ GetConduitFittingDirection( ICollection<FamilyInstance> conduitFittings, XYZ conduitOrigin, XYZ conduitDirection, string routeName )
-    {
-      const double tolerance = 0.01 ;
-      var routeNameArray = routeName.Split( '_' ) ;
-      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      conduitFittings = conduitFittings.Where( c => c.GetRouteName() is { } rName && rName.Contains( routeName ) ).ToList() ;
-      XYZ direction = new() ;
-      foreach ( var conduitFitting in conduitFittings ) {
-        var location = ( conduitFitting.Location as LocationPoint ) ! ;
-        var (originX, originY, _) = location.Point ;
-        if ( ! ( Math.Abs( originX - conduitOrigin.X ) < tolerance ) || ! ( Math.Abs( originY - conduitOrigin.Y ) < tolerance ) ) continue ;
-        var handOrientation = conduitFitting.HandOrientation ;
-        var facingOrientation = conduitFitting.FacingOrientation ;
-        if ( Math.Abs( handOrientation.X - conduitDirection.X ) < tolerance && Math.Abs( handOrientation.Y - conduitDirection.Y ) < tolerance && Math.Abs( handOrientation.Z - conduitDirection.Z ) < tolerance ) {
-          direction = facingOrientation ;
-        }
-        else {
-          direction = handOrientation ;
-        } 
-          
-        break ;
-      }
-
-      return direction ;
-    }
-
-    private bool CheckConduitOfBranchRoute ( Element conduit )
-    {
-      var fromEndPoint = conduit.GetNearestEndPoints( true ).ToList() ;
-      if ( ! fromEndPoint.Any() ) return false ;
-      var fromEndPointType = fromEndPoint.First().Key.GetTypeName() ;
-      return fromEndPointType == PassPointBranchEndPoint.Type ;
-    }
-
-    private List<string> GenerateConduitFittings( UIDocument uiDocument, MEPCurveType arentConduitType, List<RouteInfo> routeInfos, Dictionary<Element, string> newConduits, List<ElementId> conduitsHideIn3DView )
+    private List<ElementId> GenerateConduitFittings( UIDocument uiDocument, MEPCurveType arentConduitType, List<ShowConduitsIn3DUtil.RouteInfo> routeInfos, Dictionary<Element, string> newConduits, List<ElementId> conduitsHideIn3DView )
     {
       List<ElementId> removedConduitIds = new() ;
       var document = uiDocument.Document ;
@@ -382,7 +267,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var routeName = routeInfo.RouteName ;
         var conduitFittings = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ConduitFitting ).Where( c => c.GetRouteName() == routeName ).ToList() ;
         foreach ( var conduitFitting in conduitFittings ) {
-          var isBranchConduitFitting = CheckConduitOfBranchRoute( conduitFitting ) ;
+          var isBranchConduitFitting = ShowConduitsIn3DUtil.CheckConduitOfBranchRoute( conduitFitting ) ;
           if ( isBranchConduitFitting ) {
             conduitsHideIn3DView.Add( conduitFitting.Id ) ;
           }
@@ -462,7 +347,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           
           var symbol = conduitFitting.Symbol ;
           var instance = symbol.Instantiate( new XYZ( x, y, z), level!, StructuralType.NonStructural ) ;
-          newConduits.Add( instance, DummyName + "_" + routeName ) ;
+          newConduits.Add( instance, ShowConduitsIn3DUtil.DummyName + "_" + routeName ) ;
 
           if ( ( handOrientation.X is 1 && facingOrientation.Y is -1 ) || ( handOrientation.Y is 1 && facingOrientation.X is -1 ) ) {
             ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( x, y, origin.Z ), new XYZ( x, y, origin.Z ) + XYZ.BasisX ), Math.PI ) ;
@@ -501,128 +386,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           }
 
           if ( ( handOrientation.X is 1 && facingOrientation.Y is 1 or -1 ) || ( handOrientation.Y is 1 or -1 && facingOrientation.X is -1 ) ) {
-            UpdateConduitLenght( document, arentConduitType, newConduits, DummyName + "_" + routeName, tolerance, routeInfo.Directions, ref removedConduitIds, fromConduitInfo, toConduitInfo ) ;
+            UpdateConduitLenght( document, arentConduitType, newConduits, ShowConduitsIn3DUtil.DummyName + "_" + routeName, tolerance, routeInfo.Directions, ref removedConduitIds, fromConduitInfo, toConduitInfo ) ;
           }
           else if ( ( handOrientation.X is -1 && facingOrientation.Y is 1 or -1 ) || ( handOrientation.Y is 1 or -1 && facingOrientation.X is 1 ) ) {
-            UpdateConduitLenght( document, arentConduitType, newConduits, DummyName + "_" + routeName, tolerance, routeInfo.Directions, ref removedConduitIds, fromConduitInfo, toConduitInfo ) ;
+            UpdateConduitLenght( document, arentConduitType, newConduits, ShowConduitsIn3DUtil.DummyName + "_" + routeName, tolerance, routeInfo.Directions, ref removedConduitIds, fromConduitInfo, toConduitInfo ) ;
           }
           
           if ( false == instance.TryGetProperty( RoutingParameter.RouteName, out string? _ ) ) continue ;
-          instance.SetProperty( RoutingParameter.RouteName, DummyName + "_" + routeName ) ;
+          instance.SetProperty( RoutingParameter.RouteName, ShowConduitsIn3DUtil.DummyName + "_" + routeName ) ;
         }
       }
 
       return removedConduitIds ;
     }
 
-    private void HideConduitsIn2DView( Document document, Dictionary<Element, string> newConduits )
-    {
-      List<ViewPlan> views = new( new FilteredElementCollector( document )
-        .OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>()
-        .Where( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
-      var conduitsGroupByLevel = newConduits.GroupBy( c => c.Key.GetLevelId() ).Select( g => g.ToList() ) ;
-      foreach ( var conduits in conduitsGroupByLevel ) {
-        var levelId = conduits.First().Key.GetLevelId() ;
-        var viewPlans = views.Where( v => v.GenLevel.Id == levelId ) ;
-        var conduitIds = conduits.Select( c => c.Key.Id ).ToList() ;
-        foreach ( var viewPlan in viewPlans ) {
-          viewPlan.HideElements( conduitIds ) ;
-        } 
-      }
-    }
-    
-    private void HideConduitsIn3DView( Document document, ICollection<ElementId> conduitIds )
-    {
-      document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
-        .Where( c => conduitIds.Contains( c.Id ) && c.HasParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) )
-        .ForEach( c => c.TrySetProperty( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS, HiddenValue ) ) ;
-      var views = document.GetAllElements<View>().Where( v => v is View3D ) ;
-      foreach ( var view in views ) {
-        view.HideElements( conduitIds ) ;
-      }
-    }
-    
-    private static bool RemoveDummyConduits( Document document )
-    {
-      UpdateIsEnableButton( document, true ) ;
-      var allConduitIds = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
-        .Where( c => ! string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName()!.Contains( DummyName ) )
-        .Select( c => c.UniqueId ).ToList() ;
-
-      if ( ! allConduitIds.Any() ) return true ;
-
-      using var transaction = new Transaction( document, "Remove dummy conduits" ) ;
-      transaction.Start() ;
-      document.Delete( allConduitIds ) ;
-      
-      var hiddenConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
-        .Where( c => c.HasParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) && c.GetParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS )?.AsString() == HiddenValue ).ToList();
-      hiddenConduits.ForEach( c => c.GetParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS )?.ClearProperty() );  
-      var hiddenConduitIds = hiddenConduits.Select( c => c.Id ).ToList() ;
-      var views = document.GetAllElements<View>().Where( v => v is View3D ) ;
-      foreach ( var view in views ) {
-        view.UnhideElements( hiddenConduitIds ) ;
-      }
-
-      transaction.Commit() ;
-      return false ;
-    }
-
-    private ( ConduitInfo?, ConduitInfo? ) GetFromAndToConduitsOfCConduitFitting( Dictionary<Element, string> newConduits, string routeName, XYZ handOrientation, XYZ facingOrientation, XYZ origin )
-    {
-      var conduits = newConduits.Where( c => c.Key is Conduit && c.Value == routeName ) ;
-      ConduitInfo? fromConduitInfo = null ;
-      ConduitInfo? toConduitInfo = null ;
-      var minFromDistance = double.MaxValue ;
-      var minToDistance = double.MaxValue ;
-      foreach ( var conduit in conduits ) {
-        var levelId = conduit.Key.GetLevelId() ;
-        var location = ( conduit.Key.Location as LocationCurve )! ;
-        var line = ( location.Curve as Line )! ;
-        var (directionX, directionY, directionZ) = line.Direction ;
-        var fromPoint = line.GetEndPoint( 0 ) ;
-        var toPoint = line.GetEndPoint( 1 ) ;
-        var fromDistance = fromPoint.DistanceTo( origin ) ;
-        var toDistance = toPoint.DistanceTo( origin ) ;
-        if ( ( handOrientation.X is 1 or -1 && Math.Abs( directionX - handOrientation.X ) == 0 )
-             || ( handOrientation.Y is 1 or -1 && Math.Abs( directionY - handOrientation.Y ) == 0 )
-             || ( handOrientation.Z is 1 or -1 && Math.Abs( directionZ - handOrientation.Z ) == 0 ) ) {
-          if ( toDistance < minToDistance ) {
-            minToDistance = toDistance ;
-            fromConduitInfo = new ConduitInfo( conduit.Key, fromPoint, toPoint, line.Direction, levelId, false ) ;
-          }
-        }
-        
-        if ( ( facingOrientation.X is 1 or -1 && Math.Abs( directionX + facingOrientation.X ) == 0 )
-             || ( facingOrientation.Y is 1 or -1 && Math.Abs( directionY + facingOrientation.Y ) == 0 )
-             || ( facingOrientation.Z is 1 or -1 && Math.Abs( directionZ + facingOrientation.Z ) == 0 ) ) {
-          if ( toDistance < minToDistance ) {
-            minToDistance = toDistance ;
-            fromConduitInfo = new ConduitInfo( conduit.Key, fromPoint, toPoint, line.Direction, levelId, true ) ;
-          }
-        }
-
-        if ( ( facingOrientation.X is 1 or -1 && Math.Abs( directionX - facingOrientation.X ) == 0 )
-             || ( facingOrientation.Y is 1 or -1 && Math.Abs( directionY - facingOrientation.Y ) == 0 )
-             || ( facingOrientation.Z is 1 or -1 && Math.Abs( directionZ - facingOrientation.Z ) == 0 ) ) {
-          if ( ! ( fromDistance < minFromDistance ) ) continue ;
-          minFromDistance = fromDistance ;
-          toConduitInfo = new ConduitInfo( conduit.Key, fromPoint, toPoint, line.Direction, levelId, false ) ;
-        }
-        
-        if ( ( handOrientation.X is 1 or -1 && Math.Abs( directionX + handOrientation.X ) == 0 )
-             || ( handOrientation.Y is 1 or -1 && Math.Abs( directionY + handOrientation.Y ) == 0 )
-             || ( handOrientation.Z is 1 or -1 && Math.Abs( directionZ + handOrientation.Z ) == 0 ) ) {
-          if ( ! ( fromDistance < minFromDistance ) ) continue ;
-          minFromDistance = fromDistance ;
-          toConduitInfo = new ConduitInfo( conduit.Key, fromPoint, toPoint, line.Direction, levelId, true ) ;
-        }
-      }
-
-      return ( fromConduitInfo, toConduitInfo ) ;
-    }
-
-    private void UpdateConduitLenght( Document document, MEPCurveType arentConduitType, Dictionary<Element, string> newConduits, string routeName, double length, List<XYZ> directions, ref List<string> removedConduitIds, ConduitInfo? fromConduitInfo, ConduitInfo? toConduitInfo )
+    private void UpdateConduitLenght( Document document, MEPCurveType arentConduitType, Dictionary<Element, string> newConduits, string routeName, double length, List<XYZ> directions, ref List<ElementId> removedConduitIds, ShowConduitsIn3DUtil.ConduitInfo? fromConduitInfo, ShowConduitsIn3DUtil.ConduitInfo? toConduitInfo )
     {
       var minTolerance = ( 2.54 ).MillimetersToRevitUnits() ;
       if ( fromConduitInfo != null ) {
@@ -646,7 +424,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         newConduits.Remove( fromConduitInfo.Conduit ) ;
-        removedConduitIds.Add( fromConduitInfo.Conduit.UniqueId ) ;
+        removedConduitIds.Add( fromConduitInfo.Conduit.Id ) ;
 
         if ( fromConduitInfo.StartPoint.DistanceTo( fromEndPoint ) > minTolerance ) {
           var newConduit = Conduit.Create( document, arentConduitType.Id, fromConduitInfo.StartPoint, fromEndPoint, fromConduitInfo.LevelId ) ;
@@ -686,7 +464,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         newConduits.Remove( toConduitInfo.Conduit ) ;
-        removedConduitIds.Add( toConduitInfo.Conduit.UniqueId ) ;
+        removedConduitIds.Add( toConduitInfo.Conduit.Id ) ;
 
         if ( ! ( toConduitInfo.EndPoint.DistanceTo( toStartPoint ) > minTolerance ) ) return ;
         var newConduit = Conduit.Create( document, arentConduitType.Id, toStartPoint, toConduitInfo.EndPoint, toConduitInfo.LevelId ) ;
@@ -700,40 +478,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         if ( newConduit.HasParameter( BuiltInParameter.RBS_CONDUIT_DIAMETER_PARAM ) ) {
           newConduit.SetProperty( BuiltInParameter.RBS_CONDUIT_DIAMETER_PARAM, diameter ) ;
         }
-      }
-    }
-    
-    private class ConduitInfo
-    {
-      public Element Conduit { get ; }
-      public XYZ StartPoint { get ; }
-      public XYZ EndPoint { get ; }
-      public XYZ Direction { get ; }
-      public ElementId LevelId { get ; }
-      public bool IsOppositeDirection { get ; }
-
-      public ConduitInfo( Element conduit, XYZ startPoint, XYZ endPoint, XYZ direction, ElementId levelId, bool isOppositeDirection )
-      {
-        Conduit = conduit ;
-        StartPoint = startPoint ;
-        EndPoint = endPoint ;
-        Direction = direction ;
-        LevelId = levelId ;
-        IsOppositeDirection = isOppositeDirection ;
-      }
-    }
-    
-    private class RouteInfo
-    {
-      public string RouteName { get ; }
-      public double Tolerance { get ; }
-      public List<XYZ> Directions { get ; }
-
-      public RouteInfo( string routeName, double tolerance, List<XYZ> directions )
-      {
-        RouteName = routeName ;
-        Tolerance = tolerance ;
-        Directions = directions ;
       }
     }
   }
