@@ -15,7 +15,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Floor,
       CeedCode,
       DetailSymbol,
-      DetailSymbolId,
+      DetailSymbolUniqueId,
+      FromConnectorUniqueId,
+      ToConnectorUniqueId,
       WireType,
       WireSize,
       WireStrip,
@@ -59,7 +61,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var calculationExclusion = deserializer.GetBool( SerializeField.CalculationExclusion ) ;
       var floor = deserializer.GetString( SerializeField.Floor ) ;
       var ceedCode = deserializer.GetString( SerializeField.CeedCode ) ;
-      var detailSymbolId = deserializer.GetString( SerializeField.DetailSymbolId ) ;
+      var detailSymbolUniqueId = deserializer.GetString( SerializeField.DetailSymbolUniqueId ) ;
+      var fromConnectorUniqueId = deserializer.GetString( SerializeField.FromConnectorUniqueId ) ;
+      var toConnectorUniqueId = deserializer.GetString( SerializeField.ToConnectorUniqueId ) ;
       var detailSymbol = deserializer.GetString( SerializeField.DetailSymbol ) ;
       var wireType = deserializer.GetString( SerializeField.WireType ) ;
       var wireSize = deserializer.GetString( SerializeField.WireSize ) ;
@@ -96,7 +100,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var plumbingSizes = deserializer.GetNonNullStringArray( SerializeField.PlumbingSizes ) ;
       var plumbingItemTypes = deserializer.GetNonNullStringArray( SerializeField.PlumbingItemTypes ) ;
 
-      return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType,
+      return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolUniqueId, fromConnectorUniqueId, toConnectorUniqueId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType,
         plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode,
         isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems, isMixConstructionItems, copyIndex, isReadOnlyParameters, isReadOnlyWireSizeAndWireStrip, isReadOnlyPlumbingSize,
         wireSizes, wireStrips, earthSizes, plumbingSizes, plumbingItemTypes ) ;
@@ -109,7 +113,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.Add( SerializeField.CalculationExclusion, customTypeValue.CalculationExclusion ) ;
       serializerObject.AddNonNull( SerializeField.Floor, customTypeValue.Floor ) ;
       serializerObject.AddNonNull( SerializeField.CeedCode, customTypeValue.CeedCode ) ;
-      serializerObject.AddNonNull( SerializeField.DetailSymbolId, customTypeValue.DetailSymbolId ) ;
+      serializerObject.AddNonNull( SerializeField.DetailSymbolUniqueId, customTypeValue.DetailSymbolUniqueId ) ;
+      serializerObject.AddNonNull( SerializeField.FromConnectorUniqueId, customTypeValue.FromConnectorUniqueId ) ;
+      serializerObject.AddNonNull( SerializeField.ToConnectorUniqueId, customTypeValue.ToConnectorUniqueId ) ;
       serializerObject.AddNonNull( SerializeField.DetailSymbol, customTypeValue.DetailSymbol ) ;
       serializerObject.AddNonNull( SerializeField.WireType, customTypeValue.WireType ) ;
       serializerObject.AddNonNull( SerializeField.WireSize, customTypeValue.WireSize ) ;

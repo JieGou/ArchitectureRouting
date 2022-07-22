@@ -86,13 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( sender is not ComboBox comboBox ) return ;
       ViewModel.WireBookSelection( comboBox ) ;
     }
-    
-    private void WireBookLostFocus( object sender, RoutedEventArgs e )
-    {
-      if ( sender is not ComboBox comboBox ) return ;
-      ViewModel.WireBookLostFocus( comboBox );
-    }
-    
+
     private void EarthTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
