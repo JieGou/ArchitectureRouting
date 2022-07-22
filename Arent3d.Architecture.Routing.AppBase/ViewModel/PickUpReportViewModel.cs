@@ -178,19 +178,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         window.DialogResult = true ;
         window.Close() ;
       }
-      else {
-        if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) && string.IsNullOrEmpty( FileName ) )
-          MessageBox.Show( "Please select the output folder, file type and and input the file name.", "Warning" ) ;
-        else if ( ! _fileNames.Any() && string.IsNullOrEmpty( PathName ) && string.IsNullOrEmpty( FileName ) )
-          MessageBox.Show( "Please select the file type and input the file name.", "Warning" ) ;
-        else if ( ! PickUpModels.Any() )
-          MessageBox.Show( "Don't have pick up data.", "Warning" ) ;
-        else if ( string.IsNullOrEmpty( PathName ) )
-          MessageBox.Show( "Please select the output folder.", "Warning" ) ;
-        else if ( ! _fileNames.Any() )
-          MessageBox.Show( "Please select the output file type.", "Warning" ) ;
-        else if (  string.IsNullOrEmpty( FileName ) )
-          MessageBox.Show( "Please input the file name.", "Warning" ) ;
+      else { 
+        var errorStr = "Please select " ;
+        var listError = new List<string>();
+        if ( ! _fileNames.Any() ) listError.Add( "file type" ) ; 
+        if ( string.IsNullOrEmpty( PathName ) ) listError.Add( "the output folder" ) ;
+        if ( string.IsNullOrEmpty( FileName ) ) listError.Add( "the file name" ) ;
+        for ( int i = 0 ; i < listError.Count ; i++ ) {
+          if ( i != listError.Count - 1 ) errorStr += listError[ i ] + ( i == listError.Count - 2 ? " " : ", " ) ;
+          else errorStr += $"and {listError[ i ]}." ;
+        }
+        if ( ! PickUpModels.Any() ) errorStr = "Don't have pick up data." ;
+        MessageBox.Show( errorStr, "Warning" ) ;
       }
     }
     
