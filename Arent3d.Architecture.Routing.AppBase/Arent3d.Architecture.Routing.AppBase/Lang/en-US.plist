@@ -141,16 +141,7 @@
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>
         <key>Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup</key>
-        <string>Failed to set up some routing families or parameters.</string>
-
-        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.ReferenceTable</key>
-        <string>Please select the row on the reference detail table.</string>
-        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.Table</key>
-        <string>Please select a row on the detail table.</string>
-        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.CTLFile</key>
-        <string>Please select ctl file.</string>
-        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.AfterGrouping</key>
-        <string>Not allowed to change the number of wires after the grouping.</string>
+        <string>Failed to set up some routing families or parameters.</string>       
 
         <key>Dialog.Commands.Rack.PS.FileName</key>
         <string>Pipe space list file</string>
