@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.Storages
     public class StorageService<TOwner, TDataModel> where TOwner : Element where TDataModel : class, IDataModel
     {
         public TOwner Owner { get ; }
-        public TDataModel Data { get ;  }
+        public TDataModel Data { get ; set ; }
 
         private IEnumerable<(TOwner Owner, TDataModel Data)>? _allDatas ;
         public IEnumerable<(TOwner Owner, TDataModel Data)> AllDatas
