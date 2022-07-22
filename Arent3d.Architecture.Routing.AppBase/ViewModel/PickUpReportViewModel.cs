@@ -673,16 +673,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var listSeenQuantity = new List<double>() ;
         var listSeenQuantityPullBox = new List<string>() ;
         var valueDetailTableStr = string.Empty ;
-      
+        var isAssign = false ;
         foreach ( var itemGroupByRoute in itemsGroupByRoute ) {
           var ecoMode = FindEcoMode( itemGroupByRoute.Key, routes ) ;
           var wireBookDefault = FindWireBookDefault( pickUpModel.CeedSetCode, pickUpModel.ProductCode.Split( '-' ).First(), ecoMode) ;
           var dataDetail = _dataDetailTable.FirstOrDefault( x => x.RouteName == itemGroupByRoute.Key ) ;
-          if ( dataDetail == null && wireBookDefault != "1" && isWire) {
+          if ( dataDetail == null && wireBookDefault != "1" && isWire && !isAssign) {
             valueDetailTableStr = wireBookDefault ;
           }
           else if ( dataDetail != null && dataDetail.WireBook.Trim() != "1" && isWire) {
             valueDetailTableStr = dataDetail.WireBook ;
+            isAssign = true ;
           }
           
           double seenQuantity = 0 ;
