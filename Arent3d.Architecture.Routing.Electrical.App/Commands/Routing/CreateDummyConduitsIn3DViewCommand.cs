@@ -32,8 +32,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var document = uiDocument.Document ;
 
       try {
-        using var transaction = new Transaction( document, ( "TransactionName.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetAppStringByKeyOrDefault( "Create Dummy Conduits In 3D View" ) ) ) ;
-        transaction.Start() ;
         View? newView = null ;
         var isCreateDummyConduits = RemoveDummyConduits( document ) ;
         if ( isCreateDummyConduits ) {
@@ -48,34 +46,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
             Dictionary<Element, string> newConduits = new() ;
             List<ElementId> conduitsHideIn3DView = new() ;
 
+            using var transaction = new Transaction( document, ( "TransactionName.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetAppStringByKeyOrDefault( "Create Dummy Conduits In 3D View" ) ) ) ;
+            transaction.Start() ;
+            if ( document.ActiveView is ViewPlan activeView ) {
+              newView = Create3DView( document, activeView ) ;
+            }
+            
             var routeDic = GenerateConduits( document, arentConduitType!, allConduits, newConduits, conduitsHideIn3DView ) ;
-
             var removedConduitIds = GenerateConduitFittings( uiDocument, arentConduitType!, routeDic, newConduits, conduitsHideIn3DView ) ;
             transaction.Commit() ;
 
-            transaction.Start() ;
-            if ( removedConduitIds.Any() ) {
-              foreach ( var conduitId in removedConduitIds ) {
-                try {
-                  document.Delete( conduitId ) ;
-                }
-                catch {
-                  //
-                }
-              }
-            }
-        
-            HideConduitsIn2DView( document, newConduits ) ;
-            HideConduitsIn3DView( document, conduitsHideIn3DView ) ;
+            RemoveAndHideUnusedConduits( document, removedConduitIds, newConduits, conduitsHideIn3DView ) ;
           }
         }
         
-        if ( document.ActiveView is ViewPlan activeView ) {
-          newView = Create3DView( document, activeView ) ;
-        }
-
-        transaction.Commit() ;
-
         if ( newView != null ) {
           uiDocument.ActiveView = newView ;
         }
@@ -83,14 +67,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return Result.Succeeded ;
       }
       catch ( Exception exception ) {
-        using var transaction = new Transaction( document, "Enable buttons" ) ;
-        transaction.Start() ;
         UpdateIsEnableButton( document, true ) ;
-        transaction.Commit() ;
-        
         message = exception.Message ;
         return Result.Failed ;
       }
+    }
+
+    private void RemoveAndHideUnusedConduits( Document document, List<ElementId> removedConduitIds, Dictionary<Element, string> newConduits, List<ElementId> conduitsHideIn3DView )
+    {
+      using var removedTransaction = new Transaction( document, "Remove and hide unused conduits" ) ;
+      removedTransaction.Start() ;
+
+      if ( removedConduitIds.Any() ) {
+        removedConduitIds = removedConduitIds.Distinct().ToList() ;
+        document.Delete( removedConduitIds ) ;
+      }
+        
+      HideConduitsIn2DView( document, newConduits ) ;
+      HideConduitsIn3DView( document, conduitsHideIn3DView ) ;
+            
+      removedTransaction.Commit() ;
     }
     
     private static void UpdateIsEnableButton( Document document, bool isEnable )
@@ -99,6 +95,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
       if ( selectionTab == null ) return ;
       
+      using var transaction = new Transaction( document, "Enable buttons" ) ;
+      transaction.Start() ;
       foreach ( var panel in selectionTab.Panels ) {
         if ( panel.Source.Title == "Electrical.App.Panels.Routing.Confirmation".GetAppStringByKeyOrDefault( "Confirmation" ) ) {
           foreach ( var item in panel.Source.Items ) {
@@ -111,6 +109,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           panel.IsEnabled = isEnable ;
         }
       }
+
+      transaction.Commit() ;
     }
     
     private static View? Create3DView( Document document, ViewPlan activeView )
@@ -550,12 +550,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         .Select( c => c.UniqueId ).ToList() ;
 
       if ( ! allConduitIds.Any() ) return true ;
-      try {
-        document.Delete( allConduitIds ) ;
-      }
-      catch {
-        //
-      }
+
+      using var transaction = new Transaction( document, "Remove dummy conduits" ) ;
+      transaction.Start() ;
+      document.Delete( allConduitIds ) ;
       
       var hiddenConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
         .Where( c => c.HasParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) && c.GetParameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS )?.AsString() == HiddenValue ).ToList();
@@ -566,6 +564,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         view.UnhideElements( hiddenConduitIds ) ;
       }
 
+      transaction.Commit() ;
       return false ;
     }
 
