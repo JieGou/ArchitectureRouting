@@ -58,9 +58,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string OtherItem = "その他" ;
     private const string Wire = "電線" ;
     
-    private readonly List<HiroiMasterModel> _hiroiMasterModels ;
     private readonly Document _document ;
-    
+    private readonly List<HiroiMasterModel> _hiroiMasterModels ;
+    private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModels ;
+    private readonly List<HiroiSetMasterModel> _hiroiSetMasterEcoModels ;
+    private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterNormalModels ;
+    private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterEcoModels ;
+    private readonly List<DetailTableModel> _dataDetailTable ;
+
     public ObservableCollection<PickUpModel> PickUpModels { get ; set ; }
     public ObservableCollection<ListBoxItem> FileTypes { get ; set ; }
     public ObservableCollection<ListBoxItem> DoconTypes { get ; set ; }
@@ -124,9 +129,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CurrentSettingList = new ObservableCollection<ListBoxItem>() ;
       PreviousSettingList = new ObservableCollection<ListBoxItem>() ;
       _hiroiMasterModels = new List<HiroiMasterModel>() ;
+      _hiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
+      _hiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
+      _hiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
+      _hiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
+      _dataDetailTable = new List<DetailTableModel>() ;
       
       var csvStorable = _document.GetAllStorables<CsvStorable>().FirstOrDefault() ;
-      if ( csvStorable != null ) _hiroiMasterModels = csvStorable.HiroiMasterModelData ;
+      if ( csvStorable != null ) 
+      {
+        _hiroiMasterModels = csvStorable.HiroiMasterModelData ;
+        _hiroiSetMasterNormalModels = csvStorable.HiroiSetMasterNormalModelData ;
+        _hiroiSetMasterEcoModels = csvStorable.HiroiSetMasterEcoModelData ;
+        _hiroiSetCdMasterNormalModels = csvStorable.HiroiSetCdMasterNormalModelData ;
+        _hiroiSetCdMasterEcoModels = csvStorable.HiroiSetCdMasterEcoModelData ;
+      }
+      
+      var detailSymbolStorable =  _document.GetDetailTableStorable() ;
+      _dataDetailTable = detailSymbolStorable.DetailTableModelData ; ;
+
 
       _pathName = string.Empty ;
       _fileName = string.Empty ;
@@ -629,23 +650,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles, int maxPickUpNumber )
     {
-      var detailSymbolStorable =  _document.GetDetailTableStorable() ;
-      var dataDetailTable = detailSymbolStorable.DetailTableModelData ;
       if ( ! pickUpModels.Any() ) return rowStart ;
-      
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
-      var a = pickUpModels.Any( x => x.ProductCode != pickUpModel.ProductCode ) ;
       var row = sheet.CreateRow( rowStart ) ;
       var isTani = IsTani( pickUpModel ) ;
       var isWire = IsWire( pickUpModel ) ;
+      double total = 0 ;
+      Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
+      var routes = RouteCache.Get( DocumentKey.Get( _document ) ) ;
+      var inforDisplays = GetInforDisplays( pickUpModels, routes ) ;
+      
       CreateCell( row, 1, pickUpModel.ProductName, xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
       CreateCell( row, 2, pickUpModel.Standard, xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
       CreateCell( row, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
       CreateCell( row, 4, pickUpModel.Tani, xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
-      double total = 0 ;
-      Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
-      var inforDisplays = GetInforDisplays( pickUpModels ) ;
       foreach ( var pickUpNumber in pickUpNumbers ) {
         string stringNotTani = string.Empty ;
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
@@ -654,14 +673,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var listSeenQuantity = new List<double>() ;
         var listSeenQuantityPullBox = new List<string>() ;
         var valueDetailTableStr = string.Empty ;
+      
         foreach ( var itemGroupByRoute in itemsGroupByRoute ) {
-          var dataDetail = dataDetailTable.FirstOrDefault( x => x.RouteName == itemGroupByRoute.Key ) ;
-          if ( dataDetail != null && dataDetail.WireBook.Trim() != "1" && isWire) {
+          var ecoMode = FindEcoMode( itemGroupByRoute.Key, routes ) ;
+          var wireBookDefault = FindWireBookDefault( pickUpModel.CeedSetCode, pickUpModel.ProductCode.Split( '-' ).First(), ecoMode) ;
+          var dataDetail = _dataDetailTable.FirstOrDefault( x => x.RouteName == itemGroupByRoute.Key ) ;
+          if ( dataDetail == null && wireBookDefault != "1" && isWire) {
+            valueDetailTableStr = wireBookDefault ;
+          }
+          else if ( dataDetail != null && dataDetail.WireBook.Trim() != "1" && isWire) {
             valueDetailTableStr = dataDetail.WireBook ;
           }
+          
           double seenQuantity = 0 ;
 
-          var lastSegment = GetLastSegment( itemGroupByRoute.Key ) ;
+          var lastSegment = GetLastSegment( itemGroupByRoute.Key, routes ) ;
           var isSegmentConnectedToPullBox = IsSegmentConnectedToPullBox( lastSegment ) ;
           
           foreach ( var item in itemGroupByRoute ) {
@@ -732,7 +758,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var count = 0 ;
       if ( trajectoryStrCount > 1 ) {
         for ( var i = 0 ; i < trajectoryStrCount ; i++ ) {
-          valueOfCell += trajectoryStr[ i ] + " + ";
+          valueOfCell += trajectoryStr[ i ] + (i == trajectoryStrCount - 1 ? "": " + ");
           if ( valueOfCell.Length * 2  < lengthOfCellMerge/256.0 && i < trajectoryStrCount - 1 ) continue;
           if ( count == 0 ) {
             CreateMergeCell( sheet, row, rowStart, rowStart, firstCellIndex, lastCellIndex, valueOfCell , xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
@@ -745,10 +771,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateCell( rowTrajectory, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
             CreateCell( rowTrajectory, 4, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
             CreateCell( rowTrajectory, 16, "", xssfCellStyles[ "leftRightBottomBorderedCellStyleMediumThin" ] ) ;
-            if(i != trajectoryStrCount - 1)
-              CreateMergeCell( sheet, rowTrajectory, rowStart, rowStart, firstCellIndex, lastCellIndex, valueOfCell , xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
-            else 
-              CreateMergeCell( sheet, rowTrajectory, rowStart, rowStart, firstCellIndex, lastCellIndex, valueOfCell.TrimEnd().Remove(valueOfCell.TrimEnd().Length - 1),  xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
+            CreateMergeCell( sheet, rowTrajectory, rowStart, rowStart, firstCellIndex, lastCellIndex, valueOfCell , xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
           }
 
           valueOfCell = string.Empty ;
@@ -870,10 +893,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return hiroiMaster != null && hiroiMaster.Buzaisyu == Wire ;
     }
 
-    private RouteSegment? GetLastSegment( string routeName )
+    private RouteSegment? GetLastSegment( string routeName, RouteCache routes )
     {
       if ( string.IsNullOrEmpty( routeName ) ) return null ;
-      var routes = RouteCache.Get( DocumentKey.Get( _document ) ) ;
       var route = routes.SingleOrDefault( x => x.Key == routeName ) ;
       return route.Value.RouteSegments.LastOrDefault();
     }
@@ -901,12 +923,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return result ;
     }
 
-    private List<InforDisplay> GetInforDisplays(List<PickUpModel> pickUpModels)
+    private List<InforDisplay> GetInforDisplays(List<PickUpModel> pickUpModels, RouteCache routes)
     {
       var routesNameRef = pickUpModels.Select( x => x.RouteNameRef ).Distinct() ;
       var inforDisplays = new List<InforDisplay>() ;
       foreach ( var routeNameRef in routesNameRef ) {
-        var lastSegment = GetLastSegment( routeNameRef ) ;
+        var lastSegment = GetLastSegment( routeNameRef, routes ) ;
         if ( lastSegment == null ) continue ;
         if ( IsSegmentConnectedToPullBox( lastSegment ) ) {
           var idPullBox = lastSegment.FromEndPoint.Key.GetElementUniqueId() ;
@@ -923,6 +945,43 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return inforDisplays ;
+    }
+
+    private string FindWireBookDefault( string ceedCode, string productCode, string ecoMode )
+    {
+      var result = string.Empty ;
+      var hiroiSetCdMasterModel = ! string.IsNullOrEmpty( ecoMode ) && bool.Parse( ecoMode ) ?  _hiroiSetCdMasterEcoModels.SingleOrDefault( x => x.SetCode == ceedCode ) : _hiroiSetCdMasterNormalModels.SingleOrDefault( x => x.SetCode == ceedCode );
+      if ( hiroiSetCdMasterModel == null ) return result ;
+      var lengthParentPartModelNumber = hiroiSetCdMasterModel?.LengthParentPartModelNumber ;
+      var hiroiSetMasterModel = ! string.IsNullOrEmpty( ecoMode ) && bool.Parse( ecoMode ) ?  _hiroiSetMasterEcoModels.SingleOrDefault( x => x.ParentPartModelNumber == lengthParentPartModelNumber ) :  _hiroiSetMasterNormalModels.SingleOrDefault( x => x.ParentPartModelNumber == lengthParentPartModelNumber );
+      if ( hiroiSetMasterModel == null ) return result ;
+      result = GetWireBook( productCode, hiroiSetMasterModel ) ;
+      return result ;
+    }
+    
+    private string GetWireBook( string materialCode, HiroiSetMasterModel hiroiSetMasterModel ) 
+    {
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode1 ) && int.Parse(hiroiSetMasterModel.MaterialCode1) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity1 ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode2 ) && int.Parse(hiroiSetMasterModel.MaterialCode2) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity2 ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode3 ) && int.Parse(hiroiSetMasterModel.MaterialCode3) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity3 ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode4 ) && int.Parse(hiroiSetMasterModel.MaterialCode4) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity4 ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode5 ) && int.Parse(hiroiSetMasterModel.MaterialCode5) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity5 ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode6 ) && int.Parse(hiroiSetMasterModel.MaterialCode6) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity6 ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode7 ) && int.Parse(hiroiSetMasterModel.MaterialCode7) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity7 ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode8 ) && int.Parse(hiroiSetMasterModel.MaterialCode8) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity8 ;
+      return string.Empty ;
+    }
+
+    private string FindEcoMode( string routeName, RouteCache routes )
+    {
+      var lastSegment = GetLastSegment( routeName, routes ) ;
+      if ( lastSegment == null ) return string.Empty ;
+      var toEndPointKey = lastSegment.ToEndPoint.Key ;
+      var toElementId = toEndPointKey.GetElementUniqueId() ;
+      if ( string.IsNullOrEmpty( toElementId ) ) return string.Empty ;
+      var toConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+      .FirstOrDefault( c => c.UniqueId == toElementId ) ;
+      return toConnector == null ? string.Empty : toConnector.LookupParameter( "IsEcoMode" ).AsString() ;
     }
     
     public class ListBoxItem
