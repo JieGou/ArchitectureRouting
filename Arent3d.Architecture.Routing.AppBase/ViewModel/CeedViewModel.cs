@@ -41,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
     private List<CeedModel> _previousCeedModels ;
-    private readonly StorageService<CeedUserModel> _storageService ;
+    private readonly StorageService<Level, CeedUserModel> _storageService ;
 
     public DataGrid DtGrid ;
 
@@ -248,7 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       DtGrid = new DataGrid() ;
       
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      _storageService = new StorageService<CeedUserModel>(_document, true) ;
+      _storageService = new StorageService<Level, CeedUserModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
       
       if ( oldCeedStorable is null ) {
         _ceedModels = new List<CeedModel>() ;

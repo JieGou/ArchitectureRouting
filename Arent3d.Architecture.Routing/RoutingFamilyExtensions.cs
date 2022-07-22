@@ -273,9 +273,9 @@ namespace Arent3d.Architecture.Routing
       document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
       
       var connectorFamilyIds = new List<ElementId>() ;
-      var storageService = new StorageService<CeedUserModel>( document, true ) ;
+      var storageService = new StorageService<Level, CeedUserModel>( ((ViewPlan)document.ActiveView).GenLevel ) ;
       
-      var connectorFamilyUploadDatas = storageService.DataStorages.Select(x => x.Data.ConnectorFamilyUploadData)
+      var connectorFamilyUploadDatas = storageService.AllDatas.Select(x => x.Data.ConnectorFamilyUploadData)
         .SelectMany(x => x).Distinct().ToList();
       if ( ! connectorFamilyUploadDatas.Any() ) 
         return ;

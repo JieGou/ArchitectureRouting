@@ -7,7 +7,6 @@ using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
-using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -55,7 +54,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           connectorFamilyUploadFiles.Add( fileName ) ;
         }
 
-        var storageService = new StorageService<CeedUserModel>(_document, true) ;
+        var storageService = new StorageService<Level, CeedUserModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
         var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
         storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
         using Transaction t = new( _document, "Save connector family upload data" ) ;
@@ -112,7 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void LoadConnectorFamilyList()
     {
-      var storageService = new StorageService<CeedUserModel>(_document, true) ;
+      var storageService = new StorageService<Level, CeedUserModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
       foreach ( var fileName in  storageService.Data.ConnectorFamilyUploadData ) {
         ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
       }
