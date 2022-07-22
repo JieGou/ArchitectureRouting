@@ -8,44 +8,44 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "7d5caf37-8a4f-4a93-98ae-d4eecc1927c9" )]
+  [Guid("28ac1781-9bfc-4728-b974-e9345ebb8b0c")]
   [StorableVisibility( AppInfo.VendorId )]
   public class TextNotePickUpModelStorable : StorableBase
   {
     public const string StorableName = "Text Note Pick Up" ;
     private const string TextNotePickUpField = "TextNotePickUp" ;
-    private const string PickUpNumberSettingOfLevelsField = "PickUpNumberSettingOfLevels" ;
+    private const string PickUpNumberSettingField = "PickUpNumberSetting" ;
     public List<TextNotePickUpModel> TextNotePickUpData { get ; set ; }
-    public List<PickUpNumberSettingModel> PickUpNumberSettingOfLevels { get ; set ; }
+    public List<PickUpNumberSettingModel> PickUpNumberSettingData { get ; set ; }
 
     public TextNotePickUpModelStorable( DataStorage owner ) : base( owner, false )
     {
       TextNotePickUpData = new List<TextNotePickUpModel>() ;
-      PickUpNumberSettingOfLevels = new List<PickUpNumberSettingModel>() ;
+      PickUpNumberSettingData = new List<PickUpNumberSettingModel>() ;
     }
 
     public TextNotePickUpModelStorable( Document document ) : base( document, false )
     {
       TextNotePickUpData = new List<TextNotePickUpModel>() ;
-      PickUpNumberSettingOfLevels = new List<PickUpNumberSettingModel>() ;
+      PickUpNumberSettingData = new List<PickUpNumberSettingModel>() ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
     {
       TextNotePickUpData = reader.GetArray<TextNotePickUpModel>( TextNotePickUpField ).ToList() ;
-      PickUpNumberSettingOfLevels = reader.GetArray<PickUpNumberSettingModel>( PickUpNumberSettingOfLevelsField ).ToList() ;
+      PickUpNumberSettingData = reader.GetArray<PickUpNumberSettingModel>( PickUpNumberSettingField ).ToList() ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
       writer.SetArray( TextNotePickUpField, TextNotePickUpData ) ;
-      writer.SetArray( PickUpNumberSettingOfLevelsField, PickUpNumberSettingOfLevels ) ;
+      writer.SetArray( PickUpNumberSettingField, PickUpNumberSettingData ) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
     {
       generator.SetArray<TextNotePickUpModel>( TextNotePickUpField ) ;
-      generator.SetArray<PickUpNumberSettingModel>( PickUpNumberSettingOfLevelsField ) ;
+      generator.SetArray<PickUpNumberSettingModel>( PickUpNumberSettingField ) ;
     }
 
     public override string Name => StorableName ;

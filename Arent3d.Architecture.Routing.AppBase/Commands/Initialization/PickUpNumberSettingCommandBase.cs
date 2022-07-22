@@ -33,9 +33,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( !isDisplay ) return Result.Succeeded ;
             
             var pickUpViewModel = new PickUpViewModel( document ) ;
+            if ( ! pickUpViewModel.DataPickUpModels.Any() ) return Result.Succeeded ;
+            
             var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level ).ToList() ;
             if ( !pickUpModels.Any() ) {
-              MessageBox.Show( "Don't have pick up data on this view.", "Message" ) ;
+              MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
               return Result.Succeeded ;
             }
             PickUpMapCreationCommandBase.RemoveTextNotePickUp( document, level ) ;

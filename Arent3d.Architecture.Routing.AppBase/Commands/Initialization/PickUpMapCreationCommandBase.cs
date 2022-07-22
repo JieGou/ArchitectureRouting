@@ -37,6 +37,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           if ( ! isDisplay ) {
             var pickUpViewModel = new PickUpViewModel( document ) ;
+            if ( ! pickUpViewModel.DataPickUpModels.Any() ) return Result.Cancelled ;
+            
             var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level ).ToList() ;
             if ( ! pickUpModels.Any() ) {
               MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
@@ -63,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, string level, List<PickUpModel> pickUpModels )
     {
       var pickUpNumberOfPullBox = pickUpModels.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) + 1 ;
-      var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingOfLevels.FirstOrDefault( pn => pn.Level == level )?.IsPickUpNumberSetting ?? false ;
+      var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingData.FirstOrDefault( pn => pn.Level == level )?.IsPickUpNumberSetting ?? false ;
       var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
       var seenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
       var notSeenTextNotePickUps = new List<TextNoteMapCreationModel>() ;

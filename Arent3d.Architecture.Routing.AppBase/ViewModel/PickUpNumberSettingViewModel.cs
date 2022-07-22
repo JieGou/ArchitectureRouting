@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _document = document ;
       var textNotePickUpModelStorable = _document.GetTextNotePickUpStorable() ;
       var level = _document.ActiveView.GenLevel.Name ;
-      IsPickUpNumberSetting = textNotePickUpModelStorable.PickUpNumberSettingOfLevels.FirstOrDefault(pn => pn.Level == level)?.IsPickUpNumberSetting ?? false ;
+      IsPickUpNumberSetting = textNotePickUpModelStorable.PickUpNumberSettingData.FirstOrDefault(pn => pn.Level == level)?.IsPickUpNumberSetting ?? false ;
     }
 
     public bool IsPickUpNumberSetting
@@ -45,9 +45,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var textNotePickUpModelStorable = _document.GetTextNotePickUpStorable() ;
       var level = _document.ActiveView.GenLevel.Name ;
       
-      var pickUpNumberSettingModel = textNotePickUpModelStorable.PickUpNumberSettingOfLevels.FirstOrDefault( pn => pn.Level == level ) ;
+      var pickUpNumberSettingModel = textNotePickUpModelStorable.PickUpNumberSettingData.FirstOrDefault( pn => pn.Level == level ) ;
       if ( pickUpNumberSettingModel == null )
-        textNotePickUpModelStorable.PickUpNumberSettingOfLevels.Add( new PickUpNumberSettingModel( level, IsPickUpNumberSetting ) );
+        textNotePickUpModelStorable.PickUpNumberSettingData.Add( new PickUpNumberSettingModel( level, IsPickUpNumberSetting ) );
       else pickUpNumberSettingModel.IsPickUpNumberSetting = IsPickUpNumberSetting ;
       
       using Transaction transaction = new(_document, "Save Pick Up Number Setting") ;
