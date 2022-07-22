@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var firstPasPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 0 ], document ) ;
             passPointPosition = firstPasPoint.passPointPosition ;
             passPointDirection = firstPasPoint.passPointDirection ;
-            
+
             var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document ) ;
             secondPassPointPosition = secondPassPoint.passPointPosition ;
             secondPassPointDirection = secondPassPoint.passPointDirection ;
@@ -81,12 +81,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             PreviewLineSelectionFilter previewLineSelectionFilter = new( previewLineIds ) ;
             var selectedRoute = uiDocument.Selection.PickObject( ObjectType.Element, previewLineSelectionFilter, "Select preview line." ) ;
             var routeLines = allRouteLines.First( rl => rl.previewLineIds.Any( lineId => lineId == selectedRoute.ElementId ) ) ;
-            var passPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[0], document ) ;
+            var isCreatePullBoxAtMiddlePoint = ! PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ;
+            var passPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[0], document , isCreatePullBoxAtMiddlePoint) ;
             passPointPosition = passPoint.passPointPosition ;
             passPointDirection = passPoint.passPointDirection ;
             
             if ( PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ) {
-              var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document ) ;
+              var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document, isPassPointInMiddle: false, isFromStartPoint: false ) ;
               secondPassPointPosition = secondPassPoint.passPointPosition ;
               secondPassPointDirection = secondPassPoint.passPointDirection ;
             }
@@ -104,18 +105,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection,secondPassPointPosition,secondPassPointDirection ) ) ;
     }
 
-    private static (XYZ? passPointPosition, XYZ? passPointDirection) GetPassPointPositionAndDirection(ElementId lineId,Document document,double ratioToPutPassPointLocation = 2, bool isFromStartPoint = true)
+    private static (XYZ? passPointPosition, XYZ? passPointDirection) GetPassPointPositionAndDirection(ElementId lineId,Document document, bool isPassPointInMiddle = true,bool isFromStartPoint = true,double passPointPositionDistance = 550 )
     {
       var passPointLine = ( (DetailLine)document.GetElement( lineId ) ).GeometryCurve as Line ;
-      var (x0, y0, z0) = passPointLine!.GetEndPoint( 0 ) ;
-      var (x1, y1, z1) = passPointLine!.GetEndPoint( 1 ) ;
-
-      var fromStartRatio = isFromStartPoint ? ratioToPutPassPointLocation - 1 : 1 ;
-      var fromEndRatio = isFromStartPoint ? 1 : ratioToPutPassPointLocation - 1 ;
-
-      var passPointPosition = new XYZ( ( fromStartRatio * x0 + fromEndRatio * x1 ) / ratioToPutPassPointLocation, ( fromStartRatio * y0 + fromEndRatio * y1 ) / ratioToPutPassPointLocation, ( fromStartRatio * z0 + fromEndRatio * z1 ) / ratioToPutPassPointLocation ) ;
+      var p1 = passPointLine!.GetEndPoint( 0 ) ;
+      var p2 = passPointLine!.GetEndPoint( 1 ) ;
+      
       var passPointDirection = passPointLine.Direction ;
-      return ( passPointPosition, passPointDirection ) ;
+      if ( isPassPointInMiddle ) {
+        var passPointPosition = ( p1 + p2 ) / 2 ;
+        return ( passPointPosition, passPointDirection ) ;
+      }
+      
+      var distance = p1.DistanceTo( p2 ) - passPointPositionDistance.MillimetersToRevitUnits() ;
+      {
+        var passPointPosition = isFromStartPoint
+          ? p1 + ( p2 - p1 ).Normalize() * distance
+          : p2 + ( p1 - p2 ).Normalize() * distance ;
+        return ( passPointPosition, passPointDirection ) ;
+      }
     }
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, MEPSystemType? systemType )
