@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         x:Name="DetailTableWindow"
         WindowStartupLocation="CenterScreen"
-        Title="明細表作成" Height="980" Width="1150" ResizeMode="NoResize"
+        Title="明細表作成" Height="980" Width="1150" ResizeMode="NoResize" Topmost="True"
         d:DataContext="{d:DesignInstance {x:Type view:DesignDetailTableViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <Style x:Key="DefaultButtonStyle" TargetType="{x:Type Button}">
@@ -176,16 +176,7 @@
                 <DataGridTemplateColumn Header="電線種類" Width="45" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding WireType, Mode=OneWay}">
-                                <!-- <i:Interaction.Triggers> -->
-                                <!--     <i:EventTrigger EventName="MouseLeftButtonUp"> -->
-                                <!--         <i:InvokeCommandAction -->
-                                <!--             Command="{Binding SelectedItemCommand}" -->
-                                <!--             CommandParameter="{Binding ElementName = FolderTreeView}"> -->
-                                <!--         </i:InvokeCommandAction> -->
-                                <!--     </i:EventTrigger> -->
-                                <!-- </i:Interaction.Triggers> -->
-                            </TextBlock>
+                            <TextBlock Text="{Binding WireType, Mode=OneWay}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
@@ -201,14 +192,6 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-                
-                <!-- <DataGridTemplateColumn Header="電線サイズ" Width="45" CanUserSort="False"> -->
-                <!--     <DataGridTemplateColumn.CellTemplate> -->
-                <!--         <DataTemplate> -->
-                <!--             <TextBlock Text="{Binding WireSize, Mode=OneWay}" /> -->
-                <!--         </DataTemplate> -->
-                <!--     </DataGridTemplateColumn.CellTemplate> -->
-                <!-- </DataGridTemplateColumn> -->
 
                 <DataGridComboBoxColumn Header="電線サイズ" Width="45"
                                         SelectedValueBinding="{Binding WireSize}"
@@ -248,14 +231,6 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <!-- <DataGridTemplateColumn Header="電線条数" Width="45" CanUserSort="False"> -->
-                <!--     <DataGridTemplateColumn.CellTemplate> -->
-                <!--         <DataTemplate> -->
-                <!--             <TextBlock Text="{Binding WireStrip, Mode=OneWay}" /> -->
-                <!--         </DataTemplate> -->
-                <!--     </DataGridTemplateColumn.CellTemplate> -->
-                <!-- </DataGridTemplateColumn> -->
 
                 <DataGridComboBoxColumn Header="電線条数" Width="45"
                                         SelectedValueBinding="{Binding WireStrip}"
@@ -310,7 +285,6 @@
                                       SelectedValuePath="Name"
                                       ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                       SelectionChanged="WireBookSelectionChanged" 
-                                      LostFocus="WireBookLostFocus"
                                       IsEditable="True"
                                       IsReadOnly="{Binding IsReadOnlyParameters}"/>
                         </DataTemplate>
@@ -705,20 +679,11 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0" Margin="10" DockPanel.Dock="Left">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="30" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="120" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Label Grid.Row="0" FontWeight="Bold">明細記号表示状態</Label>
-                <RadioButton Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"  Margin = "5,5,30,0" GroupName = "Status"
-                             IsChecked="{Binding Path=IsShowSymbol, UpdateSourceTrigger=PropertyChanged}">表示</RadioButton>
-                <RadioButton Grid.Row="1" Grid.Column="1" Margin = "5,5,0,0"  GroupName = "Status" IsChecked="True">非表示</RadioButton>
-            </Grid>
+            <StackPanel Orientation="Horizontal" Grid.Column="0" Margin="20 10" DockPanel.Dock="Left" VerticalAlignment="Center">
+                <Label FontWeight="Bold">明細記号表示状態</Label>
+                <CheckBox VerticalContentAlignment="Center" Content="表示" Margin="20 0 0 0"
+                          IsChecked="{Binding Path=IsShowSymbol, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
             <Grid Grid.Column="1" DockPanel.Dock="Right" Width="400" HorizontalAlignment="Right">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="130" />

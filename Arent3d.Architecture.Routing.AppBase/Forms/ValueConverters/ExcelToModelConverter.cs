@@ -626,11 +626,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var line = reader.ReadLine() ;
           var values = line!.Split( ';' ) ;
           if ( values.Length <= 29 ) continue ;
-          var detailTableRow = new DetailTableModel( false, values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ],
-            values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ],
-            values[ 13 ], values[ 14 ], values[ 15 ], values[ 16 ], values[ 17 ], values[ 18 ], double.Parse( values[ 19 ] ),
-            int.Parse( values[ 20 ] ), values[ 21 ], values[ 22 ], bool.Parse( values[ 23 ] ), bool.Parse( values[ 24 ] ), values[ 25 ],
-            values[ 26 ], bool.Parse( values[ 27 ] ), bool.Parse( values[ 28 ] ), values[ 29 ] ) ;
+          var detailTableRow = new DetailTableModel( false, values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ],
+            values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ], values[ 13 ], values[ 14 ],
+            values[ 15 ], values[ 16 ], values[ 17 ], values[ 18 ], values[ 19 ], values[ 20 ], double.Parse( values[ 21 ] ),
+            int.Parse( values[ 22 ] ), values[ 23 ], values[ 24 ], bool.Parse( values[ 25 ] ), bool.Parse( values[ 26 ] ), values[ 27 ],
+            values[ 28 ], bool.Parse( values[ 29 ] ), bool.Parse( values[ 30 ] ), values[ 31 ] ) ;
           referenceDetailTableModels.Add( detailTableRow ) ;
         }
 
