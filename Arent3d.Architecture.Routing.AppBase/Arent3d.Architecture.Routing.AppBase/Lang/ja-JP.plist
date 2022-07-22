@@ -145,7 +145,7 @@
         <key>Dialog.Commands.Routing.PickRouting.PickFirst</key>
         <string>From-Toの始点を選択してください。</string>
         <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
-        <string>From-Toの終点を選択してください。</string>
+        <string>From-Toの終点を選択してください。</string>       
 
         <key>Dialog.Commands.Routing.PickAndReRoute.Pick</key>
         <string>再ルーティングしたいFrom-Toを選択してください。</string>

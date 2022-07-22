@@ -141,7 +141,7 @@
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>
         <key>Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup</key>
-        <string>Failed to set up some routing families or parameters.</string>
+        <string>Failed to set up some routing families or parameters.</string>       
 
         <key>Dialog.Commands.Rack.PS.FileName</key>
         <string>Pipe space list file</string>
