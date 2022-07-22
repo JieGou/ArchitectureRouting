@@ -197,7 +197,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       SelectionChangedReference() ;
       if ( ! _selectedReferenceDetailTableRows.Any() ) {
-        MessageBox.Show( "明細追加する参照情報を選択してください。", "Arent Inc" ) ;
+        MessageBox.Show( "Arent3d.Architecture.Routing.AppBase.ViewModel.Select.ReferenceTable".GetAppStringByKeyOrDefault( null ), "Arent Inc" ) ;
         return ;
       }
       AddReferenceDetailTableRows(_selectedReferenceDetailTableRows ) ;
@@ -1390,7 +1390,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       if ( editedDetailTableRow.IsGrouped ) {
         if ( $"{selectedWireBook}" != editedDetailTableRow.WireBook ) {
-          MessageBox.Show( "配管がまとめられているため、電線本数が変更できません。", "Arent Inc" ) ;
+          MessageBox.Show( "Arent3d.Architecture.Routing.AppBase.ViewModel.Select.AfterGrouping".GetAppStringByKeyOrDefault( null ), "Arent Inc" ) ;
         }
         comboBox.SelectedItem = Numbers.SingleOrDefault(x => x.Name == editedDetailTableRow.WireBook ) ;
         return;
@@ -1769,7 +1769,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ReadCtlFile( List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData )
     {
-      MessageBox.Show( @"CTLファイルを選択してください。", @"Message" ) ;
+      MessageBox.Show( "Arent3d.Architecture.Routing.AppBase.ViewModel.Select.CTLFile".GetAppStringByKeyOrDefault( null ), "Message" ) ;
       OpenFileDialog openFileDialog = new() { Filter = @"Ctl files (*.ctl)|*.ctl", Multiselect = false } ;
       var filePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
@@ -1993,7 +1993,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       SelectionChanged() ;
       if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) {
-        MessageBox.Show( "明細表の挿入先を選択してください。", "Arent Inc" ) ;
+        MessageBox.Show( "Arent3d.Architecture.Routing.AppBase.ViewModel.Select.Table".GetAppStringByKeyOrDefault( null ), "Arent Inc" ) ;
         return ;
       }
       
