@@ -95,7 +95,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       Dictionary<string, XYZ> conduitDirectionDic = new() ;
       var allConduitsOfBranchRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == c.GetRepresentativeRouteName() && ( c.GetNearestEndPoints( true ).FirstOrDefault()?.Key.GetTypeName() == PassPointBranchEndPoint.Type || c.GetNearestEndPoints( true ).FirstOrDefault()?.Key.GetTypeName() == PassPointEndPoint.Type ) && c.GetNearestEndPoints( false ).FirstOrDefault()?.Key.GetTypeName() == ConnectorEndPoint.Type ).ToList() ;
       List<Element> conduitOfBranchRoutes = new() ;
-      var offset = ( conduits.First() as Conduit )!.Diameter ;
+      var offset = ( conduits.First() as Conduit )!.Diameter + ( 5.0 ).MillimetersToRevitUnits() ;
+      XYZ mainDirection = XYZ.BasisX ;
       foreach ( var conduit in conduits ) {
         var routeName = conduit.GetRouteName()! ;
         var routeNameArray = routeName.Split( '_' ) ;
@@ -110,15 +111,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         } ).ToList() ;
         conduitOfBranchRoutes.AddRange( conduitOfBranchRoute ) ;
         conduitsHideIn3DView.AddRange( conduitOfBranchRoute.Select( c => c.Id ) ) ;
-        var maxLength = double.MinValue ;
+        var passPointEndPoint = conduitOfBranchRoute.First().GetNearestEndPoints( true ).ToList() ;
+        if ( ! passPointEndPoint.Any() ) return conduitToleranceDic ;
+        var passPointId = passPointEndPoint.First().Key.GetElementUniqueId() ;
+        var passPoint = document.GetElement( passPointId ) ;
+        mainDirection = ( passPoint as FamilyInstance )!.HandOrientation ;
         var direction = new XYZ() ;
         foreach ( var otherConduit in conduitOfBranchRoute ) {
           var conduitLocation = ( otherConduit.Location as LocationCurve ) ! ;
           var conduitLine = ( conduitLocation.Curve as Line ) ! ;
           var conduitDirection = conduitLine.Direction ;
-          if ( ( conduitDirection.X is 1 or -1 || conduitDirection.Y is 1 or -1 ) && conduitLine.Length > maxLength ) {
-            maxLength = conduitLine.Length ;
+          if ( ( mainDirection.X is 1 or -1 && conduitDirection.Y is 1 or -1 ) || ( mainDirection.Y is 1 or -1 && conduitDirection.X is 1 or -1 )  ) {
             direction = conduitDirection ;
+            break ;
           }
         }
 
@@ -130,8 +135,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       if ( ! conduitDirectionDic.Any() ) return conduitToleranceDic ;
       {
-        var plusDirections = conduitDirectionDic.Where( c => c.Value.X is 1 || c.Value.Y is 1 ).ToList() ;
-        var minusDirections = conduitDirectionDic.Where( c => c.Value.X is -1 || c.Value.Y is -1 ).ToList() ;
+        var mark = mainDirection.X is 1 or -1 ? mainDirection.X : mainDirection.Y ;
+        var plusDirections = conduitDirectionDic.Where( c => c.Value.X is 1 || c.Value.Y is 1 )
+          .OrderByDescending( c =>
+          {
+            var rNameArray = c.Key.Split( '_' ) ;
+            var numberRoute = Convert.ToInt16( rNameArray.ElementAt( 1 ) ) ;
+            return numberRoute ;
+          } ).ToList() ;
+        var minusDirections = conduitDirectionDic.Where( c => c.Value.X is -1 || c.Value.Y is -1 )
+          .OrderByDescending( c =>
+        {
+          var rNameArray = c.Key.Split( '_' ) ;
+          var numberRoute = Convert.ToInt16( rNameArray.ElementAt( 1 ) ) ;
+          return numberRoute ;
+        } ).ToList() ;
         if ( ! plusDirections.Any() || ! minusDirections.Any() ) {
           var count = conduitDirectionDic.Count / 2 ;
           for ( var i = 0 ; i <= count ; i++ ) {
@@ -147,13 +165,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         else {
           var number = 1 ;
           foreach ( var plusDirection in plusDirections ) {
-            conduitToleranceDic.Add( plusDirection.Key, -offset * number ) ;
+            conduitToleranceDic.Add( plusDirection.Key, - mark * offset * number ) ;
             number++ ;
           }
 
           number = 1 ;
           foreach ( var minusDirection in minusDirections ) {
-            conduitToleranceDic.Add( minusDirection.Key, offset * number ) ;
+            conduitToleranceDic.Add( minusDirection.Key, mark * offset * number ) ;
             number++ ;
           }
         }
