@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class RegisterSymbolViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly StorageService<RegisterSymbolModel> _storageService ;
+    private readonly StorageService<Level, RegisterSymbolModel> _storageService ;
     private readonly SetupPrintStorable _setupPrintStorable ;
     private readonly bool _isExistBrowseFolderPath ;
     private readonly bool _isExistFolderSelectedPath ;
@@ -111,7 +111,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public RegisterSymbolViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _storageService = new StorageService<RegisterSymbolModel>(_uiDocument.Document, true) ;
+      _storageService = new StorageService<Level, RegisterSymbolModel>(((ViewPlan)uiDocument.ActiveView).GenLevel) ;
       _setupPrintStorable = _uiDocument.Document.GetSetupPrintStorable() ;
       _isExistBrowseFolderPath = Directory.Exists( _storageService.Data.BrowseFolderPath ) ;
       _isExistFolderSelectedPath = Directory.Exists( _storageService.Data.FolderSelectedPath ) ;
