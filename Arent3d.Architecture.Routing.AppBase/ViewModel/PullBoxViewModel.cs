@@ -104,11 +104,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<PullBoxModel> GetPullBoxModels( Document document )
     {
       var csvStorable = document.GetCsvStorable() ;
-      var allPullBoxHiroiMasterModel = csvStorable.HiroiMasterModelData.Where( hr => hr.Hinmei == PullBoxName ) ;
+      var allPullBoxHiroiMasterModel = csvStorable.HiroiMasterModelData.Where( hr => hr.Hinmei.Contains(PullBoxName) && !string.IsNullOrEmpty( hr.Kikaku )  ) ;
       var pullBoxModels = from hiroiMasterModel in allPullBoxHiroiMasterModel
         select new PullBoxModel( hiroiMasterModel ) ;
 
-      return pullBoxModels.OrderBy( pb => pb.PullBoxCategoryName ).ThenBy( pb => pb.Width ).ThenBy( pb => pb.Height ).ToList() ;
+      return pullBoxModels.OrderBy( pb => pb.SuffixCategoryName ).ThenBy( pb=>pb.PrefixCategoryName ).ThenBy( pb => pb.Width ).ThenBy( pb => pb.Height ).ToList() ;
     }
 
     public ICommand OkCommand
