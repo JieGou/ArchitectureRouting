@@ -10,6 +10,13 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
 {
     public static class DataStorageExtension
     {
+        /// <summary>
+        /// Find or create DataStorage
+        /// </summary>
+        /// <param name="document">Document</param>
+        /// <param name="isForUser">True - Each user owns a DataStorage. False - All users share a DataStorage</param>
+        /// <typeparam name="TDataModel">A class that inherits from IDataModel</typeparam>
+        /// <returns>DataStorage</returns>
         public static DataStorage FindOrCreateDataStorage<TDataModel>( this Document document, bool isForUser ) where TDataModel : class, IDataModel
         {
             string dataStorageName ;
@@ -61,19 +68,19 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
             return dataStorage ;
         }
 
-        public static IEnumerable<(Element Owner, TDataModel Data)> GetAllDataStorage<TDataModel>( this Document document ) where TDataModel : class, IDataModel
+        public static IEnumerable<(TOwner Owner, TDataModel Data)> GetAllDatas<TOwner, TDataModel>( this Document document ) where TOwner : Element where TDataModel : class, IDataModel
         {
-            var allDatas = new List<(Element Owner, TDataModel Data)>() ;
+            var datas = new List<(TOwner Owner, TDataModel Data)>() ;
             
-            var dataStorages = document.GetAllInstances<DataStorage>( x => x.Name.StartsWith( AppInfo.VendorId ) ) ;
-            foreach ( var dataStorage in dataStorages ) {
-                if(dataStorage.GetData<TDataModel>() is not { } data)
+            var owners = document.GetAllInstances<TOwner>( o => o is not DataStorage dataStorage || dataStorage.Name.StartsWith(AppInfo.VendorId) ) ;
+            foreach ( var owner in owners ) {
+                if(owner.GetData<TDataModel>() is not { } data)
                     continue;
                 
-                allDatas.Add((dataStorage, data));
+                datas.Add((owner, data));
             }
 
-            return allDatas ;
+            return datas ;
         }
     }
 }
