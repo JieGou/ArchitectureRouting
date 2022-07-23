@@ -618,13 +618,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( rName ) ) return ;
       var routeNameArray = rName.Split( '_' ) ;
       var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      routeNames.Add( rName );
       var checkPickUp = string.IsNullOrEmpty( connectorId ) 
         ? AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, dictMaterialCode, conduit ) 
         : AddPickUpConnectors( allConnectors, pickUpConnectors, routeName, pickUpNumbers, connectorId!, conduit ) ;
       if ( ! checkPickUp ) 
         return ;
-      
+      routeNames.Add( rName );
       switch ( conduitType ) {
         case ConduitType.Conduit :
           var location = ( conduit.Location as LocationCurve )! ;
