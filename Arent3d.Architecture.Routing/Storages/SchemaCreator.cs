@@ -2,6 +2,7 @@
 using System.IO ;
 using System.Reflection ;
 using Arent3d.Architecture.Routing.Storages.Attributes ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
@@ -51,6 +52,9 @@ namespace Arent3d.Architecture.Routing.Storages
                 throw new ArgumentOutOfRangeException($"Exceeds 256 fields in type {type.Name}.");
             
             foreach ( var propertyModel in propertyModels ) {
+                if (propertyModel.PropertyType.IsFloatingPoint())
+                    throw new MissingMemberException($"{nameof(FieldAttribute.SpecTypeId)} & {nameof(FieldAttribute.UnitTypeId)} is required for property {propertyModel.Name}.");
+                
                 var propertyAttributes = propertyModel.GetCustomAttributes( typeof( FieldAttribute ), true ) ;
                 if ( propertyAttributes.Length == 0 )
                     continue ;
