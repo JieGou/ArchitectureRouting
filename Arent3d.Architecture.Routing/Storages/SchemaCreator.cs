@@ -2,6 +2,7 @@
 using System.IO ;
 using System.Reflection ;
 using Arent3d.Architecture.Routing.Storages.Attributes ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
@@ -56,6 +57,9 @@ namespace Arent3d.Architecture.Routing.Storages
                     continue ;
 
                 var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyModel ) ;
+                if (propertyModel.PropertyType.IsFloatingPoint() && ( string.IsNullOrEmpty(fieldAttribute.SpecTypeId) || string.IsNullOrEmpty(fieldAttribute.UnitTypeId) ) )
+                    throw new MissingMemberException($"{nameof(FieldAttribute.SpecTypeId)} & {nameof(FieldAttribute.UnitTypeId)} is required for property {propertyModel.Name}.");
+                
                 var fieldBuilder = _fieldFactory.CreateField( schemaBuilder, propertyModel ) ;
 
                 if ( ! string.IsNullOrEmpty( fieldAttribute.Documentation ) )
