@@ -1,6 +1,6 @@
 ﻿namespace Arent3d.Architecture.Routing.Storages
 {
-    public static class UnitTypeId
+    public static class UnitTypeCode
     {
         
 #if REVIT2023
