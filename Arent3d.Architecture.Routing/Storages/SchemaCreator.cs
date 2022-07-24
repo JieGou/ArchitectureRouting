@@ -52,14 +52,14 @@ namespace Arent3d.Architecture.Routing.Storages
                 throw new ArgumentOutOfRangeException($"Exceeds 256 fields in type {type.Name}.");
             
             foreach ( var propertyModel in propertyModels ) {
-                if (propertyModel.PropertyType.IsFloatingPoint())
-                    throw new MissingMemberException($"{nameof(FieldAttribute.SpecTypeId)} & {nameof(FieldAttribute.UnitTypeId)} is required for property {propertyModel.Name}.");
-                
                 var propertyAttributes = propertyModel.GetCustomAttributes( typeof( FieldAttribute ), true ) ;
                 if ( propertyAttributes.Length == 0 )
                     continue ;
 
                 var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyModel ) ;
+                if (propertyModel.PropertyType.IsFloatingPoint() && ( string.IsNullOrEmpty(fieldAttribute.SpecTypeId) || string.IsNullOrEmpty(fieldAttribute.UnitTypeId) ) )
+                    throw new MissingMemberException($"{nameof(FieldAttribute.SpecTypeId)} & {nameof(FieldAttribute.UnitTypeId)} is required for property {propertyModel.Name}.");
+                
                 var fieldBuilder = _fieldFactory.CreateField( schemaBuilder, propertyModel ) ;
 
                 if ( ! string.IsNullOrEmpty( fieldAttribute.Documentation ) )
