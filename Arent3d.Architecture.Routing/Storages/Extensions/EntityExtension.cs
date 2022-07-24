@@ -70,32 +70,42 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
         public static bool IsAcceptValueType( this Type type ) => ValueTypeAccepts.Any( x => x == type ) ;
 
         public static bool IsAcceptKeyType( this Type type ) => KeyTypeAccepts.Any( x => x == type ) ;
+        
+        public static bool IsFloatingPoint(this Type type) => FloatingPointTypes.Any(x => x == type);
 
         private static HashSet<Type> ValueTypeAccepts => new(new List<Type>
-            {
-                typeof( int ),
-                typeof( short ),
-                typeof( byte ),
-                typeof( double ),
-                typeof( float ),
-                typeof( bool ),
-                typeof( string ),
-                typeof( Guid ),
-                typeof( ElementId ),
-                typeof( XYZ ),
-                typeof( UV ),
-                typeof(Entity)
-            }) ;
+        {
+            typeof( int ),
+            typeof( short ),
+            typeof( byte ),
+            typeof( double ),
+            typeof( float ),
+            typeof( bool ),
+            typeof( string ),
+            typeof( Guid ),
+            typeof( ElementId ),
+            typeof( XYZ ),
+            typeof( UV ),
+            typeof(Entity)
+        }) ;
 
         private static HashSet<Type> KeyTypeAccepts => new(new List<Type>
-            {
-                typeof( int ),
-                typeof( short ),
-                typeof( byte ),
-                typeof( bool ),
-                typeof( string ),
-                typeof( Guid ),
-                typeof( ElementId )
-            }) ;
+        {
+            typeof( int ),
+            typeof( short ),
+            typeof( byte ),
+            typeof( bool ),
+            typeof( string ),
+            typeof( Guid ),
+            typeof( ElementId )
+        }) ;
+        
+        private static HashSet<Type> FloatingPointTypes => new(new List<Type>
+        {
+            typeof(double),
+            typeof(float),
+            typeof(XYZ),
+            typeof(UV)
+        });
     }
 }
