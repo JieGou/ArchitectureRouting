@@ -17,7 +17,15 @@ namespace Arent3d.Architecture.Routing.Storages.Attributes
         }
 
         public string Documentation { get ; set ; }
-        public string SpecTypeId { get ; set ; } // Floating-point types (float, double, XYZ and UV) required SpecTypeId
+        
+        /// <summary>
+        /// Floating-point types (float, double, XYZ and UV) required SpecTypeId
+        /// </summary>
+        public string SpecTypeId { get ; set ; }
+        
+        /// <summary>
+        /// Floating-point types (float, double, XYZ and UV) required UnitTypeId
+        /// </summary>
         public string UnitTypeId { get ; set ; }
     }
 }
