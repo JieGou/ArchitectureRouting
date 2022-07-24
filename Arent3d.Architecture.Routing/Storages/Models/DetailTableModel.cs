@@ -5,7 +5,7 @@ using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  [Schema( "95677FD8-B2AA-49DC-9D2D-3C6B4B83FB04", nameof( DetailTableModel ) )]
+  [Schema( "55299AF9-5D10-4C64-86FF-5C5AA6621E31", nameof( DetailTableModel ) )]
   public class DetailTableModel : IDataModel
   {
     [Field(Documentation = "Detail Table Data")]
@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     }
   }
   
-  [Schema( "C403896F-A525-4AEB-910E-F770D54C5CBD" , nameof( DetailTableItemModel ))]
+  [Schema( "3A325DD8-314E-4B8F-B923-186C9FF87F81" , nameof( DetailTableItemModel ))]
   public sealed class DetailTableItemModel : NotifyPropertyChanged, IDataModel
   {
     [Field(Documentation = "Calculation Exclusion")]
@@ -130,6 +130,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     public bool IsReadOnlyPlumbingSize { get ; set ; }
     
     private List<ComboboxItemType> _wireSizes = new() ;
+    
+    [Field(Documentation = "Wire Size List")]
     public List<ComboboxItemType> WireSizes
     {
       get => _wireSizes ;
@@ -141,6 +143,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     } 
     
     private List<ComboboxItemType> _wireStrips = new() ;
+    [Field(Documentation = "Wire Strip List")]
     public List<ComboboxItemType> WireStrips
     {
       get => _wireStrips ;
@@ -152,6 +155,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     }
     
     private List<ComboboxItemType> _earthSizes = new() ;
+    [Field(Documentation = "Earth Size List")]
     public List<ComboboxItemType> EarthSizes
     {
       get => _earthSizes ;
@@ -163,6 +167,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     } 
     
     private List<ComboboxItemType> _plumbingSizes = new() ;
+    [Field(Documentation = "Plumbing Size List")]
     public List<ComboboxItemType> PlumbingSizes
     {
       get => _plumbingSizes ;
@@ -174,6 +179,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     }
     
     private List<ComboboxItemType> _plumbingItems = new(){new ComboboxItemType("未設定","未設定")} ;
+    [Field(Documentation = "Plumbing Type List")]
     public List<ComboboxItemType> PlumbingItemTypes
     {
       get => _plumbingItems ;
@@ -515,10 +521,20 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       PlumbingItemTypes = new List<ComboboxItemType>() ;
     }
     
-    public class ComboboxItemType
+    [Schema("FDAE7C8D-BE9E-440C-97FF-DDEA43469131", nameof(ComboboxItemType))]
+    public class ComboboxItemType : IDataModel
     {
-      public string Type { get ; }
-      public string Name { get ; }
+      [Field(Documentation = "Type")]
+      public string Type { get ; set ; }
+      
+      [Field(Documentation = "Name")]
+      public string Name { get ; set ; }
+
+      public ComboboxItemType()
+      {
+        Type = string.Empty ;
+        Name = string.Empty ;
+      }
 
       public ComboboxItemType( string type, string name )
       {
