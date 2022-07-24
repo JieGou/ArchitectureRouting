@@ -1,50 +1,134 @@
-﻿using System ;
-using System.Collections.Generic ;
-using System.ComponentModel ;
+﻿using System.Collections.Generic ;
 using System.Linq ;
-using System.Runtime.CompilerServices ;
+using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages.Attributes ;
 
-namespace Arent3d.Architecture.Routing.Storable.Model
+namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  public sealed class DetailTableModel : INotifyPropertyChanged
+  [Schema( "95677FD8-B2AA-49DC-9D2D-3C6B4B83FB04", nameof( DetailTableModel ) )]
+  public class DetailTableModel : IDataModel
   {
+    [Field(Documentation = "Detail Table Data")]
+    public List<DetailTableItemModel> DetailTableData { get ; set ; }
+
+    public DetailTableModel()
+    {
+      DetailTableData = new List<DetailTableItemModel>() ;
+    }
+  }
+  
+  [Schema( "C403896F-A525-4AEB-910E-F770D54C5CBD" , nameof( DetailTableItemModel ))]
+  public sealed class DetailTableItemModel : NotifyPropertyChanged, IDataModel
+  {
+    [Field(Documentation = "Calculation Exclusion")]
     public bool CalculationExclusion { get ; set ; }
+    
+    [Field(Documentation = "Floor")]
     public string Floor { get ; set ; }
+    
+    [Field(Documentation = "Ceed Code")]
     public string CeedCode { get ; set ; }
+    
+    [Field(Documentation = "Detail Symbol")]
     public string DetailSymbol { get ; set ; }
+    
+    [Field(Documentation = "Detail Symbol UniqueId")]
     public string DetailSymbolUniqueId { get ; set ; }
+    
+    [Field(Documentation = "From Connector UniqueId")]
     public string FromConnectorUniqueId { get ; set ; }
+    
+    [Field(Documentation = "To Connector UniqueId")]
     public string ToConnectorUniqueId { get ; set ; }
+    
+    [Field(Documentation = "Wire Type")]
     public string WireType { get ; set ; }
+    
+    [Field(Documentation = "Wire Size")]
     public string WireSize { get ; set ; }
+    
+    [Field(Documentation = "Wire Strip")]
     public string WireStrip { get ; set ; }
+    
+    [Field(Documentation = "Wire Book")]
     public string WireBook { get ; set ; }
+    
+    [Field(Documentation = "Earth Type")]
     public string EarthType { get ; set ; }
+    
+    [Field(Documentation = "Earth Size")]
     public string EarthSize { get ; set ; }
-    public string NumberOfGrounds { get ; set ; }
+    
+    [Field(Documentation = "Number Of Ground")]
+    public string NumberOfGround { get ; set ; }
+    
+    [Field(Documentation = "Plumbing Type")]
     public string PlumbingType { get ; set ; }
+    
+    [Field(Documentation = "Plumbing Size")]
     public string PlumbingSize { get ; set ; }
+    
+    [Field(Documentation = "Number Of Plumbing")]
     public string NumberOfPlumbing { get ; set ; }
+    
+    [Field(Documentation = "Construction Classification")]
     public string ConstructionClassification { get ; set ; }
+    
+    [Field(Documentation = "Signal Type")]
     public string SignalType { get ; set ; }
+    
+    [Field(Documentation = "Construction Items")]
     public string ConstructionItems { get ; set ; }
+    
+    [Field(Documentation = "Plumbing Items")]
     public string PlumbingItems { get ; set ; }
+    
+    [Field(Documentation = "Remark")]
     public string Remark { get ; set ; }
+    
+    [Field(Documentation = "Wire Cross Sectional Area")]
     public double WireCrossSectionalArea { get ; set ; }
+    
+    [Field(Documentation = "Count Cable Same Position")]
     public int CountCableSamePosition { get ; set ; }
+    
+    [Field(Documentation = "Route Name")]
     public string RouteName { get ; set ; }
+    
+    [Field(Documentation = "Is Eco Mode")]
     public string IsEcoMode { get ; set ; }
+    
+    [Field(Documentation = "Is Parent Route")]
     public bool IsParentRoute { get ; set ; }
+    
+    [Field(Documentation = "Is ReadOnly")]
     public bool IsReadOnly { get ; set ; }
+    
+    [Field(Documentation = "Plumbing Identity Info")]
     public string PlumbingIdentityInfo { get ; set ; }
+    
+    [Field(Documentation = "GroupId")]
     public string GroupId { get ; set ; }
     public bool IsGrouped { get ; set ; }
+    
+    [Field(Documentation = "Is ReadOnly Plumbing Items")]
     public bool IsReadOnlyPlumbingItems { get ; set ; }
+    
+    [Field(Documentation = "Is Mix Construction Items")]
     public bool IsMixConstructionItems { get ; set ; }
+    
+    [Field(Documentation = "Copy Index")]
     public string CopyIndex { get ; set ; }
+    
+    [Field(Documentation = "Is ReadOnly Parameters")]
     public bool IsReadOnlyParameters { get ; set ; }
+    
+    [Field(Documentation = "Is ReadOnly Wire Size And Wire Strip")]
     public bool IsReadOnlyWireSizeAndWireStrip { get ; set ; }
+    
+    [Field(Documentation = "Is ReadOnly Plumbing Size")]
     public bool IsReadOnlyPlumbingSize { get ; set ; }
+    
     private List<ComboboxItemType> _wireSizes = new() ;
     public List<ComboboxItemType> WireSizes
     {
@@ -89,7 +173,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
     }
     
-    private List<ComboboxItemType> _plumbingItems = new List<ComboboxItemType>(){new ComboboxItemType("未設定","未設定")} ;
+    private List<ComboboxItemType> _plumbingItems = new(){new ComboboxItemType("未設定","未設定")} ;
     public List<ComboboxItemType> PlumbingItemTypes
     {
       get => _plumbingItems ;
@@ -100,7 +184,48 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
     }
 
-    public DetailTableModel( 
+    public DetailTableItemModel()
+    {
+      CalculationExclusion = false ;
+      Floor = string.Empty ;
+      CeedCode = string.Empty ;
+      DetailSymbol = string.Empty ;
+      DetailSymbolUniqueId = string.Empty ;
+      FromConnectorUniqueId = string.Empty ;
+      ToConnectorUniqueId = string.Empty ;
+      WireType = string.Empty ;
+      WireSize = string.Empty ;
+      WireStrip = string.Empty ;
+      WireBook = string.Empty ;
+      EarthType = string.Empty ;
+      EarthSize = string.Empty ;
+      NumberOfGround = string.Empty ;
+      PlumbingType = string.Empty ;
+      PlumbingSize = string.Empty ;
+      NumberOfPlumbing = string.Empty ;
+      ConstructionClassification = string.Empty ;
+      SignalType = string.Empty ;
+      ConstructionItems = string.Empty ;
+      PlumbingItems = string.Empty ;
+      Remark = string.Empty ;
+      WireCrossSectionalArea = 0 ;
+      CountCableSamePosition = 1 ;
+      RouteName = string.Empty ;
+      IsEcoMode = string.Empty ;
+      IsParentRoute = false ;
+      IsReadOnly = true ;
+      PlumbingIdentityInfo = string.Empty ;
+      GroupId = string.Empty ;
+      IsGrouped = false ;
+      IsReadOnlyPlumbingItems = true ;
+      IsMixConstructionItems = false ;
+      CopyIndex = string.Empty ;
+      IsReadOnlyParameters = false ;
+      IsReadOnlyWireSizeAndWireStrip = false ;
+      IsReadOnlyPlumbingSize = false ;
+    }
+
+    public DetailTableItemModel( 
       bool? calculationExclusion, 
       string? floor, 
       string? ceedCode,
@@ -156,7 +281,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       WireBook = wireBook ?? string.Empty ;
       EarthType = earthType ?? string.Empty ;
       EarthSize = earthSize ?? string.Empty ;
-      NumberOfGrounds = numberOfGrounds ?? string.Empty ;
+      NumberOfGround = numberOfGrounds ?? string.Empty ;
       PlumbingType = plumbingType ?? string.Empty ;
       PlumbingSize = plumbingSize ?? string.Empty ;
       NumberOfPlumbing = numberOfPlumbing ?? string.Empty ;
@@ -186,7 +311,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       PlumbingItemTypes = ( from plumbingItemType in plumbingItemTypes select new ComboboxItemType( plumbingItemType, plumbingItemType ) ).ToList() ;
     }
     
-    public DetailTableModel( 
+    public DetailTableItemModel( 
       bool? calculationExclusion, 
       string? floor, 
       string? ceedCode,
@@ -242,7 +367,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       WireBook = wireBook ?? string.Empty ;
       EarthType = earthType ?? string.Empty ;
       EarthSize = earthSize ?? string.Empty ;
-      NumberOfGrounds = numberOfGrounds ?? string.Empty ;
+      NumberOfGround = numberOfGrounds ?? string.Empty ;
       PlumbingType = plumbingType ?? string.Empty ;
       PlumbingSize = plumbingSize ?? string.Empty ;
       NumberOfPlumbing = numberOfPlumbing ?? string.Empty ;
@@ -265,14 +390,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsReadOnlyParameters = isReadOnlyParameters ?? false ;
       IsReadOnlyWireSizeAndWireStrip = isReadOnlyWireSizeAndWireStrip ?? false ;
       IsReadOnlyPlumbingSize = isReadOnlyPlumbingSize ?? false ;
-      WireSizes = wireSizes??new() ;
-      WireStrips = wireStrips??new() ; ;
-      EarthSizes = earthSizes??new() ; ;
-      PlumbingSizes = plumbingSizes??new() ; ;
-      PlumbingItemTypes = plumbingItemTypes??new() ; ;
+      WireSizes = wireSizes ?? new List<ComboboxItemType>() ;
+      WireStrips = wireStrips ?? new List<ComboboxItemType>() ;
+      EarthSizes = earthSizes ?? new List<ComboboxItemType>() ;
+      PlumbingSizes = plumbingSizes ?? new List<ComboboxItemType>() ;
+      PlumbingItemTypes = plumbingItemTypes ?? new List<ComboboxItemType>() ;
     }
     
-    public DetailTableModel( string? detailSymbol, string? detailSymbolUniqueId, string? fromConnectorUniqueId, string? toConnectorUniqueId, string routeName)
+    public DetailTableItemModel( string? detailSymbol, string? detailSymbolUniqueId, string? fromConnectorUniqueId, string? toConnectorUniqueId, string routeName)
     {
       CalculationExclusion = false ;
       Floor = string.Empty ;
@@ -287,7 +412,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       WireBook = string.Empty ;
       EarthType = string.Empty ;
       EarthSize = string.Empty ;
-      NumberOfGrounds = string.Empty ;
+      NumberOfGround = string.Empty ;
       PlumbingType = string.Empty ;
       PlumbingSize = string.Empty ;
       NumberOfPlumbing = string.Empty ;
@@ -312,7 +437,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsReadOnlyPlumbingSize = false ;
     }
     
-    public DetailTableModel( 
+    public DetailTableItemModel( 
       bool? calculationExclusion, 
       string? floor, 
       string? ceedCode,
@@ -360,7 +485,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       WireBook = wireBook ?? string.Empty ;
       EarthType = earthType ?? string.Empty ;
       EarthSize = earthSize ?? string.Empty ;
-      NumberOfGrounds = numberOfGrounds ?? string.Empty ;
+      NumberOfGround = numberOfGrounds ?? string.Empty ;
       PlumbingType = plumbingType ?? string.Empty ;
       PlumbingSize = plumbingSize ?? string.Empty ;
       NumberOfPlumbing = numberOfPlumbing ?? string.Empty ;
@@ -401,12 +526,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         Name = name ;
       }
     }
-
-    public event PropertyChangedEventHandler? PropertyChanged ;
-
-    private void OnPropertyChanged( [CallerMemberName] string? propertyName = null )
-    {
-      PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
-    }
+    
   }
 }

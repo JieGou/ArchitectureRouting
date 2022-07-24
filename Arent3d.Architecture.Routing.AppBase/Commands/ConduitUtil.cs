@@ -102,13 +102,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       return null ;
     }
 
-    public static IEnumerable<DetailTableModel> GetDetailTableModelsFromConduits(this IEnumerable<Element> allConduits,Document doc)
+    public static IEnumerable<DetailTableItemModel> GetDetailTableItemsFromConduits(this IEnumerable<Element> allConduits,Document doc)
     {
       var csvStorable = doc.GetCsvStorable() ;
       var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) doc.ActiveView ).GenLevel ) ;
       var allConduitIds = allConduits.Select( p => p.UniqueId ).ToList() ;
       var (detailTableModels, _, _) =
-        CreateDetailTableCommandBase.CreateDetailTable( doc, csvStorable, storageService, allConduits.ToList(),
+        CreateDetailTableCommandBase.CreateDetailTableItem( doc, csvStorable, storageService, allConduits.ToList(),
           allConduitIds, false ) ;
 
       return detailTableModels ;

@@ -22,12 +22,15 @@ using Expression = System.Linq.Expressions.Expression;
 using System.Linq.Expressions;
 using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class PickUpViewModel : NotifyPropertyChanged
   {
+    
     #region Variants
 
     private const string DefaultConstructionItem = "未設定" ;
@@ -35,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly List<PickUpModel> _pickUpModels ;
     private readonly PickUpStorable _pickUpStorable ;
     private readonly SymbolInformationStorable _symbolInformationStorable ;
-    private readonly DetailTableStorable _detailTableStorable ;
+    private readonly StorageService<Level, DetailTableModel> _storageService ;
     private readonly CeedDetailStorable _ceedDetailStorable ;
     private readonly List<CeedModel> _ceedModels ;
     private readonly List<RegistrationOfBoardDataModel> _registrationOfBoardDataModels ;
@@ -156,7 +159,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
 
-      _detailTableStorable = document.GetDetailTableStorable() ;
+      _storageService = new StorageService<Level, DetailTableModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
 
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null ) _ceedModels = ceedStorable.CeedModelData ;
@@ -297,12 +300,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
 
               var routeName = pickUpElement.Conduit?.GetRouteName() ?? string.Empty ;
-              var detailTableModelList = null != pickUpElement.Conduit ? 
-                _detailTableStorable.DetailTableModelData.Where( x => (x.FromConnectorUniqueId == pickUpElement.Connector.UniqueId || x.ToConnectorUniqueId == pickUpElement.Connector.UniqueId) && x.RouteName == routeName ).ToList() 
-                : new List<DetailTableModel>() ;
-              if ( productType == ProductType.Conduit && detailTableModelList.Count > 0 && null != hiroiSetMasterModel) {
-                foreach ( var detailTableModel in detailTableModelList ) {
-                  var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, detailTableModel ) ;
+              var detailTableModelItemList = null != pickUpElement.Conduit ? 
+                _storageService.Data.DetailTableData.Where( x => (x.FromConnectorUniqueId == pickUpElement.Connector.UniqueId || x.ToConnectorUniqueId == pickUpElement.Connector.UniqueId) && x.RouteName == routeName ).ToList() 
+                : new List<DetailTableItemModel>() ;
+              if ( productType == ProductType.Conduit && detailTableModelItemList.Count > 0 && null != hiroiSetMasterModel) {
+                foreach ( var detailTableItemModel in detailTableModelItemList ) {
+                  var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, detailTableItemModel ) ;
                   
                   if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                     PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, @group, layer,
@@ -429,13 +432,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private Dictionary<string, string> GetMaterialCodes(ProductType productType, HiroiSetMasterModel hiroiSetMasterModel, DetailTableModel? detailTableModel )
+    private Dictionary<string, string> GetMaterialCodes(ProductType productType, HiroiSetMasterModel hiroiSetMasterModel, DetailTableItemModel? detailTableItemModel )
     {
       Dictionary<string, string> materialCodes = new() ;
 
-      if ( productType is ProductType.Conduit && null != detailTableModel) {
+      if ( productType is ProductType.Conduit && null != detailTableItemModel) {
         //Plumping
-        var plumbingKey = $"{detailTableModel.PlumbingType}{detailTableModel.PlumbingSize}" ;
+        var plumbingKey = $"{detailTableItemModel.PlumbingType}{detailTableItemModel.PlumbingSize}" ;
         plumbingKey = plumbingKey.Replace( DetailTableViewModel.DefaultChildPlumbingSymbol, string.Empty ) ;
 
         if ( ! string.IsNullOrEmpty( plumbingKey ) ) {
@@ -446,12 +449,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         //Wiring
-        var wireStrip = Regex.IsMatch( detailTableModel.WireStrip, @"^\d" ) ? $"x{detailTableModel.WireStrip}" : "" ;
-        var wiringKey = $"{detailTableModel.WireType}{detailTableModel.WireSize}{wireStrip}" ;
+        var wireStrip = Regex.IsMatch( detailTableItemModel.WireStrip, @"^\d" ) ? $"x{detailTableItemModel.WireStrip}" : "" ;
+        var wiringKey = $"{detailTableItemModel.WireType}{detailTableItemModel.WireSize}{wireStrip}" ;
         // TODO: 600V_はハードコードしているため、このハードコード部分を解消する必要がある。600V_と3kV_の種類、サイズが重なっているため現状場合分けが必要
         var hiroiMasterModelForWiring = _hiroiMasterModels.FirstOrDefault( x => x.Ryakumeicd.Replace( " ", "" ).Replace("*", "").Replace("600V_", "") == wiringKey ) ;
         if ( null != hiroiMasterModelForWiring ) {
-          for ( var i = 0 ; i < int.Parse(detailTableModel.WireBook) ; i++ ) {
+          for ( var i = 0 ; i < int.Parse(detailTableItemModel.WireBook) ; i++ ) {
             materialCodes.Add(hiroiMasterModelForWiring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWiring.Kikaku);
           }
         }
@@ -648,7 +651,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var isPickUpByFromConnector = toConnector != null && ( toConnector.Name == ElectricalRoutingFamilyType.PressureConnector.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ) ;
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
-      if ( toConnector == null || (_detailTableStorable.DetailTableModelData.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null
+      if ( toConnector == null || (_storageService.Data.DetailTableData.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null
            &&  toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 

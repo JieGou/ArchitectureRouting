@@ -5,6 +5,7 @@ using System.ComponentModel ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Attributes ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -28,104 +29,104 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
             
             var element = document.GetElement( selection.PickObject( ObjectType.Element ) ) ;
             
-            var storageService = new StorageService<Element, MasterModel>( element ) ;
+            var storageService = new StorageService<Element, DetailTableModel>( element ) ;
             var data = storageService.Data ;
 
-            using var trans = new Transaction( document ) ;
-            trans.Start( "Set Data" ) ;
-            
-            storageService = new StorageService<Element, MasterModel>( element ) ;
-            var model = new ComplexModel
-            {
-                IntProperty = int.MaxValue,
-                ShortProperty = short.MinValue,
-                ByteProperty = 0,
-                DoubleProperty = 8.23123456789,
-                FloatProperty = 0.23345F,
-                BoolProperty = true,
-                StringProperty = "The quick brown fox jumps over the lazy dog",
-                GuidProperty = new Guid( "DFCD07E5-7218-4052-8731-1F8B74ABFCF3" ),
-                ElementIdProperty = new ElementId( 9872 ),
-                XyzProperty = new XYZ( 10.01, 20.02, 30.03 ),
-                UvProperty = new UV( 1001, 2222.333 ),
-                DeepModelProperty = new DeepModel { Count = 789, ElementId = new ElementId( 7777 ) },
-                IntArrayProperty = new Collection<int> { 1, 5, 8, 4, 37, 183403853, -243512, -4122345 },
-                ShortArrayProperty = new List<short> { -23, 13456, 4236, 125, 752, 246, -234 },
-                ByteArrayProperty = new BindingList<byte> { 0, 1, 2, 3, 255 },
-                DoubleArrayProperty = new ObservableCollection<double> { -23.45, 34.56 },
-                FloatArrayProperty = new List<float> { 99.8877665544332211F },
-                BoolArrayProperty = new Collection<bool> { true, true, false, true, false, false },
-                StringArrayProperty = new List<string> { "QWERTY", "ASDFGH", "ZxCvBN" },
-                GuidArrayProperty = new List<Guid> { new("9E7941F8-03EE-48AC-90B7-4352911F06F7"), new("78304C8D-B904-47A2-BDF6-C52A6B569D86"), new("8B1ADB16-4974-4820-A0E2-129F16620331") },
-                ElementIdArrayProperty = new List<ElementId> { new(1), new(2), new(3) },
-                XyzArrayProperty = new Collection<XYZ> { XYZ.Zero, XYZ.BasisX, XYZ.BasisY, XYZ.BasisZ },
-                UvArrayProperty = new BindingList<UV> { UV.Zero, UV.BasisU, UV.BasisV, },
-                SubModelArray = new List<SubModel>
-                {
-                    new()
-                    {
-                        ArrayField = new List<int> { 123, 456 },
-                        StringProperty = "Hello, world!",
-                        IntProperty = 99,
-                        DoubleProperty = 0.0000000056,
-                        DeepModels = new List<DeepModel> { new() { Count = 1, ElementId = new ElementId( 43 ) }, new() { Count = 589, ElementId = new ElementId( 55 ) } },
-                        DeepModel = new DeepModel { Count = 0, ElementId = ElementId.InvalidElementId }
-                    },
-                    new()
-                    {
-                        ArrayField = new List<int>() { 789, 101112 },
-                        StringProperty = "Hello, again!",
-                        IntProperty = 88,
-                        DoubleProperty = -0.0000000056,
-                        DeepModels = new List<DeepModel> { new() { Count = 100, ElementId = new ElementId( 555 ) }, new() { Count = 345, ElementId = new ElementId( 666 ) } },
-                        DeepModel = new DeepModel { Count = 12, ElementId = ElementId.InvalidElementId }
-                    }
-                },
-                BoolXyzMap = new Dictionary<bool, XYZ> { { true, new XYZ( 1, 2, 3 ) }, { false, new XYZ( -3, -2, -1 ) } },
-                ByteGuidMap =
-                    new SortedDictionary<byte, Guid>
-                    {
-                        { 0, new Guid( "D2EF3FB3-0EF9-4F5A-BCBD-A1F84EA658B8" ) },
-                        { 255, new Guid( "71DA88AA-6D47-4BF9-972A-DDB6F90BFAE0" ) },
-                        { 124, new Guid( "1DDF733C-5AA1-4079-99E9-D621DBDFD928" ) }
-                    },
-                ShortElementIdMap = new Dictionary<short, ElementId> { { -23, ElementId.InvalidElementId }, { 124, new ElementId( 245 ) }, { 156, new ElementId( 984534 ) }, { -145, new ElementId( 991233516 ) } },
-                IntSubModelMap = new SortedDictionary<int, SubModel>
-                {
-                    {
-                        -1, new SubModel
-                        {
-                            ArrayField = new List<int> { 234, 1112 },
-                            StringProperty = "Hello from map!",
-                            IntProperty = 33,
-                            DoubleProperty = -0.0000200056,
-                            DeepModels = new List<DeepModel> { new() { Count = 100, ElementId = new ElementId( 555 ) }, new() { Count = 345, ElementId = new ElementId( 666 ) } },
-                            DeepModel = new DeepModel { Count = 12, ElementId = ElementId.InvalidElementId }
-                        }
-                    },
-                    {
-                        775993884, new SubModel
-                        {
-                            ArrayField = new List<int> { 0, 123, 345564, -31243, 51454 },
-                            StringProperty = "Hello from map 2!",
-                            IntProperty = 33,
-                            DoubleProperty = -0.0000200056,
-                            DeepModels = new List<DeepModel> { new() { Count = 100, ElementId = new ElementId( 555 ) }, new() { Count = 345, ElementId = new ElementId( 666 ) } },
-                            DeepModel = new DeepModel { Count = 12, ElementId = ElementId.InvalidElementId }
-                        }
-                    }
-                },
-                ElementIdStringMap = new Dictionary<ElementId, string> { { new ElementId( BuiltInParameter.LEVEL_DATA_OWNING_LEVEL ), "LEVEL_DATA_OWNING_LEVEL" }, { ElementId.InvalidElementId, "Invalid" } },
-                GuidDeepModelMap = new Dictionary<Guid, DeepModel> { { new Guid( "A85D94A3-162D-4611-BA9B-C268700ECDB1" ), new() { Count = 23, ElementId = new ElementId( 24 ) } } },
-                StringDoubleMap = new SortedDictionary<string, double> { { "one point zero five", 0.05 }, { "one hundred and sixty six point one two three", 166.123 } }
-            } ;
-            storageService.Data.ComplexModels = new List<ComplexModel> { model } ;
-            storageService.SaveChange();
-            
-            trans.Commit() ;
-
-            storageService = new StorageService<Element, MasterModel>( element ) ;
-            data = storageService.Data ;
+            // using var trans = new Transaction( document ) ;
+            // trans.Start( "Set Data" ) ;
+            //
+            // storageService = new StorageService<Element, MasterModel>( element ) ;
+            // var model = new ComplexModel
+            // {
+            //     IntProperty = int.MaxValue,
+            //     ShortProperty = short.MinValue,
+            //     ByteProperty = 0,
+            //     DoubleProperty = 8.23123456789,
+            //     FloatProperty = 0.23345F,
+            //     BoolProperty = true,
+            //     StringProperty = "The quick brown fox jumps over the lazy dog",
+            //     GuidProperty = new Guid( "DFCD07E5-7218-4052-8731-1F8B74ABFCF3" ),
+            //     ElementIdProperty = new ElementId( 9872 ),
+            //     XyzProperty = new XYZ( 10.01, 20.02, 30.03 ),
+            //     UvProperty = new UV( 1001, 2222.333 ),
+            //     DeepModelProperty = new DeepModel { Count = 789, ElementId = new ElementId( 7777 ) },
+            //     IntArrayProperty = new Collection<int> { 1, 5, 8, 4, 37, 183403853, -243512, -4122345 },
+            //     ShortArrayProperty = new List<short> { -23, 13456, 4236, 125, 752, 246, -234 },
+            //     ByteArrayProperty = new BindingList<byte> { 0, 1, 2, 3, 255 },
+            //     DoubleArrayProperty = new ObservableCollection<double> { -23.45, 34.56 },
+            //     FloatArrayProperty = new List<float> { 99.8877665544332211F },
+            //     BoolArrayProperty = new Collection<bool> { true, true, false, true, false, false },
+            //     StringArrayProperty = new List<string> { "QWERTY", "ASDFGH", "ZxCvBN" },
+            //     GuidArrayProperty = new List<Guid> { new("9E7941F8-03EE-48AC-90B7-4352911F06F7"), new("78304C8D-B904-47A2-BDF6-C52A6B569D86"), new("8B1ADB16-4974-4820-A0E2-129F16620331") },
+            //     ElementIdArrayProperty = new List<ElementId> { new(1), new(2), new(3) },
+            //     XyzArrayProperty = new Collection<XYZ> { XYZ.Zero, XYZ.BasisX, XYZ.BasisY, XYZ.BasisZ },
+            //     UvArrayProperty = new BindingList<UV> { UV.Zero, UV.BasisU, UV.BasisV, },
+            //     SubModelArray = new List<SubModel>
+            //     {
+            //         new()
+            //         {
+            //             ArrayField = new List<int> { 123, 456 },
+            //             StringProperty = "Hello, world!",
+            //             IntProperty = 99,
+            //             DoubleProperty = 0.0000000056,
+            //             DeepModels = new List<DeepModel> { new() { Count = 1, ElementId = new ElementId( 43 ) }, new() { Count = 589, ElementId = new ElementId( 55 ) } },
+            //             DeepModel = new DeepModel { Count = 0, ElementId = ElementId.InvalidElementId }
+            //         },
+            //         new()
+            //         {
+            //             ArrayField = new List<int>() { 789, 101112 },
+            //             StringProperty = "Hello, again!",
+            //             IntProperty = 88,
+            //             DoubleProperty = -0.0000000056,
+            //             DeepModels = new List<DeepModel> { new() { Count = 100, ElementId = new ElementId( 555 ) }, new() { Count = 345, ElementId = new ElementId( 666 ) } },
+            //             DeepModel = new DeepModel { Count = 12, ElementId = ElementId.InvalidElementId }
+            //         }
+            //     },
+            //     BoolXyzMap = new Dictionary<bool, XYZ> { { true, new XYZ( 1, 2, 3 ) }, { false, new XYZ( -3, -2, -1 ) } },
+            //     ByteGuidMap =
+            //         new SortedDictionary<byte, Guid>
+            //         {
+            //             { 0, new Guid( "D2EF3FB3-0EF9-4F5A-BCBD-A1F84EA658B8" ) },
+            //             { 255, new Guid( "71DA88AA-6D47-4BF9-972A-DDB6F90BFAE0" ) },
+            //             { 124, new Guid( "1DDF733C-5AA1-4079-99E9-D621DBDFD928" ) }
+            //         },
+            //     ShortElementIdMap = new Dictionary<short, ElementId> { { -23, ElementId.InvalidElementId }, { 124, new ElementId( 245 ) }, { 156, new ElementId( 984534 ) }, { -145, new ElementId( 991233516 ) } },
+            //     IntSubModelMap = new SortedDictionary<int, SubModel>
+            //     {
+            //         {
+            //             -1, new SubModel
+            //             {
+            //                 ArrayField = new List<int> { 234, 1112 },
+            //                 StringProperty = "Hello from map!",
+            //                 IntProperty = 33,
+            //                 DoubleProperty = -0.0000200056,
+            //                 DeepModels = new List<DeepModel> { new() { Count = 100, ElementId = new ElementId( 555 ) }, new() { Count = 345, ElementId = new ElementId( 666 ) } },
+            //                 DeepModel = new DeepModel { Count = 12, ElementId = ElementId.InvalidElementId }
+            //             }
+            //         },
+            //         {
+            //             775993884, new SubModel
+            //             {
+            //                 ArrayField = new List<int> { 0, 123, 345564, -31243, 51454 },
+            //                 StringProperty = "Hello from map 2!",
+            //                 IntProperty = 33,
+            //                 DoubleProperty = -0.0000200056,
+            //                 DeepModels = new List<DeepModel> { new() { Count = 100, ElementId = new ElementId( 555 ) }, new() { Count = 345, ElementId = new ElementId( 666 ) } },
+            //                 DeepModel = new DeepModel { Count = 12, ElementId = ElementId.InvalidElementId }
+            //             }
+            //         }
+            //     },
+            //     ElementIdStringMap = new Dictionary<ElementId, string> { { new ElementId( BuiltInParameter.LEVEL_DATA_OWNING_LEVEL ), "LEVEL_DATA_OWNING_LEVEL" }, { ElementId.InvalidElementId, "Invalid" } },
+            //     GuidDeepModelMap = new Dictionary<Guid, DeepModel> { { new Guid( "A85D94A3-162D-4611-BA9B-C268700ECDB1" ), new() { Count = 23, ElementId = new ElementId( 24 ) } } },
+            //     StringDoubleMap = new SortedDictionary<string, double> { { "one point zero five", 0.05 }, { "one hundred and sixty six point one two three", 166.123 } }
+            // } ;
+            // storageService.Data.ComplexModels = new List<ComplexModel> { model } ;
+            // storageService.SaveChange();
+            //
+            // trans.Commit() ;
+            //
+            // storageService = new StorageService<Element, MasterModel>( element ) ;
+            // data = storageService.Data ;
 
             return Result.Succeeded ;
         }

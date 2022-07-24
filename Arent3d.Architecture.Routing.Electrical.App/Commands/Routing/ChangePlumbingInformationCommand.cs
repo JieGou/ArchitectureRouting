@@ -143,15 +143,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var registrationOfBoardDataModels = doc.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
 
       var plumbingTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
-      var plumbingTypes = ( from conduitTypeName in plumbingTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
-      plumbingTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
+      var plumbingTypes = ( from conduitTypeName in plumbingTypeNames select new DetailTableItemModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
+      plumbingTypes.Add( new DetailTableItemModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
 
       var hiroiCdModel = csvStorable.HiroiSetCdMasterNormalModelData ;
       var classificationOfPlumbingNames = hiroiCdModel.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
-      var classificationsOfPlumbing = ( from classificationOfPlumbingName in classificationOfPlumbingNames select new DetailTableModel.ComboboxItemType( classificationOfPlumbingName, classificationOfPlumbingName ) ).ToList() ;
+      var classificationsOfPlumbing = ( from classificationOfPlumbingName in classificationOfPlumbingNames select new DetailTableItemModel.ComboboxItemType( classificationOfPlumbingName, classificationOfPlumbingName ) ).ToList() ;
 
-      var concealmentOrExposure = new List<DetailTableModel.ComboboxItemType>() { new( ConcealmentOrExposure.隠蔽.GetFieldName(), "False" ), new( ConcealmentOrExposure.露出.GetFieldName(), "True" ) } ;
-      var inOrOutDoor = new List<DetailTableModel.ComboboxItemType>() { new( InOrOutDoor.屋内.GetFieldName(), "True" ), new( InOrOutDoor.屋外.GetFieldName(), "False" ) } ;
+      var concealmentOrExposure = new List<DetailTableItemModel.ComboboxItemType>() { new( ConcealmentOrExposure.隠蔽.GetFieldName(), "False" ), new( ConcealmentOrExposure.露出.GetFieldName(), "True" ) } ;
+      var inOrOutDoor = new List<DetailTableItemModel.ComboboxItemType>() { new( InOrOutDoor.屋内.GetFieldName(), "True" ), new( InOrOutDoor.屋外.GetFieldName(), "False" ) } ;
 
       var changePlumbingInformationModels = new List<ChangePlumbingInformationModel>() ;
       var connectorInfos = new List<ChangePlumbingInformationViewModel.ConnectorInfo>() ;
