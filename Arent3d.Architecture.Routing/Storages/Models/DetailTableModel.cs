@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     [Field(Documentation = "Remark")]
     public string Remark { get ; set ; }
     
-    [Field(Documentation = "Wire Cross Sectional Area")]
+    [Field(Documentation = "Wire Cross Sectional Area", SpecTypeId = SpecTypeCode.Area, UnitTypeId = UnitTypeCode.SquareMillimeters)]
     public double WireCrossSectionalArea { get ; set ; }
     
     [Field(Documentation = "Count Cable Same Position")]
