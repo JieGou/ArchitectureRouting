@@ -757,18 +757,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     private static void CreateTextNoteAndGroupWithPullBox(Document doc, PullBoxInfoStorable pullBoxInfoStorable, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
     {
-      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
+      var newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize ;
+      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, newSize )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       
       var txtPosition = new XYZ( point.X, point.Y, point.Z ) ;
       
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
-
-      var textNoteType = textNote.TextNoteType ;
-      double newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
-      textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
-      textNote.ChangeTypeId( textNoteType.Id ) ;
-
+      
       if ( isAutoCalculatePullBoxSize ) {
         var color = new Color( 255, 0, 0 ) ;
         ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;

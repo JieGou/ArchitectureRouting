@@ -10,6 +10,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -21,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public abstract class PickUpMapCreationCommandBase : IExternalCommand
   {
     private const double MaxToleranceOfTextNotePosition = 0.001 ;
-    private const double AngleTolerance = 0.0001 ;
+    private const double MaxDistanceBetweenTextNotes = 1.5 ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -98,56 +99,55 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       textNotePickUpModels.AddRange( notSeenTextNotePickUps ) ;
       textNotePickUpModels.AddRange( seenTextNotePickUps ) ;
+      var rooms = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.Room ).ToList() ;
+      var reSizeRooms = rooms.ToDictionary( x => x.Id.IntegerValue, _ => false ) ;
       foreach ( var textNotePickUpModel in textNotePickUpModels ) {
-        if ( textNotePickUpModel.TextNotePosition == null ) continue ;
-        
-        var textNote = document.GetAllElements<TextNote>().First( x => x.UniqueId == textNotePickUpModel.TextNoteId ) ;
-        var angle = textNote.BaseDirection.AngleTo( new XYZ( 1, 0, 0 ) ) ;
+        if ( textNotePickUpModel.Position == null ) continue ;
 
-        if ( ! textNotePickUpModels.Any( x =>
-            {
-              if ( x.TextNoteId == textNotePickUpModel.TextNoteId || x.TextNotePosition == null ) return false ;
-              var xDistance = Math.Abs( x.TextNotePosition.X - textNotePickUpModel.TextNotePosition.X ) ;
-              var yDistance = Math.Abs( x.TextNotePosition.Y - textNotePickUpModel.TextNotePosition.Y ) ;
-              return xDistance < 1.5 && yDistance < 1.5 ;
-            } ) ) continue ;
+        foreach ( var room in rooms ) {
+          var isOutOfRoom = RoomRouteManager.CheckPickElementIsInOrOutRoom( room, textNotePickUpModel.Position ) ;
+          if ( isOutOfRoom ) continue ;
+          
+          var reSizeRoomId = room.Id.IntegerValue ;
 
-        var newTextNoteType = textNote.TextNoteType.Duplicate( textNote.TextNoteType.Name ) ;
-        const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
-        var textSize = newTextNoteType.get_Parameter( paraIndex ) ;
-        textSize.Set( textSize.AsDouble() / 2 ) ;
-        textNote.ChangeTypeId( newTextNoteType.Id ) ;
+          if ( ! reSizeRooms[ reSizeRoomId ] ) {
+            if ( textNotePickUpModels.Any( x =>
+                {
+                  if ( x.Position == null ) return false ;
+                  var xDistance = Math.Abs( x.Position.X - textNotePickUpModel.Position.X ) ;
+                  var yDistance = Math.Abs( x.Position.Y - textNotePickUpModel.Position.Y ) ;
+                  return xDistance < MaxDistanceBetweenTextNotes && yDistance < MaxDistanceBetweenTextNotes &&
+                         xDistance >= MaxToleranceOfTextNotePosition && yDistance >= MaxToleranceOfTextNotePosition ;
+                } ) ) {
+              reSizeRooms[ reSizeRoomId ] = true ;
+            }
+          }
 
-        if ( Math.Abs( angle - Math.PI / 2 ) < AngleTolerance )
-          textNote.Coord = new XYZ( textNote.Coord.X + 0.7, textNote.Coord.Y, textNote.Coord.Z ) ;
-        else if ( Math.Abs( angle - Math.PI / 4 ) < AngleTolerance ) {
-          var textNoteDirection = textNotePickUpModel.TextNoteDirection ;
-          if ( textNoteDirection == null )
-            textNote.Coord = new XYZ( textNote.Coord.X, textNote.Coord.Y, textNote.Coord.Z ) ;
-          else if ( textNoteDirection.Y is 1 )
-            textNote.Coord = new XYZ( textNote.Coord.X, textNote.Coord.Y - 0.8, textNote.Coord.Z ) ;
-          else if ( textNoteDirection.Y is -1 )
-            textNote.Coord = new XYZ( textNote.Coord.X, textNote.Coord.Y + 0.5, textNote.Coord.Z ) ;
-          else if ( textNoteDirection.X is 1 )
-            textNote.Coord = new XYZ( textNote.Coord.X - 0.1, textNote.Coord.Y, textNote.Coord.Z ) ;
-          else if ( textNoteDirection.X is -1 )
-            textNote.Coord = new XYZ( textNote.Coord.X + 1.3, textNote.Coord.Y, textNote.Coord.Z ) ;
+          textNotePickUpModel.RoomId = reSizeRoomId ;
+
+          break ;
         }
-        else
-          textNote.Coord = new XYZ( textNote.Coord.X, textNote.Coord.Y - 0.8, textNote.Coord.Z ) ;
+      }
+
+      foreach ( var textNotePickUpModel in textNotePickUpModels ) {
+        if ( textNotePickUpModel.RoomId == null ) continue ;
+
+        var textNote = CreateTextNote( document, textNotePickUpModel, reSizeRooms[ (int)textNotePickUpModel.RoomId ] ) ;
+        if ( textNote != null )
+          textNotePickUpModel.Id = textNote.UniqueId ;
       }
 
       #endregion
 
-      SaveTextNotePickUpModel( textNotePickUpStorable, textNotePickUpModels.Select( x => new TextNotePickUpModel( x.TextNoteId, level.Name ) ).ToList() ) ;
+      SaveTextNotePickUpModel( textNotePickUpStorable, textNotePickUpModels.Select( x => new TextNotePickUpModel( x.Id, level.Name ) ).ToList() ) ;
     }
 
     private static void SetPositionForNotSeenTextNotePickUp( Document document, RouteCache routeCache, Dictionary<string, List<Conduit>> notSeenConduitsOfRoutes,
       TextNoteMapCreationModel notSeenTextNotePickUp )
     {
       var conduitDirections = new List<XYZ>() ;
-      var textNotePositionRef = notSeenTextNotePickUp.TextNotePositionRef ;
-      var textNotePosition = notSeenTextNotePickUp.TextNotePosition ;
+      var textNotePositionRef = notSeenTextNotePickUp.PositionRef ;
+      var textNotePosition = notSeenTextNotePickUp.Position ;
 
       foreach ( var route in routeCache ) {
         var routeSegments = route.Value.RouteSegments ;
@@ -171,12 +171,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         textNotePosition = new XYZ( textNotePositionRef.X + 0.5, textNotePositionRef.Y, textNotePositionRef.Z ) ;
       else if ( textNoteDirection.X is -1 )
         textNotePosition = new XYZ( textNotePositionRef.X - 2.5, textNotePositionRef.Y, textNotePositionRef.Z ) ;
-
-      var textNote = document.GetAllElements<TextNote>().First( x => x.UniqueId == notSeenTextNotePickUp.TextNoteId ) ;
-      textNote.Coord = textNotePosition ;
       
-      notSeenTextNotePickUp.TextNotePosition = textNotePosition ;
-      notSeenTextNotePickUp.TextNoteDirection = textNoteDirection ;
+      notSeenTextNotePickUp.Position = textNotePosition ;
+      notSeenTextNotePickUp.Direction = textNoteDirection ;
     }
 
     private static void GetConduitDirectionsOfNotSeenTextNotePickUp(List<XYZ> conduitDirections, IEnumerable<RouteSegment> routeSegments, XYZ notSeenTextNotePosition, List<Conduit> notSeenConduitsOfRoute, bool isFrom = false )
@@ -250,30 +247,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             
             int counter;
             XYZ? position;
-            var positionSeenTextNote = seenTextNotePickUps.Where( x => x.TextNotePosition != null &&
-              Math.Abs( x.TextNotePositionRef.X - point.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - point.Y ) < MaxToleranceOfTextNotePosition )
-              .OrderBy( x => x.TextNoteCounter ).LastOrDefault();
+            var positionSeenTextNote = seenTextNotePickUps.Where( x => x.Position != null &&
+              Math.Abs( x.PositionRef.X - point.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.PositionRef.Y - point.Y ) < MaxToleranceOfTextNotePosition )
+              .OrderBy( x => x.Counter ).LastOrDefault();
             if ( positionSeenTextNote == default ) {
               counter = 1 ;
               position = point ;
             }
             else if ( ! isToPullBox ) {
-              var isLeftOrTop = positionSeenTextNote.TextNoteCounter % 2 != 0 ;
+              var isLeftOrTop = positionSeenTextNote.Counter % 2 != 0 ;
               
               if ( direction.Y is 1 or -1 )
-                point = new XYZ( isLeftOrTop ? point.X + 1.7 + 1.5 * ( positionSeenTextNote.TextNoteCounter - 1 ) / 2 : point.X - 1.5 * positionSeenTextNote.TextNoteCounter / 2, point.Y, point.Z ) ;
+                point = new XYZ( isLeftOrTop ? point.X + 1.7 + 1.5 * ( positionSeenTextNote.Counter - 1 ) / 2 : point.X - 1.5 * positionSeenTextNote.Counter / 2, point.Y, point.Z ) ;
               else if ( direction.X is 1 or -1 )
-                point = new XYZ( point.X, isLeftOrTop ? point.Y - 1.7 - 1.5 * ( positionSeenTextNote.TextNoteCounter - 1 ) / 2 : point.Y + 1.5 * positionSeenTextNote.TextNoteCounter / 2, point.Z ) ;
+                point = new XYZ( point.X, isLeftOrTop ? point.Y - 1.7 - 1.5 * ( positionSeenTextNote.Counter - 1 ) / 2 : point.Y + 1.5 * positionSeenTextNote.Counter / 2, point.Z ) ;
 
-              counter = positionSeenTextNote.TextNoteCounter + 1 ;
-              position = positionSeenTextNote.TextNotePositionRef ;
+              counter = positionSeenTextNote.Counter + 1 ;
+              position = positionSeenTextNote.PositionRef ;
             }
             else continue ;
 
             var textPickUpNumber = isDisplayPickUpNumber ? "[" + ( isToPullBox ? pickUpNumberOfPullBox : pickUpNumber ) + "]" : string.Empty ;
             var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
-            var textNote = CreateTextNote( document, point, seenQuantityStr, false, direction ) ;
-            var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, counter, position, point, null ) ;
+            var pickUpAlignment = TextNotePickUpAlignment.Horizontal ;
+            if ( direction is { Y: 1 or -1 } )
+              pickUpAlignment = TextNotePickUpAlignment.Vertical ;
+            var textNotePickUpModel = new TextNoteMapCreationModel( string.Empty, counter, position, point, seenQuantityStr, pickUpAlignment, null, null ) ;
             seenTextNotePickUps.Add( textNotePickUpModel ) ;
           }
         }
@@ -284,13 +283,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var xPoint = double.Parse( points.First() ) ;
           var yPoint = double.Parse( points.Skip( 1 ).First() ) ;
 
-          if ( notSeenTextNotePickUps.Any( x => Math.Abs( x.TextNotePositionRef.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.TextNotePositionRef.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
+          if ( notSeenTextNotePickUps.Any( x => Math.Abs( x.PositionRef.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.PositionRef.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
             continue ;
 
           var notSeenQuantityStr = "↓ " + Math.Round( notSeenQuantity.Value, 1 ) ;
           var txtPosition = new XYZ( xPoint, yPoint, 0 ) ;
-          var textNote = CreateTextNote( document, txtPosition , notSeenQuantityStr, true ) ;
-          var textNotePickUpModel = new TextNoteMapCreationModel( textNote.UniqueId, 0, txtPosition, txtPosition, null ) ;
+          var textNotePickUpModel = new TextNoteMapCreationModel( string.Empty, 0, txtPosition, txtPosition, notSeenQuantityStr, TextNotePickUpAlignment.Oblique, null, null ) ;
           notSeenTextNotePickUps.Add( textNotePickUpModel );
         }
       }
@@ -340,32 +338,56 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
     }
 
-    private static TextNote CreateTextNote(Document doc, XYZ txtPosition, string text, bool isOblique = false, XYZ? direction = null )
+    private static TextNote? CreateTextNote(Document doc, TextNoteMapCreationModel textNoteMapCreationModel, bool isSmallSize = false )
     {
-      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
+      var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
+      var fontSize = isSmallSize ? .005 : .01 ;
+      if ( deviceSymbolTextNoteType != null ) {
+        var deviceSymbolTextNoteFontSize = deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).AsDouble() ;
+        fontSize = isSmallSize ? deviceSymbolTextNoteFontSize / 2 : deviceSymbolTextNoteFontSize ;
+      }
+      fontSize = fontSize.RevitUnitsToMillimeters() ;
+      
+      var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, fontSize, false ) ;
+      if ( textNoteType == null ) return null ;
+      
+      var textTypeId = textNoteType.Id ;
+
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Center } ;
       
-      var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
-      var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
-      if ( deviceSymbolTextNoteType != null ) {
-        deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( 0 ) ;
-        deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
-        deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-        textNote.ChangeTypeId( deviceSymbolTextNoteType.Id ) ;
+      if ( textNoteMapCreationModel.Position != null && isSmallSize ) {
+        if ( textNoteMapCreationModel.PickUpAlignment is TextNotePickUpAlignment.Vertical )
+          textNoteMapCreationModel.Position = new XYZ( textNoteMapCreationModel.Position.X + 0.7, textNoteMapCreationModel.Position.Y, textNoteMapCreationModel.Position.Z ) ;
+        
+        else if ( textNoteMapCreationModel.PickUpAlignment is TextNotePickUpAlignment.Oblique ) {
+          var textNoteDirection = textNoteMapCreationModel.Direction ;
+          
+          if ( textNoteDirection == null )
+            textNoteMapCreationModel.Position = new XYZ( textNoteMapCreationModel.Position.X, textNoteMapCreationModel.Position.Y, textNoteMapCreationModel.Position.Z ) ;
+          
+          else if ( textNoteDirection.Y is 1 )
+            textNoteMapCreationModel.Position = new XYZ( textNoteMapCreationModel.Position.X, textNoteMapCreationModel.Position.Y - 0.8, textNoteMapCreationModel.Position.Z ) ;
+          
+          else if ( textNoteDirection.Y is -1 )
+            textNoteMapCreationModel.Position = new XYZ( textNoteMapCreationModel.Position.X, textNoteMapCreationModel.Position.Y + 0.5, textNoteMapCreationModel.Position.Z ) ;
+          
+          else if ( textNoteDirection.X is 1 )
+            textNoteMapCreationModel.Position = new XYZ( textNoteMapCreationModel.Position.X - 0.1, textNoteMapCreationModel.Position.Y, textNoteMapCreationModel.Position.Z ) ;
+          
+          else if ( textNoteDirection.X is -1 )
+            textNoteMapCreationModel.Position = new XYZ( textNoteMapCreationModel.Position.X + 1.3, textNoteMapCreationModel.Position.Y, textNoteMapCreationModel.Position.Z ) ;
+        }
+        
+        else
+          textNoteMapCreationModel.Position = new XYZ( textNoteMapCreationModel.Position.X, textNoteMapCreationModel.Position.Y - 0.8, textNoteMapCreationModel.Position.Z ) ;
       }
-      else {
-        var textNoteType = textNote.TextNoteType ;
-        textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( .01 ) ;
-        textNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( 0 ) ;
-        textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
-        textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-        textNote.ChangeTypeId( textNoteType.Id ) ;
-      }
+      
+      var textNote = TextNote.Create( doc, doc.ActiveView.Id, textNoteMapCreationModel.Position, textNoteMapCreationModel.Content, opts ) ;
 
-      if ( isOblique )
-        ElementTransformUtils.RotateElement( doc, textNote.Id, Line.CreateBound( txtPosition, txtPosition + XYZ.BasisZ ),  Math.PI / 4 ) ;
-      else if ( direction is { Y: 1 or -1 } )
-        ElementTransformUtils.RotateElement( doc, textNote.Id, Line.CreateBound( txtPosition, txtPosition + XYZ.BasisZ ),  Math.PI / 2 ) ;
+      if ( textNoteMapCreationModel.PickUpAlignment is TextNotePickUpAlignment.Oblique )
+        ElementTransformUtils.RotateElement( doc, textNote.Id, Line.CreateBound( textNoteMapCreationModel.Position, textNoteMapCreationModel.Position + XYZ.BasisZ ),  Math.PI / 4 ) ;
+      else if ( textNoteMapCreationModel.PickUpAlignment is TextNotePickUpAlignment.Vertical )
+        ElementTransformUtils.RotateElement( doc, textNote.Id, Line.CreateBound( textNoteMapCreationModel.Position, textNoteMapCreationModel.Position + XYZ.BasisZ ),  Math.PI / 2 ) ;
       
       var color = new Color( 255, 225, 51 ) ;
       ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
@@ -405,5 +427,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       return pickUpNumberList ;
     }
+  }
+
+  public enum TextNotePickUpAlignment
+  {
+    Oblique, Vertical, Horizontal
   }
 }

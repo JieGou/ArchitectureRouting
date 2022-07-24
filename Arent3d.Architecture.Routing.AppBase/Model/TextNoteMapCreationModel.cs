@@ -1,22 +1,29 @@
-﻿using Autodesk.Revit.DB ;
+﻿using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
 {
   public class TextNoteMapCreationModel
   {
-    public string TextNoteId { get ; set ; }
-    public int TextNoteCounter { get ; set ; }
-    public XYZ TextNotePositionRef { get ; set ; }
-    public XYZ? TextNotePosition { get ; set ; }
-    public XYZ? TextNoteDirection { get ; set ; }
+    public string Id { get ; set ; }
+    public int Counter { get ; set ; }
+    public XYZ PositionRef { get ; set ; }
+    public XYZ? Position { get ; set ; }
+    public string Content { get ; set ; }
+    public TextNotePickUpAlignment PickUpAlignment { get ; set ; }
+    public XYZ? Direction { get ; set ; }
+    public int? RoomId { get ; set ; }
 
-    public TextNoteMapCreationModel( string textNoteId, int textNoteCounter, XYZ textNotePositionRef, XYZ? textNotePosition, XYZ? textNoteDirection)
+    public TextNoteMapCreationModel( string id, int counter, XYZ positionRef, XYZ? position, string content, TextNotePickUpAlignment pickUpAlignment, XYZ? direction, int? roomId )
     {
-      TextNoteId = textNoteId ;
-      TextNoteCounter = textNoteCounter ;
-      TextNotePositionRef = textNotePositionRef ;
-      TextNotePosition = textNotePosition ;
-      TextNoteDirection = textNoteDirection ;
+      Id = id ;
+      Counter = counter ;
+      PositionRef = positionRef ;
+      Position = position ;
+      Content = content ;
+      PickUpAlignment = pickUpAlignment ;
+      Direction = direction ;
+      RoomId = roomId ;
     }
   }
 }
