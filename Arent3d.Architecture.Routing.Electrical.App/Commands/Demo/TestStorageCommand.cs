@@ -12,8 +12,6 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
-using SpecTypeId = Arent3d.Architecture.Routing.Storages.SpecTypeId ;
-using UnitTypeId = Arent3d.Architecture.Routing.Storages.UnitTypeId ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
 {
@@ -158,10 +156,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         [Field( Documentation = "Byte Property" )]
         public byte ByteProperty { get ; set ; }
 
-        [Field( Documentation = "Double Property", SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( Documentation = "Double Property", SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public double DoubleProperty { get ; set ; }
 
-        [Field( Documentation = "Float Property", SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( Documentation = "Float Property", SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public float FloatProperty { get ; set ; }
 
         [Field( Documentation = "Boolean Property" )]
@@ -176,10 +174,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         [Field( Documentation = "ElementId Property" )]
         public ElementId? ElementIdProperty { get ; set ; }
 
-        [Field( Documentation = "XYZ Property", SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( Documentation = "XYZ Property", SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public XYZ? XyzProperty { get ; set ; }
 
-        [Field( Documentation = "UV Property", SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( Documentation = "UV Property", SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public UV? UvProperty { get ; set ; }
 
         [Field]
@@ -198,10 +196,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         [Field( Documentation = "BindingList of Byte Property" )]
         public BindingList<byte>? ByteArrayProperty { get ; set ; }
 
-        [Field( Documentation = "ObservableCollection of Double Property", SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( Documentation = "ObservableCollection of Double Property", SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public ObservableCollection<double>? DoubleArrayProperty { get ; set ; }
 
-        [Field( Documentation = "Float List Property", SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( Documentation = "Float List Property", SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public List<float>? FloatArrayProperty { get ; set ; }
 
         [Field( Documentation = "Boolean List Property" )]
@@ -216,10 +214,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         [Field( Documentation = "ElementId List Property" )]
         public List<ElementId>? ElementIdArrayProperty { get ; set ; }
 
-        [Field( Documentation = "XYZ List Property", SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( Documentation = "XYZ List Property", SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public Collection<XYZ>? XyzArrayProperty { get ; set ; }
 
-        [Field( Documentation = "UV BindingList Property", SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( Documentation = "UV BindingList Property", SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public BindingList<UV>? UvArrayProperty { get ; set ; }
 
         [Field]
@@ -230,7 +228,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
 
         #region Map properties
 
-        [Field( SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public Dictionary<bool, XYZ>? BoolXyzMap { get ; set ; }
 
         [Field]
@@ -248,7 +246,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         [Field]
         public Dictionary<Guid, DeepModel>? GuidDeepModelMap { get ; set ; }
 
-        [Field( SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public SortedDictionary<string, double>? StringDoubleMap { get ; set ; }
 
         #endregion
@@ -273,7 +271,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         [Field( Documentation = "Integer property" )]
         public int IntProperty { get ; set ; }
 
-        [Field( SpecTypeId = SpecTypeId.Length, UnitTypeId = UnitTypeId.Millimeters )]
+        [Field( SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
         public double DoubleProperty { get ; set ; }
 
         [Field]
