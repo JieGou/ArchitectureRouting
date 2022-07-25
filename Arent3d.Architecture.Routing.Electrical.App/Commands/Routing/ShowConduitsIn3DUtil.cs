@@ -92,7 +92,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     public static Dictionary<string, double> SetOffsetForConduit( Document document, ICollection<Element> conduits, List<ElementId> conduitsHideIn3DView )
     {
       Dictionary<string, double> conduitToleranceDic = new() ;
-      Dictionary<string, XYZ> conduitDirectionDic = new() ;
+      List<DirectionAndLengthConduitInfo> directionAndLengthConduits = new() ;
       var allConduitsOfBranchRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == c.GetRepresentativeRouteName() && ( c.GetNearestEndPoints( true ).FirstOrDefault()?.Key.GetTypeName() == PassPointBranchEndPoint.Type || c.GetNearestEndPoints( true ).FirstOrDefault()?.Key.GetTypeName() == PassPointEndPoint.Type ) && c.GetNearestEndPoints( false ).FirstOrDefault()?.Key.GetTypeName() == ConnectorEndPoint.Type ).ToList() ;
       List<Element> conduitOfBranchRoutes = new() ;
       var offset = ( conduits.First() as Conduit )!.Diameter + ( 5.0 ).MillimetersToRevitUnits() ;
@@ -101,7 +101,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var routeName = conduit.GetRouteName()! ;
         var routeNameArray = routeName.Split( '_' ) ;
         var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-        if ( conduitDirectionDic.ContainsKey( mainRouteName ) ) continue ;
+        if ( directionAndLengthConduits.Exists( c => c.RouteName == mainRouteName ) ) continue ;
         var conduitOfBranchRoute = allConduitsOfBranchRoute.Where( c =>
         {
           if ( c.GetRouteName() is not { } rName ) return false ;
@@ -117,69 +117,69 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var passPoint = document.GetElement( passPointId ) ;
         mainDirection = ( passPoint as FamilyInstance )!.HandOrientation ;
         var direction = new XYZ() ;
+        double length = 0 ;
         foreach ( var otherConduit in conduitOfBranchRoute ) {
           var conduitLocation = ( otherConduit.Location as LocationCurve ) ! ;
           var conduitLine = ( conduitLocation.Curve as Line ) ! ;
           var conduitDirection = conduitLine.Direction ;
-          if ( ( mainDirection.X is 1 or -1 && conduitDirection.Y is 1 or -1 ) || ( mainDirection.Y is 1 or -1 && conduitDirection.X is 1 or -1 )  ) {
-            direction = conduitDirection ;
-            break ;
-          }
+          if ( ( mainDirection.X is not (1 or -1) || conduitDirection.Y is not (1 or -1) ) && ( mainDirection.Y is not (1 or -1) || conduitDirection.X is not (1 or -1) ) ) continue ;
+          direction = conduitDirection ;
+          length = conduitLine.Length ;
+          break ;
         }
 
-        if ( ! conduitDirectionDic.ContainsKey( mainRouteName ) )
-          conduitDirectionDic.Add( mainRouteName, direction ) ;
+        if ( ! directionAndLengthConduits.Exists( c => c.RouteName == mainRouteName ) )
+          directionAndLengthConduits.Add( new DirectionAndLengthConduitInfo( mainRouteName, direction, length ) ) ;
       }
 
       conduits.AddRange( conduitOfBranchRoutes ) ;
 
-      if ( ! conduitDirectionDic.Any() ) return conduitToleranceDic ;
+      if ( ! directionAndLengthConduits.Any() ) return conduitToleranceDic ;
       {
         var mark = mainDirection.X is 1 or -1 ? mainDirection.X : mainDirection.Y ;
-        var plusDirections = conduitDirectionDic.Where( c => c.Value.X is 1 || c.Value.Y is 1 )
+        var plusDirections = directionAndLengthConduits.Where( c => c.Direction.X is 1 || c.Direction.Y is 1 )
           .OrderByDescending( c =>
           {
-            var rNameArray = c.Key.Split( '_' ) ;
+            var rNameArray = c.RouteName.Split( '_' ) ;
             var numberRoute = Convert.ToInt16( rNameArray.ElementAt( 1 ) ) ;
             return numberRoute ;
           } ).ToList() ;
-        var minusDirections = conduitDirectionDic.Where( c => c.Value.X is -1 || c.Value.Y is -1 )
+        var minusDirections = directionAndLengthConduits.Where( c => c.Direction.X is -1 || c.Direction.Y is -1 )
           .OrderByDescending( c =>
         {
-          var rNameArray = c.Key.Split( '_' ) ;
+          var rNameArray = c.RouteName.Split( '_' ) ;
           var numberRoute = Convert.ToInt16( rNameArray.ElementAt( 1 ) ) ;
           return numberRoute ;
         } ).ToList() ;
         if ( ! plusDirections.Any() || ! minusDirections.Any() ) {
-          var conduitDirections = conduitDirectionDic.OrderByDescending( c =>
+          var conduitDirections = directionAndLengthConduits.OrderBy( c => c.Length ).ToList() ;
+          var count = conduitDirections.Count / 2 ;
+          plusDirections = conduitDirections.GetRange( 0, count )
+            .OrderByDescending( c =>
             {
-              var rNameArray = c.Key.Split( '_' ) ;
+              var rNameArray = c.RouteName.Split( '_' ) ;
               var numberRoute = Convert.ToInt16( rNameArray.ElementAt( 1 ) ) ;
               return numberRoute ;
             } ).ToList() ;
-          var count = conduitDirections.Count / 2 ;
-          for ( var i = 0 ; i <= count ; i++ ) {
-            conduitToleranceDic.Add( conduitDirections.ElementAt( i ).Key, -offset * ( i + 1 ) ) ;
-          }
-
-          var number = 1 ;
-          for ( var i = count + 1 ; i < conduitDirections.Count ; i++ ) {
-            conduitToleranceDic.Add( conduitDirections.ElementAt( i ).Key, offset * number ) ;
-            number++ ;
-          }
+          minusDirections = conduitDirections.GetRange( count, conduitDirections.Count - count )
+            .OrderByDescending( c =>
+            {
+              var rNameArray = c.RouteName.Split( '_' ) ;
+              var numberRoute = Convert.ToInt16( rNameArray.ElementAt( 1 ) ) ;
+              return numberRoute ;
+            } ).ToList() ;
         }
-        else {
-          var number = 1 ;
-          foreach ( var plusDirection in plusDirections ) {
-            conduitToleranceDic.Add( plusDirection.Key, ( mainDirection.X is 1 or -1 ? mark : - mark ) * offset * number ) ;
-            number++ ;
-          }
 
-          number = 1 ;
-          foreach ( var minusDirection in minusDirections ) {
-            conduitToleranceDic.Add( minusDirection.Key, ( mainDirection.X is 1 or -1 ? - mark : mark ) * offset * number ) ;
-            number++ ;
-          }
+        var number = 1 ;
+        foreach ( var plusDirection in plusDirections ) {
+          conduitToleranceDic.Add( plusDirection.RouteName, ( mainDirection.X is 1 or -1 ? mark : -mark ) * offset * number ) ;
+          number++ ;
+        }
+
+        number = 1 ;
+        foreach ( var minusDirection in minusDirections ) {
+          conduitToleranceDic.Add( minusDirection.RouteName, ( mainDirection.X is 1 or -1 ? -mark : mark ) * offset * number ) ;
+          number++ ;
         }
       }
 
@@ -387,6 +387,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         Directions = directions ;
         ConduitsOfBranch = conduitsOfBranch ;
         PassPointDirection = passPointDirection ;
+      }
+    }
+    
+    public class DirectionAndLengthConduitInfo
+    {
+      public string RouteName { get ; }
+      public XYZ Direction { get ; }
+      public double Length { get ; }
+
+      public DirectionAndLengthConduitInfo( string routeName, XYZ direction, double length )
+      {
+        RouteName = routeName ;
+        Direction = direction ;
+        Length = length ;
       }
     }
 
