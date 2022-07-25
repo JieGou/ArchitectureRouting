@@ -338,6 +338,15 @@
         <key>Dialog.Commands.Routing.PickRouting.PickEndPointOverSubRoute</key>
         <string>From-Toの行き先を選択してください。</string>
 
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.ReferenceTable</key>
+        <string>明細追加する参照情報を選択してください。</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.Table</key>
+        <string>明細表の挿入先を選択してください。</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.CTLFile</key>
+        <string>CTLファイルを選択してください。</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.AfterGrouping</key>
+        <string>配管がまとめられているため、電線本数が変更できません。</string>
+
         <key>Dialog.Commands.Routing.PickAndReRoute.Pick</key>
         <string>再ルーティングしたいFrom-Toを選択してください。</string>
 

@@ -2,7 +2,9 @@
 {
   public class DetailSymbolModel
   {
-    public string DetailSymbolId { get ; set ; }
+    public string DetailSymbolUniqueId { get ; set ; }
+    public string FromConnectorUniqueId { get ; set ; }
+    public string ToConnectorUniqueId { get ; set ; }
     public string DetailSymbol { get ; set ; }
     public string ConduitId { get ; set ; }
     public string RouteName { get ; set ; }
@@ -13,10 +15,12 @@
     public string DeviceSymbol { get ; set ; }
     public string PlumbingType { get ; set ; }
 
-    public DetailSymbolModel( string? detailSymbolId, string? detailSymbol, string? conduitId, string? routeName, string? code, string? lineIds, bool? isParentSymbol, int? countCableSamePosition, string? deviceSymbol, string? plumbingType )
+    public DetailSymbolModel( string? detailSymbol, string? detailSymbolUniqueId, string? fromConnectorUniqueId, string? toConnectorUniqueId, string? conduitId, string? routeName, string? code, string? lineIds, bool? isParentSymbol, int? countCableSamePosition, string? deviceSymbol, string? plumbingType )
     {
-      DetailSymbolId = detailSymbolId ?? string.Empty ;
       DetailSymbol = detailSymbol ?? string.Empty ;
+      DetailSymbolUniqueId = detailSymbolUniqueId ?? string.Empty ;
+      FromConnectorUniqueId = fromConnectorUniqueId ?? string.Empty ;
+      ToConnectorUniqueId = toConnectorUniqueId ?? string.Empty ;
       ConduitId = conduitId ?? string.Empty ;
       RouteName = routeName ?? string.Empty ;
       Code = code ?? string.Empty ;
