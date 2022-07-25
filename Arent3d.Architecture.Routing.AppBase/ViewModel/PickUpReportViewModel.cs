@@ -521,7 +521,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           sheet.SetColumnWidth( 4, 1300 ) ;
           row0 = sheet.CreateRow( 0 ) ;
           row2 = sheet.CreateRow( 2 ) ;
+          var row1S = sheet.CreateRow( 1 ) ;
+          row1S.HeightInPoints = 8.25F ;
           var row3 = sheet.CreateRow( 3 ) ;
+          row3.HeightInPoints = 19.5F ;
           CreateCell( row0, 2, "【拾い出し集計表】", xssfCellStyles[ "headerNoneBorderedCellStyle" ] ) ;
           CreateMergeCell( sheet, row0, 0, 0, 6, 7, fileName, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
           for ( var i = 7 ; i < 19 ; i++ ) {
@@ -544,16 +547,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
           if ( index < 19 ) {
             for ( int i = index + 1 ; i < 19 ; i++ ) {
-              CreateCell( row2, i, "", xssfCellStyles[ "topBorderedCellStyleMedium" ] ) ;
-              CreateCell( row3, i, "", xssfCellStyles[ "bottomBorderedCellStyleMedium" ] ) ;
+              if ( i == 18 ) {
+                CreateCell( row2, i, "", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) ) ;
+                CreateCell( row3, i, "", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Thin, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) ) ;
+              }
+              else {
+                CreateCell( row2, i, "", xssfCellStyles[ "topBorderedCellStyleMedium" ] ) ;
+                CreateCell( row3, i, "", xssfCellStyles[ "bottomBorderedCellStyleMedium" ] ) ;
+              }
             }
           }
-          
-          CreateCell( row2, index, "合計", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) ) ;
+
+          if ( index == 18 ) {
+            CreateCell( row2, index, "合計", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) ) ;
+          }
+          else {
+            CreateCell( row2, index, "合計", xssfCellStyles[ "topBorderedCellStyleMedium" ] ) ;
+          }
           var spaceS = "  " ;
           CreateMergeCell( sheet, row3, 3, 3, 1, 3, $"品{spaceS}名 / 規{spaceS}格", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ), true ) ;
           CreateCell( row3, 4, "単位", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) ) ;
-          CreateCell( row3, index, "", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) ) ;
+          if ( index == 18 ) {
+            CreateCell( row3, index, "", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) ) ;
+          }
+          else {
+            CreateCell( row3, index, "", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.Thin, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) ) ;
+          }
+
 
           rowStart = 4 ;
           List<KeyValuePair<string, List<PickUpModel>>> dictionaryDataPickUpModelSummary = new List<KeyValuePair<string, List<PickUpModel>>>() ;
@@ -645,13 +665,27 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         total += quantityFloor ;
       }
 
-      CreateCell( rowName, index, total == 0 ? string.Empty : Math.Round( total, isTani ? 1 : 2 ).ToString(), xssfCellStyles[ "rightBorderedCellStyleMediumDotted" ] ) ;
-      CreateCell( rowStandard, index, "", isLastRow ? xssfCellStyles[ "rightBottomCellStyleSummaryMedium" ] : xssfCellStyles[ "exceptTopBorderedCellStyleSummaryMedium" ] ) ;
+      if ( index != 18 ) 
+      {
+        CreateCell( rowName, index, total == 0 ? string.Empty : Math.Round( total, isTani ? 1 : 2 ).ToString(), xssfCellStyles[ "leftRightBorderedCellStyle" ] ) ;
+        CreateCell( rowStandard, index, "", isLastRow ? xssfCellStyles[ "bottomCellStyleSummaryMedium" ] : xssfCellStyles[ "exceptTopBorderedCellStyleSummary" ] ) ;
+      }
+      else {
+        CreateCell( rowName, index, total == 0 ? string.Empty : Math.Round( total, isTani ? 1 : 2 ).ToString(), xssfCellStyles[ "rightBorderedCellStyleMediumDotted" ] ) ;
+        CreateCell( rowStandard, index, "", isLastRow ? xssfCellStyles[ "rightBottomCellStyleSummaryMedium" ] : xssfCellStyles[ "exceptTopBorderedCellStyleSummaryMedium" ] ) ;
+      }
+    
 
       if ( index < 19 ) {
         for ( int i = index + 1 ; i < 19 ; i++ ) {
-          CreateCell( rowName, i,  "" , xssfCellStyles[ "leftRightBorderedCellStyle" ] ) ;
-          CreateCell( rowStandard, i, "", isLastRow ? xssfCellStyles[ "bottomCellStyleSummaryMedium" ] : xssfCellStyles[ "exceptTopBorderedCellStyleSummary" ] ) ;
+          if ( i == 18 ) {
+            CreateCell( rowName, i, "", xssfCellStyles[ "rightBorderedCellStyleMediumDotted" ] ) ;
+            CreateCell( rowStandard, i, "", isLastRow ? xssfCellStyles[ "rightBottomCellStyleSummaryMedium" ] : xssfCellStyles[ "exceptTopBorderedCellStyleSummaryMedium" ] ) ;
+          }
+          else {
+            CreateCell( rowName, i,  "" , xssfCellStyles[ "leftRightBorderedCellStyle" ] ) ;
+            CreateCell( rowStandard, i, "", isLastRow ? xssfCellStyles[ "bottomCellStyleSummaryMedium" ] : xssfCellStyles[ "exceptTopBorderedCellStyleSummary" ] ) ;
+          }
         }
       }
       rowStart++ ;
