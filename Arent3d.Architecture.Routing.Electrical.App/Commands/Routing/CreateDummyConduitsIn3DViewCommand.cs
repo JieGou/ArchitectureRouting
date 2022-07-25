@@ -37,13 +37,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
             using var transaction = new Transaction( document, ( "TransactionName.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetAppStringByKeyOrDefault( "Create Dummy Conduits In 3D View" ) ) ) ;
             transaction.Start() ;
+            var failureOptions = transaction.GetFailureHandlingOptions() ;
+            failureOptions.SetFailuresPreprocessor( new ShowConduitsIn3DUtil.FailurePreprocessor() ) ;
+            transaction.SetFailureHandlingOptions( failureOptions ) ;
             if ( document.ActiveView is ViewPlan activeView ) {
               newView = ShowConduitsIn3DUtil.Create3DView( document, activeView ) ;
             }
             
             var routeDic = GenerateConduits( document, allConduits, newConduits, conduitsHideIn3DView ) ;
             var removedConduitIds = GenerateConduitFittings( uiDocument, routeDic, newConduits, conduitsHideIn3DView ) ;
-            transaction.Commit() ;
+            transaction.Commit( failureOptions ) ;
 
             ShowConduitsIn3DUtil.RemoveAndHideUnusedConduits( document, removedConduitIds, newConduits, conduitsHideIn3DView ) ;
           }
@@ -103,8 +106,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
             offset = conduitToleranceDic[mainName] ;
             var ( branchConduitWithSamePassPointDirection, passPointDirection ) = ShowConduitsIn3DUtil.GetBranchConduitWithSamePassPointDirection( document, mainName ) ;
             isMoveConduit = isMoveConduit || branchConduitWithSamePassPointDirection.SingleOrDefault( c => c.UniqueId == conduit.UniqueId ) != null ;
-            var arentConduitTypeName = "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
-            conduitType = document.GetAllElements<MEPCurveType>().FirstOrDefault( c => c.Name == arentConduitTypeName ) ;
+            var conduitTypeName = conduit.Name ;
+            conduitType = document.GetAllElements<MEPCurveType>().FirstOrDefault( c => c.Name == conduitTypeName ) ;
             var routeInfo = new ShowConduitsIn3DUtil.RouteInfo( routeName!, conduitType!, offset, conduitDirections, branchConduitWithSamePassPointDirection, passPointDirection ) ;
             routeDic.Add( routeInfo ) ;
           }
@@ -305,11 +308,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
             }
           }
           var z = origin.Z - elevation ;
-          
-          var symbol = routeInfo.CurveType.Elbow ;
+
+          var symbol = conduitFitting.Symbol ;
           var instance = symbol.Instantiate( new XYZ( x, y, z), level!, StructuralType.NonStructural ) ;
-          var conduitSize = conduitFitting.ParametersMap.get_Item( "呼び半径" ).AsDouble() ;
-          instance.ParametersMap.get_Item( "呼び半径" )?.Set( conduitSize ) ;
+          var radius = conduitFitting.ParametersMap.get_Item( "呼び半径" ).AsDouble() ;
+          instance.ParametersMap.get_Item( "呼び半径" )?.Set( radius ) ;
+          if ( ! conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) ).IsReadOnly ) {
+            var bendRadius = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) ).AsDouble() ;
+            instance.ParametersMap.get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) )?.Set( bendRadius ) ;
+          }
           newConduits.Add( instance, ShowConduitsIn3DUtil.DummyName + "_" + routeName ) ;
 
           if ( ( handOrientation.X is 1 && facingOrientation.Y is -1 ) || ( handOrientation.Y is 1 && facingOrientation.X is -1 ) ) {

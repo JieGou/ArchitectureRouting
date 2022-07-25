@@ -151,27 +151,33 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           return numberRoute ;
         } ).ToList() ;
         if ( ! plusDirections.Any() || ! minusDirections.Any() ) {
-          var count = conduitDirectionDic.Count / 2 ;
+          var conduitDirections = conduitDirectionDic.OrderByDescending( c =>
+            {
+              var rNameArray = c.Key.Split( '_' ) ;
+              var numberRoute = Convert.ToInt16( rNameArray.ElementAt( 1 ) ) ;
+              return numberRoute ;
+            } ).ToList() ;
+          var count = conduitDirections.Count / 2 ;
           for ( var i = 0 ; i <= count ; i++ ) {
-            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, -offset * ( i + 1 ) ) ;
+            conduitToleranceDic.Add( conduitDirections.ElementAt( i ).Key, -offset * ( i + 1 ) ) ;
           }
 
           var number = 1 ;
-          for ( var i = count + 1 ; i < conduitDirectionDic.Count ; i++ ) {
-            conduitToleranceDic.Add( conduitDirectionDic.ElementAt( i ).Key, offset * number ) ;
+          for ( var i = count + 1 ; i < conduitDirections.Count ; i++ ) {
+            conduitToleranceDic.Add( conduitDirections.ElementAt( i ).Key, offset * number ) ;
             number++ ;
           }
         }
         else {
           var number = 1 ;
           foreach ( var plusDirection in plusDirections ) {
-            conduitToleranceDic.Add( plusDirection.Key, - mark * offset * number ) ;
+            conduitToleranceDic.Add( plusDirection.Key, ( mainDirection.X is 1 or -1 ? mark : - mark ) * offset * number ) ;
             number++ ;
           }
 
           number = 1 ;
           foreach ( var minusDirection in minusDirections ) {
-            conduitToleranceDic.Add( minusDirection.Key, mark * offset * number ) ;
+            conduitToleranceDic.Add( minusDirection.Key, ( mainDirection.X is 1 or -1 ? - mark : mark ) * offset * number ) ;
             number++ ;
           }
         }
@@ -381,6 +387,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         Directions = directions ;
         ConduitsOfBranch = conduitsOfBranch ;
         PassPointDirection = passPointDirection ;
+      }
+    }
+
+    public class FailurePreprocessor : IFailuresPreprocessor
+    {
+      public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
+      {
+        var failureMessages = failuresAccessor.GetFailureMessages() ;
+        foreach ( var message in failureMessages ) {
+          if ( message.GetSeverity() == FailureSeverity.Warning )
+            failuresAccessor.DeleteWarning( message ) ;
+        }
+
+        return FailureProcessingResult.Continue ;
       }
     }
   }
