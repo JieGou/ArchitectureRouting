@@ -423,9 +423,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           sheet.SetColumnWidth( 4, GetWidth256Excel( 4.57F ) ) ;
           sheet.SetColumnWidth( 5, GetWidth256Excel( 8F )  ) ;
           sheet.SetColumnWidth( 7, GetWidth256Excel( 9.86F ) ) ;
+          sheet.SetColumnWidth( 10, GetWidth256Excel( 9.5F ) ) ;
           sheet.SetColumnWidth( 13, GetWidth256Excel( 12.2F ) );
           sheet.SetColumnWidth( 15, GetWidth256Excel( 12.2F ) );
-          sheet.SetColumnWidth( 16, GetWidth256Excel( 8.5F ) ) ;
+          sheet.SetColumnWidth( 16, GetWidth256Excel( 9.5F ) ) ;
           
           rowStart = 0 ;
           var view = _document.ActiveView ;
@@ -445,23 +446,24 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateMergeCell( sheet, row0, rowStart, rowStart, 2, 6, fileName, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 13, $"縮尺:1/{scale}", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 14, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
-            CreateCell( row0, 15, $"階高:{Math.Round(height/1000,1)}m", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
+            CreateCell( row0, 15, $"階高:{Math.Round(height/1000,1)}ｍ", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
             CreateCell( row0, 16, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
 
             CreateCell( row1, 1, "【入力確認表】", xssfCellStyles[ "headerNoneBorderedCellStyle" ] ) ;
-            CreateCell( row1, 2, "工事項目 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateCell( row1, 2, "工事項目:", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 3, 6, sheetName, xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
-            CreateCell( row1, 7, "図面番号 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateCell( row1, 7, "図面番号:", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 8, 9, "", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
-            CreateCell( row1, 10, $"階数 : {level}", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
-            CreateCell( row1, 12, "区間 :", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateCell( row1, 10, $"階数:{level}", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateCell( row1, 12, "区間:", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 13, 16, "", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
 
             var space = "      " ;
             CreateCell( row2, 1, $"品{space}名", xssfCellStyles[ "borderedCellStyleMedium" ] ) ;
             CreateMergeCell( sheet, row2, rowStart + 2, rowStart + 2, 2, 3, $"規{space}格", xssfCellStyles[ "borderedCellStyleMedium" ], true ) ;
             CreateCell( row2, 4, "単位", xssfCellStyles[ "borderedCellStyleMedium" ] ) ;
-            CreateMergeCell( sheet, row2, rowStart + 2, rowStart + 2, 5, 15, $"軌{space}{space}{space}{space}跡", xssfCellStyles[ "borderedCellStyleMedium" ], true ) ;
+            var nextSpace = "                " ;
+            CreateMergeCell( sheet, row2, rowStart + 2, rowStart + 2, 5, 15, $"軌{nextSpace}跡", xssfCellStyles[ "borderedCellStyleMedium" ], true ) ;
             CreateCell( row2, 16, "合計数量", xssfCellStyles[ "borderedCellStyleMedium" ] ) ;
 
             rowStart += 3 ;
@@ -758,11 +760,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               if ( ! isTani ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? item.SumQuantity : $"＋{item.SumQuantity}" ;
               seenQuantity += quantity ;
             }
-
-            total += quantity ;
           }
           
           if ( seenQuantity > 0 ) {
+            total += Math.Round( seenQuantity, isTani ? 1 : 2 ) ;
             if ( isSegmentConnectedToPullBox ) {
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
@@ -791,6 +792,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
           notSeenQuantityStr += value > 0 ? "＋↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
+          total += Math.Round( value, isTani ? 1 : 2 ) ;
         }
 
         var key = isTani ? ( "(" + seenQuantityStr + notSeenQuantityStr + ")" ) + (string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $"×{valueDetailTableStr}") + (string.IsNullOrEmpty( seenQuantityPullBoxStr ) ? string.Empty : $"＋{seenQuantityPullBoxStr}" )  : ( seenQuantityStr + notSeenQuantityStr ) ;
