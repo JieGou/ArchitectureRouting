@@ -126,7 +126,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return routeDic ;
     }
 
-    private void CreateConduit( Document document, MEPCurveType conduitType, ICollection<FamilyInstance> allConduitFittings, Dictionary<Element, string> newConduits, ICollection<XYZ> conduitDirections, Element conduit, string routeName, XYZ direction, XYZ startPoint, XYZ endPoint, double offset, ElementId levelId, bool isMoveConduit )
+    private void CreateConduit( Document document, MEPCurveType conduitType, ICollection<FamilyInstance> allConduitFittings, IDictionary<Element, string> newConduits, IEnumerable<XYZ> conduitDirections, Element conduit, string routeName, XYZ direction, XYZ startPoint, XYZ endPoint, double offset, ElementId levelId, bool isMoveConduit )
     {
       if ( isMoveConduit ) {
         if ( direction.X is 1 or -1 ) {
@@ -190,7 +190,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
 
-    private List<ElementId> GenerateConduitFittings( UIDocument uiDocument, List<ShowConduitsIn3DUtil.RouteInfo> routeInfos, Dictionary<Element, string> newConduits, List<ElementId> conduitsHideIn3DView )
+    private List<ElementId> GenerateConduitFittings( UIDocument uiDocument, IEnumerable<ShowConduitsIn3DUtil.RouteInfo> routeInfos, Dictionary<Element, string> newConduits, ICollection<ElementId> conduitsHideIn3DView )
     {
       List<ElementId> removedConduitIds = new() ;
       var document = uiDocument.Document ;
@@ -370,7 +370,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return removedConduitIds ;
     }
 
-    private void UpdateConduitLenght( Document document, MEPCurveType arentConduitType, Dictionary<Element, string> newConduits, string routeName, double length, List<XYZ> directions, ref List<ElementId> removedConduitIds, ShowConduitsIn3DUtil.ConduitInfo? fromConduitInfo, ShowConduitsIn3DUtil.ConduitInfo? toConduitInfo, bool isConduitWithSamePassPointDirection )
+    private void UpdateConduitLenght( Document document, MEPCurveType arentConduitType, IDictionary<Element, string> newConduits, string routeName, double length, IReadOnlyCollection<XYZ> directions, ref List<ElementId> removedConduitIds, ShowConduitsIn3DUtil.ConduitInfo? fromConduitInfo, ShowConduitsIn3DUtil.ConduitInfo? toConduitInfo, bool isConduitWithSamePassPointDirection )
     {
       var minTolerance = ( 2.54 ).MillimetersToRevitUnits() ;
       if ( fromConduitInfo != null && ! isConduitWithSamePassPointDirection ) {

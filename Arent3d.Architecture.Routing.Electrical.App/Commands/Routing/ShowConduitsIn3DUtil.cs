@@ -186,7 +186,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return conduitToleranceDic ;
     }
 
-    public static List<XYZ> GetConduitDirections( ICollection<Element> conduits, string routeName )
+    public static List<XYZ> GetConduitDirections( IEnumerable<Element> conduits, string routeName )
     {
       var routeNameArray = routeName.Split( '_' ) ;
       routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
@@ -311,9 +311,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       ConduitInfo? toConduitInfo = null ;
       var minFromDistance = double.MaxValue ;
       var minToDistance = double.MaxValue ;
-      foreach ( var conduit in conduits ) {
-        var levelId = conduit.Key.GetLevelId() ;
-        var location = ( conduit.Key.Location as LocationCurve )! ;
+      foreach ( var (conduit, _) in conduits ) {
+        var levelId = conduit.GetLevelId() ;
+        var location = ( conduit.Location as LocationCurve )! ;
         var line = ( location.Curve as Line )! ;
         var (directionX, directionY, directionZ) = line.Direction ;
         var fromPoint = line.GetEndPoint( 0 ) ;
@@ -323,27 +323,27 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         if ( ( handOrientation.X is 1 or -1 && Math.Abs( directionX - handOrientation.X ) == 0 ) || ( handOrientation.Y is 1 or -1 && Math.Abs( directionY - handOrientation.Y ) == 0 ) || ( handOrientation.Z is 1 or -1 && Math.Abs( directionZ - handOrientation.Z ) == 0 ) ) {
           if ( toDistance < minToDistance ) {
             minToDistance = toDistance ;
-            fromConduitInfo = new ConduitInfo( conduit.Key, fromPoint, toPoint, line.Direction, levelId, false ) ;
+            fromConduitInfo = new ConduitInfo( conduit, fromPoint, toPoint, line.Direction, levelId, false ) ;
           }
         }
 
         if ( ( facingOrientation.X is 1 or -1 && Math.Abs( directionX + facingOrientation.X ) == 0 ) || ( facingOrientation.Y is 1 or -1 && Math.Abs( directionY + facingOrientation.Y ) == 0 ) || ( facingOrientation.Z is 1 or -1 && Math.Abs( directionZ + facingOrientation.Z ) == 0 ) ) {
           if ( toDistance < minToDistance ) {
             minToDistance = toDistance ;
-            fromConduitInfo = new ConduitInfo( conduit.Key, fromPoint, toPoint, line.Direction, levelId, true ) ;
+            fromConduitInfo = new ConduitInfo( conduit, fromPoint, toPoint, line.Direction, levelId, true ) ;
           }
         }
 
         if ( ( facingOrientation.X is 1 or -1 && Math.Abs( directionX - facingOrientation.X ) == 0 ) || ( facingOrientation.Y is 1 or -1 && Math.Abs( directionY - facingOrientation.Y ) == 0 ) || ( facingOrientation.Z is 1 or -1 && Math.Abs( directionZ - facingOrientation.Z ) == 0 ) ) {
           if ( ! ( fromDistance < minFromDistance ) ) continue ;
           minFromDistance = fromDistance ;
-          toConduitInfo = new ConduitInfo( conduit.Key, fromPoint, toPoint, line.Direction, levelId, false ) ;
+          toConduitInfo = new ConduitInfo( conduit, fromPoint, toPoint, line.Direction, levelId, false ) ;
         }
 
         if ( ( handOrientation.X is 1 or -1 && Math.Abs( directionX + handOrientation.X ) == 0 ) || ( handOrientation.Y is 1 or -1 && Math.Abs( directionY + handOrientation.Y ) == 0 ) || ( handOrientation.Z is 1 or -1 && Math.Abs( directionZ + handOrientation.Z ) == 0 ) ) {
           if ( ! ( fromDistance < minFromDistance ) ) continue ;
           minFromDistance = fromDistance ;
-          toConduitInfo = new ConduitInfo( conduit.Key, fromPoint, toPoint, line.Direction, levelId, true ) ;
+          toConduitInfo = new ConduitInfo( conduit, fromPoint, toPoint, line.Direction, levelId, true ) ;
         }
       }
 
@@ -390,7 +390,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
     
-    public class DirectionAndLengthConduitInfo
+    private class DirectionAndLengthConduitInfo
     {
       public string RouteName { get ; }
       public XYZ Direction { get ; }
