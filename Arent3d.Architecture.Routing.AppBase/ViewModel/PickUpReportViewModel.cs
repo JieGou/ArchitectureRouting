@@ -454,7 +454,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 3, 6, sheetName, xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateCell( row1, 7, "図面番号:", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 8, 9, "", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
-            CreateCell( row1, 10, $"階数:{level}", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateCell( row1, 10, "階数:", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
+            CreateCell( row1, 11, level, xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateCell( row1, 12, "区間:", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
             CreateMergeCell( sheet, row1, rowStart + 1, rowStart + 1, 13, 16, "", xssfCellStyles[ "noneBorderedCellStyle" ] ) ;
 
@@ -771,10 +772,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               if ( ! isTani ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? item.SumQuantity : $"＋{item.SumQuantity}" ;
               seenQuantity += quantity ;
             }
+
+            total += quantity ;
           }
           
           if ( seenQuantity > 0 ) {
-            total += Math.Round( seenQuantity, isTani ? 1 : 2 ) ;
             if ( isSegmentConnectedToPullBox ) {
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
@@ -807,11 +809,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
           notSeenQuantityStr += value > 0 ? "＋↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
-          total += Math.Round( value, isTani ? 1 : 2 ) ;
-        }
-        
-        foreach ( var (_, value) in notSeenQuantitiesPullBox ) {
-          total += Math.Round( value, isTani ? 1 : 2 ) ;
         }
 
         var key = isTani ? ( "(" + seenQuantityStr + notSeenQuantityStr + ")" ) + (string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $"×{valueDetailTableStr}") + (string.IsNullOrEmpty( seenQuantityPullBoxStr ) ? string.Empty : $"＋{seenQuantityPullBoxStr}" )  : ( seenQuantityStr + notSeenQuantityStr ) ;
