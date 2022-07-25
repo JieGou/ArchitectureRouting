@@ -180,7 +180,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _pickUpModels = GetPickUpData(equipmentCategory) ;
       DataPickUpModels = _pickUpModels ;
       _pickUpStorable = _document.GetPickUpStorable() ;
-      if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have element.", "Result Message" ) ;
+      if ( ! _pickUpModels.Any() ) {
+        MessageBox.Show( "Don't have element.", "Result Message" ) ;
+      }
       else {
         var pickUpConduitByNumbers = PickUpModelByNumber( ProductType.Conduit ) ;
         var pickUpRackByNumbers = PickUpModelByNumber( ProductType.Cable ) ;
@@ -419,8 +421,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( productType == ProductType.Connector ) {
           var pickUpModel = pickUpModels.FirstOrDefault( p =>
             p.Floor == floor && p.ConstructionItems == constructionItems && p.ProductName == productName && p.Construction == construction && p.ModelNumber == modelNumber && p.Specification == specification && p.Specification2 == specification2 && p.Size == size && p.Tani == tani ) ;
-          if ( pickUpModel != null )
+          if ( pickUpModel != null ) {
             pickUpModel.Quantity = ( int.Parse( pickUpModel.Quantity ) + 1 ).ToString() ;
+          }
           else {
             pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction, materialCode,
               ceedSetCode, deviceSymbol, condition, routeName, routeNameRef) ;
