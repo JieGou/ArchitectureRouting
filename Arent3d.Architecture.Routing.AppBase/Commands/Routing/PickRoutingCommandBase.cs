@@ -105,7 +105,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection,secondPassPointPosition,secondPassPointDirection ) ) ;
     }
 
-    private static (XYZ? passPointPosition, XYZ? passPointDirection) GetPassPointPositionAndDirection(ElementId lineId,Document document, bool isPassPointInMiddle = true,bool isFromStartPoint = true,double passPointPositionDistance = 550 )
+    private static (XYZ? passPointPosition, XYZ? passPointDirection) GetPassPointPositionAndDirection(ElementId lineId,Document document, bool isPassPointInMiddle = true,bool isFromStartPoint = true,double passPointPositionDistance = 250 )
     {
       var passPointLine = ( (DetailLine)document.GetElement( lineId ) ).GeometryCurve as Line ;
       var p1 = passPointLine!.GetEndPoint( 0 ) ;

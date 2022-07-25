@@ -330,8 +330,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       trans.Start() ;
       var firstPoint = fromPickResult.GetOrigin() ;
       var lastPoint = toPickResult.GetOrigin() ;
-      if ( Math.Abs( firstPoint.X - lastPoint.X ) < MinToleranceOfConnector ||
-           Math.Abs( firstPoint.Y - lastPoint.Y ) < MinToleranceOfConnector )
+      if ( (Math.Abs( firstPoint.X - lastPoint.X ) < MinToleranceOfConnector ||
+           Math.Abs( firstPoint.Y - lastPoint.Y ) < MinToleranceOfConnector ) &&
+           !IsAnyConnectorNotDirectionAsXOrY(fromPickResult,toPickResult))
         return previewLines ;
       
       var redColor = new Color( 255, 0, 0 ) ;
