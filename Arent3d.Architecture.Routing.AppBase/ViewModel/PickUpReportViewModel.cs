@@ -724,6 +724,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var pickUpNumber in pickUpNumbers ) {
         string stringNotTani = string.Empty ;
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
+        Dictionary<string, double> notSeenQuantitiesPullBox = new Dictionary<string, double>() ;
         var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
         var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RouteNameRef ) ;
         var listSeenQuantity = new List<double>() ;
@@ -734,10 +735,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var ecoMode = FindEcoMode( itemGroupByRoute.Key, routes ) ;
           var wireBookDefault = FindWireBookDefault( pickUpModel.CeedSetCode, pickUpModel.ProductCode.Split( '-' ).First(), ecoMode) ;
           var dataDetail = _dataDetailTable.FirstOrDefault( x => x.RouteName == itemGroupByRoute.Key ) ;
-          if ( dataDetail == null && wireBookDefault != "1" && isWire && !isAssign) {
+          if ( dataDetail == null && wireBookDefault != "1" && isWire && !isAssign) 
+          {
             valueDetailTableStr = wireBookDefault ;
           }
-          else if ( dataDetail != null && dataDetail.WireBook.Trim() != "1" && isWire) {
+          else if ( dataDetail != null && dataDetail.WireBook.Trim() != "1" && isWire) 
+          {
             valueDetailTableStr = dataDetail.WireBook ;
             isAssign = true ;
           }
@@ -746,15 +749,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
           var lastSegment = GetLastSegment( itemGroupByRoute.Key, routes ) ;
           var isSegmentConnectedToPullBox = IsSegmentConnectedToPullBox( lastSegment ) ;
+          var isSegmentFromPowerToPullBox = IsSegmentFromPowerToPullBox( lastSegment ) ;
           
           foreach ( var item in itemGroupByRoute ) {
             double.TryParse( item.Quantity, out var quantity ) ;
             if ( ! string.IsNullOrEmpty( item.Direction ) ) {
-              if ( ! notSeenQuantities.Keys.Contains( item.Direction ) ) {
-                notSeenQuantities.Add( item.Direction, 0 ) ;
+              if ( isSegmentFromPowerToPullBox ) {
+                if ( ! notSeenQuantitiesPullBox.Keys.Contains( item.Direction ) ) {
+                  notSeenQuantitiesPullBox.Add( item.Direction, 0 ) ;
+                }
+                notSeenQuantitiesPullBox[ item.Direction ] += quantity ;
               }
-
-              notSeenQuantities[ item.Direction ] += quantity ;
+              else {
+                if ( ! notSeenQuantities.Keys.Contains( item.Direction ) ) {
+                  notSeenQuantities.Add( item.Direction, 0 ) ;
+                }
+                notSeenQuantities[ item.Direction ] += quantity ;
+              }
             }
             else {
               if ( ! isTani ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? item.SumQuantity : $"＋{item.SumQuantity}" ;
@@ -767,16 +778,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( isSegmentConnectedToPullBox ) {
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
-              if ( inforDisplay != null && inforDisplay.IsDisplay ) {
+              if ( inforDisplay != null && inforDisplay.IsDisplay) {
                 countStr = inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ;
                 inforDisplay.IsDisplay = false ;
-                listSeenQuantityPullBox.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr);
+                if ( isSegmentFromPowerToPullBox ) {
+                  listSeenQuantityPullBox.Add( $"({Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isTani ? 1 : 2 )})" + countStr);
+                }
+                else {
+                  listSeenQuantityPullBox.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr);
+                }
               }
             }
             else {
               listSeenQuantity.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ) ) ;
             }
-             
           }
         }
 
@@ -792,6 +807,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
           notSeenQuantityStr += value > 0 ? "＋↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
+          total += Math.Round( value, isTani ? 1 : 2 ) ;
+        }
+        
+        foreach ( var (_, value) in notSeenQuantitiesPullBox ) {
           total += Math.Round( value, isTani ? 1 : 2 ) ;
         }
 
@@ -970,6 +989,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var toConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
         .FirstOrDefault( c => c.UniqueId == toElementId ) ;
       return toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ;
+    }
+    
+    private bool IsSegmentFromPowerToPullBox( RouteSegment? lastSegment )
+    {
+      if ( lastSegment == null ) return false ;
+      var fromEndPointKey = lastSegment.FromEndPoint.Key ;
+      var toEndPointKey = lastSegment.ToEndPoint.Key ;
+      var fromElementId = fromEndPointKey.GetElementUniqueId() ;
+      var toElementId = toEndPointKey.GetElementUniqueId() ;
+      if ( string.IsNullOrEmpty( toElementId ) || string.IsNullOrEmpty( fromElementId ) ) 
+        return false ;
+      var fromConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .FirstOrDefault( c => c.UniqueId == fromElementId ) ;
+      var toConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .FirstOrDefault( c => c.UniqueId == toElementId ) ;
+      return fromConnector != null && toConnector != null && fromConnector.GetConnectorFamilyType() == ConnectorFamilyType.Power && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox;
     }
 
     private int FindMaxPickUpNumber(List<PickUpModel> pickUpModels)
