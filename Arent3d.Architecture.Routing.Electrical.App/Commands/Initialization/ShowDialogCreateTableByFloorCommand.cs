@@ -67,15 +67,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             var conduitsByFloor = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
             var elementsByFloor = conduitsByFloor.Cast<Element>().ToList() ;
             var conduitsByFloorIds = conduitsByFloor.Select( p => p.UniqueId ).ToList() ;
-            var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableItem( doc, csvStorable, storageService, elementsByFloor, conduitsByFloorIds, false ) ;
-            if ( ! detailTableModels.Any() ) continue ;
+            var (detailTableItemModels, _, _) = CreateDetailTableItem( doc, csvStorable, storageService, elementsByFloor, conduitsByFloorIds, false ) ;
+            if ( ! detailTableItemModels.Any() ) continue ;
             if ( isCreateTableEachFloors ) {
-              var level = detailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Floor ) )?.Floor ?? string.Empty ;
-              var scheduleName = CreateDetailTableSchedule( doc, detailTableModels, level ) ;
+              var level = detailTableItemModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Floor ) )?.Floor ?? string.Empty ;
+              var scheduleName = CreateDetailTableSchedule( doc, detailTableItemModels, level ) ;
               message += string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ) + "\n" ;
             }
 
-            detailTableModelsOfAllFloors.AddRange( detailTableModels ) ;
+            detailTableModelsOfAllFloors.AddRange( detailTableItemModels ) ;
           }
 
           if ( ! isCreateTableEachFloors ) {
