@@ -1084,13 +1084,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           pullBoxElement.UniqueId ) ;
 
       var elementIds = conduitsFromPullBox.Select( c => c.UniqueId ).ToList() ;
-      var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable,
+      var (detailTableItemModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableItemAddWiringInfo( document, csvStorable,
         storageService, conduitsFromPullBox, elementIds, false ) ;
 
-      var newDetailTableModels = DetailTableViewModel.SummarizePlumbing( detailTableModels, conduitsModelData,
-        storageService, new List<DetailTableModel>(), false, new Dictionary<string, string>() ) ;
+      var newDetailTableItemModels = DetailTableViewModel.SummarizePlumbing( detailTableItemModels, conduitsModelData,
+        storageService, new List<DetailTableItemModel>(), false, new Dictionary<string, string>() ) ;
 
-      var plumbingSizes = newDetailTableModels.Where( p => int.TryParse( p.PlumbingSize, out _ ) )
+      var plumbingSizes = newDetailTableItemModels.Where( p => int.TryParse( p.PlumbingSize, out _ ) )
         .Select( p => Convert.ToInt32( p.PlumbingSize ) ).ToArray() ;
       var (depth, width, height) = GetPullBoxDimension( plumbingSizes, isStraightDirection ) ;
 

@@ -8,6 +8,7 @@ using System.Text ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Utility ;
 using Microsoft.Office.Interop.Excel ;
 using NPOI.HSSF.UserModel ;
@@ -280,10 +281,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var generalDisplayDeviceSymbol = symbol.Normalize( NormalizationForm.FormKC ) ;
           if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) continue ;
           var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
-          if ( symbolModelNumber.Any() )
+          if ( symbolModelNumber.Any() ) {
             foreach ( var modelNumber in symbolModelNumber ) {
               AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
+          }
           else {
             if ( equipmentSymbols.Any() ) {
               var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
@@ -593,8 +595,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           }
           case false when extension == ".csv" :
           {
-            using StreamReader reader = new StreamReader( path, Encoding.GetEncoding( "shift-jis" ), true ) ;
-            List<string> lines = new List<string>() ;
+            using var reader = new StreamReader( path, Encoding.GetEncoding( "shift-jis" ), true ) ;
             while ( ! reader.EndOfStream ) {
               var line = reader.ReadLine() ;
               var values = line!.Split( ',' ) ;
@@ -616,9 +617,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       return modelNumbers ;
     }
 
-    public static List<DetailTableModel> GetReferenceDetailTableModels( string path )
+    public static List<DetailTableItemModel> GetReferenceDetailTableModels( string path )
     {
-      var referenceDetailTableModels = new List<DetailTableModel>() ;
+      var referenceDetailTableItemModels = new List<DetailTableItemModel>() ;
 
       try {
         using StreamReader reader = new( path ) ;
@@ -626,22 +627,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var line = reader.ReadLine() ;
           var values = line!.Split( ';' ) ;
           if ( values.Length <= 29 ) continue ;
-          var detailTableRow = new DetailTableModel( false, values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ],
+          var detailTableItemModel = new DetailTableItemModel( false, values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ],
             values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ], values[ 13 ], values[ 14 ],
             values[ 15 ], values[ 16 ], values[ 17 ], values[ 18 ], values[ 19 ], values[ 20 ], double.Parse( values[ 21 ] ),
             int.Parse( values[ 22 ] ), values[ 23 ], values[ 24 ], bool.Parse( values[ 25 ] ), bool.Parse( values[ 26 ] ), values[ 27 ],
             values[ 28 ], bool.Parse( values[ 29 ] ), bool.Parse( values[ 30 ] ), values[ 31 ] ) ;
-          referenceDetailTableModels.Add( detailTableRow ) ;
+          referenceDetailTableItemModels.Add( detailTableItemModel ) ;
         }
 
         reader.Close() ;
         reader.Dispose() ;
       }
       catch ( Exception ) {
-        return new List<DetailTableModel>() ;
+        return new List<DetailTableItemModel>() ;
       }
 
-      return referenceDetailTableModels ;
+      return referenceDetailTableItemModels ;
     }
 
     private static string GetCellValue( ICell? cell )
@@ -669,7 +670,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         if ( excelWorkbook != null ) {
           var sheet = excelWorkbook.Sheets.Count > 1 ? (Worksheet) excelWorkbook.Sheets[ 1 ] : (Worksheet) excelWorkbook.ActiveSheet ;
           sheet.DisplayPageBreaks = false ;
-          var xlSheets = excelWorkbook.Sheets as Sheets ;
+          var xlSheets = excelWorkbook.Sheets ;
           var newSheet = (Worksheet) xlSheets.Add( xlSheets[ 1 ], Type.Missing, Type.Missing, Type.Missing ) ;
           var xlRange = sheet.UsedRange ;
           var endRow = xlRange.Rows.Count ;
