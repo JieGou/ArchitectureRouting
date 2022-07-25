@@ -619,8 +619,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var firstPoint = PickInfo.Position ;
         var (textNote, lineIds) = CreateDetailSymbolCommandBase.CreateDetailSymbol( _document, detailSymbolSettingDialog, firstPoint, detailSymbolSettingDialog.Angle, isParentSymbol ) ;
 
-        CreateDetailSymbolCommandBase.SaveDetailSymbol( _document, storageServiceForDetailSymbol, conduit, textNote, detailSymbolSettingDialog.DetailSymbol, lineIds, isParentSymbol ) ;
+        var detailSymbolItemModelModel = CreateDetailSymbolCommandBase.SaveDetailSymbol( _document, storageServiceForDetailSymbol, conduit, textNote, detailSymbolSettingDialog.DetailSymbol, lineIds, isParentSymbol ) ;
 
+        if ( null != detailSymbolItemModelModel ) {
+          var storageServiceForDetailTable = new StorageService<Level, DetailTableModel>( ( (ViewPlan) _document.ActiveView ).GenLevel ) ;
+          foreach ( var detailTableItemModel in storageServiceForDetailTable.Data.DetailTableData ) {
+            if ( detailSymbolItemModelModel.FromConnectorUniqueId == detailTableItemModel.FromConnectorUniqueId
+                && detailSymbolItemModelModel.ToConnectorUniqueId == detailTableItemModel.ToConnectorUniqueId
+                && detailSymbolItemModelModel.RouteName == detailTableItemModel.RouteName) {
+              detailTableItemModel.DetailSymbolUniqueId = detailSymbolItemModelModel.DetailSymbolUniqueId ;
+            }
+          }
+          storageServiceForDetailTable.SaveChange();
+        }
+        
         transaction.Commit() ;
       }
       else {

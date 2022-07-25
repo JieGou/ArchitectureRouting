@@ -216,7 +216,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return representativeRouteName ;
     }
 
-    public static void SaveDetailSymbol( Document doc, StorageService<Level, DetailSymbolModel> storageService, Element conduit, TextNote detailSymbol, string detailSymbolContent, string lineIds, bool isParentSymbol )
+    public static DetailSymbolItemModel? SaveDetailSymbol( Document doc, StorageService<Level, DetailSymbolModel> storageService, Element conduit, TextNote detailSymbol, string detailSymbolContent, string lineIds, bool isParentSymbol )
     {
       try {
         var detailSymbolItemModels = new List<DetailSymbolItemModel>() ;
@@ -239,7 +239,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var fromConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, true ) ;
         var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, false ) ;
         if(null == fromConnector || null == toConnector)
-          return;
+          return null;
         
         var detailSymbolItemModel = CreateDetailSymbolItemModel( conduit, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, toConnector.UniqueId, lineIds, isParentSymbol, routeName!, ceedCode, routeNameSamePosition.Count, deviceSymbol, plumbingType ) ;
         detailSymbolItemModels.Add( detailSymbolItemModel ) ;
@@ -281,10 +281,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           UpdateDetailTableModel( doc, oldDetailSymbolModel, detailSymbol.UniqueId, detailSymbolContent, fromConnector.UniqueId, toConnector.UniqueId ) ;
 
         storageService.SaveChange() ;
+
+        return detailSymbolItemModel ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         MessageBox.Show( "Save Data Failed.", "Error Message" ) ;
       }
+
+      return null ;
     }
 
     public static void UpdateDetailTableModel( Document doc, DetailSymbolItemModel detailSymbolItemModel, string newDetailSymbolId, string detailSymbol, string fromConnectorUniqueId, string toConnectorUniqueId )
