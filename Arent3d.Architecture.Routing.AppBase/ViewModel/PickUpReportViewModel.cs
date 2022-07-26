@@ -39,10 +39,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     private const string SummaryFileType = "拾い出し集計表" ;
     private const string ConfirmationFileType = "拾い根拠確認表" ;
-    private const string DoconOffExcel = "拾い番号OFF" ;
-    private const string DoconOnExcel = "拾い番号ON" ;
-    private string DoconOff => FileName + "OFF" ;
-    private string DoconOn => FileName + "ON" ;
+    private string PickUpNumberOff => FileName + "OFF" ;
+    private string PickUpNumberOn => FileName + "ON" ;
     private const string OnText = "ON" ;
     private const string OffText = "OFF" ;
     private const string OutputItemAll = "全項目出力" ;
@@ -243,7 +241,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _fileNames = new List<string>() ;
       var radioButton = sender as RadioButton ;
       var fileTypes = FileTypes.Where( f => f.TheValue == true ).Select( f => f.TheText ).ToList() ;
-      var docon = radioButton!.Content.ToString() == OnText ? DoconOn : DoconOff ;
+      var pickUpNumberStatus = radioButton!.Content.ToString() == OnText ? PickUpNumberOn : PickUpNumberOff ;
       foreach ( var fileType in fileTypes ) {
         string fileName = string.Empty ;
         switch ( fileType ) {
@@ -256,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         if ( string.IsNullOrEmpty( fileName ) ) continue ;
-        _fileNames.Add( docon + fileName ) ;
+        _fileNames.Add( pickUpNumberStatus + fileName ) ;
       }
       
     }
@@ -264,15 +262,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void FileTypeChecked( object sender )
     {
       var checkbox = sender as CheckBox ;
-      var docon = DoconTypes.First().TheValue ? DoconOn : DoconOff ;
+      var pickUpNumberStatus = DoconTypes.First().TheValue ? PickUpNumberOn : PickUpNumberOff ;
       switch ( checkbox!.Content.ToString() ) {
         case SummaryFileType :
-          if ( ! _fileNames.Contains( docon + SummaryFileName ) )
-            _fileNames.Add( docon + SummaryFileName ) ;
+          if ( ! _fileNames.Contains( pickUpNumberStatus + SummaryFileName ) )
+            _fileNames.Add( pickUpNumberStatus + SummaryFileName ) ;
           break ;
         case ConfirmationFileType :
-          if ( ! _fileNames.Contains( docon + ConfirmationFileName ) )
-            _fileNames.Add( docon + ConfirmationFileName ) ;
+          if ( ! _fileNames.Contains( pickUpNumberStatus + ConfirmationFileName ) )
+            _fileNames.Add( pickUpNumberStatus + ConfirmationFileName ) ;
           break ;
       }
       
@@ -281,15 +279,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void FileTypeUnchecked( object sender )
     {
       var checkbox = sender as CheckBox ;
-      var docon = DoconTypes.First().TheValue ? DoconOn : DoconOff ;
+      var pickUpNumberStatus = DoconTypes.First().TheValue ? PickUpNumberOn : PickUpNumberOff ;
       switch ( checkbox!.Content.ToString() ) {
         case SummaryFileType :
-          if ( _fileNames.Contains( docon + SummaryFileName ) )
-            _fileNames.Remove( docon + SummaryFileName ) ;
+          if ( _fileNames.Contains( pickUpNumberStatus + SummaryFileName ) )
+            _fileNames.Remove( pickUpNumberStatus + SummaryFileName ) ;
           break ;
         case ConfirmationFileType :
-          if ( _fileNames.Contains( docon + ConfirmationFileName ) )
-            _fileNames.Remove( docon + ConfirmationFileName ) ;
+          if ( _fileNames.Contains( pickUpNumberStatus + ConfirmationFileName ) )
+            _fileNames.Remove( pickUpNumberStatus + ConfirmationFileName ) ;
           break ;
       }
     }
@@ -704,7 +702,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return pickUpNumberList ;
     }
-
     private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles, int maxPickUpNumber )
     {
       if ( ! pickUpModels.Any() ) return rowStart ;
@@ -713,11 +710,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var row = sheet.CreateRow( rowStart ) ;
       row.HeightInPoints = 13.5F ;
       var isTani = IsTani( pickUpModel ) ;
-      var isWire = IsWire( pickUpModel ) ;
       double total = 0 ;
       Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
       var routes = RouteCache.Get( DocumentKey.Get( _document ) ) ;
       var inforDisplays = GetInforDisplays( pickUpModels, routes ) ;
+      var isMoreTwoWireBook = IsMoreTwoWireBook( pickUpModels ) ;
       CreateCell( row, 1, pickUpModel.ProductName, xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
       CreateCell( row, 2, pickUpModel.Standard, xssfCellStyles[ "leftBottomBorderedCellStyleMedium" ] ) ;
       CreateCell( row, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyleMedium" ] ) ;
@@ -727,31 +724,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
         Dictionary<string, double> notSeenQuantitiesPullBox = new Dictionary<string, double>() ;
         var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
+        var itemFirst = items.First() ;
+        var wireBook = ( string.IsNullOrEmpty( itemFirst.WireBook ) || itemFirst.WireBook == "1" ) ? string.Empty : itemFirst.WireBook ;
         var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RouteNameRef ) ;
         var listSeenQuantity = new List<double>() ;
         var listSeenQuantityPullBox = new List<string>() ;
         var valueDetailTableStr = string.Empty ;
-        var isAssign = false ;
+        double totalBasedOnCreateTable = 0 ;
         foreach ( var itemGroupByRoute in itemsGroupByRoute ) {
-          var ecoMode = FindEcoMode( itemGroupByRoute.Key, routes ) ;
-          var wireBookDefault = FindWireBookDefault( pickUpModel.CeedSetCode, pickUpModel.ProductCode.Split( '-' ).First(), ecoMode) ;
-          var dataDetail = _dataDetailTable.FirstOrDefault( x => x.RouteName == itemGroupByRoute.Key ) ;
-          if ( dataDetail == null && wireBookDefault != "1" && isWire && !isAssign) 
-          {
-            valueDetailTableStr = wireBookDefault ;
-          }
-          else if ( dataDetail != null && dataDetail.WireBook.Trim() != "1" && isWire) 
-          {
-            valueDetailTableStr = dataDetail.WireBook ;
-            isAssign = true ;
-          }
-          
+          valueDetailTableStr = wireBook ;
           double seenQuantity = 0 ;
 
           var lastSegment = GetLastSegment( itemGroupByRoute.Key, routes ) ;
           var isSegmentConnectedToPullBox = IsSegmentConnectedToPullBox( lastSegment ) ;
           var isSegmentFromPowerToPullBox = IsSegmentFromPowerToPullBox( lastSegment ) ;
-          
+
           foreach ( var item in itemGroupByRoute ) {
             double.TryParse( item.Quantity, out var quantity ) ;
             if ( ! string.IsNullOrEmpty( item.Direction ) ) {
@@ -759,12 +746,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 if ( ! notSeenQuantitiesPullBox.Keys.Contains( item.Direction ) ) {
                   notSeenQuantitiesPullBox.Add( item.Direction, 0 ) ;
                 }
+
                 notSeenQuantitiesPullBox[ item.Direction ] += quantity ;
               }
               else {
                 if ( ! notSeenQuantities.Keys.Contains( item.Direction ) ) {
                   notSeenQuantities.Add( item.Direction, 0 ) ;
                 }
+
                 notSeenQuantities[ item.Direction ] += quantity ;
               }
             }
@@ -773,7 +762,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               seenQuantity += quantity ;
             }
 
-            total += quantity ;
+            totalBasedOnCreateTable += quantity ;
           }
           
           if ( seenQuantity > 0 ) {
@@ -781,7 +770,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
               if ( inforDisplay != null && inforDisplay.IsDisplay) {
-                countStr = inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ;
+                countStr = ( inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ) + ( isMoreTwoWireBook ? $"×N" : string.IsNullOrEmpty(valueDetailTableStr) ? string.Empty: $"×{valueDetailTableStr}" ) ;
                 inforDisplay.IsDisplay = false ;
                 if ( isSegmentFromPowerToPullBox ) {
                   listSeenQuantityPullBox.Add( $"({Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isTani ? 1 : 2 )})" + countStr);
@@ -796,6 +785,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
           }
         }
+
+        total += ! string.IsNullOrEmpty( wireBook ) ? Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) * int.Parse( wireBook ) : Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) ;
 
         var number = DoconTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
         var numberPullBox = DoconTypes.First().TheValue ? $"[{(maxPickUpNumber + 1)}]" : string.Empty;
@@ -1038,47 +1029,28 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return inforDisplays ;
     }
-
-    private string FindWireBookDefault( string ceedCode, string productCode, string ecoMode )
-    {
-      var result = string.Empty ;
-      var hiroiSetCdMasterModel = ! string.IsNullOrEmpty( ecoMode ) && bool.Parse( ecoMode ) ?  _hiroiSetCdMasterEcoModels.SingleOrDefault( x => x.SetCode == ceedCode ) : _hiroiSetCdMasterNormalModels.SingleOrDefault( x => x.SetCode == ceedCode );
-      if ( hiroiSetCdMasterModel == null ) return result ;
-      var lengthParentPartModelNumber = hiroiSetCdMasterModel?.LengthParentPartModelNumber ;
-      var hiroiSetMasterModel = ! string.IsNullOrEmpty( ecoMode ) && bool.Parse( ecoMode ) ?  _hiroiSetMasterEcoModels.SingleOrDefault( x => x.ParentPartModelNumber == lengthParentPartModelNumber ) :  _hiroiSetMasterNormalModels.SingleOrDefault( x => x.ParentPartModelNumber == lengthParentPartModelNumber );
-      if ( hiroiSetMasterModel == null ) return result ;
-      result = GetWireBook( productCode, hiroiSetMasterModel ) ;
-      return result ;
-    }
     
-    private string GetWireBook( string materialCode, HiroiSetMasterModel hiroiSetMasterModel ) 
-    {
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode1 ) && int.Parse(hiroiSetMasterModel.MaterialCode1) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity1 ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode2 ) && int.Parse(hiroiSetMasterModel.MaterialCode2) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity2 ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode3 ) && int.Parse(hiroiSetMasterModel.MaterialCode3) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity3 ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode4 ) && int.Parse(hiroiSetMasterModel.MaterialCode4) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity4 ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode5 ) && int.Parse(hiroiSetMasterModel.MaterialCode5) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity5 ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode6 ) && int.Parse(hiroiSetMasterModel.MaterialCode6) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity6 ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode7 ) && int.Parse(hiroiSetMasterModel.MaterialCode7) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity7 ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterModel.MaterialCode8 ) && int.Parse(hiroiSetMasterModel.MaterialCode8) == int.Parse(materialCode) ) return hiroiSetMasterModel.Quantity8 ;
-      return string.Empty ;
-    }
-
-    private string FindEcoMode( string routeName, RouteCache routes )
-    {
-      var lastSegment = GetLastSegment( routeName, routes ) ;
-      if ( lastSegment == null ) return string.Empty ;
-      var toEndPointKey = lastSegment.ToEndPoint.Key ;
-      var toElementId = toEndPointKey.GetElementUniqueId() ;
-      if ( string.IsNullOrEmpty( toElementId ) ) return string.Empty ;
-      var toConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-      .FirstOrDefault( c => c.UniqueId == toElementId ) ;
-      return toConnector == null ? string.Empty : toConnector.LookupParameter( "IsEcoMode" ).AsString() ;
-    }
-
     private int GetWidth256Excel( float widthExcel )
     {
       return (int)Math.Round((widthExcel * DefaultCharacterWidth + 5) / DefaultCharacterWidth * 256);
+    }
+    
+    private bool IsMoreTwoWireBook( List<PickUpModel> pickUpModels )
+    {
+      var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
+      if ( pickUpModels.Count < 2 ) return false ;
+      var wireBooks = new List<string>() ;
+      foreach ( var pickUpNumber in pickUpNumbers ) {
+        var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
+        var itemFirst = items.First() ;
+        var wireBook = itemFirst.WireBook ;
+        int wireBookInt ;
+        if ( int.TryParse( wireBook, out wireBookInt ) && wireBookInt > 1 && ! wireBooks.Contains( wireBook ) ) {
+          wireBooks.Add( wireBook );
+        }
+      }
+      
+      return wireBooks.Count > 1 ;
     }
     
     public class ListBoxItem

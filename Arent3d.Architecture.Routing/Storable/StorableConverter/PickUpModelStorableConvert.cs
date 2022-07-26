@@ -38,7 +38,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Condition, 
       SumQuantity,
       RouteName,
-      RouteNameRef
+      RouteNameRef,
+      WireBook
     }
 
     protected override PickUpModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -74,8 +75,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var sumQuantity = deserializer.GetString( SerializeField.SumQuantity ) ;
       var routeName = deserializer.GetString( SerializeField.RouteName ) ;
       var routeNameRef = deserializer.GetString( SerializeField.RouteNameRef ) ;
+      var wireBook = deserializer.GetString( SerializeField.WireBook ) ;
       return new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction, productCode,
-        ceedSetCode, deviceSymbol, condition, sumQuantity, routeName, routeNameRef ) ;
+        ceedSetCode, deviceSymbol, condition, sumQuantity, routeName, routeNameRef, wireBook ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, PickUpModel customTypeValue )
@@ -110,6 +112,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.SumQuantity, customTypeValue.SumQuantity ) ;
       serializerObject.AddNonNull( SerializeField.RouteName, customTypeValue.RouteName ) ;
       serializerObject.AddNullable( SerializeField.RouteNameRef, customTypeValue.RouteNameRef ) ;
+      serializerObject.AddNullable( SerializeField.WireBook, customTypeValue.WireBook ) ;
       return serializerObject ;
     }
   }
