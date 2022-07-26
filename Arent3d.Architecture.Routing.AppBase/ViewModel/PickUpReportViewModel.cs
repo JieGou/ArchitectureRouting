@@ -655,11 +655,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       for ( var i = 5 ; i < index ; i++ ) {
         double quantityFloor = 0 ;
         var level = levelColumns[ i ] ;
-        foreach ( var item in pickUpModels.Where( item => item.Floor == level ) ) {
-          double.TryParse( item.Quantity, out var quantity ) ;
-          quantityFloor += quantity ;
-        }
-
+        quantityFloor = CalculateTotalByFloor( pickUpModels.Where( item => item.Floor == level ).ToList() ) ;
         CreateCell( rowName, i, quantityFloor == 0 ? string.Empty : Math.Round( quantityFloor, isTani ? 1 : 2 ).ToString(), xssfCellStyles[ "leftRightBorderedCellStyle" ] ) ;
         CreateCell( rowStandard, i, "", isLastRow ? xssfCellStyles[ "bottomCellStyleSummaryMedium" ] : xssfCellStyles[ "exceptTopBorderedCellStyleSummary" ] ) ;
         
@@ -954,12 +950,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return pickUpModel.Tani == "m" ;
     }
     
-    private bool IsWire( PickUpModel pickUpModel )
-    {
-      var hiroiMaster = _hiroiMasterModels.SingleOrDefault( h => ( int.Parse( h.Buzaicd ) == int.Parse( pickUpModel.ProductCode.Split( '-' ).First() ) ) ) ;
-      return hiroiMaster != null && hiroiMaster.Buzaisyu == Wire ;
-    }
-
     private RouteSegment? GetLastSegment( string routeName, RouteCache routes )
     {
       if ( string.IsNullOrEmpty( routeName ) ) return null ;
@@ -1029,7 +1019,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return inforDisplays ;
     }
-    
+
     private int GetWidth256Excel( float widthExcel )
     {
       return (int)Math.Round((widthExcel * DefaultCharacterWidth + 5) / DefaultCharacterWidth * 256);
@@ -1051,6 +1041,76 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
       return wireBooks.Count > 1 ;
+    }
+
+    private double CalculateTotalByFloor(List<PickUpModel> pickUpModels)
+    {
+      double result = 0 ;
+      if ( pickUpModels.Count < 1 ) return result ;
+      if ( IsTani( pickUpModels.First() ) ) {
+        var pickUpModelsByNumber = PickUpModelByNumber( PickUpViewModel.ProductType.Conduit, pickUpModels ) ;
+        foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
+          var wireBook = pickUpModelByNumber.WireBook ;
+          if ( ! string.IsNullOrEmpty( wireBook ) ) {
+            result += ( double.Parse( pickUpModelByNumber.Quantity ) * int.Parse( wireBook ) ) ;
+          }
+          else {
+            result += double.Parse( pickUpModelByNumber.Quantity ) ;
+          }
+        }
+      }
+      else {
+        foreach ( var item in pickUpModels ) {
+          double.TryParse( item.Quantity, out var quantity ) ;
+          result += quantity ;
+        }
+      }
+     
+      return result ;
+    }
+    
+    private List<PickUpModel> PickUpModelByNumber( PickUpViewModel.ProductType productType, List<PickUpModel> pickUpModels )
+    {
+      List<PickUpModel> result = new() ;
+      
+      var equipmentType = productType.GetFieldName() ;
+      var pickUpModelsByNumber = pickUpModels.Where( p => p.EquipmentType == equipmentType )
+        .GroupBy( x => x.PickUpNumber )
+        .Select( g => g.ToList() ) ;
+      
+      foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
+        var pickUpModelByProductCodes = PickUpModelByProductCode( pickUpModelByNumber ) ;
+        result.AddRange(pickUpModelByProductCodes);
+      }
+
+      return result ;
+    }
+    
+    private List<PickUpModel> PickUpModelByProductCode( List<PickUpModel> pickUpModels )
+    {
+      List<PickUpModel> pickUpModelByProductCodes = new() ;
+      
+      var pickUpModelsByProductCode = pickUpModels.GroupBy( x => x.ProductCode.Split( '-' ).First() )
+        .Select( g => g.ToList() ) ;
+        
+      foreach ( var pickUpModelByProductCode in pickUpModelsByProductCode ) {
+        var pickUpModelsByConstructionItemsAndConstruction = pickUpModelByProductCode.GroupBy( x => ( x.ConstructionItems, x.Construction ) )
+          .Select( g => g.ToList() ) ;
+          
+        foreach ( var pickUpModelByConstructionItemsAndConstruction in pickUpModelsByConstructionItemsAndConstruction ) {
+          var sumQuantity = Math.Round(pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ), 1) ;
+            
+          var pickUpModel = pickUpModelByConstructionItemsAndConstruction.FirstOrDefault() ;
+          if ( pickUpModel == null ) 
+            continue ;
+            
+          PickUpModel newPickUpModel = new(pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, $"{sumQuantity}", pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction, pickUpModel.ProductCode, pickUpModel.CeedSetCode, pickUpModel.DeviceSymbol, pickUpModel.Condition, pickUpModel.SumQuantity, pickUpModel.RouteName, null, pickUpModel.WireBook ) ;
+          
+          pickUpModelByProductCodes.Add( newPickUpModel ) ;
+        }
+      }
+
+      return pickUpModelByProductCodes ;
     }
     
     public class ListBoxItem
