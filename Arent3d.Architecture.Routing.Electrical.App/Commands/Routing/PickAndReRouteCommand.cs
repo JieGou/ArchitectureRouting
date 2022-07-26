@@ -25,7 +25,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
       var reRouteNames = executeResultValue.Select( r => r.RouteName ).Distinct().ToHashSet() ;
-      var (_, oldConduitIds) = reRouteState ;
+      var (_, oldConduitIds, routeNameDictionary) = reRouteState ;
+
+      if ( routeNameDictionary.Any() ) {
+        RouteGenerator.ChangeRepresentativeRouteName( document, routeNameDictionary ) ;
+      }
+
       var ( wireTypeName, isLeakRoute ) = ChangeWireTypeCommand.RemoveDetailLines( document, oldConduitIds ) ;
       if ( string.IsNullOrEmpty( wireTypeName ) ) return ;
       ChangeWireTypeCommand.ChangeWireType( document, reRouteNames, wireTypeName, isLeakRoute ) ;
