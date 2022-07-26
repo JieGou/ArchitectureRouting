@@ -733,7 +733,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if (!string.IsNullOrEmpty( buzaiCd ))
         pullBox.GetParameter( MaterialCodeParameter )?.Set( buzaiCd ) ;
       pullBox.GetParameter( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
-      detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId ) ;
+      detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
 
       if(positionLabel != null)
         CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
