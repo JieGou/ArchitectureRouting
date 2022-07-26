@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, Level level, List<PickUpModel> pickUpModels )
     {
-      var pickUpNumberOfPullBox = pickUpModels.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) + 1 ;
+      var pickUpNumberOfPullBox = pickUpModels.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
       var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingData[level.Id.IntegerValue]?.IsPickUpNumberSetting ?? false ;
       var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
       var seenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
@@ -88,7 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( conduitPickUpModel == null ) continue ;
 
         ShowPickUp( document, routeCache, allConduitsOfRoutes, isDisplayPickUpNumber, conduitPickUpModel.PickUpModels,
-          seenTextNotePickUps, notSeenTextNotePickUps, pickUpNumberOfPullBox ) ;
+          seenTextNotePickUps, notSeenTextNotePickUps, ref pickUpNumberOfPullBox ) ;
       }
 
       foreach ( var notSeenTextNotePickUp in notSeenTextNotePickUps ) {
@@ -202,7 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     }
 
     private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, bool isDisplayPickUpNumber, 
-      List<PickUpModel> pickUpModels, List<TextNoteMapCreationModel> seenTextNotePickUps, List<TextNoteMapCreationModel> notSeenTextNotePickUps, int pickUpNumberOfPullBox )
+      List<PickUpModel> pickUpModels, List<TextNoteMapCreationModel> seenTextNotePickUps, List<TextNoteMapCreationModel> notSeenTextNotePickUps, ref int pickUpNumberOfPullBox )
     {
       var pickUpModelsGroupsByRouteNameRef = pickUpModels.GroupBy( p => p.RouteNameRef ) ;
       var notSeenQuantities = new Dictionary<string, double>() ;
@@ -267,7 +267,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
             else continue ;
 
-            var textPickUpNumber = isDisplayPickUpNumber ? "[" + ( isToPullBox ? pickUpNumberOfPullBox : pickUpNumber ) + "]" : string.Empty ;
+            var pickUpNumberStr = pickUpNumber ?? string.Empty ;
+            if ( isToPullBox )
+              pickUpNumberStr = ( ++pickUpNumberOfPullBox ).ToString() ;
+              
+            var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumberStr + "]" : string.Empty ;
             var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
             var pickUpAlignment = TextNotePickUpAlignment.Horizontal ;
             if ( direction is { Y: 1 or -1 } )
