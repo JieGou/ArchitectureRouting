@@ -48,11 +48,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
       }
 
+      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
+      if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
+
+      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
+
+      double passPointPositionDistance ;
+      using ( Transaction trans = new Transaction( document, "Create Arent Shaft" ) ) {
+        trans.Start() ;
+        var pipeSpec = new MEPSystemPipeSpec( new RouteMEPSystem( document, property.GetSystemType(), property.GetCurveType() ), routingExecutor.FittingSizeCalculator ) ;
+        var bendRadius = pipeSpec.GetLongElbowSize( property.GetDiameter().DiameterValueToPipeDiameter() ).RevitUnitsToMillimeters() ;
+        passPointPositionDistance = bendRadius + property.GetDiameter().RevitUnitsToMillimeters() * 6 ;
+        trans.Commit() ;
+      }
+
       XYZ? passPointPosition = null ;
       XYZ? passPointDirection = null ;
       XYZ? secondPassPointPosition = null ;
       XYZ? secondPassPointDirection = null ;
-      
+
       if ( document.ActiveView is ViewPlan ) {
         var allRouteLines = PickCommandUtil.CreatePreviewLines( uiDocument.Document, fromPickResult, toPickResult ) ;
 
@@ -62,32 +76,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         allRouteLines.ForEach( rl =>
         {
           previewLineIds.AddRange( rl.previewLineIds ) ;
-          allLineIds.AddRange( rl.allLineIds );
+          allLineIds.AddRange( rl.allLineIds ) ;
         } ) ;
 
         if ( previewLineIds.Any() && allLineIds.Any() ) {
-
-          if ( allRouteLines.Any( rl => rl.allowedTiltedPiping ) && allRouteLines.Count() == 1) {
+          if ( allRouteLines.Any( rl => rl.allowedTiltedPiping ) && allRouteLines.Count() == 1 ) {
             var routeLines = allRouteLines.First( rl => rl.allowedTiltedPiping ) ;
-            var firstPasPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 0 ], document ) ;
+            var firstPasPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 0 ], document, true, true, passPointPositionDistance ) ;
             passPointPosition = firstPasPoint.passPointPosition ;
             passPointDirection = firstPasPoint.passPointDirection ;
 
-            var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document ) ;
+            var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document, true, true, passPointPositionDistance ) ;
             secondPassPointPosition = secondPassPoint.passPointPosition ;
             secondPassPointDirection = secondPassPoint.passPointDirection ;
           }
           else {
-            PreviewLineSelectionFilter previewLineSelectionFilter = new( previewLineIds ) ;
+            PreviewLineSelectionFilter previewLineSelectionFilter = new(previewLineIds) ;
             var selectedRoute = uiDocument.Selection.PickObject( ObjectType.Element, previewLineSelectionFilter, "Select preview line." ) ;
             var routeLines = allRouteLines.First( rl => rl.previewLineIds.Any( lineId => lineId == selectedRoute.ElementId ) ) ;
             var isCreatePullBoxAtMiddlePoint = ! PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ;
-            var passPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[0], document , isCreatePullBoxAtMiddlePoint) ;
+            var passPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 0 ], document, isCreatePullBoxAtMiddlePoint, true, passPointPositionDistance ) ;
             passPointPosition = passPoint.passPointPosition ;
             passPointDirection = passPoint.passPointDirection ;
-            
+
             if ( PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ) {
-              var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document, isPassPointInMiddle: false, isFromStartPoint: false ) ;
+              var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document, isPassPointInMiddle: false, isFromStartPoint: false, passPointPositionDistance ) ;
               secondPassPointPosition = secondPassPoint.passPointPosition ;
               secondPassPointDirection = secondPassPoint.passPointDirection ;
             }
@@ -97,12 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
-      if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
-
-      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
-
-      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection,secondPassPointPosition,secondPassPointDirection ) ) ;
+      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) ) ;
     }
 
     private static (XYZ? passPointPosition, XYZ? passPointDirection) GetPassPointPositionAndDirection(ElementId lineId,Document document, bool isPassPointInMiddle = true,bool isFromStartPoint = true,double passPointPositionDistance = 250 )
