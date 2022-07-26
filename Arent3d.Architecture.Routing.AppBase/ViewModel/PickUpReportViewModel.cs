@@ -328,16 +328,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             { "leftAlignmentLeftRightBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
             { "leftRightBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Right ) },
             { "exceptTopBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "wrapTextBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left, false ) },
+            { "wrapTextBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left, true ) },
             { "borderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
             { "bottomBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
             { "topBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
             { "leftBottomBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.None, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
+            { "leftBottomBorderedCellStyleMediumWrap", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.None, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left, true ) },
             { "rightBottomBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.Medium, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
             { "leftAlignmentLeftRightBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
             { "leftRightBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Thin, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
             { "exceptTopBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "wrapTextBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left, false ) },
+            { "wrapTextBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Left, true ) },
             { "leftRightBottomBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Right ) },
             { "leftRightBottomBorderedCellStyleMediumThin", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Right ) },
             { "leftRightTopBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Bottom, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
@@ -872,6 +873,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CellRangeAddress cellMerge = new CellRangeAddress( firstRowIndex, lastRowIndex, firstCellIndex, lastCellIndex ) ;
       sheet.AddMergedRegion( cellMerge ) ;
       style.DataFormat = (short)49 ; // format type is text
+      style.FillBackgroundColor = NPOI.HSSF.Util.HSSFColor.White.Index ;
       cell.CellStyle = style ;
       cell.SetCellValue( value ) ;
       RegionUtil.SetBorderTop( style.BorderTop == BorderStyle.None ? 0 : style.BorderTop == BorderStyle.Thin ?  1 : isMediumBorder ? 2 : 1, cellMerge, sheet ) ;
