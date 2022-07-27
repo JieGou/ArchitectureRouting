@@ -373,7 +373,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public static Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpModel> pickUpModelsByLevel )
     {
       var result = new Dictionary<string, int>() ;
-      var pullBoxUniqueIds = new HashSet<string>() ;
+      var pullBoxIdWithPickUpNumbers = new Dictionary<string, int>() ;
       var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var pickUpNumberOfPullBox = pickUpModelsByLevel.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
       var routes = pickUpModelsByLevel.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
@@ -390,10 +390,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           var lastRoute = routeCache.LastOrDefault( r => r.Key == routeName ) ;
           var lastSegment = lastRoute.Value.RouteSegments.Last() ;
           var pullBoxUniqueId = PullBoxRouteManager.IsSegmentConnectedToPoPullBox( document, lastSegment ) ;
-          if ( string.IsNullOrEmpty( pullBoxUniqueId ) || pullBoxUniqueIds.Contains( pullBoxUniqueId ) ) continue ;
-          
-          pullBoxUniqueIds.Add( pullBoxUniqueId ) ;
-          result.Add( routeName, ++pickUpNumberOfPullBox );
+          if ( string.IsNullOrEmpty( pullBoxUniqueId ) ) continue ;
+            
+          if ( pullBoxIdWithPickUpNumbers.ContainsKey( pullBoxUniqueId ) )
+            result.Add( routeName, pullBoxIdWithPickUpNumbers[pullBoxUniqueId] );
+          else {
+            pickUpNumberOfPullBox++ ;
+            pullBoxIdWithPickUpNumbers.Add( pullBoxUniqueId, pickUpNumberOfPullBox );
+            result.Add( routeName, pickUpNumberOfPullBox );
+          }
         }
       }
       
