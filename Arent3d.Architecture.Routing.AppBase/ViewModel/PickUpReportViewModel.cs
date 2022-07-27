@@ -486,9 +486,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
 
             var dictionaryDataPickUpModelOrder = dictionaryDataPickUpModel.OrderBy( x => x.Value.First().Tani == "m" ? 1 : 2).ThenBy( c => c.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard ) ; ;
-            var maxNumberPickUp = FindMaxPickUpNumber( dictionaryDataPickUpModel.SelectMany(x=>x.Value).ToList()) ;
+            var pickUpNumberForConduitsToPullBox = GetPickUpNumberForConduitsToPullBox(_document,PickUpModels.Where( p=> p.Floor == level ).ToList()) ;
             foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrder ) {
-              rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, xssfCellStyles, maxNumberPickUp ) ;
+              rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, xssfCellStyles, pickUpNumberForConduitsToPullBox ) ;
             }
             
             while ( rowStart % 61 != 0 ) {
@@ -699,7 +699,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return pickUpNumberList ;
     }
-    private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles, int maxPickUpNumber )
+    private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles, IReadOnlyDictionary<string, int> pickUpNumberForConduitsToPullBox )
     {
       if ( ! pickUpModels.Any() ) return rowStart ;
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
@@ -735,6 +735,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var lastSegment = GetLastSegment( itemGroupByRoute.Key, routes ) ;
           var isSegmentConnectedToPullBox = IsSegmentConnectedToPullBox( lastSegment ) ;
           var isSegmentFromPowerToPullBox = IsSegmentFromPowerToPullBox( lastSegment ) ;
+          var pickUpNumberForConduitToPullBox = pickUpNumberForConduitsToPullBox.SingleOrDefault( p => p.Key == itemGroupByRoute.Key ) ;
+          var pickUpNumberPullBox = pickUpNumberForConduitToPullBox.Value ;
 
           foreach ( var item in itemGroupByRoute ) {
             double.TryParse( item.Quantity, out var quantity ) ;
@@ -766,14 +768,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( isSegmentConnectedToPullBox ) {
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
+              var numberPullBox = DoconTypes.First().TheValue ? $"[{(pickUpNumberPullBox)}]" : string.Empty;
               if ( inforDisplay != null && inforDisplay.IsDisplay) {
                 countStr = ( inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ) + ( isMoreTwoWireBook ? $"×N" : string.IsNullOrEmpty(valueDetailTableStr) ? string.Empty: $"×{valueDetailTableStr}" ) ;
                 inforDisplay.IsDisplay = false ;
                 if ( isSegmentFromPowerToPullBox ) {
-                  listSeenQuantityPullBox.Add( $"({Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isTani ? 1 : 2 )})" + countStr);
+                  listSeenQuantityPullBox.Add(numberPullBox + $"({Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isTani ? 1 : 2 )})" + countStr);
                 }
                 else {
-                  listSeenQuantityPullBox.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr);
+                  listSeenQuantityPullBox.Add( numberPullBox + Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr);
                 }
               }
             }
@@ -786,12 +789,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         total += ! string.IsNullOrEmpty( wireBook ) ? Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) * int.Parse( wireBook ) : Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) ;
 
         var number = DoconTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
-        var numberPullBox = DoconTypes.First().TheValue ? $"[{(maxPickUpNumber + 1)}]" : string.Empty;
         var seenQuantityStr = isTani ? string.Join( "＋", listSeenQuantity ) : string.Join("＋",stringNotTani.Split( '+' )) ;
 
         var seenQuantityPullBoxStr = string.Empty ;
         if ( listSeenQuantityPullBox.Any() ) {
-          seenQuantityPullBoxStr = numberPullBox + string.Join($"＋{numberPullBox}", listSeenQuantityPullBox ) ;
+          seenQuantityPullBoxStr = string.Join($"＋", listSeenQuantityPullBox ) ;
         }
         
         var notSeenQuantityStr = string.Empty ;
@@ -986,18 +988,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         .FirstOrDefault( c => c.UniqueId == toElementId ) ;
       return fromConnector != null && toConnector != null && fromConnector.GetConnectorFamilyType() == ConnectorFamilyType.Power && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox;
     }
-
-    private int FindMaxPickUpNumber(List<PickUpModel> pickUpModels)
-    {
-      int result = int.MinValue ;
-      foreach ( var pickUpModel in pickUpModels.Where( x=>! string.IsNullOrEmpty( x.PickUpNumber ) ) ) {
-        int pickUpNumber = int.Parse( pickUpModel.PickUpNumber );
-        if ( pickUpNumber > result ) result = pickUpNumber ;
-      }
-
-      return result ;
-    }
-
+    
     private List<InforDisplay> GetInforDisplays(List<PickUpModel> pickUpModels, RouteCache routes)
     {
       var routesNameRef = pickUpModels.Select( x => x.RouteNameRef ).Distinct() ;
@@ -1113,6 +1104,56 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return pickUpModelByProductCodes ;
+    }
+    
+    private Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpModel> pickUpModelsByLevel )
+    {
+      var result = new Dictionary<string, int>() ;
+      if ( pickUpModelsByLevel.All( x => string.IsNullOrEmpty( x.PickUpNumber ) ) ) return result ;
+      var pullBoxIdWithPickUpNumbers = new Dictionary<string, int>() ;
+      var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var pickUpNumberOfPullBox = pickUpModelsByLevel.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
+      var routes = pickUpModelsByLevel.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
+      foreach ( var route in routes ) {
+        var conduitPickUpModel = pickUpModelsByLevel
+          .Where( p => p.RouteName == route && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
+          .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } )
+          .FirstOrDefault() ;
+        if ( conduitPickUpModel == null ) continue ;
+
+        var pickUpModelsGroupsByRouteNameRef = conduitPickUpModel.PickUpModels.GroupBy( p => p.RouteNameRef ) ;
+        foreach ( var pickUpModelsGroup in pickUpModelsGroupsByRouteNameRef ) {
+          var routeName = pickUpModelsGroup.Key ;
+          var lastRoute = routeCache.LastOrDefault( r => r.Key == routeName ) ;
+          var lastSegment = lastRoute.Value.RouteSegments.Last() ;
+          var pullBoxUniqueId = IsSegmentConnectedToPoPullBox( document, lastSegment ) ;
+          if ( string.IsNullOrEmpty( pullBoxUniqueId ) ) continue ;
+
+          if ( pullBoxIdWithPickUpNumbers.ContainsKey( pullBoxUniqueId ) )
+            result.Add( routeName, pullBoxIdWithPickUpNumbers[pullBoxUniqueId] );
+          else {
+            pickUpNumberOfPullBox++ ;
+            pullBoxIdWithPickUpNumbers.Add( pullBoxUniqueId, pickUpNumberOfPullBox );
+            result.Add( routeName, pickUpNumberOfPullBox );
+          }
+        }
+      }
+
+      return result; 
+    }
+    
+    private string IsSegmentConnectedToPoPullBox( Document document, RouteSegment lastSegment )
+    {
+      var pullBoxUniqueId = string.Empty ;
+      var toEndPointKey = lastSegment.ToEndPoint.Key ;
+      var toElementId = toEndPointKey.GetElementUniqueId() ;
+      if ( string.IsNullOrEmpty( toElementId ) ) 
+        return pullBoxUniqueId ;
+      var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .FirstOrDefault( c => c.UniqueId == toElementId ) ;
+      if ( toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
+        pullBoxUniqueId = toConnector.UniqueId ;
+      return pullBoxUniqueId ;
     }
     
     public class ListBoxItem
