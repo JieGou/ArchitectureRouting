@@ -316,6 +316,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
 
+          [Button( typeof( ShowPickUpInformationByLevelCommand ), OnlyInitialized = true )]
+          private static class ShowPickUpInformationByLevelCommandButton
+          {
+          }
+
           [Button( typeof( PickUpReportCommand ), OnlyInitialized = true )]
           private static class PickUpReportCommandButton
           {

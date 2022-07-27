@@ -175,6 +175,9 @@
         <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
         <string>拾い</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationByLevelCommand</key>
+        <string>床で拾う</string>
+
         <key>Electrical.App.Commands.Initialization.PickUpReportCommand</key>
         <string>拾い書出力</string>
 

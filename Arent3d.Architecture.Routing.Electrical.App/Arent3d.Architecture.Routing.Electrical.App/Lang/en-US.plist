@@ -196,6 +196,9 @@
         <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
         <string>Pick Up</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationByLevelCommand</key>
+        <string>Pick Up&#xA;By Floor</string>
+
         <key>Electrical.App.Commands.Initialization.PickUpReportCommand</key>
         <string>Pick Up&#xA;Output</string>
 
