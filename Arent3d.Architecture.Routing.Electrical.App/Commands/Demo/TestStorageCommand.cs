@@ -25,14 +25,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
             var selection = commandData.Application.ActiveUIDocument.Selection ;
             
             var element = document.GetElement( selection.PickObject( ObjectType.Element ) ) ;
-            
-            var storageService = new StorageService<Element, MasterModel>( element ) ;
-            var data = storageService.Data ;
 
-            using var trans = new Transaction( document ) ;
-            trans.Start( "Set Data" ) ;
-            
-            storageService = new StorageService<Element, MasterModel>( element ) ;
             var model = new ComplexModel
             {
                 IntProperty = int.MaxValue,
@@ -117,13 +110,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
                 GuidDeepModelMap = new Dictionary<Guid, DeepModel> { { new Guid( "A85D94A3-162D-4611-BA9B-C268700ECDB1" ), new() { Count = 23, ElementId = new ElementId( 24 ) } } },
                 StringDoubleMap = new SortedDictionary<string, double> { { "one point zero five", 0.05 }, { "one hundred and sixty six point one two three", 166.123 } }
             } ;
-            storageService.Data.ComplexModels = new List<ComplexModel> { model } ;
-            storageService.SaveChange();
             
-            trans.Commit() ;
-
-            storageService = new StorageService<Element, MasterModel>( element ) ;
-            data = storageService.Data ;
+            element.SetData(model);
+            // var data = element.GetData<ComplexModel>() ;
 
             return Result.Succeeded ;
         }

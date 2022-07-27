@@ -16,8 +16,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       document.EraseAllConnectorFamilies() ;
       document.EraseAllElectricalRoutingFamilies();
-      document.DeleteEntireSchema();
       base.UnSetup( document ) ;
+      document.DeleteEntireSchema();
     }
   }
 }

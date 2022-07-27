@@ -112,7 +112,11 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
                 return ;
 
             using var transaction = new Transaction( document ) ;
-            transaction.OpenTransactionIfNeed( document, "Delete Schema", () => { document.EraseSchemaAndAllEntities( schema ) ; } ) ;
+            transaction.OpenTransactionIfNeed( document, "Delete Schema", () =>
+            {
+                if ( schema.VendorId == AppInfo.VendorId.ToUpper() )
+                    document.EraseSchemaAndAllEntities( schema ) ;
+            } ) ;
         }
 
         public static void DeleteEntireSchema( this Document document )
@@ -128,7 +132,8 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
             transaction.OpenTransactionIfNeed( document, "Delete Entire Schema", () =>
             {
                 foreach ( var schema in schemas ) {
-                    document.EraseSchemaAndAllEntities( schema ) ;
+                    if ( schema.VendorId == AppInfo.VendorId.ToUpper() )
+                        document.EraseSchemaAndAllEntities( schema ) ;
                 }
             } ) ;
         }
@@ -210,40 +215,41 @@ namespace Arent3d.Architecture.Routing.Storages.Extensions
         public static bool IsFloatingPoint( this Type type ) => FloatingPointTypes.Any( x => x == type ) ;
 
         private static HashSet<Type> ValueTypeAccepts =>
-        new(new List<Type>
-        {
-            typeof( int ),
-            typeof( short ),
-            typeof( byte ),
-            typeof( double ),
-            typeof( float ),
-            typeof( bool ),
-            typeof( string ),
-            typeof( Guid ),
-            typeof( ElementId ),
-            typeof( XYZ ),
-            typeof( UV ),
-            typeof( Entity )
-        }) ;
+            new(new List<Type>
+            {
+                typeof( int ),
+                typeof( short ),
+                typeof( byte ),
+                typeof( double ),
+                typeof( float ),
+                typeof( bool ),
+                typeof( string ),
+                typeof( Guid ),
+                typeof( ElementId ),
+                typeof( XYZ ),
+                typeof( UV ),
+                typeof( Entity )
+            }) ;
 
         private static HashSet<Type> KeyTypeAccepts =>
-        new(new List<Type>
-        {
-            typeof( int ),
-            typeof( short ),
-            typeof( byte ),
-            typeof( bool ),
-            typeof( string ),
-            typeof( Guid ),
-            typeof( ElementId )
-        }) ;
+            new(new List<Type>
+            {
+                typeof( int ),
+                typeof( short ),
+                typeof( byte ),
+                typeof( bool ),
+                typeof( string ),
+                typeof( Guid ),
+                typeof( ElementId )
+            }) ;
 
-        private static HashSet<Type> FloatingPointTypes => new(new List<Type>
-        {
-            typeof( double ),
-            typeof( float ), 
-            typeof( XYZ ), 
-            typeof( UV )
-        }) ;
+        private static HashSet<Type> FloatingPointTypes => 
+            new(new List<Type>
+            {
+                typeof( double ), 
+                typeof( float ), 
+                typeof( XYZ ), 
+                typeof( UV )
+            }) ;
     }
 }
