@@ -47,7 +47,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     
     public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, Level level, List<PickUpModel> pickUpModels )
     {
-      var x = GetPickUpNumberForConduitsToPullBox( document, pickUpModels ) ;
       var pickUpNumberOfPullBox = pickUpModels.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
       var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingData[level.Id.IntegerValue]?.IsPickUpNumberSetting ?? false ;
       var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
