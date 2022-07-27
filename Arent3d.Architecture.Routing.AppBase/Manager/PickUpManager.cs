@@ -47,7 +47,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     
     public static void ShowTextNotePickUp( TextNotePickUpModelStorable textNotePickUpStorable, Document document, Level level, List<PickUpModel> pickUpModels )
     {
-      var pickUpNumberOfPullBox = pickUpModels.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
+      var pickUpNumberOfPullBox = 0 ;
+      var pickUpModelsWithPickUpNumber = pickUpModels.Where( x => ! string.IsNullOrEmpty( x.PickUpNumber ) ).ToList() ;
+      if ( pickUpModelsWithPickUpNumber.Any() )
+        pickUpNumberOfPullBox = pickUpModelsWithPickUpNumber.Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
       var isDisplayPickUpNumber = textNotePickUpStorable.PickUpNumberSettingData[level.Id.IntegerValue]?.IsPickUpNumberSetting ?? false ;
       var routes = pickUpModels.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
       var seenTextNotePickUps = new List<TextNoteMapCreationModel>() ;
@@ -191,9 +194,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
             var pickUpNumberStr = pickUpNumber ?? string.Empty ;
             if ( isToPullBox )
-              pickUpNumberStr = ( ++pickUpNumberOfPullBox ).ToString() ;
-              
-            var textPickUpNumber = isDisplayPickUpNumber ? "[" + pickUpNumberStr + "]" : string.Empty ;
+              pickUpNumberStr = pickUpNumberOfPullBox != 0 ? ( ++pickUpNumberOfPullBox ).ToString() : string.Empty ;
+            pickUpNumberStr = string.IsNullOrEmpty( pickUpNumberStr ) ? string.Empty : "[" + pickUpNumberStr + "]" ;
+            
+            var textPickUpNumber = isDisplayPickUpNumber ? pickUpNumberStr : string.Empty ;
             var seenQuantityStr = textPickUpNumber + Math.Round( seenQuantity, 1 ) ;
             var pickUpAlignment = TextNotePickUpAlignment.Horizontal ;
             if ( direction is { Y: 1 or -1 } )
@@ -373,9 +377,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public static Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpModel> pickUpModelsByLevel )
     {
       var result = new Dictionary<string, int>() ;
+      var pickUpModelsWithPickUpNumber = pickUpModelsByLevel.Where( x => ! string.IsNullOrEmpty( x.PickUpNumber ) ).ToList() ;
+      if ( ! pickUpModelsWithPickUpNumber.Any() ) return result ;
+      
       var pullBoxIdWithPickUpNumbers = new Dictionary<string, int>() ;
       var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      var pickUpNumberOfPullBox = pickUpModelsByLevel.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
+      var pickUpNumberOfPullBox = pickUpModelsWithPickUpNumber.Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
       var routes = pickUpModelsByLevel.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
       foreach ( var route in routes ) {
         var conduitPickUpModel = pickUpModelsByLevel
