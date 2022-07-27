@@ -1,6 +1,7 @@
 ﻿using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit.I18n ;
@@ -40,8 +41,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
               return Result.Succeeded ;
             }
-            PickUpMapCreationCommandBase.RemoveTextNotePickUp( document, level.Name ) ;
-            PickUpMapCreationCommandBase.ShowTextNotePickUp( textNotePickUpStorable, document, level, pickUpModels ) ;
+            PickUpManager.RemoveTextNotePickUp( document, level.Name ) ;
+            PickUpManager.ShowTextNotePickUp( textNotePickUpStorable, document, level, pickUpModels ) ;
 
             return Result.Succeeded ;
           } ) ;
