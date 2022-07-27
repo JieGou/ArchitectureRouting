@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       XYZ? passPointPosition = null ;
       XYZ? passPointDirection = null ;
-      if ( document.ActiveView is ViewPlan ) {
+      if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan ) {
         var (previewLineIds, allLineIds) = PickCommandUtil.CreatePreviewLines( uiDocument.Document, fromPickResult, toPickResult ) ;
 
         if ( previewLineIds.Any() && allLineIds.Any() ) {
