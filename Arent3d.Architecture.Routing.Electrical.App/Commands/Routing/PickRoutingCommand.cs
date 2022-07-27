@@ -3,6 +3,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -12,6 +13,8 @@ using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
+using Autodesk.Revit.UI.Selection ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
@@ -44,6 +47,27 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType )
     {
       return MEPSystemClassificationInfo.CableTrayConduit ;
+    }
+
+    protected override ( XYZ?, XYZ? ) ShowPreviewLines( UIDocument uiDocument, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    {
+      var document = uiDocument.Document ;
+
+      if ( document.ActiveView is not ViewPlan || fromPickResult.GetLevelId() != toPickResult.GetLevelId() ) return ( null, null ) ;
+      var (previewLineIds, allLineIds) = PickCommandUtil.CreatePreviewLines( uiDocument.Document, fromPickResult, toPickResult ) ;
+      if ( ! previewLineIds.Any() || ! allLineIds.Any() ) return ( null, null ) ;
+      PreviewLineSelectionFilter previewLineSelectionFilter = new( previewLineIds ) ;
+      var selectedRoute = uiDocument.Selection.PickObject( ObjectType.Element, previewLineSelectionFilter, "Select preview line." ) ;
+      var selectedLine = ( document.GetElement( selectedRoute.ElementId ) as DetailLine ) ! ;
+      var passPointLine = ( selectedLine.GeometryCurve as Line ) ! ;
+      var (x0, y0, z0) = passPointLine.GetEndPoint( 0 ) ;
+      var (x1, y1, z1) = passPointLine.GetEndPoint( 1 ) ;
+      var passPointPosition = new XYZ( ( x0 + x1 ) / 2, ( y0 + y1 ) / 2, ( z0 + z1 ) / 2 ) ;
+      var passPointDirection = passPointLine.Direction ;
+
+      PickCommandUtil.RemovePreviewLines( document, allLineIds ) ;
+
+      return ( passPointPosition, passPointDirection ) ;
     }
 
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, PickState state )

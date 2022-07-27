@@ -1,10 +1,8 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
@@ -13,8 +11,6 @@ using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using Autodesk.Revit.UI.Selection ;
-using Line = Autodesk.Revit.DB.Line ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -36,6 +32,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
+    protected virtual ( XYZ?, XYZ? ) ShowPreviewLines( UIDocument uiDocument, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    {
+      return ( null, null ) ;
+    }
+
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -48,24 +49,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
       }
 
-      XYZ? passPointPosition = null ;
-      XYZ? passPointDirection = null ;
-      if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan ) {
-        var (previewLineIds, allLineIds) = PickCommandUtil.CreatePreviewLines( uiDocument.Document, fromPickResult, toPickResult ) ;
-
-        if ( previewLineIds.Any() && allLineIds.Any() ) {
-          PreviewLineSelectionFilter previewLineSelectionFilter = new( previewLineIds ) ;
-          var selectedRoute = uiDocument.Selection.PickObject( ObjectType.Element, previewLineSelectionFilter, "Select preview line." ) ;
-          var selectedLine = ( document.GetElement( selectedRoute.ElementId ) as DetailLine ) ! ;
-          var passPointLine = ( selectedLine.GeometryCurve as Line ) ! ;
-          var (x0, y0, z0) = passPointLine.GetEndPoint( 0 ) ;
-          var (x1, y1, z1) = passPointLine.GetEndPoint( 1 ) ;
-          passPointPosition = new XYZ( ( x0 + x1 ) / 2, ( y0 + y1 ) / 2, ( z0 + z1 ) / 2 ) ;
-          passPointDirection = passPointLine.Direction ;
-
-          PickCommandUtil.RemovePreviewLines( document, allLineIds ) ;
-        }
-      }
+      var (passPointPosition, passPointDirection) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult ) ;
 
       var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
       if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
