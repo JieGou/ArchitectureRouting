@@ -13,13 +13,11 @@ namespace Arent3d.Architecture.Routing.Storages
     /// </summary>
     public class SchemaCreator : ISchemaCreator
     {
-        private readonly AttributeExtractor<SchemaAttribute> _schemaAttributeExtractor = new() ;
-        private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new() ;
         private readonly IFieldFactory _fieldFactory = new FieldFactory() ;
 
         public Schema FindOrCreate( Type type )
         {
-            var schemaAttribute = _schemaAttributeExtractor.GetAttribute( type ) ;
+            var schemaAttribute = type.GetAttribute<SchemaAttribute>( ) ;
             if ( Schema.Lookup( schemaAttribute.GUID ) is { } schema )
                 return schema ;
 
@@ -44,8 +42,12 @@ namespace Arent3d.Architecture.Routing.Storages
             if ( schemaAttribute.WriteAccessLevel != default )
                 schemaBuilder.SetWriteAccessLevel( schemaAttribute.WriteAccessLevel ) ;
 
-            if ( ! string.IsNullOrEmpty( schemaAttribute.VendorId ) )
-                schemaBuilder.SetVendorId( schemaAttribute.VendorId ) ;
+            if ( ! string.IsNullOrEmpty( schemaAttribute.VendorId ) ) {
+                if (!SchemaBuilder.VendorIdIsValid(schemaAttribute.VendorId))
+                    throw new InvalidOperationException($"{nameof(SchemaAttribute.VendorId)} is invalid.");
+
+                schemaBuilder.SetVendorId(schemaAttribute.VendorId);
+            }
 
             var propertyModels = type.GetProperties( BindingFlags.Public | BindingFlags.Instance ) ;
             if (propertyModels.Length > 256)
@@ -56,7 +58,7 @@ namespace Arent3d.Architecture.Routing.Storages
                 if ( propertyAttributes.Length == 0 )
                     continue ;
 
-                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyModel ) ;
+                var fieldAttribute = propertyModel.GetAttribute<FieldAttribute>( ) ;
                 if (propertyModel.PropertyType.IsFloatingPoint() && ( string.IsNullOrEmpty(fieldAttribute.SpecTypeId) || string.IsNullOrEmpty(fieldAttribute.UnitTypeId) ) )
                     throw new MissingMemberException($"{nameof(FieldAttribute.SpecTypeId)} & {nameof(FieldAttribute.UnitTypeId)} is required for property {propertyModel.Name}.");
                 
