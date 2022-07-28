@@ -113,7 +113,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       set
       {
         _originPickUpModels = value ;
-        FilterPickUpModels = MergePickUpModels( PickUpModelByProductCode( _originPickUpModels ) ) ;
+        FilterPickUpModels = MergePickUpModels( _originPickUpModels ) ;
         OnPropertyChanged();
       }
     }
@@ -938,7 +938,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if(null == dlg)
             return;
 
-          FilterPickUpModels = MergePickUpModels( PickUpModelByProductCode( OriginPickUpModels.Where( dlg ).ToList() ) ) ;
+          FilterPickUpModels = MergePickUpModels( OriginPickUpModels.Where( dlg ).ToList() ) ;
         } ) ;
       }
     }
@@ -1000,12 +1000,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       return pickUpModels.GroupBy( p => new
       {
-        p.Item, p.Classification, p.Condition, p.Construction,
-        p.Direction, p.Floor, p.Group, p.Layer,
-        p.Size, p.Specification, p.Specification2, p.Standard,
-        p.Supplement, p.Supplement2, p.Tani, p.Use,
-        p.ConstructionItems, p.DeviceSymbol, p.EquipmentType, p.ModelNumber,
-        p.ProductCode, p.ProductName, p.UsageName, p.CeedSetCode, p.RouteName
+        p.Classification,
+        p.Condition,
+        p.Construction,
+        p.Floor,
+        p.Layer,
+        p.Specification,
+        p.Supplement,
+        p.Tani,
+        p.ConstructionItems,
+        p.DeviceSymbol,
+        p.ModelNumber,
+        p.ProductName,
+        p.CeedSetCode
       } ).Select( p =>
       {
         var newModel = p.First() ;
