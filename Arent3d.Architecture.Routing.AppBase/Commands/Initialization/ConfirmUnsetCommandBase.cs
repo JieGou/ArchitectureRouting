@@ -11,13 +11,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public class ConfirmUnsetCommandBase : IExternalCommand
   {
+    private const string DefaultConstructionItems = "未設定" ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       Document document = commandData.Application.ActiveUIDocument.Document ;
       try {
         return document.Transaction( "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Unset" ), _ =>
         {
-          var elementNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && string.IsNullOrEmpty( constructionItem ) ).ToList() ;
+          var elementNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && ( string.IsNullOrEmpty( constructionItem ) || constructionItem == DefaultConstructionItems )).ToList() ;
           var color = new Color( 255, 215, 0 ) ;
           ChangeElementColor( document, elementNotConstruction, color ) ;
 
