@@ -1090,12 +1090,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       if ( depth == 0 || width == 0 || height == 0 )
         return null ;
-      var minPullBoxModelDepth = hiroiMasterModels.Where( p => p.Tani == TaniOfPullBox && p.Hinmei.Contains( HinmeiOfPullBox ) )
-        .Where( p =>
+      var satisfiedHiroiMasterModels = hiroiMasterModels
+        .Where( p => p.Tani == TaniOfPullBox && p.Hinmei.Contains( HinmeiOfPullBox ) ).Where( p =>
         {
           var (d, w, h) = ParseKikaku( p.Kikaku ) ;
           return d >= depth && w >= width && h >= height ;
-        } ).Min( x =>
+        } ).ToList() ;
+
+      if ( ! satisfiedHiroiMasterModels.Any() )
+        return null ;
+        
+      var minPullBoxModelDepth = satisfiedHiroiMasterModels.Min( x =>
         {
           var (d, _, _) = ParseKikaku( x.Kikaku ) ;
           return d ;

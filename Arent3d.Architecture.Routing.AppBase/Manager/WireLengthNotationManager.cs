@@ -104,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                 var yDistance = Math.Abs( x.Position.Y - textNoteOfPickUpFigureModel.Position.Y ) ;
                 return xDistance < MaxDistanceBetweenTextNotes && yDistance < MaxDistanceBetweenTextNotes &&
                        xDistance >= MaxToleranceOfTextNotePosition && yDistance >= MaxToleranceOfTextNotePosition ;
-              } ) )
+              } ) && ! IsNearPowerConnector( document, textNoteOfPickUpFigureModel.Position ) )
             reSizeRooms[ reSizeRoomId ] = true ;
 
           textNoteOfPickUpFigureModel.RoomId = reSizeRoomId ;
@@ -113,6 +113,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         }
       }
 
+      #endregion
+      
       foreach ( var textNoteOfPickUpFigureModel in allTextNoteOfPickUpFigureModels ) {
         if ( textNoteOfPickUpFigureModel.RoomId == null ) continue ;
 
@@ -120,8 +122,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( textNote != null )
           textNoteOfPickUpFigureModel.Id = textNote.UniqueId ;
       }
-
-      #endregion
 
       SaveWireLengthNotationModel( wireLengthNotationStorable, allTextNoteOfPickUpFigureModels.Select( x => new WireLengthNotationModel( x.Id, level.Name ) ).ToList() ) ;
     }
@@ -379,8 +379,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       
       var textNoteOfPickUpFigure = TextNote.Create( doc, doc.ActiveView.Id, textNoteOfPickUpFigureModel.Position, textNoteOfPickUpFigureModel.Content, textNoteOptions ) ;
       
-      var color = new Color( 255, 225, 51 ) ; // Dark yellow
-      ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNoteOfPickUpFigure }, color ) ;
+      var colorOfTextNote = new Color( 255, 225, 51 ) ; // Dark yellow
+      ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNoteOfPickUpFigure }, colorOfTextNote ) ;
 
       return textNoteOfPickUpFigure ;
     }
@@ -432,5 +432,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       
       return result; 
     }
+    
+    private static bool IsNearPowerConnector( Document document, XYZ point )
+    {
+      var allPowerConnectors = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .Where( c => c.GetConnectorFamilyType() == ConnectorFamilyType.Power ) ;
+      return allPowerConnectors.Any( c =>
+      {
+        var locationPoint =  ( c.Location as LocationPoint )?.Point ;
+        return locationPoint != null && ( Math.Abs( locationPoint.X - point.X ) < MaxDistanceBetweenTextNotes || Math.Abs( locationPoint.Y - point.Y ) < MaxDistanceBetweenTextNotes ) ;
+      } ) ;
+    } 
   }
 }
