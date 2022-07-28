@@ -48,10 +48,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       XYZ? passPointPosition = null ;
       XYZ? passPointDirection = null ;
-      if ( GetAddInType() == AddInType.Electrical ) {
-        if ( document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
-          ( passPointPosition, passPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult ) ;
-        }
+      if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
+        ( passPointPosition, passPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult ) ;
       }
 
       var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
