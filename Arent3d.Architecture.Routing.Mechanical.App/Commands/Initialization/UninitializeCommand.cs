@@ -1,4 +1,5 @@
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -15,6 +16,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
     {
       document.EraseAllMechanicalRoutingFamilies();
       base.UnSetup( document ) ;
+      document.DeleteEntireSchema();
     }
   }
 }

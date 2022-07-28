@@ -1,8 +1,6 @@
 ﻿using System ;
-using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storages
 {
@@ -10,12 +8,6 @@ namespace Arent3d.Architecture.Routing.Storages
     {
         public TOwner Owner { get ; }
         public TDataModel Data { get ; set ; }
-
-        private IEnumerable<(TOwner Owner, TDataModel Data)>? _allDatas ;
-        public IEnumerable<(TOwner Owner, TDataModel Data)> AllDatas
-        {
-            get { return _allDatas ??= Owner.Document.GetAllDatas<TOwner, TDataModel>() ; }
-        }
 
         public StorageService( TOwner owner )
         {
@@ -25,8 +17,11 @@ namespace Arent3d.Architecture.Routing.Storages
 
         public void SaveChange()
         {
-            Owner.SetData(Data);
+            using var transaction = new Transaction(Owner.Document);
+            transaction.OpenTransactionIfNeed(Owner.Document, "Save Change Data", () =>
+            {
+                Owner.SetData(Data);
+            });
         }
-        
     }
 }
