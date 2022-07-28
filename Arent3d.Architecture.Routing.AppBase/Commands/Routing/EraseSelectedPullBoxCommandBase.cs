@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
-using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -15,10 +13,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class EraseSelectedPullBoxCommandBase : RoutingCommandBase<EraseSelectedPullBoxCommandBase.PickState>
   {
-    public record PickState(List<Route> RoutesRelatedPullBox, Element PullBox) ;
+    public record PickState(List<Route> RoutesRelatedPullBox, Element PullBox, Dictionary<string, string> RouteNameDictionary ) ;
     protected abstract AddInType GetAddInType() ;
-    
-    protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
     
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
@@ -26,17 +22,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       var pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, new PullPoxPickFilter() ) ;
       var elementPullBox = document.GetElement( pickedPullBox?.ElementId ) ;
-
+      
       //Get information to reroute
       var routes = document.CollectRoutes( GetAddInType()) ;
       var routesRelatedPullBox = GetRouteRelatedPullBox( routes, elementPullBox ).ToList();
       
-      return new OperationResult<PickState>( new PickState(routesRelatedPullBox, elementPullBox) ) ;
+      var routeNameDictionary = new Dictionary<string, string>() ;
+      return new OperationResult<PickState>( new PickState( routesRelatedPullBox, elementPullBox, routeNameDictionary ) ) ;
     }
     
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (routesRelatedPullBox, elementPullBox) = pickState ;
+      var (routesRelatedPullBox, elementPullBox, routeNameDictionary) = pickState ;
+      foreach ( var route in routesRelatedPullBox ) {
+        if ( routeNameDictionary.ContainsKey( route.Name ) ) continue ;
+
+        var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == route.Name );
+        if ( conduitOfRoute == null ) continue ;
+          
+        var representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+        if ( ! string.IsNullOrEmpty( representativeRouteName ) && representativeRouteName != route.Name )
+          routeNameDictionary.Add( route.Name, representativeRouteName! ) ;
+      }
       
       var routeRecords = GetRelatedBranchSegments( routesRelatedPullBox.FirstOrDefault(x=>x.RouteSegments.Count() > 1) ).ToList() ;
       
@@ -87,8 +94,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           } ) ;
           if ( ! string.IsNullOrEmpty( endPointsOfRouteSegmentCrossPullBox.Key ) )
             endPointsOfRouteSegmentsCrossPullBox[ endPointsOfRouteSegmentCrossPullBox.Key ] = ( routeSegment.FromEndPoint, endPointsOfRouteSegmentsCrossPullBox[ endPointsOfRouteSegmentCrossPullBox.Key ].ToEndPoint ) ;
-          else
-            endPointsOfRouteSegmentsCrossPullBox.Add( routeName, ( routeSegment.FromEndPoint, null ) ) ;
         }
       }
 
@@ -130,6 +135,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else
           routeSegmentsGroup.Add( routeName, listRouteSegmentTemp ) ;
       }
+
+      var filteredRoutes = new List<string>() ;
+      foreach ( var (routeName, _) in routeNameDictionary ) {
+        if ( ! routeSegmentsGroup.ContainsKey( routeName ) )
+          filteredRoutes.Add( routeName );
+      }
+      filteredRoutes.ForEach( f => routeNameDictionary.Remove( f ) );
 
       foreach ( var routeSegmentGroup in routeSegmentsGroup ) {
         // Rename route name for pass point 
@@ -237,16 +249,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     }
 
-    private int GetRouteNameIndex( RouteCache routes, string? targetName )
-    {
-      string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
-      var regex = new Regex( pattern ) ;
-
-      var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
-
-      return lastIndex + 1 ;
-    }
-    
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( Document document, IEnumerable<Route> routesRelatedPullBox )
     {
       var selectedRoutes = Route.CollectAllDescendantBranches( routesRelatedPullBox ) ;
@@ -268,6 +270,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           yield return route ;
         }
       }
+    }
+    
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, PickState pickState )
+    {
+      if ( ! pickState.RouteNameDictionary.Any() ) return ;
+      RouteGenerator.ChangeRepresentativeRouteName( document, pickState.RouteNameDictionary ) ;
     }
     
     private class PullPoxPickFilter : ISelectionFilter
