@@ -239,8 +239,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )
     {
-      var storageService = new StorageService<Level, ConduitAndDetailCurveModel>( ((ViewPlan)document.ActiveView).GenLevel ) ;
-      var dataStorages = storageService.AllDatas.Where(x => x.Data.ConduitAndDetailCurveData.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
+      var dataStorages = document.GetAllDatas<Level, ConduitAndDetailCurveModel>().Where(x => x.Data.ConduitAndDetailCurveData.Any(y => conduitIds.Any(z => z == y.ConduitId))).ToList() ;
       if ( ! dataStorages.Any() ) 
         return ( string.Empty, false ) ;
       
