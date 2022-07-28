@@ -723,7 +723,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
         var itemFirst = items.First() ;
         var wireBook = ( string.IsNullOrEmpty( itemFirst.WireBook ) || itemFirst.WireBook == "1" ) ? string.Empty : itemFirst.WireBook ;
-        var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RouteNameRef ) ;
+        var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RelatedRouteName ) ;
         var listSeenQuantity = new List<double>() ;
         var listSeenQuantityPullBox = new List<string>() ;
         var valueDetailTableStr = string.Empty ;
@@ -991,7 +991,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private List<InforDisplay> GetInforDisplays(List<PickUpModel> pickUpModels, RouteCache routes)
     {
-      var routesNameRef = pickUpModels.Select( x => x.RouteNameRef ).Distinct() ;
+      var routesNameRef = pickUpModels.Select( x => x.RelatedRouteName ).Distinct() ;
       var inforDisplays = new List<InforDisplay>() ;
       foreach ( var routeNameRef in routesNameRef ) {
         var lastSegment = GetLastSegment( routeNameRef, routes ) ;
@@ -1121,7 +1121,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           .FirstOrDefault() ;
         if ( conduitPickUpModel == null ) continue ;
 
-        var pickUpModelsGroupsByRouteNameRef = conduitPickUpModel.PickUpModels.GroupBy( p => p.RouteNameRef ) ;
+        var pickUpModelsGroupsByRouteNameRef = conduitPickUpModel.PickUpModels.GroupBy( p => p.RelatedRouteName ) ;
         foreach ( var pickUpModelsGroup in pickUpModelsGroupsByRouteNameRef ) {
           var routeName = pickUpModelsGroup.Key ;
           var lastRoute = routeCache.LastOrDefault( r => r.Key == routeName ) ;

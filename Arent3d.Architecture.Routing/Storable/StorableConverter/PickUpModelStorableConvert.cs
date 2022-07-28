@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Condition, 
       SumQuantity,
       RouteName,
-      RouteNameRef,
+      RelatedRouteName,
       WireBook
     }
 
@@ -74,10 +74,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var condition = deserializer.GetString( SerializeField.Condition ) ;
       var sumQuantity = deserializer.GetString( SerializeField.SumQuantity ) ;
       var routeName = deserializer.GetString( SerializeField.RouteName ) ;
-      var routeNameRef = deserializer.GetString( SerializeField.RouteNameRef ) ;
+      var relatedRouteName = deserializer.GetString( SerializeField.RelatedRouteName ) ;
       var wireBook = deserializer.GetString( SerializeField.WireBook ) ;
       return new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction, productCode,
-        ceedSetCode, deviceSymbol, condition, sumQuantity, routeName, routeNameRef, wireBook ) ;
+        ceedSetCode, deviceSymbol, condition, sumQuantity, routeName, relatedRouteName, wireBook ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, PickUpModel customTypeValue )
@@ -111,7 +111,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Condition, customTypeValue.Condition ) ;
       serializerObject.AddNonNull( SerializeField.SumQuantity, customTypeValue.SumQuantity ) ;
       serializerObject.AddNonNull( SerializeField.RouteName, customTypeValue.RouteName ) ;
-      serializerObject.AddNullable( SerializeField.RouteNameRef, customTypeValue.RouteNameRef ) ;
+      serializerObject.AddNullable( SerializeField.RelatedRouteName, customTypeValue.RelatedRouteName ) ;
       serializerObject.AddNullable( SerializeField.WireBook, customTypeValue.WireBook ) ;
       return serializerObject ;
     }

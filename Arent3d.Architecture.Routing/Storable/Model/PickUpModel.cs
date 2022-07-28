@@ -30,11 +30,11 @@
     public string Condition { get ; set ; }
     public string SumQuantity { get ; set ; }
     public string RouteName { get ; set ; }
-    public string RouteNameRef { get ; set ; }
+    public string RelatedRouteName { get ; set ; }
     public string WireBook { get ; set ; }
 
     public PickUpModel( string? item, string? floor, string? constructionItems, string? equipmentType, string? productName, string? use, string? usageName, string? construction, string? modelNumber, string? specification, string? specification2, string? size, string? quantity, string? tani, string? supplement, string? supplement2, string? group, string? layer, string? classification, string? standard, string? pickUpNumber, string? direction, string? productCode,
-      string? ceedSetCode, string? deviceSymbol, string? condition, string? sumQuantity, string? routeName, string? routeNameRef = null, string? wireBook = null )
+      string? ceedSetCode, string? deviceSymbol, string? condition, string? sumQuantity, string? routeName, string? relatedRouteName = null, string? wireBook = null )
     {
       Item = item ?? string.Empty ;
       Floor = floor ?? string.Empty ;
@@ -64,7 +64,7 @@
       Condition = condition ?? string.Empty ;
       SumQuantity = sumQuantity ?? string.Empty ;
       RouteName = routeName ?? string.Empty ;
-      RouteNameRef = routeNameRef ?? string.Empty ;
+      RelatedRouteName = relatedRouteName ?? string.Empty ;
       WireBook = wireBook ?? string.Empty ;
     }
   }
