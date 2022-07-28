@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -273,9 +274,8 @@ namespace Arent3d.Architecture.Routing
       document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
       
       var connectorFamilyIds = new List<ElementId>() ;
-      var storageService = new StorageService<Level, CeedUserModel>( ((ViewPlan)document.ActiveView).GenLevel ) ;
       
-      var connectorFamilyUploadDatas = storageService.AllDatas.Select(x => x.Data.ConnectorFamilyUploadData)
+      var connectorFamilyUploadDatas = document.GetAllDatas<Level, CeedUserModel>().Select(x => x.Data.ConnectorFamilyUploadData)
         .SelectMany(x => x).Distinct().ToList();
       if ( ! connectorFamilyUploadDatas.Any() ) 
         return ;
