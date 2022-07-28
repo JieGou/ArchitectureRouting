@@ -10,8 +10,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
   {
     private enum SerializeField
     {
-      DetailSymbolId,
       DetailSymbol,
+      DetailSymbolUniqueId,
+      FromConnectorUniqueId,
+      ToConnectorUniqueId,
       ConduitId,
       RouteName,
       Code,
@@ -26,8 +28,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
-      var detailSymbolId = deserializer.GetString( SerializeField.DetailSymbolId ) ;
       var detailSymbol = deserializer.GetString( SerializeField.DetailSymbol ) ;
+      var detailSymbolId = deserializer.GetString( SerializeField.DetailSymbolUniqueId ) ;
+      var fromConnectorUniqueId = deserializer.GetString( SerializeField.FromConnectorUniqueId ) ;
+      var toConnectorUniqueId = deserializer.GetString( SerializeField.ToConnectorUniqueId ) ;
       var conduitId = deserializer.GetString( SerializeField.ConduitId ) ;
       var routeName = deserializer.GetString( SerializeField.RouteName ) ;
       var code = deserializer.GetString( SerializeField.Code ) ;
@@ -37,15 +41,17 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var deviceSymbol = deserializer.GetString( SerializeField.DeviceSymbol ) ;
       var plumbingType = deserializer.GetString( SerializeField.PlumbingType ) ;
 
-      return new DetailSymbolModel( detailSymbolId, detailSymbol, conduitId, routeName, code, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
+      return new DetailSymbolModel( detailSymbol, detailSymbolId, fromConnectorUniqueId, toConnectorUniqueId, conduitId, routeName, code, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailSymbolModel customTypeValue )
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
 
-      serializerObject.AddNonNull( SerializeField.DetailSymbolId, customTypeValue.DetailSymbolId ) ;
       serializerObject.AddNonNull( SerializeField.DetailSymbol, customTypeValue.DetailSymbol ) ;
+      serializerObject.AddNonNull( SerializeField.DetailSymbolUniqueId, customTypeValue.DetailSymbolUniqueId ) ;
+      serializerObject.AddNonNull( SerializeField.FromConnectorUniqueId, customTypeValue.FromConnectorUniqueId ) ;
+      serializerObject.AddNonNull( SerializeField.ToConnectorUniqueId, customTypeValue.ToConnectorUniqueId ) ;
       serializerObject.AddNonNull( SerializeField.ConduitId, customTypeValue.ConduitId ) ;
       serializerObject.AddNonNull( SerializeField.RouteName, customTypeValue.RouteName ) ;
       serializerObject.AddNonNull( SerializeField.Code, customTypeValue.Code ) ;

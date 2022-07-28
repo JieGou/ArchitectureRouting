@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class AllReRouteByFloorCommandBase : RoutingCommandBase<AllReRouteByFloorCommandBase.ReRouteByFloorState>
   {
-    public record ReRouteByFloorState ( IReadOnlyCollection<ElementId> LevelIds, Dictionary<string, HashSet<string>> ConduitIdsOfRoute ) ;
+    public record ReRouteByFloorState ( IReadOnlyCollection<ElementId> LevelIds, Dictionary<string, HashSet<string>> ConduitIdsOfRoute, Dictionary<string, string> RouteNameDictionary ) ;
     protected abstract AddInType GetAddInType() ;
 
     protected override OperationResult<ReRouteByFloorState> OperateUI( ExternalCommandData commandData, ElementSet elements )
@@ -31,19 +31,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => routeNames.Contains( e.GetRouteName() ! ) ).GroupBy( e => e.GetRouteName() ! )
           .ToDictionary( d => d.Key, d => d.Select( e => e.UniqueId ).ToHashSet() )
         : new Dictionary<string, HashSet<string>>() ;
-      return new OperationResult<ReRouteByFloorState>( new ReRouteByFloorState( levelIds, allConduitsByRoute ) ) ;
+      return new OperationResult<ReRouteByFloorState>( new ReRouteByFloorState( levelIds, allConduitsByRoute, new Dictionary<string, string>() ) ) ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments(
       Document document, ReRouteByFloorState reRouteByFloorState )
     {
       RouteGenerator.CorrectEnvelopes( document ) ;
-      var (levelIds, _) = reRouteByFloorState ;
+      var (levelIds, _, routeNameDictionary) = reRouteByFloorState ;
       var allConduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
         .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
       // get route names belong to selected level
       var routeNames = allConduits.Where( conduit => levelIds.Contains( conduit.ReferenceLevel.Id ) )
-        .GroupBy( conduit => conduit.GetRouteName() ).Select( conduit => conduit.Key ).ToList() ;
+        .GroupBy( conduit => conduit.GetRouteName() ).Select( conduit => conduit.Key ! ).ToList() ;
+      RouteGenerator.GetRelatedBranchRouteNames( document, routeNames, routeNameDictionary ) ;
       var routes = document.CollectRoutes( GetAddInType() ).ToSegmentsWithName()
         .Where( segment => routeNames.Contains( segment.RouteName ) ).EnumerateAll() ;
       return routes ;

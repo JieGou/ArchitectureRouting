@@ -731,7 +731,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if (!string.IsNullOrEmpty( buzaiCd ))
         pullBox.ParametersMap.get_Item( MaterialCodeParameter )?.Set( buzaiCd ) ;
       pullBox.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
-      detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId ) ;
+      detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
 
       if(positionLabel != null)
         CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
@@ -1028,6 +1028,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     {
       var sortConduits = new List<Element>() ;
       var toEndPoint = route.FirstToConnector()?.RoutingStartPosition ;
+      if ( toEndPoint == null ) return ;
       while ( sortConduits.Count != conduits.Count ) {
         var minDistance = double.MaxValue ;
         var nearestConduit = conduits.First() ;
@@ -1184,14 +1185,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return new PullBoxInfo( position, fromConduitDirection, toConduitDirection, level! ) ;
     }
 
-    public static IEnumerable<TextNote> GetTextNotesOfAutomaticCalculatedDimensionPullBox( Document document )
+    public static IEnumerable<TextNote> GetTextNotesOfPullBox( Document document, bool isOnlyCalculatedSizePullBoxes = false)
     {
-      var pullBoxUniqueIds = document.GetAllElements<FamilyInstance>()
-        .OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-        .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
-        .Where( e => Convert.ToBoolean( e.ParametersMap.get_Item( PullBoxRouteManager.IsAutoCalculatePullBoxSizeParameter ).AsString() ) )
-        .Select( e => e.UniqueId )
-        .ToList() ;
+      var pullBoxes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
+      if ( isOnlyCalculatedSizePullBoxes )
+        pullBoxes = pullBoxes.Where( e => Convert.ToBoolean( e.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
+      var pullBoxUniqueIds = pullBoxes.Select( e => e.UniqueId ).ToList() ;
       var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
       var pullBoxInfoModels = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxUniqueIds.Contains(p.PullBoxUniqueId) ) ;
       var textNote = document.GetAllElements<TextNote>().Where( t => pullBoxInfoModels.Any(p => p.TextNoteUniqueId == t.UniqueId) ) ;

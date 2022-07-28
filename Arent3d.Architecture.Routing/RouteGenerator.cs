@@ -277,7 +277,7 @@ namespace Arent3d.Architecture.Routing
       var detailSymbolModels = new List<DetailSymbolModel>() ;
       foreach ( var detailSymbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => elementIds.Contains( d.ConduitId ) ).ToList() ) {
         // delete symbol
-        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == detailSymbolModel.DetailSymbolId ).Select( t => t.Id ).FirstOrDefault() ;
+        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == detailSymbolModel.DetailSymbolUniqueId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( symbolId != null ) document.Delete( symbolId ) ;
         foreach ( var lineId in detailSymbolModel.LineIds.Split( ',' ) ) {
           var id = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.UniqueId == lineId ).Select( e => e.Id ).FirstOrDefault() ;
@@ -292,7 +292,7 @@ namespace Arent3d.Architecture.Routing
         detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
       }
 
-      var detailSymbols = detailSymbolModels.Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+      var detailSymbols = detailSymbolModels.Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
       if ( detailSymbolStorable.DetailSymbolModelData.Any() && detailSymbols.Count == 1 ) {
         var detailSymbolModel = detailSymbolModels.FirstOrDefault() ;
         if ( detailSymbolModel!.IsParentSymbol ) {
@@ -311,7 +311,7 @@ namespace Arent3d.Architecture.Routing
       var firstChildSymbol = detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != code ) ;
       if ( firstChildSymbol == null ) return ;
       {
-        var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+        var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
         foreach ( var id in detailSymbolIds ) {
           var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == id ) ;
           if ( textElement == null ) continue ;
@@ -340,6 +340,61 @@ namespace Arent3d.Architecture.Routing
 
       // Change the text notes type to the new type
       textNote.ChangeTypeId( textNoteType!.Id ) ;
+    }
+
+    public static void GetAllRelatedBranches( Document document, ICollection<Route> routes, Dictionary<string, string> routeNameDictionary )
+    {
+      var relatedBranches = new List<Route>() ;
+      var dic = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var allRouteNames = routes.Select( r => r.RouteName ).Distinct().ToHashSet() ;
+      foreach ( var route in routes ) {
+        var routeName = route.RouteName ;
+        var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == routeName ) ;
+        if ( conduitOfRoute == null ) continue ;
+        var representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+        if ( string.IsNullOrEmpty( representativeRouteName ) ) continue ;
+        var allBranchRouteNames = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => ! allRouteNames.Contains( e.GetRouteName() ! ) && ( representativeRouteName == routeName ? e.GetRepresentativeRouteName() == routeName : e.GetRepresentativeRouteName() == representativeRouteName ) ).Select( e => e.GetRouteName() ! ).Distinct() ;
+        foreach ( var branchRouteName in allBranchRouteNames ) {
+          if ( false == dic.TryGetValue( branchRouteName, out var branchRoute ) ) continue ;
+          relatedBranches.Add( branchRoute ) ;
+          allRouteNames.Add( branchRouteName ) ;
+          if ( ! routeNameDictionary.ContainsKey( branchRouteName ) ) {
+            routeNameDictionary.Add( branchRouteName, representativeRouteName! ) ;
+          }
+        }
+      }
+      
+      routes.AddRange( relatedBranches ) ;
+    }
+
+    public static void GetRelatedBranchRouteNames( Document document, IEnumerable<string> routeNames, Dictionary<string, string> routeNameDictionary )
+    {
+      foreach ( var routeName in routeNames ) {
+        var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == routeName ) ;
+        if ( conduitOfRoute == null ) continue ;
+        var representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+        if ( string.IsNullOrEmpty( representativeRouteName ) ) continue ;
+        var allBranchRouteNames = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => e.GetRouteName() != routeName && ( representativeRouteName == routeName ? e.GetRepresentativeRouteName() == routeName : e.GetRepresentativeRouteName() == representativeRouteName ) ).Select( e => e.GetRouteName() ! ).Distinct() ;
+        foreach ( var branchRouteName in allBranchRouteNames ) {
+          if ( ! routeNameDictionary.ContainsKey( branchRouteName ) ) {
+            routeNameDictionary.Add( branchRouteName, representativeRouteName! ) ;
+          }
+        }
+      }
+    }
+
+    public static void ChangeRepresentativeRouteName( Document document, Dictionary<string, string> routeNameDictionary )
+    {
+      using Transaction transactionChangeRepresentativeRouteName = new( document ) ;
+      transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
+      foreach ( var (routeName, parentRouteName ) in routeNameDictionary ) {
+        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+        foreach ( var conduit in conduits ) {
+          conduit.TrySetProperty( RoutingParameter.RepresentativeRouteName, parentRouteName ) ;
+        }
+      }
+
+      transactionChangeRepresentativeRouteName.Commit() ;
     }
   }
 }
