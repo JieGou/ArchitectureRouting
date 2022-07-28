@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     [Transaction( TransactionMode.Manual )]
     [DisplayNameKey( "Electrical.App.Commands.Demo.TestStorageCommand", DefaultString = "Storable" )]
     [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-    public class TestStorageCommand : IExternalCommand
+    public class StorageCommandTemplate : IExternalCommand
     {
         public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
         {
@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
             var selection = commandData.Application.ActiveUIDocument.Selection ;
             
             var element = document.GetElement( selection.PickObject( ObjectType.Element ) ) ;
-
+            
             var model = new ComplexModel
             {
                 IntProperty = int.MaxValue,
@@ -112,27 +112,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
             } ;
             
             element.SetData(model);
-            // var data = element.GetData<ComplexModel>() ;
-
+            
             return Result.Succeeded ;
-        }
-    }
-
-    [Schema( "686551F3-04D4-4A34-94CA-0C2E34B2A5BF", nameof( MasterModel ) )]
-    public class MasterModel : IDataModel
-    {
-        [Field(Documentation = "Complex Model List")]
-        public List<ComplexModel> ComplexModels { get ; set ; }
-
-        public MasterModel()
-        {
-            ComplexModels = new List<ComplexModel>() ;
         }
     }
 
     [Schema( "685551F3-04D4-4A34-94CA-0C2E34B2A5BF", nameof( ComplexModel ), Documentation = "The class I want to save in the project" )]
     public class ComplexModel : IDataModel
     {
+        
         #region Simple properties
 
         [Field( Documentation = "Int32 Property" )]
@@ -213,7 +201,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
 
         #endregion
 
-
         #region Map properties
 
         [Field( SpecTypeId = SpecTypeCode.Length, UnitTypeId = UnitTypeCode.Millimeters )]
@@ -238,6 +225,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         public SortedDictionary<string, double>? StringDoubleMap { get ; set ; }
 
         #endregion
+        
     }
 
     [Schema( "6C0EEADC-9B38-4CDF-A5C9-28296D37EE23", nameof( DeepModel ) )]
