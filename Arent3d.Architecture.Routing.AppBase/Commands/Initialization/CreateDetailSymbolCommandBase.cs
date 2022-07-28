@@ -2,8 +2,10 @@
 using System.Drawing ;
 using System.Linq ;
 using System.Windows.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
@@ -14,6 +16,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using Application = Autodesk.Revit.ApplicationServices.Application ;
 using Color = Autodesk.Revit.DB.Color ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
@@ -229,7 +232,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         var routeNameSamePosition = GetRouteNameSamePosition( doc, representativeRouteName!, conduit ) ;
         var oldDetailSymbolModel = storageService.Data.DetailSymbolData.FirstOrDefault( d => d.ConduitUniqueId == conduit.UniqueId && d.CountCableSamePosition == routeNameSamePosition.Count ) ;
-        var plumbingType = oldDetailSymbolModel == null ? DefaultPlumbingType : oldDetailSymbolModel.PlumbingType ;
+        
         if ( oldDetailSymbolModel != null )
           if ( routeName == representativeRouteName )
             detailSymbolItemModelsIsDeleted = storageService.Data.DetailSymbolData.Where( d => CreateDetailTableCommandBase.GetKeyRouting(d) == CreateDetailTableCommandBase.GetKeyRouting(oldDetailSymbolModel) && d.RouteName == oldDetailSymbolModel.RouteName ).ToList() ;
@@ -240,6 +243,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, false ) ;
         if(null == fromConnector || null == toConnector)
           return null;
+
+        string plumbingType ;
+        if ( null != oldDetailSymbolModel ) {
+          plumbingType = oldDetailSymbolModel.PlumbingType ;
+        }
+        else {
+          var csvStorable = doc.GetCsvStorable() ;
+          toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? connectorIsEcoMode ) ;
+          plumbingType = AddWiringInformationCommandBase.GetPlumpingType( csvStorable, connectorIsEcoMode, ceedCode ) ;
+        }
         
         var detailSymbolItemModel = CreateDetailSymbolItemModel( conduit, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, toConnector.UniqueId, lineIds, isParentSymbol, routeName!, ceedCode, routeNameSamePosition.Count, deviceSymbol, plumbingType ) ;
         detailSymbolItemModels.Add( detailSymbolItemModel ) ;
@@ -256,13 +269,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         // add symbol for conduit same position
         if ( ! string.IsNullOrEmpty( representativeRouteName ) && ! string.IsNullOrEmpty( routeName ) && representativeRouteName != routeName ) {
-          fromConnector = ConduitUtil.GetConnectorOfRoute( doc, representativeRouteName!, true ) ;
-          toConnector = ConduitUtil.GetConnectorOfRoute( doc, representativeRouteName!, false ) ;
-          if(null == fromConnector || null == toConnector)
-            return null;
-          
-          AddDetailSymbolForConduitsSamePosition( doc, allConduit, allConnector, detailSymbolItemModels, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, 
-            toConnector.UniqueId, routeName!, lineIds, isParentSymbol, routeNameSamePosition, plumbingType ) ;
+          var fromConnectorSamePosition = ConduitUtil.GetConnectorOfRoute( doc, representativeRouteName!, true ) ;
+          var toConnectorSamePosition = ConduitUtil.GetConnectorOfRoute( doc, representativeRouteName!, false ) ;
+          if ( null != fromConnectorSamePosition && null != toConnectorSamePosition ) {
+            AddDetailSymbolForConduitsSamePosition( doc, allConduit, allConnector, detailSymbolItemModels, detailSymbolContent, detailSymbol.UniqueId, fromConnectorSamePosition.UniqueId, 
+              toConnectorSamePosition.UniqueId, routeName!, lineIds, isParentSymbol, routeNameSamePosition, plumbingType ) ;
+          }
         }
 
         storageService.Data.DetailSymbolData.AddRange( detailSymbolItemModels ) ;

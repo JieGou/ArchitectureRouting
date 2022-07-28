@@ -18,9 +18,9 @@ using DataGrid = System.Windows.Controls.DataGrid ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
-using MoreLinq ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using TextBox = System.Windows.Controls.TextBox ;
+using MoreLinq;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -1107,17 +1107,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newDetailTableItemModels = new List<DetailTableItemModel>() ;
       
       var newDetailTableItemRow = new DetailTableItemModel( selectDetailTableItemRow.DetailSymbol, selectDetailTableItemRow.DetailSymbolUniqueId, 
-        selectDetailTableItemRow.FromConnectorUniqueId, selectDetailTableItemRow.ToConnectorUniqueId, selectDetailTableItemRow.RouteName ) ;
-      
-      if ( _isCallFromAddWiringInformationCommand ) {
-        newDetailTableItemRow.PlumbingType = DefaultParentPlumbingType ;
-        newDetailTableItemRow.ConstructionClassification = selectDetailTableItemRow.ConstructionClassification ;
-        newDetailTableItemRow.SignalType = selectDetailTableItemRow.SignalType ;
-        newDetailTableItemRow.ConstructionItems = selectDetailTableItemRow.ConstructionItems ;
-        newDetailTableItemRow.PlumbingItems = selectDetailTableItemRow.PlumbingItems ;
-        newDetailTableItemRow.Remark = selectDetailTableItemRow.Remark ;
-      }
-      
+        selectDetailTableItemRow.FromConnectorUniqueId, selectDetailTableItemRow.ToConnectorUniqueId, selectDetailTableItemRow.RouteName )
+      {
+        Floor = selectDetailTableItemRow.Floor,
+        PlumbingType = selectDetailTableItemRow.PlumbingType,
+        PlumbingItemTypes = selectDetailTableItemRow.PlumbingItemTypes,
+        PlumbingSize = selectDetailTableItemRow.PlumbingSize, 
+        PlumbingSizes = selectDetailTableItemRow.PlumbingSizes,
+        NumberOfPlumbing = selectDetailTableItemRow.NumberOfPlumbing,
+        ConstructionClassification = selectDetailTableItemRow.ConstructionClassification,
+        SignalType = selectDetailTableItemRow.SignalType,
+        ConstructionItems = selectDetailTableItemRow.ConstructionItems,
+        PlumbingItems = selectDetailTableItemRow.PlumbingItems,
+        Remark = selectDetailTableItemRow.Remark
+      } ;
+
       foreach ( var detailTableRow in _detailTableModelItemOrigins ) {
         newDetailTableItemModels.Add( detailTableRow ) ;
         if ( detailTableRow == selectDetailTableItemRow ) {

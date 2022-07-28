@@ -153,24 +153,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var fromConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, true ) ;
         if(null == fromConnector)
           continue;
-
+        
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? connectorIsEcoMode ) ;
         var ceedSetCode = ceedSetCodeModel?.Split( ':' ).ToList() ;
         var ceedCode = ceedSetCode?[ 0 ] ;
 
-        var isEcoMode = bool.TryParse( connectorIsEcoMode, out var value ) && value ;
-        var hiroiSetCdMasterModels = isEcoMode ? csvStorable.HiroiSetCdMasterEcoModelData : csvStorable.HiroiSetCdMasterNormalModelData ;
-        var hiroiSetCdMasterModel = hiroiSetCdMasterModels.FirstOrDefault( h => h.SetCode == ceedCode ) ;
-        if ( null == hiroiSetCdMasterModel )
-          continue ;
-
-        var hiroiSetMasterModels = isEcoMode ? csvStorable.HiroiSetMasterEcoModelData : csvStorable.HiroiSetMasterNormalModelData ;
-        var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == hiroiSetCdMasterModel.LengthParentPartModelNumber ) ;
-        if ( null == hiroiSetMasterModel )
-          continue ;
-
-        var plumbingType = GetPlumpingType( hiroiSetMasterModel, csvStorable.ConduitsModelData ) ;
+        var plumbingType = GetPlumpingType( csvStorable, connectorIsEcoMode, ceedCode ) ;
 
         foreach ( var conduitOfRoute in conduitOfRoutes ) {
           var detailSymbolModel = new DetailSymbolItemModel( SpecialSymbol, ! string.IsNullOrEmpty( uniqueId ) ? uniqueId : string.Empty, fromConnector.UniqueId, toConnector.UniqueId , conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count > 2 ? ceedSetCode[ 1 ] : string.Empty, plumbingType ) ;
@@ -180,16 +169,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static string GetPlumpingType( HiroiSetMasterModel hiroiSetMasterModel, List<ConduitsModel> conduitsModels)
+    public static string GetPlumpingType(CsvStorable csvStorable, string? connectorIsEcoMode, string? ceedCode)
     {
-      if ( string.IsNullOrEmpty( hiroiSetMasterModel.Name2 ) )
-        return NoPlumping ;
+      
+      var isEcoMode = bool.TryParse( connectorIsEcoMode, out var value ) && value ;
+      var hiroiSetCdMasterModels = isEcoMode ? csvStorable.HiroiSetCdMasterEcoModelData : csvStorable.HiroiSetCdMasterNormalModelData ;
+      var hiroiSetCdMasterModel = hiroiSetCdMasterModels.FirstOrDefault( h => h.SetCode == ceedCode ) ;
+      if ( null == hiroiSetCdMasterModel )
+        return CreateDetailSymbolCommandBase.DefaultPlumbingType ;
 
-      var conduitsModel = conduitsModels.FirstOrDefault( x => $"{x.PipingType}{x.Size}".Equals( hiroiSetMasterModel.Name2 ) ) ;
+      var hiroiSetMasterModels = isEcoMode ? csvStorable.HiroiSetMasterEcoModelData : csvStorable.HiroiSetMasterNormalModelData ;
+      var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == hiroiSetCdMasterModel.LengthParentPartModelNumber ) ;
+      if ( null == hiroiSetMasterModel )
+        return CreateDetailSymbolCommandBase.DefaultPlumbingType ;
+      
+      if ( string.IsNullOrEmpty( hiroiSetMasterModel.Name2 ) )
+        return CreateDetailSymbolCommandBase.DefaultPlumbingType ;
+
+      var conduitsModel = csvStorable.ConduitsModelData.FirstOrDefault( x => $"{x.PipingType}{x.Size}".Equals( hiroiSetMasterModel.Name2 ) ) ;
       if ( null != conduitsModel )
         return conduitsModel.PipingType ;
 
-      return NoPlumping ;
+      return CreateDetailSymbolCommandBase.DefaultPlumbingType ;
     }
 
     public static List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
