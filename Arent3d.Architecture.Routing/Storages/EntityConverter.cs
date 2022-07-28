@@ -12,7 +12,6 @@ namespace Arent3d.Architecture.Routing.Storages
     public class EntityConverter : IEntityConverter
     {
         private readonly ISchemaCreator _schemaCreator ;
-        private readonly AttributeExtractor<FieldAttribute> _fieldAttributeExtractor = new() ;
 
         public EntityConverter( ISchemaCreator schemaCreator )
         {
@@ -31,7 +30,7 @@ namespace Arent3d.Architecture.Routing.Storages
                 if ( null == propertyModel )
                     continue ;
 
-                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyModel ) ;
+                var fieldAttribute = propertyModel.GetAttribute<FieldAttribute>( ) ;
                 dynamic propertyValue = propertyModel.GetValue( dataModel ) ;
                 if ( propertyValue is null )
                     continue ;
@@ -92,7 +91,7 @@ namespace Arent3d.Architecture.Routing.Storages
                 if ( null == propertyModel )
                     continue ;
 
-                var fieldAttribute = _fieldAttributeExtractor.GetAttribute( propertyModel ) ;
+                var fieldAttribute = propertyModel.GetAttribute<FieldAttribute>( ) ;
                 object? entityValue = null ;
                 switch ( schemaField.ContainerType ) {
                     case ContainerType.Simple :

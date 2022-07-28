@@ -7,10 +7,13 @@ using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using System.ComponentModel ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Arent3d.Revit.UI.Forms;
+using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -300,5 +303,95 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         grdCategories.CancelEdit( DataGridEditingUnit.Cell ) ;
 
     }
+
+    private void HighLightConstructionItems_Click( object sender, RoutedEventArgs e )
+    {
+      using var processData = ProgressBar.ShowWithNewThread( this, false ) ;
+      processData.Message = "Highlighting construction items ..." ;
+      using ( processData?.Reserve( 0.5 ) ) {
+        ClearHighLightAllConstructionItemElement() ;
+
+        var selectedCnsSettingDataList = grdCategories.SelectedItems.Cast<CnsSettingModel>().ToList() ;
+
+        selectedCnsSettingDataList.ForEach( cnsSettingModel =>
+          cnsSettingModel.IsHighLighted = ! cnsSettingModel.IsHighLighted ) ;
+
+        // Saving HightLight State of constructionSetting Model
+        using Transaction tx = new Transaction( _document ) ;
+        tx.Start( "Change Element Color" ) ;
+        _cnsSettingViewModel.CnsSettingStorable.Save() ;
+        tx.Commit() ;
+
+        if ( ! selectedCnsSettingDataList.Any() ) return ;
+
+        var elementsByConstructionCategory =
+          GetAllConstructionItemElementsByCnsSettingModel( selectedCnsSettingDataList ) ;
+
+        if ( selectedCnsSettingDataList.FirstOrDefault()!.IsHighLighted ) {
+          HighLightSelectedConstructionITemElements( elementsByConstructionCategory ) ;
+        }
+      }
+    }
+
+    private void ClearHighLightAllConstructionItemElement()
+    {
+      var selectedCnsSettingDataList =  grdCategories.SelectedItems.Cast<CnsSettingModel>() ;
+
+      var allNonSelectedCnsSettingDataList = _cnsSettingViewModel.CnsSettingModels.Where( cnsSettingModel => selectedCnsSettingDataList.All( selectedCnsSettingModel => selectedCnsSettingModel != cnsSettingModel ) ) ;
+      
+      allNonSelectedCnsSettingDataList.ForEach( x=>x.IsHighLighted = false );
+      
+      using var tx = new Transaction( _document) ;
+      tx.Start( "Change Element Color" );
+      _cnsSettingViewModel.CnsSettingStorable.Save();
+      tx.Commit();
+      
+      var allConstructionItemElements = GetAllConstructionItemElementsByCnsSettingModel( _cnsSettingViewModel.CnsSettingModels ) ;
+      
+      UnHighLightConstructionItemElements( allConstructionItemElements.ToList());
+    }
+
+    private IEnumerable<Element> GetAllConstructionItemElementsByCnsSettingModel( IEnumerable<CnsSettingModel> cnsSettingModels )
+    {
+      var elements = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).OfNotElementType() ;
+
+      if (!elements.Any())
+        yield break;
+      
+      foreach ( var cnsSettingModel in cnsSettingModels ) {
+        var elementsByCategory = GetConstructionItemByCategoryName( cnsSettingModel.CategoryName,elements ) ;
+        foreach ( var element in elementsByCategory ) {
+          yield return element ;
+        }
+      }
+    }
+
+    private static IEnumerable<Element> GetConstructionItemByCategoryName(string categoryName, IEnumerable<Element> elements)
+    {
+      foreach ( var element in elements ) {
+        if (!element.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem , out string?  elementCnstructionCategory)) continue;
+        if ( !string.IsNullOrEmpty(elementCnstructionCategory) &&  elementCnstructionCategory == categoryName) 
+          yield return element ;
+      }
+    }
+
+    private void HighLightSelectedConstructionITemElements(IEnumerable<Element> constructionItemElements)
+    {
+      var color = new Color(
+        0, 0, 255 );
+      using var tx = new Transaction( _document) ;
+      tx.Start( "Reset Element Color" );
+      ConfirmUnsetCommandBase.ChangeElementColor( _document, constructionItemElements.ToList(),color ) ;    
+      tx.Commit();
+    }
+
+    private void UnHighLightConstructionItemElements(IEnumerable<Element> constructionITemElements)
+    {
+      using var tx = new Transaction( _document) ;
+      tx.Start( "Reset Element Color" );
+      ConfirmUnsetCommandBase.ResetElementColor(_document,constructionITemElements.ToList());
+      tx.Commit();
+    }
+    
   }
 }
