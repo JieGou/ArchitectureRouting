@@ -46,6 +46,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       CeedSetCode = string.Empty ;
       DeviceSymbol = string.Empty ;
       Condition = string.Empty ;
+      RouteName = string.Empty ;
+      RelatedRouteName = string.Empty ;
       Version = string.Empty ;
     }
 
@@ -54,7 +56,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       string? specification, string? specification2, string? size, string? quantity, string? tani, string? supplement,
       string? supplement2, string? group, string? layer, string? classification, string? standard, string? pickUpNumber,
       string? direction, string? productCode, string? ceedSetCode, string? deviceSymbol, string? condition,
-      string? version = null )
+      string? routeName = null, string? relatedRouteName = null, string? version = null )
     {
       Item = item ?? string.Empty ;
       Floor = floor ?? string.Empty ;
@@ -82,6 +84,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       CeedSetCode = ceedSetCode ?? string.Empty ;
       DeviceSymbol = deviceSymbol ?? string.Empty ;
       Condition = condition ?? string.Empty ;
+      RouteName = routeName ?? string.Empty ;
+      RelatedRouteName = relatedRouteName ?? string.Empty ;
       Version = version ?? string.Empty ;
     }
 
@@ -163,6 +167,12 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     [Field( Documentation = "Condition" )]
     public string Condition { get ; set ; }
 
+    [Field( Documentation = "Route Name" )]
+    public string RouteName { get ; set ; }
+    
+    [Field( Documentation = "Related Route Name" )]
+    public string RelatedRouteName { get ; set ; }
+    
     [Field( Documentation = "Version" )]
     public string Version { get ; set ; }
   }
