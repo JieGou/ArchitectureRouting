@@ -1030,6 +1030,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     {
       var sortConduits = new List<Element>() ;
       var toEndPoint = route.FirstToConnector()?.RoutingStartPosition ;
+      if ( toEndPoint == null ) return ;
       while ( sortConduits.Count != conduits.Count ) {
         var minDistance = double.MaxValue ;
         var nearestConduit = conduits.First() ;
