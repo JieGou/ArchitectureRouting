@@ -103,6 +103,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class ShowHeightSettingCommandButton
           {
           }
+          
+          [Button( typeof( PickUpNumberSettingCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
+          private static class PickUpNumberSettingCommandButton
+          {
+          }
         }
       }
 
@@ -154,6 +159,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( SwitchPrintModeCommand ), OnlyInitialized = true )]
           private static class SwitchPrintModeCommandButton
+          {
+          }
+          
+          [Button( typeof( PickUpFigureCreationCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
+          private static class PickUpFigureCreationCommandButton
           {
           }
         }

@@ -322,6 +322,12 @@
         <key>TransactionName.Commands.Routing.OffsetSetting</key>
         <string>Offset Setting</string>
 
+        <key>TransactionName.Commands.Initialization.PickUpFigureCreation</key>
+        <string>Pick Up Diagram</string>
+
+        <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
+        <string>Pick Up Number Setting</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>
@@ -530,6 +536,11 @@
         
         <key>Electrical.App.Commands.Routing.EraseSelectedPullBoxCommand</key>
         <string>Delete Pull Box</string>
-        
+
+        <key>Electrical.App.Commands.Initialization.PickUpFigureCreationCommand</key>
+        <string>Pick Up&#xA;Diagram</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
+        <string>Pick Up&#xA;Number Setting</string>
     </dict>
 </plist>
