@@ -1105,6 +1105,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newDetailTableRow = new DetailTableModel( selectDetailTableRow.DetailSymbol, selectDetailTableRow.DetailSymbolUniqueId, 
         selectDetailTableRow.FromConnectorUniqueId, selectDetailTableRow.ToConnectorUniqueId, selectDetailTableRow.RouteName )
         {
+          Floor = selectDetailTableRow.Floor,
           PlumbingType = selectDetailTableRow.PlumbingType,
           PlumbingItemTypes = selectDetailTableRow.PlumbingItemTypes,
           PlumbingSize = selectDetailTableRow.PlumbingSize, 
