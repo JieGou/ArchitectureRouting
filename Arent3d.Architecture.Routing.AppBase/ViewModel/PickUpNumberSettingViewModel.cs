@@ -15,9 +15,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public PickUpNumberSettingViewModel( Document document )
     {
       _document = document ;
-      var textNotePickUpModelStorable = _document.GetTextNotePickUpStorable() ;
+      var wireLengthNotationStorable = _document.GetWireLengthNotationStorable() ;
       var levelId = _document.ActiveView.GenLevel.Id.IntegerValue ;
-      IsPickUpNumberSetting = textNotePickUpModelStorable.PickUpNumberSettingData[levelId]?.IsPickUpNumberSetting ?? false ;
+      IsPickUpNumberSetting = wireLengthNotationStorable.PickUpNumberSettingData[ levelId ]?.IsPickUpNumberSetting ?? false ;
     }
 
     public bool IsPickUpNumberSetting
@@ -41,18 +41,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Execute( Window window )
     {
-      var textNotePickUpModelStorable = _document.GetTextNotePickUpStorable() ;
+      var wireLengthNotationStorable = _document.GetWireLengthNotationStorable() ;
       var level = _document.ActiveView.GenLevel ;
       var levelId = level.Id.IntegerValue ;
-      
-      var pickUpNumberSettingModel = textNotePickUpModelStorable.PickUpNumberSettingData[levelId] ;
+
+      var pickUpNumberSettingModel = wireLengthNotationStorable.PickUpNumberSettingData[ levelId ] ;
       if ( pickUpNumberSettingModel == null )
-        textNotePickUpModelStorable.PickUpNumberSettingData.Add( levelId, new PickUpNumberSettingModel( level, IsPickUpNumberSetting ) );
-      else pickUpNumberSettingModel.IsPickUpNumberSetting = IsPickUpNumberSetting ;
-      
+        wireLengthNotationStorable.PickUpNumberSettingData.Add( levelId, new PickUpNumberSettingModel( level, IsPickUpNumberSetting ) ) ;
+      else 
+        pickUpNumberSettingModel.IsPickUpNumberSetting = IsPickUpNumberSetting ;
+
       using Transaction transaction = new(_document, "Save Pick Up Number Setting") ;
       transaction.Start() ;
-      textNotePickUpModelStorable.Save() ;
+      wireLengthNotationStorable.Save() ;
       transaction.Commit() ;
 
       window.DialogResult = true ;

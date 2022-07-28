@@ -107,7 +107,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.DeviceSymbol, customTypeValue.DeviceSymbol ) ;
       serializerObject.AddNonNull( SerializeField.Condition, customTypeValue.Condition ) ;
       serializerObject.AddNonNull( SerializeField.RouteName, customTypeValue.RouteName ) ;
-      serializerObject.AddNullable( SerializeField.RouteNameRef, customTypeValue.RouteNameRef ) ;
+      serializerObject.AddNullable( SerializeField.RouteNameRef, customTypeValue.RelatedRouteName ) ;
 
       return serializerObject ;
     }

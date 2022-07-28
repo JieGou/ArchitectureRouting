@@ -3,22 +3,22 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
 {
-  public class TextNoteMapCreationModel
+  public class TextNoteOfPickUpFigureModel
   {
     public string Id { get ; set ; }
     public int Counter { get ; set ; }
-    public XYZ PositionRef { get ; set ; }
+    public XYZ RelatedPosition { get ; set ; }
     public XYZ? Position { get ; set ; }
     public string Content { get ; set ; }
-    public TextNotePickUpAlignment PickUpAlignment { get ; set ; }
+    public WireLengthNotationAlignment PickUpAlignment { get ; set ; }
     public XYZ? Direction { get ; set ; }
     public int? RoomId { get ; set ; }
 
-    public TextNoteMapCreationModel( string id, int counter, XYZ positionRef, XYZ? position, string content, TextNotePickUpAlignment pickUpAlignment, XYZ? direction, int? roomId )
+    public TextNoteOfPickUpFigureModel( string id, int counter, XYZ relatedPosition, XYZ? position, string content, WireLengthNotationAlignment pickUpAlignment, XYZ? direction, int? roomId )
     {
       Id = id ;
       Counter = counter ;
-      PositionRef = positionRef ;
+      RelatedPosition = relatedPosition ;
       Position = position ;
       Content = content ;
       PickUpAlignment = pickUpAlignment ;

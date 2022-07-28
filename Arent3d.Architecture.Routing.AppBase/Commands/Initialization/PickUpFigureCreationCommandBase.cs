@@ -11,18 +11,18 @@ using Arent3d.Architecture.Routing.Extensions ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public abstract class PickUpMapCreationCommandBase : IExternalCommand
+  public abstract class PickUpFigureCreationCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       
       try {
-        var result = document.Transaction( "TransactionName.Commands.Initialization.PickUpMapCreation".GetAppStringByKeyOrDefault( "Pick Up Map Creation" ), _ =>
+        var result = document.Transaction( "TransactionName.Commands.Initialization.PickUpFigureCreation".GetAppStringByKeyOrDefault( "Pick Up Figure Creation" ), _ =>
         {
           var level = document.ActiveView.GenLevel ;
-          var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
-          var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any(tp => tp.Level == level.Name ) ;
+          var wireLengthNotationStorable = document.GetWireLengthNotationStorable() ;
+          var isDisplay = wireLengthNotationStorable.WireLengthNotationData.Any(tp => tp.Level == level.Name ) ;
 
           if ( ! isDisplay ) {
             var pickUpViewModel = new PickUpViewModel( document ) ;
@@ -34,10 +34,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               return Result.Cancelled ;
             }
             
-            PickUpManager.ShowTextNotePickUp( textNotePickUpStorable, document, level, pickUpModels ) ;
+            WireLengthNotationManager.ShowWireLengthNotation( wireLengthNotationStorable, document, level, pickUpModels ) ;
           }
           else {
-            PickUpManager.RemoveTextNotePickUp( document, level.Name ) ;
+            WireLengthNotationManager.RemoveWireLengthNotation( document, level.Name ) ;
           }
         
           return Result.Succeeded ;
@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     }
   }
 
-  public enum TextNotePickUpAlignment
+  public enum WireLengthNotationAlignment
   {
     Oblique, Vertical, Horizontal
   }

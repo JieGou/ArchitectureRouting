@@ -322,7 +322,7 @@
         <key>TransactionName.Commands.Routing.SelectRangeRoute</key>
         <string>選択範囲配線</string>
 
-        <key>TransactionName.Commands.Initialization.PickUpMapCreation</key>
+        <key>TransactionName.Commands.Initialization.PickUpFigureCreation</key>
         <string>電線長さ表示</string>
 
         <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
@@ -518,7 +518,7 @@
         <key> Electrical.App.Commands.Initialization.ChangePullBoxDimensionCommand</key>
         <string>プルボックス&#xA;自動計算</string>
 
-        <key>Electrical.App.Commands.Initialization.PickUpMapCreationCommand</key>
+        <key>Electrical.App.Commands.Initialization.PickUpFigureCreationCommand</key>
         <string>電線長さ表示</string>
 
         <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>

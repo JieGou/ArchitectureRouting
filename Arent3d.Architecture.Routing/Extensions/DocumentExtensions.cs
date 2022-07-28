@@ -326,13 +326,13 @@ namespace Arent3d.Architecture.Routing.Extensions
     /// <summary>
     /// Get TextNotePickUpModel data from snoop DB.
     /// </summary>
-    public static TextNotePickUpModelStorable GetTextNotePickUpStorable( this Document document )
+    public static WireLengthNotationStorable GetWireLengthNotationStorable( this Document document )
     {
       try {
-        return TextNotePickUpModelStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( TextNotePickUpModelStorable.StorableName ) ;
+        return WireLengthNotationModelStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WireLengthNotationStorable.StorableName ) ;
       }
       catch ( InvalidOperationException ) {
-        return new TextNotePickUpModelStorable( document ) ;
+        return new WireLengthNotationStorable( document ) ;
       }
     }
   }

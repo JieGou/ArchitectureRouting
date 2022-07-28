@@ -28,8 +28,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             "Pick Up Number Setting" ), _ =>
           {
             var level = document.ActiveView.GenLevel ;
-            var textNotePickUpStorable = document.GetTextNotePickUpStorable() ;
-            var isDisplay = textNotePickUpStorable.TextNotePickUpData.Any( t => t.Level == level.Name ) ;
+            var wireLengthNotationStorable = document.GetWireLengthNotationStorable() ;
+            var isDisplay = wireLengthNotationStorable.WireLengthNotationData.Any( t => t.Level == level.Name ) ;
 
             if ( !isDisplay ) return Result.Succeeded ;
             
@@ -41,8 +41,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
               return Result.Succeeded ;
             }
-            PickUpManager.RemoveTextNotePickUp( document, level.Name ) ;
-            PickUpManager.ShowTextNotePickUp( textNotePickUpStorable, document, level, pickUpModels ) ;
+            WireLengthNotationManager.RemoveWireLengthNotation( document, level.Name ) ;
+            WireLengthNotationManager.ShowWireLengthNotation( wireLengthNotationStorable, document, level, pickUpModels ) ;
 
             return Result.Succeeded ;
           } ) ;

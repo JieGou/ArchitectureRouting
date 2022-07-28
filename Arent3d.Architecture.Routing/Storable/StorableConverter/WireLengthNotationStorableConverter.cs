@@ -6,8 +6,8 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 {
-  [StorableConverterOf( typeof( TextNotePickUpModel ) )]
-  public class TextNotePickUpStorableConverter: StorableConverterBase<TextNotePickUpModel>
+  [StorableConverterOf( typeof( WireLengthNotationModel ) )]
+  public class WireLengthNotationStorableConverter: StorableConverterBase<WireLengthNotationModel>
   {
     private enum SerializeField
     {
@@ -15,16 +15,16 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Level
     }
   
-    protected override TextNotePickUpModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
+    protected override WireLengthNotationModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
       var textNoteId = deserializer.GetString( SerializeField.TextNoteId ) ;
       var level = deserializer.GetString( SerializeField.Level ) ;
 
-      return new TextNotePickUpModel( textNoteId, level ) ;
+      return new WireLengthNotationModel( textNoteId, level ) ;
     }
   
-    protected override ISerializerObject Serialize( Element storedElement, TextNotePickUpModel customTypeValue )
+    protected override ISerializerObject Serialize( Element storedElement, WireLengthNotationModel customTypeValue )
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
   

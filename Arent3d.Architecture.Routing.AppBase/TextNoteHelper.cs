@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -34,7 +35,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       return textNoteType ;
     }
-    
+
     public static TextNoteType? FindOrCreateTextNoteType(Document document, double textSize, bool isVisible = true)
     {
       var textNoteTypeName = $"ARENT3D_{Math.Round( textSize, 2 )}MM_0.75" ;
@@ -54,6 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( 0.75 ) ;
       textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( LeaderOffsetSheet.MillimetersToRevitUnits() ) ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+      
       if( !isVisible )
         textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
 
