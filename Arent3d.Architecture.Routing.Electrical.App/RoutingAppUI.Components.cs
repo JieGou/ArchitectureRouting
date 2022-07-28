@@ -583,7 +583,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( NewStorableCommand ) )]
         private static class NewStorableCommandButton { }
         
-        [Button( typeof( TestStorageCommand ) )]
+        [Button( typeof( StorageCommandTemplate ) )]
         private static class TestStorageCommandButton { }
       }
 
