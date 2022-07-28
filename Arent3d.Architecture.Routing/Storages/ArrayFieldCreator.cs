@@ -17,8 +17,7 @@ namespace Arent3d.Architecture.Routing.Storages
             if ( null != dataModelType ) {
                 fieldBuilder = schemaBuilder.AddArrayField( propertyModel.Name, typeof( Entity ) ) ;
 
-                var schemaAttributeExtractor = new AttributeExtractor<SchemaAttribute>() ;
-                var subSchemaAttribute = schemaAttributeExtractor.GetAttribute( genericType ) ;
+                var subSchemaAttribute = genericType.GetAttribute<SchemaAttribute>( ) ;
                 fieldBuilder.SetSubSchemaGUID( subSchemaAttribute.GUID ) ;
             }
             else {

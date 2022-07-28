@@ -256,6 +256,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         // add symbol for conduit same position
         if ( ! string.IsNullOrEmpty( representativeRouteName ) && ! string.IsNullOrEmpty( routeName ) && representativeRouteName != routeName ) {
+          fromConnector = ConduitUtil.GetConnectorOfRoute( doc, representativeRouteName!, true ) ;
+          toConnector = ConduitUtil.GetConnectorOfRoute( doc, representativeRouteName!, false ) ;
+          if(null == fromConnector || null == toConnector)
+            return null;
+          
           AddDetailSymbolForConduitsSamePosition( doc, allConduit, allConnector, detailSymbolItemModels, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, 
             toConnector.UniqueId, routeName!, lineIds, isParentSymbol, routeNameSamePosition, plumbingType ) ;
         }
@@ -385,7 +390,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       } ).ToList() ;
       if ( string.IsNullOrEmpty( ceedCode ) )
         ( ceedCode, deviceSymbol ) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName ) ;
-      
+
       foreach ( var conduit in conduitOfRoute ) {
         var detailSymbolItemModel = new DetailSymbolItemModel( detailSymbolContent, detailSymbolId, fromConnectorUniqueId, toConnectorUniqueId, conduit.UniqueId, routeName, ceedCode, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
         detailSymbolItemModels.Add( detailSymbolItemModel ) ;
