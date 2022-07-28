@@ -24,6 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public Route Route => SubRoute.Route ;
       public SubRoute SubRoute { get ; }
       public Connector ReferenceConnector { get ; }
+      public readonly Dictionary<string, string> RouteNameDictionary = new() ;
 
       public double Radius => GetRadius( ReferenceConnector ) ;
 

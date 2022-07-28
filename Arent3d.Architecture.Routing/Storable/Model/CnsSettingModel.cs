@@ -43,6 +43,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     }
 
     public string CategoryName { get ; set ; }
+    
+    public bool IsHighLighted { get ; set ; }
 
     public CnsSettingModel( int sequence, string categoryName, bool isDefaultItemChecked = false )
     {

@@ -1,4 +1,5 @@
 using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Revit.UI ;
@@ -19,9 +20,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, Dictionary<string, HashSet<string>> allConduitsByRoute )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, ReRouteState reRouteState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
+
+      var (allConduitsByRoute, routeNameDictionary) = reRouteState ;
+      if ( routeNameDictionary.Any() ) {
+        RouteGenerator.ChangeRepresentativeRouteName( document, routeNameDictionary ) ;
+      }
       
       foreach ( var ( routeName, oldConduitIds ) in allConduitsByRoute ) {
         var ( wireTypeName, isLeakRoute ) = ChangeWireTypeCommand.RemoveDetailLines( document, oldConduitIds ) ;

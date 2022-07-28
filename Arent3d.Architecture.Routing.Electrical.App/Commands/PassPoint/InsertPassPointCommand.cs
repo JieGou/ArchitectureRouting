@@ -1,3 +1,5 @@
+using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.PassPoint ;
 using Arent3d.Revit.UI ;
@@ -17,5 +19,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
+    
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, PointOnRoutePicker.PickInfo pickInfo )
+    {
+      if ( ! pickInfo.RouteNameDictionary.Any() ) return ;
+      RouteGenerator.ChangeRepresentativeRouteName( document, pickInfo.RouteNameDictionary ) ;
+    }
   }
 }
