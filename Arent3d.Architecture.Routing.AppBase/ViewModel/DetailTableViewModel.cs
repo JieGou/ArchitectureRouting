@@ -1103,17 +1103,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newDetailTableModels = new List<DetailTableModel>() ;
       
       var newDetailTableRow = new DetailTableModel( selectDetailTableRow.DetailSymbol, selectDetailTableRow.DetailSymbolUniqueId, 
-        selectDetailTableRow.FromConnectorUniqueId, selectDetailTableRow.ToConnectorUniqueId, selectDetailTableRow.RouteName ) ;
-      
-      if ( _isCallFromAddWiringInformationCommand ) {
-        newDetailTableRow.PlumbingType = DefaultParentPlumbingType ;
-        newDetailTableRow.ConstructionClassification = selectDetailTableRow.ConstructionClassification ;
-        newDetailTableRow.SignalType = selectDetailTableRow.SignalType ;
-        newDetailTableRow.ConstructionItems = selectDetailTableRow.ConstructionItems ;
-        newDetailTableRow.PlumbingItems = selectDetailTableRow.PlumbingItems ;
-        newDetailTableRow.Remark = selectDetailTableRow.Remark ;
-      }
-      
+        selectDetailTableRow.FromConnectorUniqueId, selectDetailTableRow.ToConnectorUniqueId, selectDetailTableRow.RouteName )
+        {
+          Floor = selectDetailTableRow.Floor,
+          PlumbingType = selectDetailTableRow.PlumbingType,
+          PlumbingItemTypes = selectDetailTableRow.PlumbingItemTypes,
+          PlumbingSize = selectDetailTableRow.PlumbingSize, 
+          PlumbingSizes = selectDetailTableRow.PlumbingSizes,
+          NumberOfPlumbing = selectDetailTableRow.NumberOfPlumbing,
+          ConstructionClassification = selectDetailTableRow.ConstructionClassification,
+          SignalType = selectDetailTableRow.SignalType,
+          ConstructionItems = selectDetailTableRow.ConstructionItems,
+          PlumbingItems = selectDetailTableRow.PlumbingItems,
+          Remark = selectDetailTableRow.Remark
+        } ;
+
       foreach ( var detailTableRow in _detailTableModelsOrigin ) {
         newDetailTableModels.Add( detailTableRow ) ;
         if ( detailTableRow == selectDetailTableRow ) {

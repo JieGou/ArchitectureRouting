@@ -2,8 +2,8 @@
 using System.Drawing ;
 using System.Linq ;
 using System.Windows.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -16,7 +16,6 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using Application = Autodesk.Revit.ApplicationServices.Application ;
 using Color = Autodesk.Revit.DB.Color ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
@@ -37,8 +36,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var selection = uiDoc.Selection ;
-      UIApplication uiApp = commandData.Application ;
-      Application app = uiApp.Application ;
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
 
       return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
@@ -72,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       // create color using Color.FromArgb with RGB inputs
       var color = System.Drawing.Color.FromArgb( 255, 0, 0 ) ;
       // convert color into an integer
-      var colorInt = System.Drawing.ColorTranslator.ToWin32( color ) ;
+      var colorInt = ColorTranslator.ToWin32( color ) ;
       var txtColor = isParentSymbol ? 0 : colorInt ;
       List<string> lineIds = new List<string>() ;
       var startLineP1 = new XYZ( firstPoint.X + baseLengthOfLine, firstPoint.Y + baseLengthOfLine, firstPoint.Z ) ;
@@ -234,7 +231,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         var routeNameSamePosition = GetRouteNameSamePosition( doc, representativeRouteName!, conduit ) ;
         var oldDetailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.ConduitId == conduit.UniqueId && d.CountCableSamePosition == routeNameSamePosition.Count ) ;
-        var plumbingType = oldDetailSymbolModel == null ? DefaultPlumbingType : oldDetailSymbolModel.PlumbingType ;
+        
         if ( oldDetailSymbolModel != null )
           if ( routeName == representativeRouteName )
             detailSymbolModelsIsDeleted = detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbolUniqueId == oldDetailSymbolModel.DetailSymbolUniqueId && d.FromConnectorUniqueId == oldDetailSymbolModel.FromConnectorUniqueId && d.ToConnectorUniqueId == oldDetailSymbolModel.ToConnectorUniqueId && d.RouteName == oldDetailSymbolModel.RouteName ).ToList() ;
@@ -245,6 +242,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName!, false ) ;
         if(null == fromConnector || null == toConnector)
           return;
+
+        string plumbingType ;
+        if ( null != oldDetailSymbolModel ) {
+          plumbingType = oldDetailSymbolModel.PlumbingType ;
+        }
+        else {
+          var csvStorable = doc.GetCsvStorable() ;
+          toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? connectorIsEcoMode ) ;
+          plumbingType = AddWiringInformationCommandBase.GetPlumpingType( csvStorable, connectorIsEcoMode, ceedCode ) ;
+        }
         
         var detailSymbolModel = CreateDetailSymbolModel( conduit, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, toConnector.UniqueId, lineIds, isParentSymbol, routeName!, ceedCode, routeNameSamePosition.Count, deviceSymbol, plumbingType ) ;
         detailSymbolModels.Add( detailSymbolModel ) ;
@@ -261,8 +268,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         // add symbol for conduit same position
         if ( ! string.IsNullOrEmpty( representativeRouteName ) && ! string.IsNullOrEmpty( routeName ) && representativeRouteName != routeName ) {
-          AddDetailSymbolForConduitsSamePosition( doc, allConduit, allConnector, detailSymbolModels, detailSymbolContent, detailSymbol.UniqueId, fromConnector.UniqueId, 
-            toConnector.UniqueId, routeName!, lineIds, isParentSymbol, routeNameSamePosition, plumbingType ) ;
+          var fromConnectorSamePosition = ConduitUtil.GetConnectorOfRoute( doc, representativeRouteName!, true ) ;
+          var toConnectorSamePosition = ConduitUtil.GetConnectorOfRoute( doc, representativeRouteName!, false ) ;
+          if ( null != fromConnectorSamePosition && null != toConnectorSamePosition ) {
+            AddDetailSymbolForConduitsSamePosition( doc, allConduit, allConnector, detailSymbolModels, detailSymbolContent, detailSymbol.UniqueId, fromConnectorSamePosition.UniqueId, 
+              toConnectorSamePosition.UniqueId, routeName!, lineIds, isParentSymbol, routeNameSamePosition, plumbingType ) ;
+          }
         }
 
         detailSymbolStorable.DetailSymbolModelData.AddRange( detailSymbolModels ) ;
@@ -367,8 +378,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var newColor = new Color( 0, 250, 0 ) ;
         subCategory.LineColor = newColor ;
       }
-      else
+      else {
         subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+      }
 
       return subCategory ;
     }
@@ -405,9 +417,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           return strRouteName == mainRouteName ;
         } ).ToList() ;
         if ( ! conduitRouteName.Any() ) continue ;
-        var (ceedCode, deviceSymbol) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName! ) ;
+        var (ceedCode, deviceSymbol) = GetCeedCodeAndDeviceSymbolOfRouteToConnector( doc, allConnector, routeName ) ;
         foreach ( var conduit in conduitsOfRouteName ) {
-          var detailSymbolModel = CreateDetailSymbolModel( conduit, detailSymbolContent, detailSymbolId, fromConnectorUniqueId, toConnectorUniqueId, lineIds, isParentSymbol, routeName!, ceedCode, routeNamesSamePosition.Count, deviceSymbol, plumbingType ) ;
+          var detailSymbolModel = CreateDetailSymbolModel( conduit, detailSymbolContent, detailSymbolId, fromConnectorUniqueId, toConnectorUniqueId, lineIds, isParentSymbol, routeName, ceedCode, routeNamesSamePosition.Count, deviceSymbol, plumbingType ) ;
           detailSymbolModels.Add( detailSymbolModel ) ;
         }
       }
@@ -527,11 +539,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_UNDERLINE ).Set( underline ) ;
         textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 1d.MillimetersToRevitUnits() ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( (double) widthScale / 100 ) ;
-        textNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
       }
 
       // Change the text notes type to the new type
-      textNote.ChangeTypeId( textNoteType!.Id ) ;
+      textNote.ChangeTypeId( textNoteType.Id ) ;
     }
 
     public static void CreateNewTextNoteType( Document doc, TextNote textNote, int color )
@@ -548,7 +560,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       // Change the text notes type to the new type
-      textNote.ChangeTypeId( textNoteType!.Id ) ;
+      textNote.ChangeTypeId( textNoteType.Id ) ;
     }
   }
 }

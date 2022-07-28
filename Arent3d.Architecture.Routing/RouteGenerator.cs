@@ -341,5 +341,60 @@ namespace Arent3d.Architecture.Routing
       // Change the text notes type to the new type
       textNote.ChangeTypeId( textNoteType!.Id ) ;
     }
+
+    public static void GetAllRelatedBranches( Document document, ICollection<Route> routes, Dictionary<string, string> routeNameDictionary )
+    {
+      var relatedBranches = new List<Route>() ;
+      var dic = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var allRouteNames = routes.Select( r => r.RouteName ).Distinct().ToHashSet() ;
+      foreach ( var route in routes ) {
+        var routeName = route.RouteName ;
+        var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == routeName ) ;
+        if ( conduitOfRoute == null ) continue ;
+        var representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+        if ( string.IsNullOrEmpty( representativeRouteName ) ) continue ;
+        var allBranchRouteNames = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => ! allRouteNames.Contains( e.GetRouteName() ! ) && ( representativeRouteName == routeName ? e.GetRepresentativeRouteName() == routeName : e.GetRepresentativeRouteName() == representativeRouteName ) ).Select( e => e.GetRouteName() ! ).Distinct() ;
+        foreach ( var branchRouteName in allBranchRouteNames ) {
+          if ( false == dic.TryGetValue( branchRouteName, out var branchRoute ) ) continue ;
+          relatedBranches.Add( branchRoute ) ;
+          allRouteNames.Add( branchRouteName ) ;
+          if ( ! routeNameDictionary.ContainsKey( branchRouteName ) ) {
+            routeNameDictionary.Add( branchRouteName, representativeRouteName! ) ;
+          }
+        }
+      }
+      
+      routes.AddRange( relatedBranches ) ;
+    }
+
+    public static void GetRelatedBranchRouteNames( Document document, IEnumerable<string> routeNames, Dictionary<string, string> routeNameDictionary )
+    {
+      foreach ( var routeName in routeNames ) {
+        var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == routeName ) ;
+        if ( conduitOfRoute == null ) continue ;
+        var representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+        if ( string.IsNullOrEmpty( representativeRouteName ) ) continue ;
+        var allBranchRouteNames = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => e.GetRouteName() != routeName && ( representativeRouteName == routeName ? e.GetRepresentativeRouteName() == routeName : e.GetRepresentativeRouteName() == representativeRouteName ) ).Select( e => e.GetRouteName() ! ).Distinct() ;
+        foreach ( var branchRouteName in allBranchRouteNames ) {
+          if ( ! routeNameDictionary.ContainsKey( branchRouteName ) ) {
+            routeNameDictionary.Add( branchRouteName, representativeRouteName! ) ;
+          }
+        }
+      }
+    }
+
+    public static void ChangeRepresentativeRouteName( Document document, Dictionary<string, string> routeNameDictionary )
+    {
+      using Transaction transactionChangeRepresentativeRouteName = new( document ) ;
+      transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
+      foreach ( var (routeName, parentRouteName ) in routeNameDictionary ) {
+        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+        foreach ( var conduit in conduits ) {
+          conduit.TrySetProperty( RoutingParameter.RepresentativeRouteName, parentRouteName ) ;
+        }
+      }
+
+      transactionChangeRepresentativeRouteName.Commit() ;
+    }
   }
 }
