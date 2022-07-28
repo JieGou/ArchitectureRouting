@@ -127,13 +127,14 @@ namespace Arent3d.Architecture.Routing
       return ViewableElementCategory.Contains( (BuiltInCategory) cat.Id.IntegerValue ) ;
     }
 
-    public static void Create3DView( this Document document, IReadOnlyCollection<(ElementId Id, string Name)> levels )
+    public static List<View> Create3DView( this Document document, IReadOnlyCollection<(ElementId Id, string Name)> levels )
     {
-      if ( levels == null || levels.Count < 1 ) return ;
+      if ( levels == null || levels.Count < 1 ) return new List<View>() ;
 
       HeightSettingStorable settingStorables = document.GetHeightSettingStorable() ;
       var allLevels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
 
+      List<View> newViews = new() ;
       var viewFamilyType = document.GetAllElements<ViewFamilyType>().FirstOrDefault( viewFamilyType => viewFamilyType.ViewFamily == ViewFamily.ThreeDimensional ) ?? throw new InvalidOperationException() ;
       var views = document.GetAllElements<View>() ;
       var viewNames = views.Select( x => x.Name ).ToList() ;
@@ -179,6 +180,11 @@ namespace Arent3d.Architecture.Routing
 
           // Apply this bounding box to the view's section box
           view.SetSectionBox( boundingBoxXYZ ) ;
+          newViews.Add( view ) ;
+        }
+        else {
+          var view = views.SingleOrDefault( v => v.Name == viewName ) ;
+          if ( view != null ) newViews.Add( view ) ;
         }
       }
 
@@ -195,6 +201,8 @@ namespace Arent3d.Architecture.Routing
           }
         }
       }
+
+      return newViews ;
     }
   }
 }

@@ -345,6 +345,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new ChangePlumbingInformationStorable( document ) ;
       }
     }
-
+    
+    /// <summary>
+    /// Get TextNotePickUpModel data from snoop DB.
+    /// </summary>
+    public static WireLengthNotationStorable GetWireLengthNotationStorable( this Document document )
+    {
+      try {
+        return WireLengthNotationModelStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WireLengthNotationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WireLengthNotationStorable( document ) ;
+      }
+    }
   }
 }

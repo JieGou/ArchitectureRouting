@@ -757,18 +757,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     private static void CreateTextNoteAndGroupWithPullBox(Document doc, PullBoxInfoStorable pullBoxInfoStorable, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
     {
-      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
+      var newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize ;
+      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, newSize )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       
       var txtPosition = new XYZ( point.X, point.Y, point.Z ) ;
       
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
-
-      var textNoteType = textNote.TextNoteType ;
-      double newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
-      textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
-      textNote.ChangeTypeId( textNoteType.Id ) ;
-
+      
       if ( isAutoCalculatePullBoxSize ) {
         var color = new Color( 255, 0, 0 ) ;
         ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
@@ -1095,12 +1091,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       if ( depth == 0 || width == 0 || height == 0 )
         return null ;
-      var minPullBoxModelDepth = hiroiMasterModels.Where( p => p.Tani == TaniOfPullBox && p.Hinmei.Contains( HinmeiOfPullBox ) )
-        .Where( p =>
+      var satisfiedHiroiMasterModels = hiroiMasterModels
+        .Where( p => p.Tani == TaniOfPullBox && p.Hinmei.Contains( HinmeiOfPullBox ) ).Where( p =>
         {
           var (d, w, h) = ParseKikaku( p.Kikaku ) ;
           return d >= depth && w >= width && h >= height ;
-        } ).Min( x =>
+        } ).ToList() ;
+
+      if ( ! satisfiedHiroiMasterModels.Any() )
+        return null ;
+        
+      var minPullBoxModelDepth = satisfiedHiroiMasterModels.Min( x =>
         {
           var (d, _, _) = ParseKikaku( x.Kikaku ) ;
           return d ;
@@ -1195,6 +1196,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var pullBoxInfoModels = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxUniqueIds.Contains(p.PullBoxUniqueId) ) ;
       var textNote = document.GetAllElements<TextNote>().Where( t => pullBoxInfoModels.Any(p => p.TextNoteUniqueId == t.UniqueId) ) ;
       return textNote ;
+    }
+    
+    public static string IsSegmentConnectedToPoPullBox( Document document, RouteSegment lastSegment )
+    {
+      var pullBoxUniqueId = string.Empty ;
+      var toEndPointKey = lastSegment.ToEndPoint.Key ;
+      var toElementId = toEndPointKey.GetElementUniqueId() ;
+      if ( string.IsNullOrEmpty( toElementId ) ) 
+        return pullBoxUniqueId ;
+      var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .FirstOrDefault( c => c.UniqueId == toElementId ) ;
+      if ( toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
+        pullBoxUniqueId = toConnector.UniqueId ;
+      return pullBoxUniqueId ;
     }
     
     private class ConduitInfo
