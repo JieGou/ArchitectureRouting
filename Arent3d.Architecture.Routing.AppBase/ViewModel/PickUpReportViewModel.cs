@@ -29,6 +29,7 @@ using Arent3d.Architecture.Routing.StorableCaches ;
 using MoreLinq ;
 using MoreLinq.Extensions ;
 using NPOI.OpenXmlFormats.Spreadsheet ;
+using NPOI.SS.Formula.Functions ;
 using CellType = NPOI.SS.UserModel.CellType ;
 using FillPattern = NPOI.SS.UserModel.FillPattern ;
 using MarginType = NPOI.SS.UserModel.MarginType ;
@@ -305,54 +306,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! constructionItemList.Any() ) constructionItemList.Add( DefaultConstructionItem ) ;
         foreach ( var fileName in _fileNames ) {
           XSSFWorkbook workbook = new XSSFWorkbook() ;
-
-          Dictionary<string, XSSFCellStyle> xssfCellStyles = new Dictionary<string, XSSFCellStyle>
-          {
-            { "borderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "noneBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.None, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "bottomBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.None, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "leftBottomBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.None, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "rightBottomBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.Thin, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Right ) },
-            { "leftAlignmentLeftRightBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "leftRightBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Right ) },
-            { "exceptTopBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "wrapTextBorderedCellStyle", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left, true ) },
-            { "borderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "bottomBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "topBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "leftBottomBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.None, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "leftBottomBorderedCellStyleMediumWrap", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.None, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left, true ) },
-            { "rightBottomBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.Medium, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "leftAlignmentLeftRightBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "leftRightBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Thin, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "exceptTopBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "wrapTextBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left, true ) },
-            { "leftRightBottomBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Right ) },
-            { "leftRightBottomBorderedCellStyleMediumThin", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Right ) },
-            { "leftRightTopBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "topRightBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.Medium, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "leftTopBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "rightBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.Medium, BorderStyle.None, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Center ) },
-            { "rightBorderedCellStyleMediumDotted", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.Medium, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Right ) },
-            { "leftBorderedCellStyleMedium", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.Thin, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "exceptTopBorderedCellStyleSummary", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Dotted, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "exceptTopBorderedCellStyleSummaryMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Dotted, BorderStyle.Thin, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "bottomCellStyleSummaryMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Thin, BorderStyle.Dotted, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "rightBottomCellStyleSummaryMedium", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Dotted, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "leftBottomBorderedCellStyleLastRow", CreateCellStyle( workbook, BorderStyle.Medium, BorderStyle.None, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "bottomBorderedCellStyleLastRow", CreateCellStyle( workbook, BorderStyle.None, BorderStyle.None, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) },
-            { "rightBottomBorderedCellStyleLastRow", CreateCellStyle( workbook, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.None, BorderStyle.Medium, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Right ) }
-          } ;
-          var headerNoneBorderedCellStyle = CreateCellStyle( workbook, BorderStyle.None, BorderStyle.None, BorderStyle.None, BorderStyle.None, NPOI.SS.UserModel.VerticalAlignment.Center, NPOI.SS.UserModel.HorizontalAlignment.Left ) ;
-          XSSFFont myFont = (XSSFFont) workbook.CreateFont() ;
-          myFont.FontHeightInPoints = 18 ;
-          myFont.IsBold = true ;
-          myFont.FontName = "ＭＳ ゴシック";
-          headerNoneBorderedCellStyle.SetFont( myFont ) ;
-          xssfCellStyles.Add( "headerNoneBorderedCellStyle", headerNoneBorderedCellStyle ) ;
-
-
-
+          
           if ( fileName.Contains( SummaryFileName ) ) 
           {
             string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, ResourceFolderName ) ;
@@ -418,7 +372,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string> levels = _document.GetAllElements<Level>().Select( l => l.Name ).ToList() ;
       var codeList = GetCodeList() ;
       var fileName = FileName ;
-      IRow row0, row2 ;
       int rowStart ;
       switch ( sheetType ) {
         case SheetType.Confirmation :
@@ -426,7 +379,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var view = _document.ActiveView ;
           var scale = view.Scale ;
           HeightSettingStorable settingStorables = _document.GetHeightSettingStorable() ;
-          var number = NumberLevelHaveValue( levels ) ;
           var numberCount = 0 ;
           
           foreach ( var level in levels ) {
@@ -434,30 +386,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if( PickUpModels.Where( x => x.Floor == level ).All( p => p.ConstructionItems != sheetName ) ) continue;
             numberCount++ ;
             var height = settingStorables.HeightSettingsData.Values.FirstOrDefault( x => x.LevelName == level )?.Elevation ?? 0 ;
-            row0 = sheet.GetRow( rowStart ) ;
-            var row1 = sheet.GetRow( rowStart + 1 ) ;
-            row2 = sheet.GetRow( rowStart + 2 ) ;
-            SetCellValue( row0, 2 , fileName ) ;
-            SetCellValue( row0, 13, $"縮尺:" ) ;
-            SetCellValue( row0, 14, $"1/{scale}" ) ;
-            SetCellValue( row0, 15, $"階高:" ) ;
-            SetCellValue( row0, 16, $"{Math.Round(height/1000,1)}ｍ" ) ;
-            SetCellValue( row1, 1, "【入力確認表】" ) ;
-            SetCellValue( row1, 2, "工事項目:" ) ;
-            SetCellValue( row1, 3, sheetName ) ;
-            SetCellValue( row1, 7, "図面番号:" ) ;
-            SetCellValue( row1, 10, "階数:") ;
-            SetCellValue( row1, 11, level) ;
-            SetCellValue( row1, 12, "区間:") ;
-            var space = "      " ;
-            SetCellValue( row2, 1, $"品{space}名" ) ;
-            SetCellValue( row2, 2,  $"規{space}格" ) ;
-            SetCellValue( row2, 4, "単位" ) ;
-            var nextSpace = "                " ;
-            SetCellValue( row2, 5, $"軌{nextSpace}跡" ) ;
-            SetCellValue( row2, 16, "合計数量") ;
-
-            rowStart += 3 ;
+            
+            rowStart = numberCount == 1 ? CreateHeaderConfirmation( sheet, rowStart, fileName, sheetName, level, scale, height ) : CreateTemplateConfirmation( workbook, workbook.GetSheetAt( 0 ), sheet, rowStart, fileName, sheetName, level, scale, height ) ;
+            
             List<KeyValuePair<string, List<PickUpModel>>> dictionaryDataPickUpModel = new List<KeyValuePair<string, List<PickUpModel>>>() ;
             
             foreach ( var code in codeList ) {
@@ -478,45 +409,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
             var dictionaryDataPickUpModelOrder = dictionaryDataPickUpModel.OrderBy( x => x.Value.First().Tani == "m" ? 1 : 2).ThenBy( c => c.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard ) ; ;
             var pickUpNumberForConduitsToPullBox = GetPickUpNumberForConduitsToPullBox(_document,PickUpModels.Where( p=> p.Floor == level ).ToList()) ;
+            
+            int countNum = 0 ;
 
-            int numberRowOfLevel = 3 ;
-            foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrder ) {
-              numberRowOfLevel = GetRowOfLevel( dataPickUpModel.Value, sheet, numberRowOfLevel, pickUpNumberForConduitsToPullBox ) ;
-            }
-
-            var parts = numberRowOfLevel / 62 ;
-            for ( int i = 1 ; i <= parts ; i++ ) {
-              while ( rowStart % 62 != 0 ) {
-                for ( int j = 1 ; j <= 62 ; j++ ) {
-                  CopyFromSourceToDestinationRow( workbook, workbook.GetSheetAt( 0 ), sheet, i, rowStart ) ;
-                  rowStart++ ;
-                  i++ ;
-                }
-              }
+            var lastItem = dictionaryDataPickUpModelOrder.Last() ;
+            foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrder) {
+              var isLastItem = dataPickUpModel.Equals( lastItem ) ;
+              rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, pickUpNumberForConduitsToPullBox, workbook, fileName, sheetName, level, scale, height, ref countNum , isLastItem) ;
+              if ( isLastItem ) rowStart -- ;
             }
             
-            
-            foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrder ) {
-              rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, pickUpNumberForConduitsToPullBox ) ;
-            }
-            
-            while ( rowStart < 61 ) {
+            while ( (rowStart + 1) % 62 != 0 ) {
               rowStart++ ;
             }
             
             rowStart += 1 ;
-            
-            if ( numberCount != number ) {
-              int i = 0 ;
-              var tempRowStart = rowStart ;
-              for ( int j = 1 ; j <= 62 ; j++ ) {
-                CopyFromSourceToDestinationRow( workbook, workbook.GetSheetAt( 0 ), sheet, i, tempRowStart ) ;
-                tempRowStart++ ;
-                i++ ;
-              }
-            }
+            sheet.SetRowBreak( rowStart - 1 );
           }
-          
           break ;
         case SheetType.Summary :
           rowStart = 0 ;
@@ -567,16 +476,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           
           break ;
       }
-    }
-
-    private int NumberLevelHaveValue( List<string> levels )
-    {
-      List<string> result = new List<string>() ;
-      foreach ( var level in levels ) {
-        if ( PickUpModels.Any( x => x.Floor == level ) && !result.Contains( level ) ) result.Add( level ) ;
-      }
-
-      return result.Count ;
     }
 
     private void CopyFromSourceToDestinationRow(IWorkbook workbook, ISheet sourceWorksheet, ISheet destinationWorksheet, int sourceRowNum, int destinationRowNum) {
@@ -701,12 +600,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return pickUpNumberList ;
     }
-    
-    private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, int> pickUpNumberForConduitsToPullBox )
+
+    private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, int> pickUpNumberForConduitsToPullBox,
+      IWorkbook workbook, string fileName, string sheetName, string level, int scale, double height, ref int countNum , bool isLastItem = false)
     {
       if ( ! pickUpModels.Any() ) return rowStart ;
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       var pickUpModel = pickUpModels.First() ;
+
+      if ( countNum == 59 && !isLastItem) {
+        sheet.SetRowBreak( rowStart - 1 );
+        rowStart = CreateTemplateConfirmation( workbook, workbook.GetSheetAt( 0 ), sheet, rowStart, fileName, sheetName, level, scale, height ) ;
+        countNum = 0 ;
+      }
+      
       var row = sheet.GetRow( rowStart ) ;
       var isTani = IsTani( pickUpModel ) ;
       double total = 0 ;
@@ -714,9 +621,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var routes = RouteCache.Get( DocumentKey.Get( _document ) ) ;
       var inforDisplays = GetInforDisplays( pickUpModels, routes ) ;
       var isMoreTwoWireBook = IsMoreTwoWireBook( pickUpModels ) ;
+
       SetCellValue( row, 1, pickUpModel.ProductName ) ;
       SetCellValue( row, 2, pickUpModel.Standard ) ;
-      SetCellValue( row, 4, isTani ? "ｍ" : pickUpModel.Tani) ;
+      SetCellValue( row, 4, isTani ? "ｍ" : pickUpModel.Tani ) ;
       foreach ( var pickUpNumber in pickUpNumbers ) {
         string stringNotTani = string.Empty ;
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
@@ -764,20 +672,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
             totalBasedOnCreateTable += quantity ;
           }
-          
+
           if ( seenQuantity > 0 ) {
             if ( isSegmentConnectedToPullBox ) {
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
-              var numberPullBox = PickUpNumberTypes.First().TheValue ? $"[{(pickUpNumberPullBox)}]" : string.Empty;
-              if ( inforDisplay != null && inforDisplay.IsDisplay) {
-                countStr = ( inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ) + ( isMoreTwoWireBook ? $"×N" : string.IsNullOrEmpty(valueDetailTableStr) ? string.Empty: $"×{valueDetailTableStr}" ) ;
+              var numberPullBox = PickUpNumberTypes.First().TheValue ? $"[{( pickUpNumberPullBox )}]" : string.Empty ;
+              if ( inforDisplay != null && inforDisplay.IsDisplay ) {
+                countStr = ( inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ) +
+                           ( isMoreTwoWireBook ? $"×N" : string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $"×{valueDetailTableStr}" ) ;
                 inforDisplay.IsDisplay = false ;
                 if ( isSegmentFromPowerToPullBox ) {
-                  listSeenQuantityPullBox.Add(numberPullBox + $"({Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isTani ? 1 : 2 )})" + countStr);
+                  listSeenQuantityPullBox.Add( numberPullBox +
+                                               $"({Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isTani ? 1 : 2 )})" +
+                                               countStr ) ;
                 }
                 else {
-                  listSeenQuantityPullBox.Add( numberPullBox + Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr);
+                  listSeenQuantityPullBox.Add( numberPullBox + Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr ) ;
                 }
               }
             }
@@ -787,22 +698,27 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
         }
 
-        total += ! string.IsNullOrEmpty( wireBook ) ? Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) * int.Parse( wireBook ) : Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) ;
+        total += ! string.IsNullOrEmpty( wireBook )
+          ? Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) * int.Parse( wireBook )
+          : Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) ;
 
         var number = PickUpNumberTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
-        var seenQuantityStr = isTani ? string.Join( "＋", listSeenQuantity ) : string.Join("＋",stringNotTani.Split( '+' )) ;
+        var seenQuantityStr = isTani ? string.Join( "＋", listSeenQuantity ) : string.Join( "＋", stringNotTani.Split( '+' ) ) ;
 
         var seenQuantityPullBoxStr = string.Empty ;
         if ( listSeenQuantityPullBox.Any() ) {
-          seenQuantityPullBoxStr = string.Join($"＋", listSeenQuantityPullBox ) ;
+          seenQuantityPullBoxStr = string.Join( $"＋", listSeenQuantityPullBox ) ;
         }
-        
+
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
           notSeenQuantityStr += value > 0 ? "＋↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
         }
 
-        var key = isTani ? ( "(" + seenQuantityStr + notSeenQuantityStr + ")" ) + (string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $"×{valueDetailTableStr}") + (string.IsNullOrEmpty( seenQuantityPullBoxStr ) ? string.Empty : $"＋{seenQuantityPullBoxStr}" )  : ( seenQuantityStr + notSeenQuantityStr ) ;
+        var key = isTani
+          ? ( "(" + seenQuantityStr + notSeenQuantityStr + ")" ) + ( string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $"×{valueDetailTableStr}" ) +
+            ( string.IsNullOrEmpty( seenQuantityPullBoxStr ) ? string.Empty : $"＋{seenQuantityPullBoxStr}" )
+          : ( seenQuantityStr + notSeenQuantityStr ) ;
         var itemKey = trajectory.FirstOrDefault( t => t.Key.Contains( key ) ).Key ;
 
         if ( string.IsNullOrEmpty( itemKey ) )
@@ -811,24 +727,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           trajectory[ itemKey ]++ ;
         }
       }
-      
+
       List<string> trajectoryStr = ( from item in trajectory select item.Value == 1 ? item.Key : item.Key + "×" + item.Value ).ToList() ;
       int lengthOfCellMerge = GetWidthOfCellMerge( sheet, 5, 15 ) ;
-      
+
       var valueOfCell = string.Empty ;
       var trajectoryStrCount = trajectoryStr.Count ;
       var count = 0 ;
+
       if ( trajectoryStrCount > 1 ) {
         for ( var i = 0 ; i < trajectoryStrCount ; i++ ) {
           valueOfCell += trajectoryStr[ i ] + (i == trajectoryStrCount - 1 ? "": "＋");
-          if ( valueOfCell.Length * 2.5  < lengthOfCellMerge/256.0 && i < trajectoryStrCount - 1 ) continue;
+          if ( valueOfCell.Length * 3  < lengthOfCellMerge/256.0 && i < trajectoryStrCount - 1 ) continue;
           if ( count == 0 ) {
             SetCellValue( row,5, valueOfCell ) ;
             count++ ;
+            countNum++ ;
           }
           else {
-            var rowTrajectory = sheet.GetRow( ++rowStart ) ;
+            rowStart++ ;
+            if ( countNum == 59 ) {
+              sheet.SetRowBreak( rowStart - 1 );
+              rowStart = CreateTemplateConfirmation( workbook, workbook.GetSheetAt( 0 ), sheet, rowStart, fileName, sheetName, level, scale, height ) ;
+              countNum = 0 ;
+            }
+            var rowTrajectory = sheet.GetRow( rowStart ) ;
             SetCellValue( rowTrajectory, 5, valueOfCell  ) ;
+            countNum++ ;
           }
 
           valueOfCell = string.Empty ;
@@ -838,6 +763,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       else {
         SetCellValue( row, 5, string.Join( "＋", trajectoryStr ) ) ;
         SetCellValue( row, 16, $"{Math.Round( total, isTani ? 1 : 2 )}"  ) ;
+        countNum++ ;
       }
       
       rowStart++ ;
@@ -854,60 +780,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return result ;
     }
 
-    private void CreateCell( IRow currentRow, int cellIndex, string value, ICellStyle style )
-    {
-      ICell cell = currentRow.CreateCell( cellIndex ) ;
-      style.DataFormat = (short)49 ; // format type is text
-      cell.CellStyle = style ;
-      cell.SetCellValue( value ) ;
-    }
-    
     private void SetCellValue( IRow currentRow, int cellIndex, string value )
     {
       ICell cell = currentRow.GetCell( cellIndex ) ;
       cell.SetCellValue( value ) ;
     }
 
-    private void CreateMergeCell( ISheet sheet, IRow currentRow, int firstRowIndex, int lastRowIndex, int firstCellIndex, int lastCellIndex, string value, ICellStyle style, bool isMediumBorder = false )
-    {
-      ICell cell = currentRow.CreateCell( firstCellIndex ) ;
-      CellRangeAddress cellMerge = new CellRangeAddress( firstRowIndex, lastRowIndex, firstCellIndex, lastCellIndex ) ;
-      sheet.AddMergedRegion( cellMerge ) ;
-      style.DataFormat = (short)49 ; // format type is text
-      style.FillBackgroundColor = NPOI.HSSF.Util.HSSFColor.White.Index ;
-      cell.CellStyle = style ;
-      cell.SetCellValue( value ) ;
-      RegionUtil.SetBorderTop( style.BorderTop == BorderStyle.None ? 0 : style.BorderTop == BorderStyle.Thin ?  1 : isMediumBorder ? 2 : 1, cellMerge, sheet ) ;
-      RegionUtil.SetBorderBottom( style.BorderBottom == BorderStyle.None ? 0 : style.BorderBottom == BorderStyle.Thin ?  1 : isMediumBorder ? 2 : 1, cellMerge, sheet ) ;
-      RegionUtil.SetBorderLeft( style.BorderLeft == BorderStyle.None ? 0 : style.BorderLeft == BorderStyle.Thin ?  1 : isMediumBorder ? 2 : 1, cellMerge, sheet ) ;
-      RegionUtil.SetBorderRight( style.BorderRight == BorderStyle.None ? 0 : style.BorderRight == BorderStyle.Thin ?  1 : isMediumBorder ? 2 : 1, cellMerge, sheet ) ;
-    }
-
-    private XSSFCellStyle CreateCellStyle( 
-      IWorkbook workbook,
-      BorderStyle leftBorderStyle,
-      BorderStyle rightBorderStyle, 
-      BorderStyle topBorderStyle, 
-      BorderStyle bottomBorderStyle, 
-      NPOI.SS.UserModel.VerticalAlignment verticalAlignment, 
-      NPOI.SS.UserModel.HorizontalAlignment horizontalAlignment,
-      bool wrapText = false )
-    {
-      XSSFCellStyle borderedCellStyle = (XSSFCellStyle) workbook.CreateCellStyle() ;
-      borderedCellStyle.BorderLeft = leftBorderStyle ;
-      borderedCellStyle.BorderTop = topBorderStyle ;
-      borderedCellStyle.BorderRight = rightBorderStyle ;
-      borderedCellStyle.BorderBottom = bottomBorderStyle ;
-      borderedCellStyle.VerticalAlignment = verticalAlignment ;
-      borderedCellStyle.Alignment = horizontalAlignment ;
-      borderedCellStyle.WrapText = wrapText ;
-      
-      XSSFFont myFont = (XSSFFont) workbook.CreateFont() ;
-      myFont.FontName = "ＭＳ 明朝";
-      borderedCellStyle.SetFont( myFont );
-      return borderedCellStyle ;
-    }
-    
     private void OutputItemsSelectionSetting()
     {
       var settingOutputPickUpReport = new SettingOutputPickUpReport( this ) ;
@@ -1329,6 +1207,53 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return rowStart ;
     }
+    
+    private void CopyTemplateConfirmation( IWorkbook workbook, ISheet sourceWorkSheet, ISheet destinationWorksheet, int rowStart )
+    {
+      var tempRowStart = rowStart ;
+      for ( int i = 0 ; i < 62 ; i++ ) {
+        CopyFromSourceToDestinationRow( workbook, sourceWorkSheet, destinationWorksheet, i, tempRowStart ) ;
+        tempRowStart++ ;
+      }
+    }
+    
+    private int CreateHeaderConfirmation( ISheet sheet, int rowStart, string fileName, string sheetName, string level, int scale, double height )
+    {
+      var row0 = sheet.GetRow( rowStart ) ;
+      var row1 = sheet.GetRow( ++rowStart ) ;
+      var row2 = sheet.GetRow( ++rowStart ) ;
+      SetCellValue( row0, 2 , fileName ) ;
+      SetCellValue( row0, 13, $"縮尺:" ) ;
+      SetCellValue( row0, 14, $"1/{scale}" ) ;
+      SetCellValue( row0, 15, $"階高:" ) ;
+      SetCellValue( row0, 16, $"{Math.Round(height/1000,1)}ｍ" ) ;
+      SetCellValue( row1, 1, "【入力確認表】" ) ;
+      SetCellValue( row1, 2, "工事項目:" ) ;
+      SetCellValue( row1, 3, sheetName ) ;
+      SetCellValue( row1, 7, "図面番号:" ) ;
+      SetCellValue( row1, 10, "階数:") ;
+      SetCellValue( row1, 11, level) ;
+      SetCellValue( row1, 12, "区間:") ;
+      var space = "      " ;
+      SetCellValue( row2, 1, $"品{space}名" ) ;
+      SetCellValue( row2, 2,  $"規{space}格" ) ;
+      SetCellValue( row2, 4, "単位" ) ;
+      var nextSpace = "                " ;
+      SetCellValue( row2, 5, $"軌{nextSpace}跡" ) ;
+      SetCellValue( row2, 16, "合計数量") ;
+      rowStart++ ;
+      return rowStart;
+    }
+    
+    private int CreateTemplateConfirmation(IWorkbook workbook, ISheet sourceSheet, ISheet destinationSheet, int rowStart, string fileName, string sheetName, string level, int scale, double height)
+    {
+      CopyTemplateConfirmation(workbook, sourceSheet,destinationSheet, rowStart);
+      
+      rowStart = CreateHeaderConfirmation( destinationSheet, rowStart, fileName, sheetName, level, scale, height ) ;
+
+      return rowStart ;
+    }
+    
     
     public class ListBoxItem
     {
