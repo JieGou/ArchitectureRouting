@@ -363,6 +363,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
 
               var rName = pickUpElement.Conduit?.GetRouteName() ?? string.Empty ;
+              if ( ! string.IsNullOrEmpty( rName ) ) {
+                var rNameArray = rName.Split( '_' ) ;
+                rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+              }
               var detailTableModelItemList = null != pickUpElement.Conduit ? 
                 _storageDetailTableService.Data.DetailTableData.Where( x =>
                 {
