@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing
     public IEnumerable<IEndPoint> ToEndPoints => _routeSegments.Select( s => s.ToEndPoint ).Distinct() ;
 
     public IEnumerable<IEndPoint> AllEndPoints => FromEndPoints.Concat( ToEndPoints ) ;
+    public bool AllowedTiltedPiping { get ; set ; }
 
     internal SubRoute( Route route, int index )
     {

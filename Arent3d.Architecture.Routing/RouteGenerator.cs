@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing
 
           var edgeDiameter = subRoute.GetDiameter() ;
           var spec = new MEPSystemPipeSpec( mepSystem, fittingSizeCalculator ) ;
-          var routeCondition = new MEPSystemRouteCondition( spec, edgeDiameter, subRoute.AvoidType ) ;
+          var routeCondition = new MEPSystemRouteCondition( spec, edgeDiameter, subRoute.AvoidType, subRoute.AllowedTiltedPiping ) ;
 
           dic.Add( key, routeCondition ) ;
         }
