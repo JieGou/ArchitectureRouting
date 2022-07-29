@@ -39,7 +39,7 @@
         </GroupBox>
 
         <GroupBox Grid.Row="0" Header="拾い番号" DockPanel.Dock="Left" Width="120" Height="95" FontSize="16" VerticalAlignment="Top" Margin="240, 10, 10, 10" HorizontalAlignment="Left">
-            <ListBox HorizontalContentAlignment="Stretch" BorderBrush="White" ItemsSource="{Binding DoconTypes}">
+            <ListBox HorizontalContentAlignment="Stretch" BorderBrush="White" ItemsSource="{Binding PickUpNumberTypes}">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Template">

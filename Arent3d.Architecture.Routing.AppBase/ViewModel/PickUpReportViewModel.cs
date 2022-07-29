@@ -56,7 +56,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string BoardItem  = "盤搬入据付" ;
     private const string InteriorRepairEquipmentItem = "内装・補修・設備" ;
     private const string OtherItem = "その他" ;
-    private const string Wire = "電線" ;
     private const float DefaultCharacterWidth = 7.001699924468994F ;
     private const string SummaryTemplateFileName = "拾い出し集計表_template.xls" ;
     private const string ConfirmationTemplateFileName = "拾い根拠確認表_template.xls" ;
@@ -64,15 +63,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private readonly Document _document ;
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
-    private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModels ;
-    private readonly List<HiroiSetMasterModel> _hiroiSetMasterEcoModels ;
-    private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterNormalModels ;
-    private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterEcoModels ;
-    private readonly List<DetailTableModel> _dataDetailTable ;
 
     public ObservableCollection<PickUpModel> PickUpModels { get ; set ; }
     public ObservableCollection<ListBoxItem> FileTypes { get ; set ; }
-    public ObservableCollection<ListBoxItem> DoconTypes { get ; set ; }
+    public ObservableCollection<ListBoxItem> PickUpNumberTypes { get ; set ; }
     public ObservableCollection<ListBoxItem> OutputItems { get ; set ; }
     
     public ObservableCollection<ListBoxItem> CurrentSettingList { get ; set ; }
@@ -128,29 +122,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _document = document ;
       PickUpModels = new ObservableCollection<PickUpModel>() ;
       FileTypes = new ObservableCollection<ListBoxItem>() ;
-      DoconTypes = new ObservableCollection<ListBoxItem>() ;
+      PickUpNumberTypes = new ObservableCollection<ListBoxItem>() ;
       OutputItems = new ObservableCollection<ListBoxItem>() ;
       CurrentSettingList = new ObservableCollection<ListBoxItem>() ;
       PreviousSettingList = new ObservableCollection<ListBoxItem>() ;
       _hiroiMasterModels = new List<HiroiMasterModel>() ;
-      _hiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
-      _hiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
-      _hiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
-      _hiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
-      _dataDetailTable = new List<DetailTableModel>() ;
-      
+
       var csvStorable = _document.GetAllStorables<CsvStorable>().FirstOrDefault() ;
       if ( csvStorable != null ) 
       {
         _hiroiMasterModels = csvStorable.HiroiMasterModelData ;
-        _hiroiSetMasterNormalModels = csvStorable.HiroiSetMasterNormalModelData ;
-        _hiroiSetMasterEcoModels = csvStorable.HiroiSetMasterEcoModelData ;
-        _hiroiSetCdMasterNormalModels = csvStorable.HiroiSetCdMasterNormalModelData ;
-        _hiroiSetCdMasterEcoModels = csvStorable.HiroiSetCdMasterEcoModelData ;
       }
       
       var detailSymbolStorable =  _document.GetDetailTableStorable() ;
-      _dataDetailTable = detailSymbolStorable.DetailTableModelData ; ;
 
 
       _pathName = string.Empty ;
@@ -209,9 +193,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       FileTypes.Add( new ListBoxItem { TheText = SummaryFileType, TheValue = false } ) ;
       FileTypes.Add( new ListBoxItem { TheText = ConfirmationFileType, TheValue = false } ) ;
 
-      // DoconTypes
-      DoconTypes.Add( new ListBoxItem { TheText = OnText, TheValue = true } ) ;
-      DoconTypes.Add( new ListBoxItem { TheText = OffText, TheValue = false } ) ;
+      // PickUpNumberTypes
+      PickUpNumberTypes.Add( new ListBoxItem { TheText = OnText, TheValue = true } ) ;
+      PickUpNumberTypes.Add( new ListBoxItem { TheText = OffText, TheValue = false } ) ;
       
       // OutputItems
       OutputItems.Add( new ListBoxItem { TheText = OutputItemAll, TheValue = true } );
@@ -266,7 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void FileTypeChecked( object sender )
     {
       var checkbox = sender as CheckBox ;
-      var pickUpNumberStatus = DoconTypes.First().TheValue ? PickUpNumberOn : PickUpNumberOff ;
+      var pickUpNumberStatus = PickUpNumberTypes.First().TheValue ? PickUpNumberOn : PickUpNumberOff ;
       switch ( checkbox!.Content.ToString() ) {
         case SummaryFileType :
           if ( ! _fileNames.Contains( pickUpNumberStatus + SummaryFileName ) )
@@ -283,7 +267,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void FileTypeUnchecked( object sender )
     {
       var checkbox = sender as CheckBox ;
-      var pickUpNumberStatus = DoconTypes.First().TheValue ? PickUpNumberOn : PickUpNumberOff ;
+      var pickUpNumberStatus = PickUpNumberTypes.First().TheValue ? PickUpNumberOn : PickUpNumberOff ;
       switch ( checkbox!.Content.ToString() ) {
         case SummaryFileType :
           if ( _fileNames.Contains( pickUpNumberStatus + SummaryFileName ) )
@@ -511,6 +495,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               }
             }
             
+            
             foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrder ) {
               rowStart = AddConfirmationPickUpRow( dataPickUpModel.Value, sheet, rowStart, pickUpNumberForConduitsToPullBox ) ;
             }
@@ -534,30 +519,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           
           break ;
         case SheetType.Summary :
-         
-          row0 = sheet.GetRow( 0 ) ;
-          row2 = sheet.GetRow( 2 ) ;
-          var row3 = sheet.GetRow( 3 ) ;
-          SetCellValue( row0, 2, "【拾い出し集計表】" ) ;
-          SetCellValue(  row0, 6,  fileName ) ;
-          
-          SetCellValue( row0, 14, sheetName ) ;
+          rowStart = 0 ;
           Dictionary<int, string> levelColumns = new Dictionary<int, string>() ;
           var index = 5 ;
           foreach ( var level in levels ) {
             if(PickUpModels.All( x => x.Floor != level )) continue;
-            SetCellValue( row2, index, level) ;
             levelColumns.Add( index, level ) ;
             index++ ;
           }
           
-          SetCellValue( row2, index, "合計") ;
+          rowStart = CreateHeaderSummary( sheet, rowStart, fileName, sheetName, levelColumns ) ;
           
-          var spaceS = "  " ;
-          SetCellValue( row3, 1,  $"品{spaceS}名 / 規{spaceS}格") ;
-          SetCellValue( row3, 4, "単位" ) ;
-          
-          rowStart = 4 ;
           List<KeyValuePair<string, List<PickUpModel>>> dictionaryDataPickUpModelSummary = new List<KeyValuePair<string, List<PickUpModel>>>() ;
           foreach ( var code in codeList ) {
             var dataPickUpModels = PickUpModels
@@ -575,12 +547,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
           
           var dictionaryDataPickUpModelOrderSummary = dictionaryDataPickUpModelSummary.OrderBy( x => x.Value.First().Tani == "m" ? 1 : 2).ThenBy( c => c.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard ).ToList() ;
+
+          int count = 0 ;
+          
           foreach ( var dataPickUpModel in dictionaryDataPickUpModelOrderSummary ) {
             if ( rowStart + 2 == (dictionaryDataPickUpModelOrderSummary.Count * 2 + 4)) {
               rowStart = AddSummaryPickUpRow( dataPickUpModel.Value, sheet, rowStart, levelColumns, index ) ;
             }
             else {
               rowStart = AddSummaryPickUpRow( dataPickUpModel.Value, sheet, rowStart, levelColumns, index ) ;
+            }
+
+            count++ ;
+            if ( rowStart % 54 == 0 && count != dictionaryDataPickUpModelOrderSummary.Count) {
+              sheet.SetRowBreak( rowStart - 1 ) ;
+              rowStart = CreateTemplateSummary( workbook, workbook.GetSheetAt( 0 ), sheet, rowStart , fileName, sheetName, levelColumns ) ;
             }
           }
           
@@ -598,17 +579,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return result.Count ;
     }
 
-    private void CreateTemplateForFloor(ISheet sourceSheet, ISheet destinationSheet, int rowStart)
-    {
-      for ( int i = rowStart ; i < rowStart + 61 ; i++ ) {
-        //destinationSheet.GetRow( rowStart ) = sourceSheet.GetRow( 0 ).Cop ;
-      }
-    }
-    
     private void CopyFromSourceToDestinationRow(IWorkbook workbook, ISheet sourceWorksheet, ISheet destinationWorksheet, int sourceRowNum, int destinationRowNum) {
         // Get the source / new row
         XSSFRow sourceRow = (XSSFRow)sourceWorksheet.GetRow(sourceRowNum);
         XSSFRow newRow = (XSSFRow)destinationWorksheet.CreateRow(destinationRowNum);
+
+      
+        // Set heightfrom old row and apply to new row
+        newRow.HeightInPoints = sourceRow.HeightInPoints ;
+        
         // Loop through source columns to add to new row
         for (int i = 0; i < sourceRow.LastCellNum; i++) {
             // Grab a copy of the old/new cell
@@ -657,7 +636,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
         }
 
-        // If there are are any merged regions in the source row, copy to new row
+        // If there are any merged regions in the source row, copy to new row
         for (int i = 0; i < sourceWorksheet.NumMergedRegions; i++) {
             CellRangeAddress cellRangeAddress = sourceWorksheet.GetMergedRegion(i);
             if (cellRangeAddress.FirstRow == sourceRow.RowNum) {
@@ -680,13 +659,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     private int AddSummaryPickUpRow( 
-      List<PickUpModel> pickUpModels, 
+      List<PickUpModel> pickUpModels,
       ISheet sheet, 
-      int rowStart, 
+      int rowStart,
       IReadOnlyDictionary<int, string> levelColumns, 
-      int index,
-      bool isLastRow = false
-      )
+      int index
+    )
     {
       if ( ! pickUpModels.Any() ) return rowStart ;
       var pickUpModel = pickUpModels.First() ;
@@ -710,7 +688,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       SetCellValue( rowName, index, total == 0 ? string.Empty : $"{Math.Round( total, isTani ? 1 : 2 )}") ;
       
-      rowStart++ ;
+      rowStart ++ ;
       return rowStart ;
     }
 
@@ -791,7 +769,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( isSegmentConnectedToPullBox ) {
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
-              var numberPullBox = DoconTypes.First().TheValue ? $"[{(pickUpNumberPullBox)}]" : string.Empty;
+              var numberPullBox = PickUpNumberTypes.First().TheValue ? $"[{(pickUpNumberPullBox)}]" : string.Empty;
               if ( inforDisplay != null && inforDisplay.IsDisplay) {
                 countStr = ( inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ) + ( isMoreTwoWireBook ? $"×N" : string.IsNullOrEmpty(valueDetailTableStr) ? string.Empty: $"×{valueDetailTableStr}" ) ;
                 inforDisplay.IsDisplay = false ;
@@ -811,7 +789,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         total += ! string.IsNullOrEmpty( wireBook ) ? Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) * int.Parse( wireBook ) : Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) ;
 
-        var number = DoconTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
+        var number = PickUpNumberTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
         var seenQuantityStr = isTani ? string.Join( "＋", listSeenQuantity ) : string.Join("＋",stringNotTani.Split( '+' )) ;
 
         var seenQuantityPullBoxStr = string.Empty ;
@@ -1241,7 +1219,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( isSegmentConnectedToPullBox ) {
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
-              var numberPullBox = DoconTypes.First().TheValue ? $"[{(pickUpNumberPullBox)}]" : string.Empty;
+              var numberPullBox = PickUpNumberTypes.First().TheValue ? $"[{(pickUpNumberPullBox)}]" : string.Empty;
               if ( inforDisplay != null && inforDisplay.IsDisplay) {
                 countStr = ( inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ) + ( isMoreTwoWireBook ? $"×N" : string.IsNullOrEmpty(valueDetailTableStr) ? string.Empty: $"×{valueDetailTableStr}" ) ;
                 inforDisplay.IsDisplay = false ;
@@ -1261,7 +1239,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         total += ! string.IsNullOrEmpty( wireBook ) ? Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) * int.Parse( wireBook ) : Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) ;
 
-        var number = DoconTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
+        var number = PickUpNumberTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
         var seenQuantityStr = isTani ? string.Join( "＋", listSeenQuantity ) : string.Join("＋",stringNotTani.Split( '+' )) ;
 
         var seenQuantityPullBoxStr = string.Empty ;
@@ -1304,6 +1282,51 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
       rowStart++ ;
+      return rowStart ;
+    }
+
+
+    private void CopyTemplateSummary( IWorkbook workbook, ISheet sourceWorkSheet, ISheet destinationWorksheet, int rowStart )
+    {
+      int i = 0 ;
+      var tempRowStart = rowStart ;
+      for ( int j = 1 ; j <= 54 ; j++ ) {
+        CopyFromSourceToDestinationRow( workbook, sourceWorkSheet, destinationWorksheet, i, tempRowStart ) ;
+        tempRowStart++ ;
+        i++ ;
+      }
+    }
+
+    private int CreateHeaderSummary( ISheet sheet, int rowStart, string fileName, string sheetName, IReadOnlyDictionary<int, string> levelColumns )
+    {
+      var row0 = sheet.GetRow( rowStart ) ;
+
+      rowStart += 2 ;
+      var row2= sheet.GetRow( rowStart ) ;
+      rowStart++ ;
+      var row3 = sheet.GetRow( rowStart ) ;
+      SetCellValue( row0, 2, "【拾い出し集計表】" ) ;
+      SetCellValue(  row0, 6,  fileName ) ;
+      SetCellValue( row0, 14, sheetName ) ;
+    
+      foreach ( var levelColumn in levelColumns ) {
+        SetCellValue( row2, levelColumn.Key, levelColumn.Value) ;
+      }
+          
+      SetCellValue( row2, levelColumns.Last().Key + 1, "合計") ;
+      var spaceS = "  " ;
+      SetCellValue( row3, 1,  $"品{spaceS}名 / 規{spaceS}格") ;
+      SetCellValue( row3, 4, "単位" ) ;
+      rowStart++ ;
+      return rowStart;
+    }
+    
+    private int CreateTemplateSummary(IWorkbook workbook, ISheet sourceSheet, ISheet destinationSheet, int rowStart, string fileName, string sheetName, IReadOnlyDictionary<int, string> levelColumns)
+    {
+      CopyTemplateSummary(workbook, sourceSheet,destinationSheet, rowStart);
+      
+      rowStart = CreateHeaderSummary( destinationSheet, rowStart, fileName, sheetName, levelColumns ) ;
+
       return rowStart ;
     }
     
