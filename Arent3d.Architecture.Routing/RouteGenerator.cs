@@ -6,13 +6,11 @@ using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -124,14 +122,18 @@ namespace Arent3d.Architecture.Routing
 
       if ( ! pullBoxIds.Any() ) return ;
       {
-        var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
-        var pullBoxInfoModels = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).ToList() ;
-        var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
-        if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
-        document.Delete( pullBoxIds ) ;
-        foreach ( var pullBoxInfoModel in pullBoxInfoModels ) {
-          pullBoxInfoStorable.PullBoxInfoModelData.Remove( pullBoxInfoModel ) ;
+        var level = document.ActiveView.GenLevel ;
+        if ( level != null ) {
+          var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
+          var pullBoxInfoModels = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).ToList() ;
+          var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
+          if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
+          foreach ( var pullBoxInfoModel in pullBoxInfoModels ) {
+            storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( pullBoxInfoModel ) ;
+          }
         }
+        
+        document.Delete( pullBoxIds ) ;
       }
     }
     

@@ -142,19 +142,6 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
-    /// Get pull box data from snoop DB.
-    /// </summary>
-    public static PullBoxInfoStorable GetPullBoxInfoStorable( this Document document )
-    {
-      try {
-        return PullBoxInfoStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( PullBoxInfoStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new PullBoxInfoStorable( document ) ;
-      }
-    }
-
-    /// <summary>
     /// Get rack notation data from snoop DB.
     /// </summary>
     public static RackNotationStorable GetRackNotationStorable( this Document document )
