@@ -174,13 +174,14 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
+    public bool UseCache( IAutoRoutingEndPoint endPoint ) => false ;
+
     public string LineId { get ; }
 
     public ICommonRoutingCondition Condition { get ; }
 
-    public int RouteCount => _fromEndPoints.Count + _toEndPoints.Count - 1 ;
-
     public Action<IEnumerable<(IAutoRoutingEndPoint, Vector3d)>> PositionInitialized => SyncTermPositions ;
+    public AutoRoutingMemo Memo { get ; } = new AutoRoutingMemo() ;
 
     private static void SyncTermPositions( IEnumerable<(IAutoRoutingEndPoint, Vector3d)> positions )
     {
@@ -208,7 +209,7 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly SubRoute _subRoute ;
 
-      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, double? forcedFixedHeight, List<List<Box3d>> priorityBoxes )
+      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, double? forcedFixedHeight, IList<IList<Box3d>> priorityBoxes )
       {
         var documentData = DocumentMapper.Get( document ) ;
 
@@ -232,7 +233,7 @@ namespace Arent3d.Architecture.Routing
       public bool AllowHorizontalBranches { get ; }
       public double? FixedBopHeight { get ; set ; }
       
-      public List<List<Box3d>> PriorityBoxes { get ; }
+      public IList<IList<Box3d>> PriorityBoxes { get ; }
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints
@@ -246,6 +247,7 @@ namespace Arent3d.Architecture.Routing
       public IEnumerable<IAutoRoutingEndPoint> Starts { get ; }
 
       public IEnumerable<IAutoRoutingEndPoint> Destination { get ; }
+      public IReadOnlyCollection<IAutoRoutingEndPoint> CacheEnabledEndPoints { get ; } = Array.Empty<IAutoRoutingEndPoint>() ;
     }
 
     #endregion
