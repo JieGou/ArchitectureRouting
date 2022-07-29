@@ -173,10 +173,10 @@
         <string>読み込みdb保存</string>
 
         <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
-        <string>拾い</string>
+        <string>拾い（全ての階）</string>
 
         <key>Electrical.App.Commands.Initialization.ShowPickUpInformationByLevelCommand</key>
-        <string>床で拾う</string>
+        <string>拾い（作業の階）</string>
 
         <key>Electrical.App.Commands.Initialization.PickUpReportCommand</key>
         <string>拾い書出力</string>
