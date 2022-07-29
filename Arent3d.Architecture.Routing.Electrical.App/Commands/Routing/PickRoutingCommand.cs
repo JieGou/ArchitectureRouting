@@ -101,18 +101,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       var scale = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var baseLengthOfLine = scale / 100d ;
-
-      foreach ( var pullBoxElement in pullBoxElements ) {
-        var (pullBox, position) = pullBoxElement ;
-        var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
-        var level = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).FirstOrDefault( l => l.Id == pullBox.LevelId ) ;
-        if ( level == null ) continue ;
-        
+      var level = document.ActiveView.GenLevel ;
+      if ( level != null ) {
         var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
         var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
-        
-        PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
-          conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
+
+        foreach ( var pullBoxElement in pullBoxElements ) {
+          var (pullBox, position) = pullBoxElement ;
+          var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
+          PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
+            conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
+        }
       }
 
       #endregion

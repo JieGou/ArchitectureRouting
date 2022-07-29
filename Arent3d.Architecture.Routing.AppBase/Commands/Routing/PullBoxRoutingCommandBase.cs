@@ -101,7 +101,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       }
       
-      var level = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).FirstOrDefault( l => l.Id == pullBox.LevelId ) ;
+      var level = document.ActiveView.GenLevel ;
       if ( level != null ) {
         var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
         var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;

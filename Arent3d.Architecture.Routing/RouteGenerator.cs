@@ -122,19 +122,17 @@ namespace Arent3d.Architecture.Routing
 
       if ( ! pullBoxIds.Any() ) return ;
       {
-        var pullBoxInfoModels = new List<PullBoxInfoItemModel>() ;
-        foreach ( var pullBox in pullBoxes ) {
-          var level = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).FirstOrDefault( l => l.Id == pullBox.LevelId ) ;
-          if ( level == null ) continue ;
-        
+        var level = document.ActiveView.GenLevel ;
+        if ( level != null ) {
           var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
-          var storedPullBoxInfoModel = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.FirstOrDefault( p => pullBox.UniqueId == p.PullBoxUniqueId ) ;
-          if ( storedPullBoxInfoModel == null ) continue ;
-          pullBoxInfoModels.Add( storedPullBoxInfoModel );
-          storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( storedPullBoxInfoModel ) ;
+          var pullBoxInfoModels = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).ToList() ;
+          var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
+          if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
+          foreach ( var pullBoxInfoModel in pullBoxInfoModels ) {
+            storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( pullBoxInfoModel ) ;
+          }
         }
-        var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
-        if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
+        
         document.Delete( pullBoxIds ) ;
       }
     }
