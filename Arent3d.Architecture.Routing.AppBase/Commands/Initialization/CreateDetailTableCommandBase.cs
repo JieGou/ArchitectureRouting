@@ -255,7 +255,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailSymbolModel = conduits.Any() ? detailSymbolModels.FirstOrDefault( x => x.ConduitId.Equals( conduits.First().UniqueId ) ) : null;
       var plumbingType = null != detailSymbolModel ? detailSymbolModel.PlumbingType : DefaultPlumbingType ;
       if ( detailTableModels.Any() ) {
-        SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableModels, plumbingType ) ;
+        SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableModels, plumbingType, isFromCreateDetailTable && ! isReferenceDetailTableModels ) ;
       }
 
       if ( keyRoutingOnDetailSymbolModels.Any() ) {
@@ -534,13 +534,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       SetPlumbingDataForEachWiring( new List<DetailTableModel>(), conduitsModelData, ref detailTableRowsSinglePlumbing, plumbingType ) ;
     }
 
-    private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType )
+    private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType, bool isFromCreateDetailTable = false )
     {
       var newDetailTableRows = new List<DetailTableModel>() ;
       foreach ( var detailTableRow in detailTableModels ) {
         const int plumbingCount = 1 ;
         var oldDetailTableRows = detailTableModelData.Where( d => GetKeyRouting(d) == GetKeyRouting( detailTableRow ) && d.RouteName == detailTableRow.RouteName ).ToList() ;
         if ( ! oldDetailTableRows.Any() ) {
+          if ( isFromCreateDetailTable && ! string.IsNullOrEmpty( detailTableRow.PlumbingType ) ) plumbingType = detailTableRow.PlumbingType ; 
           var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
           if(!conduitsModels.Any())
             continue;
