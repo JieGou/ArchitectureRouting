@@ -250,6 +250,9 @@
         <key>Electrical.App.Commands.Routing.AddWiringInformation</key>
         <string>配線情報追加</string>
 
+        <key>Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand</key>
+        <string>配線３D表示モード</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
@@ -321,6 +324,12 @@
 
         <key>TransactionName.Commands.Routing.SelectRangeRoute</key>
         <string>選択範囲配線</string>
+
+        <key>TransactionName.Commands.Initialization.PickUpFigureCreation</key>
+        <string>電線長さ表示</string>
+
+        <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
+        <string>拾い番号設定</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
@@ -511,6 +520,12 @@
 
         <key> Electrical.App.Commands.Initialization.ChangePullBoxDimensionCommand</key>
         <string>プルボックス&#xA;自動計算</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpFigureCreationCommand</key>
+        <string>電線長さ表示</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
+        <string>拾い番号設定</string>
 
         <key>Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
         <string>印刷モード切替</string>

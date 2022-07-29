@@ -14,7 +14,6 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using Line = Autodesk.Revit.DB.Line ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -194,7 +193,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection,secondPassPointPosition,secondPassPointDirection) = pickState ;
+      var (fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection) = pickState ;
 
       RouteGenerator.CorrectEnvelopes( document ) ;
       ChangeFromConnectorAndToConnectorColor( document, fromPickResult, toPickResult ) ;

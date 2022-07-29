@@ -1,0 +1,48 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.PickUpNumberSettingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        Name="PickUpNumberSetting"
+        mc:Ignorable="d"
+        Title="拾い設定" Height="200" Width="400"
+        WindowStartupLocation="CenterScreen"
+        VerticalAlignment="Center"
+        d:DataContext="{d:DesignInstance {x:Type local:DesignPickUpNumberSettingViewModel}, IsDesignTimeCreatable=True}">
+    <Grid VerticalAlignment="Center">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation= "Vertical" HorizontalAlignment="Center">
+            <GroupBox 
+                Header="拾い番号表示設定（電気のみ）" 
+                DockPanel.Dock="Left" 
+                FontSize="16" 
+                VerticalAlignment="Top"
+                Margin="0, 5, 0, 0" 
+                HorizontalAlignment="Left">
+                <CheckBox HorizontalAlignment="Left" IsChecked="{Binding IsPickUpNumberSetting}" Content="拾い根拠確認表、電線表示に拾い番号を表示する" Margin="20" FontSize="13" />
+            </GroupBox>
+        </StackPanel>
+        
+        <StackPanel Grid.Row="1" Orientation = "Horizontal" Margin="0 10 10 0" HorizontalAlignment="Center">
+            <Button 
+                    Content="OK"
+                    Command="{Binding ExecuteCommand}"
+                    CommandParameter="{Binding ElementName=PickUpNumberSetting}"
+                    HorizontalAlignment="Center"
+                    Width="150" 
+                    Height="30"/>
+            <Button 
+                    Content="キャンセル"
+                    Command="{Binding CancelCommand}"
+                    CommandParameter="{Binding ElementName=PickUpNumberSetting}"
+                    HorizontalAlignment="Center"
+                    Height="30"
+                    Margin="20 0 0 0"
+                    Width="150" />
+        </StackPanel>
+    </Grid>
+</Window>

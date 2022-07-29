@@ -8,7 +8,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "14e49565-23e8-48f2-9873-653f285b6901" )]
+  [Guid( "02fd8011-a641-43e1-bc76-569219ee6512" )]
   [StorableVisibility( AppInfo.VendorId )]
   public class PickUpStorable : StorableBase
   {
