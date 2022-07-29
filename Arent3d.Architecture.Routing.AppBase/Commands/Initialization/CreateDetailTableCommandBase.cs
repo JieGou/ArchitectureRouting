@@ -710,7 +710,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                   parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
                 }
                 parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
-                parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, wireBook ) ;
+                parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.TryParse(parentDetailRow.WireBook, out var value) ? value : 1 ) ;
                 parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
                 parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
                 parentDetailRow.IsReadOnlyPlumbingSize = false ;
