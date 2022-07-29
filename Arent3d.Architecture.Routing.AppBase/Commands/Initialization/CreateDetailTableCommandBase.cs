@@ -189,7 +189,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
       var hiroiSetCdMasterEcoModelData = csvStorable.HiroiSetCdMasterEcoModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      var storageServiceForDetailTable = new StorageService<Level, DetailTableModel>( ( (ViewPlan) doc.ActiveView ).GenLevel ) ;
+      var storageServiceForDetailTable = new StorageService<Level, DetailTableModel>( storageServiceForDetailSymbol.Owner ) ;
       var detailTableModelsData = storageServiceForDetailTable.Data.DetailTableData ;
       var detailTableItemModels = new ObservableCollection<DetailTableItemModel>() ;
 
