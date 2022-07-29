@@ -702,8 +702,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     public static void ChangeDimensionOfPullBoxAndSetLabel( Document document, FamilyInstance pullBox,
-      CsvStorable? csvStorable, StorageService<Level, DetailSymbolModel> storageService, PullBoxInfoStorable pullBoxInfoStorable,
-      List<ConduitsModel>? conduitsModelData, List<HiroiMasterModel>? hiroiMasterModels, double scale, string textLabel,
+      CsvStorable? csvStorable, StorageService<Level, DetailSymbolModel> storageService, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel,
+      List<ConduitsModel>? conduitsModelData, List<HiroiMasterModel>? hiroiMasterModels, string textLabel,
       XYZ? positionLabel, bool isAutoCalculatePullBoxSize, PullBoxModel? selectedPullBoxModel = null )
     {
       var defaultLabel = textLabel ;
@@ -738,16 +738,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       storageService.Data.DetailSymbolData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
 
       if(positionLabel != null)
-        CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       else 
-        ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+        ChangeLabelOfPullBox( document, storagePullBoxInfoServiceByLevel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       t.Commit() ;
     }
 
-    private static void ChangeLabelOfPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement, string textLabel, bool isAutoCalculatePullBoxSize )
+    private static void ChangeLabelOfPullBox( Document document, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, Element pullBoxElement, string textLabel, bool isAutoCalculatePullBoxSize )
     {
       // Find text note compatible with pull box, change label if exists
-      var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
+      var pullBoxInfoModel = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
       var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel?.TextNoteUniqueId == t.UniqueId ) ;
       if ( textNote != null ) {
         textNote.Text = textLabel ;
@@ -757,7 +757,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    private static void CreateTextNoteAndGroupWithPullBox(Document doc, PullBoxInfoStorable pullBoxInfoStorable, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
+    private static void CreateTextNoteAndGroupWithPullBox(Document doc, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
     {
       var newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize ;
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, newSize )!.Id ;
@@ -772,8 +772,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
       }
 
-      pullBoxInfoStorable.PullBoxInfoModelData.Add( new PullBoxInfoModel( pullBox.UniqueId, textNote.UniqueId ) );
-      pullBoxInfoStorable.Save() ;
+      storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Add( new PullBoxInfoItemModel( pullBox.UniqueId, textNote.UniqueId ) );
+      storagePullBoxInfoServiceByLevel.SaveChange() ;
     }
 
     private static string GetPullBoxTextBox( int depth, int height, string text)
@@ -1188,15 +1188,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return new PullBoxInfo( position, fromConduitDirection, toConduitDirection, level! ) ;
     }
 
-    public static IEnumerable<TextNote> GetTextNotesOfPullBox( Document document, bool isOnlyCalculatedSizePullBoxes = false)
+    public static IEnumerable<TextNote> GetTextNotesOfPullBox( Document document, bool isOnlyCalculatedSizePullBoxes = false )
     {
-      var pullBoxes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
+      var pullBoxes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
       if ( isOnlyCalculatedSizePullBoxes )
         pullBoxes = pullBoxes.Where( e => Convert.ToBoolean( e.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
       var pullBoxUniqueIds = pullBoxes.Select( e => e.UniqueId ).ToList() ;
-      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
-      var pullBoxInfoModels = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxUniqueIds.Contains(p.PullBoxUniqueId) ) ;
-      var textNote = document.GetAllElements<TextNote>().Where( t => pullBoxInfoModels.Any(p => p.TextNoteUniqueId == t.UniqueId) ) ;
+      var level = document.ActiveView.GenLevel ;
+      var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
+      var pullBoxInfoModels = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData
+        .Where( p => pullBoxUniqueIds.Contains( p.PullBoxUniqueId ) ) ;
+      var textNote = document.GetAllElements<TextNote>()
+        .Where( t => pullBoxInfoModels.Any( p => p.TextNoteUniqueId == t.UniqueId ) ) ;
       return textNote ;
     }
     

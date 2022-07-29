@@ -6,13 +6,11 @@ using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -124,14 +122,20 @@ namespace Arent3d.Architecture.Routing
 
       if ( ! pullBoxIds.Any() ) return ;
       {
-        var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
-        var pullBoxInfoModels = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).ToList() ;
+        var pullBoxInfoModels = new List<PullBoxInfoItemModel>() ;
+        foreach ( var pullBox in pullBoxes ) {
+          var level = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).FirstOrDefault( l => l.Id == pullBox.LevelId ) ;
+          if ( level == null ) continue ;
+        
+          var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
+          var storedPullBoxInfoModel = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.FirstOrDefault( p => pullBox.UniqueId == p.PullBoxUniqueId ) ;
+          if ( storedPullBoxInfoModel == null ) continue ;
+          pullBoxInfoModels.Add( storedPullBoxInfoModel );
+          storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( storedPullBoxInfoModel ) ;
+        }
         var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
         if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
         document.Delete( pullBoxIds ) ;
-        foreach ( var pullBoxInfoModel in pullBoxInfoModels ) {
-          pullBoxInfoStorable.PullBoxInfoModelData.Remove( pullBoxInfoModel ) ;
-        }
       }
     }
     
