@@ -71,6 +71,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       return elementId ;
     }
+    
+    public string GetTypeName()
+    {
+      return Type ;
+    }
 
     private enum SerializeField
     {

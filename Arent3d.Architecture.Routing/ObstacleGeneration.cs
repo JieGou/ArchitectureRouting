@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Utils ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Architecture ;
 using Application = Autodesk.Revit.ApplicationServices.Application ;
@@ -12,9 +13,9 @@ namespace Arent3d.Architecture.Routing
 {
   public static class ObstacleGeneration
   {
-    private static List<List<Box3d>> _listRoomBox3dInCurrentProject = new() ;
+    private static List<IList<Box3d>> _listRoomBox3dInCurrentProject = new() ;
 
-    public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc )
+    public static IList<IList<Box3d>> GetAllObstacleRoomBox( Document doc )
     {
       var allRooms = GetAllRoomsInCurrentAndLinkDocument( doc ) ;
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
@@ -23,7 +24,7 @@ namespace Arent3d.Architecture.Routing
       var livingListBox3d = CreateBox3dFromDividedRoom( livingRooms ) ;
       var otherListBox3d = CreateBox3dFromDividedRoom( otherRooms ) ;
 
-      _listRoomBox3dInCurrentProject = new List<List<Box3d>> { livingListBox3d, otherListBox3d } ;
+      _listRoomBox3dInCurrentProject = new List<IList<Box3d>> { livingListBox3d, otherListBox3d } ;
       return _listRoomBox3dInCurrentProject ;
     }
 
@@ -74,7 +75,7 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    private static List<Box3d> CreateBox3dFromDividedRoom( IEnumerable<Room> list )
+    private static IList<Box3d> CreateBox3dFromDividedRoom( IEnumerable<Room> list )
     {
       var listOut = new List<Box3d>() ;
       var option = new SpatialElementBoundaryOptions() ;
@@ -140,7 +141,7 @@ namespace Arent3d.Architecture.Routing
 
     public static void ShowRoomBox( Document document )
     {
-      _listRoomBox3dInCurrentProject.ForEach( list => list.ForEach( recBox => { CreateBoxGenericModelInPlace( recBox.Min.ToXYZRaw(), recBox.Max.ToXYZRaw(), document ) ; } ) ) ;
+      _listRoomBox3dInCurrentProject.ForEach( list => list.ForEach( recBox => CreateBoxGenericModelInPlace( recBox.Min.ToXYZRaw(), recBox.Max.ToXYZRaw(), document ) ) ) ;
     }
 
     private static ElementId CreateBoxGenericModelInPlace( XYZ min, XYZ max, Document doc )
