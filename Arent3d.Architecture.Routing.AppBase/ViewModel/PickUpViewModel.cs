@@ -198,7 +198,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _pickUpNumber = 1 ;
 
       _storageDetailTableService = new StorageService<Level, DetailTableModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
-      
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null ) _ceedModels = ceedStorable.CeedModelData ;
 
