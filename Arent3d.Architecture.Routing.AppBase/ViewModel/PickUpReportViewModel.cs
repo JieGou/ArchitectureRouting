@@ -352,14 +352,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         MessageBox.Show( "Export file failed because " + ex, "Error message" ) ;
       }
     }
-    
-    void SaveWorkbook(IWorkbook workbook, string path)
-    {
-      using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write))
-      {
-        workbook.Write(fileStream);
-      }
-    }
 
     private enum SheetType
     {
@@ -397,7 +389,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             
               foreach ( var dataPickUpModel in dataPickUpModels ) {
-                if ( dictionaryDataPickUpModel.Any( l => l.Key == dataPickUpModel.ProductCode ) && ! IsTani( dataPickUpModel.PickUpModels.First() ) ) {
+                if ( dictionaryDataPickUpModel.Any( l => l.Key == dataPickUpModel.ProductCode ) && ! IsLengthObject( dataPickUpModel.PickUpModels.First() ) ) {
                   var dataPickUpModelExist = dictionaryDataPickUpModel.Single( x => x.Key == dataPickUpModel.ProductCode ) ;
                   dataPickUpModelExist.Value.AddRange( dataPickUpModel.PickUpModels );
                 }
@@ -445,7 +437,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code )
               .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             foreach ( var dataPickUpModel in dataPickUpModels ) {
-              if ( dictionaryDataPickUpModelSummary.Any( l => l.Key == dataPickUpModel.ProductCode ) && ! IsTani( dataPickUpModel.PickUpModels.First() ) ) {
+              if ( dictionaryDataPickUpModelSummary.Any( l => l.Key == dataPickUpModel.ProductCode ) && ! IsLengthObject( dataPickUpModel.PickUpModels.First() ) ) {
                 var dataPickUpModelExist = dictionaryDataPickUpModelSummary.Single( x => x.Key == dataPickUpModel.ProductCode ) ;
                 dataPickUpModelExist.Value.AddRange( dataPickUpModel.PickUpModels );
               }
@@ -568,9 +560,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ! pickUpModels.Any() ) return rowStart ;
       var pickUpModel = pickUpModels.First() ;
       var rowName = sheet.GetRow( rowStart ) ;
-      var isTani = IsTani( pickUpModel ) ;
+      var isLengthObject = IsLengthObject( pickUpModel ) ;
       SetCellValue( rowName, 1, pickUpModel.ProductName ) ;
-      SetCellValue( rowName, 4, isTani ? "ｍ" : pickUpModel.Tani ) ;
+      SetCellValue( rowName, 4, isLengthObject ? "ｍ" : pickUpModel.Tani ) ;
 
       rowStart++ ;
       var rowStandard = sheet.GetRow( rowStart ) ;
@@ -581,11 +573,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         double quantityFloor = 0 ;
         var level = levelColumns[ i ] ;
         quantityFloor = CalculateTotalByFloor( pickUpModels.Where( item => item.Floor == level ).ToList() ) ;
-        SetCellValue( rowName, i, quantityFloor == 0 ? string.Empty : $"{Math.Round( quantityFloor, isTani ? 1 : 2 )}" ) ;
+        SetCellValue( rowName, i, quantityFloor == 0 ? string.Empty : $"{Math.Round( quantityFloor, isLengthObject ? 1 : 2 )}" ) ;
         total += quantityFloor ;
       }
       
-      SetCellValue( rowName, index, total == 0 ? string.Empty : $"{Math.Round( total, isTani ? 1 : 2 )}") ;
+      SetCellValue( rowName, index, total == 0 ? string.Empty : $"{Math.Round( total, isLengthObject ? 1 : 2 )}") ;
       
       rowStart ++ ;
       return rowStart ;
@@ -615,7 +607,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
       var row = sheet.GetRow( rowStart ) ;
-      var isTani = IsTani( pickUpModel ) ;
+      var isLengthObject = IsLengthObject( pickUpModel ) ;
       double total = 0 ;
       Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
       var routes = RouteCache.Get( DocumentKey.Get( _document ) ) ;
@@ -624,7 +616,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       SetCellValue( row, 1, pickUpModel.ProductName ) ;
       SetCellValue( row, 2, pickUpModel.Standard ) ;
-      SetCellValue( row, 4, isTani ? "ｍ" : pickUpModel.Tani ) ;
+      SetCellValue( row, 4, isLengthObject ? "ｍ" : pickUpModel.Tani ) ;
       foreach ( var pickUpNumber in pickUpNumbers ) {
         string stringNotTani = string.Empty ;
         Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
@@ -666,7 +658,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               }
             }
             else {
-              if ( ! isTani ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? item.SumQuantity : $"＋{item.SumQuantity}" ;
+              if ( ! isLengthObject ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? item.SumQuantity : $"＋{item.SumQuantity}" ;
               seenQuantity += quantity ;
             }
 
@@ -684,26 +676,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 inforDisplay.IsDisplay = false ;
                 if ( isSegmentFromPowerToPullBox ) {
                   listSeenQuantityPullBox.Add( numberPullBox +
-                                               $"({Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isTani ? 1 : 2 )})" +
+                                               $"({Math.Round( seenQuantity, isLengthObject ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isLengthObject ? 1 : 2 )})" +
                                                countStr ) ;
                 }
                 else {
-                  listSeenQuantityPullBox.Add( numberPullBox + Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr ) ;
+                  listSeenQuantityPullBox.Add( numberPullBox + Math.Round( seenQuantity, isLengthObject ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr ) ;
                 }
               }
             }
             else {
-              listSeenQuantity.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ) ) ;
+              listSeenQuantity.Add( Math.Round( seenQuantity, isLengthObject ? 1 : 2 ) ) ;
             }
           }
         }
 
         total += ! string.IsNullOrEmpty( wireBook )
-          ? Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) * int.Parse( wireBook )
-          : Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) ;
+          ? Math.Round( totalBasedOnCreateTable, isLengthObject ? 1 : 2 ) * int.Parse( wireBook )
+          : Math.Round( totalBasedOnCreateTable, isLengthObject ? 1 : 2 ) ;
 
         var number = PickUpNumberTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
-        var seenQuantityStr = isTani ? string.Join( "＋", listSeenQuantity ) : string.Join( "＋", stringNotTani.Split( '+' ) ) ;
+        var seenQuantityStr = isLengthObject ? string.Join( "＋", listSeenQuantity ) : string.Join( "＋", stringNotTani.Split( '+' ) ) ;
 
         var seenQuantityPullBoxStr = string.Empty ;
         if ( listSeenQuantityPullBox.Any() ) {
@@ -712,10 +704,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         var notSeenQuantityStr = string.Empty ;
         foreach ( var (_, value) in notSeenQuantities ) {
-          notSeenQuantityStr += value > 0 ? "＋↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
+          notSeenQuantityStr += value > 0 ? "＋↓" + Math.Round( value, isLengthObject ? 1 : 2 ) : string.Empty ;
         }
 
-        var key = isTani
+        var key = isLengthObject
           ? ( "(" + seenQuantityStr + notSeenQuantityStr + ")" ) + ( string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $"×{valueDetailTableStr}" ) +
             ( string.IsNullOrEmpty( seenQuantityPullBoxStr ) ? string.Empty : $"＋{seenQuantityPullBoxStr}" )
           : ( seenQuantityStr + notSeenQuantityStr ) ;
@@ -758,11 +750,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
           valueOfCell = string.Empty ;
         }
-        SetCellValue( row, 16, $"{Math.Round( total, isTani ? 1 : 2 )}" ) ;
+        SetCellValue( row, 16, $"{Math.Round( total, isLengthObject ? 1 : 2 )}" ) ;
       }
       else {
         SetCellValue( row, 5, string.Join( "＋", trajectoryStr ) ) ;
-        SetCellValue( row, 16, $"{Math.Round( total, isTani ? 1 : 2 )}"  ) ;
+        SetCellValue( row, 16, $"{Math.Round( total, isLengthObject ? 1 : 2 )}"  ) ;
         countNum++ ;
       }
       
@@ -826,7 +818,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       PickUpModels = new ObservableCollection<PickUpModel>( newPickUpModels ) ;
     }
 
-    private bool IsTani( PickUpModel pickUpModel )
+    private bool IsLengthObject( PickUpModel pickUpModel )
     {
       return pickUpModel.Tani == "m" ;
     }
@@ -917,7 +909,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       double result = 0 ;
       if ( pickUpModels.Count < 1 ) return result ;
-      if ( IsTani( pickUpModels.First() ) ) {
+      if ( IsLengthObject( pickUpModels.First() ) ) {
         var pickUpModelsByNumber = PickUpModelByNumber( PickUpViewModel.ProductType.Conduit, pickUpModels ) ;
         foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
           var wireBook = pickUpModelByNumber.WireBook ;
@@ -1033,137 +1025,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return pullBoxUniqueId ;
     }
     
-    private int GetRowOfLevel( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, int> pickUpNumberForConduitsToPullBox )
-    {
-      if ( ! pickUpModels.Any() ) return rowStart ;
-      var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
-      var pickUpModel = pickUpModels.First() ;
-      var row = sheet.GetRow( rowStart ) ;
-      var isTani = IsTani( pickUpModel ) ;
-      double total = 0 ;
-      Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
-      var routes = RouteCache.Get( DocumentKey.Get( _document ) ) ;
-      var inforDisplays = GetInforDisplays( pickUpModels, routes ) ;
-      var isMoreTwoWireBook = IsMoreTwoWireBook( pickUpModels ) ;
-      foreach ( var pickUpNumber in pickUpNumbers ) {
-        string stringNotTani = string.Empty ;
-        Dictionary<string, double> notSeenQuantities = new Dictionary<string, double>() ;
-        Dictionary<string, double> notSeenQuantitiesPullBox = new Dictionary<string, double>() ;
-        var items = pickUpModels.Where( p => p.PickUpNumber == pickUpNumber ).ToList() ;
-        var itemFirst = items.First() ;
-        var wireBook = ( string.IsNullOrEmpty( itemFirst.WireBook ) || itemFirst.WireBook == "1" ) ? string.Empty : itemFirst.WireBook ;
-        var itemsGroupByRoute = items.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ).GroupBy( i => i.RelatedRouteName ) ;
-        var listSeenQuantity = new List<double>() ;
-        var listSeenQuantityPullBox = new List<string>() ;
-        var valueDetailTableStr = string.Empty ;
-        double totalBasedOnCreateTable = 0 ;
-        foreach ( var itemGroupByRoute in itemsGroupByRoute ) {
-          valueDetailTableStr = wireBook ;
-          double seenQuantity = 0 ;
-
-          var lastSegment = GetLastSegment( itemGroupByRoute.Key, routes ) ;
-          var isSegmentConnectedToPullBox = IsSegmentConnectedToPullBox( lastSegment ) ;
-          var isSegmentFromPowerToPullBox = IsSegmentFromPowerToPullBox( lastSegment ) ;
-          var pickUpNumberForConduitToPullBox = pickUpNumberForConduitsToPullBox.SingleOrDefault( p => p.Key == itemGroupByRoute.Key ) ;
-          var pickUpNumberPullBox = pickUpNumberForConduitToPullBox.Value ;
-
-          foreach ( var item in itemGroupByRoute ) {
-            double.TryParse( item.Quantity, out var quantity ) ;
-            if ( ! string.IsNullOrEmpty( item.Direction ) ) {
-              if ( isSegmentFromPowerToPullBox ) {
-                if ( ! notSeenQuantitiesPullBox.Keys.Contains( item.Direction ) ) {
-                  notSeenQuantitiesPullBox.Add( item.Direction, 0 ) ;
-                }
-
-                notSeenQuantitiesPullBox[ item.Direction ] += quantity ;
-              }
-              else {
-                if ( ! notSeenQuantities.Keys.Contains( item.Direction ) ) {
-                  notSeenQuantities.Add( item.Direction, 0 ) ;
-                }
-
-                notSeenQuantities[ item.Direction ] += quantity ;
-              }
-            }
-            else {
-              if ( ! isTani ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? item.SumQuantity : $"＋{item.SumQuantity}" ;
-              seenQuantity += quantity ;
-            }
-
-            totalBasedOnCreateTable += quantity ;
-          }
-          
-          if ( seenQuantity > 0 ) {
-            if ( isSegmentConnectedToPullBox ) {
-              var countStr = string.Empty ;
-              var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
-              var numberPullBox = PickUpNumberTypes.First().TheValue ? $"[{(pickUpNumberPullBox)}]" : string.Empty;
-              if ( inforDisplay != null && inforDisplay.IsDisplay) {
-                countStr = ( inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ) + ( isMoreTwoWireBook ? $"×N" : string.IsNullOrEmpty(valueDetailTableStr) ? string.Empty: $"×{valueDetailTableStr}" ) ;
-                inforDisplay.IsDisplay = false ;
-                if ( isSegmentFromPowerToPullBox ) {
-                  listSeenQuantityPullBox.Add(numberPullBox + $"({Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture )}＋↓{Math.Round( notSeenQuantitiesPullBox.First().Value, isTani ? 1 : 2 )})" + countStr);
-                }
-                else {
-                  listSeenQuantityPullBox.Add( numberPullBox + Math.Round( seenQuantity, isTani ? 1 : 2 ).ToString( CultureInfo.InvariantCulture ) + countStr);
-                }
-              }
-            }
-            else {
-              listSeenQuantity.Add( Math.Round( seenQuantity, isTani ? 1 : 2 ) ) ;
-            }
-          }
-        }
-
-        total += ! string.IsNullOrEmpty( wireBook ) ? Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) * int.Parse( wireBook ) : Math.Round( totalBasedOnCreateTable, isTani ? 1 : 2 ) ;
-
-        var number = PickUpNumberTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
-        var seenQuantityStr = isTani ? string.Join( "＋", listSeenQuantity ) : string.Join("＋",stringNotTani.Split( '+' )) ;
-
-        var seenQuantityPullBoxStr = string.Empty ;
-        if ( listSeenQuantityPullBox.Any() ) {
-          seenQuantityPullBoxStr = string.Join($"＋", listSeenQuantityPullBox ) ;
-        }
-        
-        var notSeenQuantityStr = string.Empty ;
-        foreach ( var (_, value) in notSeenQuantities ) {
-          notSeenQuantityStr += value > 0 ? "＋↓" + Math.Round( value, isTani ? 1 : 2 ) : string.Empty ;
-        }
-
-        var key = isTani ? ( "(" + seenQuantityStr + notSeenQuantityStr + ")" ) + (string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $"×{valueDetailTableStr}") + (string.IsNullOrEmpty( seenQuantityPullBoxStr ) ? string.Empty : $"＋{seenQuantityPullBoxStr}" )  : ( seenQuantityStr + notSeenQuantityStr ) ;
-        var itemKey = trajectory.FirstOrDefault( t => t.Key.Contains( key ) ).Key ;
-
-        if ( string.IsNullOrEmpty( itemKey ) )
-          trajectory.Add( number + key, 1 ) ;
-        else {
-          trajectory[ itemKey ]++ ;
-        }
-      }
-      
-      List<string> trajectoryStr = ( from item in trajectory select item.Value == 1 ? item.Key : item.Key + "×" + item.Value ).ToList() ;
-      int lengthOfCellMerge = GetWidthOfCellMerge( sheet, 5, 15 ) ;
-      
-      var valueOfCell = string.Empty ;
-      var trajectoryStrCount = trajectoryStr.Count ;
-      var count = 0 ;
-      if ( trajectoryStrCount > 1 ) {
-        for ( var i = 0 ; i < trajectoryStrCount ; i++ ) {
-          valueOfCell += trajectoryStr[ i ] + (i == trajectoryStrCount - 1 ? "": "＋");
-          if ( valueOfCell.Length * 2.5  < lengthOfCellMerge/256.0 && i < trajectoryStrCount - 1 ) continue;
-          if ( count == 0 ) {
-            count++ ;
-          }
-          else {
-            rowStart++ ;
-          }
-        }
-      }
-      
-      rowStart++ ;
-      return rowStart ;
-    }
-
-
     private void CopyTemplateSummary( IWorkbook workbook, ISheet sourceWorkSheet, ISheet destinationWorksheet, int rowStart )
     {
       int i = 0 ;
@@ -1253,8 +1114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return rowStart ;
     }
-    
-    
+
     public class ListBoxItem
     {
       public string? TheText { get ; set ; }
