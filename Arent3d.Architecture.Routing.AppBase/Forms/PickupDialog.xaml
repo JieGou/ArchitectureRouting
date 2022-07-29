@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         x:Name="ThisWindow"
         WindowStartupLocation="CenterScreen"
-        Title="内容表示" Height="800" Width="1400"
+        Title="拾い結果" Height="800" Width="1400"
         d:DataContext="{d:DesignInstance {x:Type local:DesignPickUpViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <cvt:MultiValueOrConverter x:Key="MultiValueOrConverter"/>
