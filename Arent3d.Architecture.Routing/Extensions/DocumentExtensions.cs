@@ -142,32 +142,6 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
-    /// Get pick up data from snoop DB.
-    /// </summary>
-    public static PickUpStorable GetPickUpStorable( this Document document )
-    {
-      try {
-        return PickUpStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( PickUpStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new PickUpStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get detail symbol data from snoop DB.
-    /// </summary>
-    public static DetailSymbolStorable GetDetailSymbolStorable( this Document document )
-    {
-      try {
-        return DetailSymbolStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailSymbolStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new DetailSymbolStorable( document ) ;
-      }
-    }
-    
-    /// <summary>
     /// Get pull box data from snoop DB.
     /// </summary>
     public static PullBoxInfoStorable GetPullBoxInfoStorable( this Document document )
@@ -190,19 +164,6 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new RackNotationStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get detail table data from snoop DB.
-    /// </summary>
-    public static DetailTableStorable GetDetailTableStorable( this Document document )
-    {
-      try {
-        return DetailTableStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailTableStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new DetailTableStorable( document ) ;
       }
     }
 

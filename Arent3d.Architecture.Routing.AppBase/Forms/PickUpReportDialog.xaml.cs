@@ -5,11 +5,13 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using NPOI.XSSF.UserModel ;
 using NPOI.SS.UserModel ;
 using NPOI.SS.Util ;
@@ -32,24 +34,62 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private const string ConfirmationFileName = "_拾い根拠確認表.xlsx" ;
     private const string DefaultConstructionItem = "未設定" ;
     private readonly Document _document ;
-    private readonly List<PickUpModel> _pickUpModels ;
+    private List<PickUpItemModel> _pickUpModels ;
     private readonly List<ListBoxItem> _fileTypes ;
     private readonly List<ListBoxItem> _doconTypes ;
     private string _path ;
     private List<string> _fileNames ;
+    private readonly Level? _level ;
+    private readonly string? _version ;
 
-    public PickUpReportDialog( Document document )
+    public PickUpReportDialog( Document document, Level? level = null, string? version = null )
     {
       InitializeComponent() ;
       _document = document ;
-      _pickUpModels = new List<PickUpModel>() ;
+      _pickUpModels = new List<PickUpItemModel>() ;
+      _fileTypes = new List<ListBoxItem>() ;
+      _doconTypes = new List<ListBoxItem>() ;
+      _path = string.Empty ;
+      _fileNames = new List<string>() ;
+      _level = level ;
+      _version = version ;
+      CreateCheckBoxList() ;
+      InitPickUpModels() ;
+    }
+    
+    public PickUpReportDialog( Document document, List<PickUpItemModel> pickUpItemModels )
+    {
+      InitializeComponent() ;
+      _document = document ;
+      _pickUpModels = new List<PickUpItemModel>() ;
       _fileTypes = new List<ListBoxItem>() ;
       _doconTypes = new List<ListBoxItem>() ;
       _path = string.Empty ;
       _fileNames = new List<string>() ;
       CreateCheckBoxList() ;
-      var pickUpStorable = _document.GetAllStorables<PickUpStorable>().FirstOrDefault() ;
-      if ( pickUpStorable != null ) _pickUpModels = pickUpStorable.AllPickUpModelData ;
+      InitPickUpModels( pickUpItemModels ) ;
+    }
+
+    private void InitPickUpModels( List<PickUpItemModel>? pickUpItemModels = null )
+    {
+      if ( pickUpItemModels == null ) {
+        // Get storage
+        if ( _level == null ) {
+          var dataStorage = _document.FindOrCreateDataStorage<PickUpModel>( false ) ;
+          var storagePickUpService = new StorageService<DataStorage, PickUpModel>( dataStorage ) ;
+          _pickUpModels = storagePickUpService.Data.PickUpData ;
+          if ( ! string.IsNullOrEmpty( _version ) )
+            _pickUpModels = _pickUpModels.Where( p => p.Version == _version ).ToList() ;
+        }
+        else {
+          var storagePickUpServiceByLevel = new StorageService<Level, PickUpModel>( _level ) ;
+          _pickUpModels = storagePickUpServiceByLevel.Data.PickUpData ;
+          if ( ! string.IsNullOrEmpty( _version ) )
+            _pickUpModels = _pickUpModels.Where( p => p.Version == _version ).ToList() ;
+        }
+      }
+      else 
+        _pickUpModels = pickUpItemModels ;
     }
 
     private void Button_Reference( object sender, RoutedEventArgs e )
@@ -354,7 +394,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return codeList ;
     }
 
-    private int AddSummaryPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<int, string> levelColumns, int index, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles )
+    private int AddSummaryPickUpRow( List<PickUpItemModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<int, string> levelColumns, int index, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles )
     {
       if ( ! pickUpModels.Any() ) return rowStart ;
       var pickUpModel = pickUpModels.First() ;
@@ -389,7 +429,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return rowStart ;
     }
 
-    private List<string> GetPickUpNumbersList( List<PickUpModel> pickUpModels )
+    private List<string> GetPickUpNumbersList( List<PickUpItemModel> pickUpModels )
     {
       var pickUpNumberList = new List<string>() ;
       foreach ( var pickUpModel in pickUpModels.Where( pickUpModel => ! pickUpNumberList.Contains( pickUpModel.PickUpNumber ) ) ) {
@@ -399,7 +439,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return pickUpNumberList ;
     }
 
-    private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles )
+    private int AddConfirmationPickUpRow( List<PickUpItemModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, XSSFCellStyle> xssfCellStyles )
     {
       if ( ! pickUpModels.Any() ) return rowStart ;
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;

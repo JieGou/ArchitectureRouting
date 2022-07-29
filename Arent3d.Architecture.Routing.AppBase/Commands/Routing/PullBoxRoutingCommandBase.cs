@@ -10,6 +10,8 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 
@@ -89,8 +91,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var (_, pullBox, _, _, _, _, isAutoCalculatePullBoxSize, positionLabel, selectedPullBox, _, _, parentAndChildRoute) = result ;
       
       #region Change dimension of pullbox and set new label
-      
-      var detailSymbolStorable = document.GetDetailSymbolStorable() ;
+
+      var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) document.ActiveView ).GenLevel ) ;
       var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       CsvStorable? csvStorable = null ;
@@ -102,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       }
       
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, detailSymbolStorable, pullBoxInfoStorable,
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageService, pullBoxInfoStorable,
         conduitsModelData, hiroiMasterModels, scale, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, isAutoCalculatePullBoxSize, selectedPullBox ) ;
       
       #endregion
