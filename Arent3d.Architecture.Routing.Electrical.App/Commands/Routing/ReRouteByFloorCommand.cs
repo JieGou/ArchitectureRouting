@@ -23,7 +23,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, ReRouteByFloorState reRouteByFloorState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
-      var (_, allConduitsByRouteName) = reRouteByFloorState ;
+      var (_, allConduitsByRouteName, routeNameDictionary) = reRouteByFloorState ;
+      
+      if ( routeNameDictionary.Any() ) {
+        RouteGenerator.ChangeRepresentativeRouteName( document, routeNameDictionary ) ;
+      }
+      
       foreach ( var (routeName, oldConduitIds) in allConduitsByRouteName ) {
         var ( wireTypeName, isLeakRoute ) = ChangeWireTypeCommand.RemoveDetailLines( document, oldConduitIds ) ;
         if ( string.IsNullOrEmpty( wireTypeName ) ) continue ;

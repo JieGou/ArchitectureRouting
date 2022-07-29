@@ -103,6 +103,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class ShowHeightSettingCommandButton
           {
           }
+          
+          [Button( typeof( PickUpNumberSettingCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
+          private static class PickUpNumberSettingCommandButton
+          {
+          }
         }
       }
 
@@ -156,6 +161,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class SwitchPrintModeCommandButton
           {
           }
+          
+          [Button( typeof( PickUpFigureCreationCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
+          private static class PickUpFigureCreationCommandButton
+          {
+          }
+        }
+        
+        [Button( typeof( CreateDummyConduitsIn3DViewCommand ), OnlyInitialized = true )]
+        private static class CreateDummyConduitsIn3DViewCommandButton
+        {
         }
       }
 
@@ -576,15 +591,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( DemoDeleteAllRoutedElements ) )]
         private static class DemoDeleteAllRoutedElementsCommandButton { }
-        
-        // [Button( typeof( OldStorableCommand ) )]
-        // private static class OldStorableCommandButton { }
-        
-        [Button( typeof( NewStorableCommand ) )]
-        private static class NewStorableCommandButton { }
-        
-        [Button( typeof( TestStorageCommand ) )]
-        private static class TestStorageCommandButton { }
       }
 
       [Panel( "arent3d.architecture.rc.debug", TitleKey = "App.Panels.Rc.Debug" )]
