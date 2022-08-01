@@ -114,7 +114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       set
       {
         _originPickUpModels = value ;
-        FilterPickUpModels = MergePickUpModels( PickUpModelByProductCode( _originPickUpModels ) ) ;
+        FilterPickUpModels = MergePickUpModels(  _originPickUpModels  ) ;
         OnPropertyChanged();
       }
     }
