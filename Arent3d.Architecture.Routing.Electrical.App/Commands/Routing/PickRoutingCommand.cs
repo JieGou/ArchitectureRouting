@@ -69,7 +69,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var parentIndex = 1 ;
       var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
       var isWireEnteredShaft = false ;
-      var (fromPickResult, toPickResult, _, _, _, _) = state ;
       var isPickedFromBottomToTop = fromPickResult.PickedConnector!.Origin.Z < toPickResult.PickedConnector!.Origin.Z ;
       Dictionary<string, List<string>> parentAndChildRoute = new() ;
       for ( int i = 0 ; i < 50 ; i++ ) {

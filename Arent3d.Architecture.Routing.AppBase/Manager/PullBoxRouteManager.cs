@@ -610,7 +610,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var fromDirection = pullBoxInfo.FromDirection ;
         var toDirection = pullBoxInfo.ToDirection ;
         var height = originZ - pullBoxInfo.Level.Elevation ;
-        result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, fromHeight, isWireEnteredShaft ).ToList() ;
+        result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, fromHeight, true, isWireEnteredShaft ).ToList() ;
         if ( pullBoxElement != null ) pullBoxElements.Add( ( pullBoxElement, null ) ) ;
         pullBoxPositions.Add( pullBoxInfo.Position ) ;
         return result ;
@@ -675,16 +675,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreatePullBoxAndGetSegments( Document document, Route route, Element element, double originX, double originY, double originZ,
-      Level? level, XYZ? direction, string nameBase, out FamilyInstance? pullBox, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool isWireEnteredShaft = true )
+      Level? level, XYZ? direction, string nameBase, out FamilyInstance? pullBox, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool isPullBoxInShaft = false, bool isWireEnteredShaft = true )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
       pullBox = null ;
       try {
-        using Transaction t = new( document, "Create pull box" ) ;
-        t.Start() ;
-        pullBox = GenerateConnector( document, ElectricalRoutingFamilyType.PullBox, ConnectorFamilyType.PullBox, originX, originY, originZ , level!, route.RouteName ) ;
-        t.Commit() ;
-
+        if( isPullBoxInShaft )
+          pullBox = FindPullBoxByLocation( document, originX, originY, originZ + level?.Elevation ?? 0 ) ;
+        
+        if ( ! isPullBoxInShaft || pullBox == null ) {
+          using Transaction t = new( document, "Create pull box" ) ;
+          t.Start() ;
+          pullBox = GenerateConnector( document, ElectricalRoutingFamilyType.PullBox, ConnectorFamilyType.PullBox, originX, originY, originZ , level!, route.RouteName ) ;
+          t.Commit() ;
+        }
+        
         using Transaction t1 = new( document, "Get segments" ) ;
         t1.Start() ;
         result.AddRange( GetRouteSegments( document, route, element, pullBox, originZ, originZ, direction!, true, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, firstHeight, isWireEnteredShaft ) ) ;
@@ -1210,6 +1215,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
         pullBoxUniqueId = toConnector.UniqueId ;
       return pullBoxUniqueId ;
+    }
+    
+    private static FamilyInstance? FindPullBoxByLocation( Document document, double originX, double originY, double originZ )
+    {
+      var pullBoxes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .Where( c => c.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
+      
+      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
+      double minDistance = ( 400.0 ).MillimetersToRevitUnits() * baseLengthOfLine;
+
+      return pullBoxes.FirstOrDefault( p =>
+      {
+        var locationPoint = ( p.Location as LocationPoint )?.Point ;
+        return locationPoint != null && locationPoint.DistanceTo( new XYZ( originX, originY, originZ ) ) < minDistance ;
+      } ) ;
     }
     
     private class ConduitInfo
