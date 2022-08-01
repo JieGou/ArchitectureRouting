@@ -9,7 +9,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid("28ac1781-9bfc-4728-b974-e9345ebb8b0c")]
+  [Guid("bbe3e978-29b7-4a5b-a79b-5f73c77e7a36")]
   [StorableVisibility( AppInfo.VendorId )]
   public class WireLengthNotationStorable : StorableBase
   {
