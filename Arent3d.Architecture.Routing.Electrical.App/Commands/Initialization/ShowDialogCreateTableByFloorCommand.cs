@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             var conduitsByFloor = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
             var elementsByFloor = conduitsByFloor.Cast<Element>().ToList() ;
             var conduitsByFloorIds = conduitsByFloor.Select( p => p.UniqueId ).ToList() ;
-            var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTable( doc, csvStorable, detailSymbolStorable, elementsByFloor, conduitsByFloorIds, false ) ;
+            var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTable( doc, csvStorable, detailSymbolStorable, elementsByFloor, conduitsByFloorIds, false, true ) ;
             if ( ! detailTableModels.Any() ) continue ;
             if ( isCreateTableEachFloors ) {
               var level = detailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Floor ) )?.Floor ?? string.Empty ;

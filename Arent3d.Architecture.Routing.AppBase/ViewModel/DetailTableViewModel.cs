@@ -4,7 +4,6 @@ using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
 using System.Windows ;
-using System.Windows.Data ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
@@ -20,7 +19,6 @@ using ComboBox = System.Windows.Controls.ComboBox ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Revit ;
-using Autodesk.Revit.UI ;
 using MoreLinq ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using TextBox = System.Windows.Controls.TextBox ;
@@ -464,7 +462,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var mixtureOfMultipleConstructionClassificationsInDetailSymbol = string.Empty ;
       if ( IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol( _detailTableModelsOrigin, ref mixtureOfMultipleConstructionClassificationsInDetailSymbol ) ) {
-        MyMessageBox.Show(string.Format( "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol), "Error") ;
+        MyMessageBox.Show(string.Format( "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol), "Warning") ;
       }
       else {
         SaveData( _document, _detailTableModelsOrigin ) ;
@@ -529,7 +527,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var mixtureOfMultipleConstructionClassificationsInDetailSymbol = string.Empty ;
       if ( IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol( _detailTableModelsOrigin, ref mixtureOfMultipleConstructionClassificationsInDetailSymbol ) ) {
-        MyMessageBox.Show(string.Format( "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol), "Error") ;
+        MyMessageBox.Show(string.Format( "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol), "Warning") ;
         IsCreateDetailTableOnFloorPlanView = false ;
       }
       else {

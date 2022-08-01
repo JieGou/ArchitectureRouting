@@ -1,8 +1,5 @@
-﻿using System ;
-using System.Windows.Forms ;
-using Autodesk.Revit.DB ;
+﻿using System.Windows.Forms ;
 using Form = System.Windows.Forms.Form ;
-using Point = System.Drawing.Point ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -10,11 +7,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private string _msg = string.Empty;
     public CustomMsgBox(string msg) {
       InitializeComponent();
-      this.MinimizeBox = false;
-      this.MaximizeBox = false;
-      this.FormBorderStyle = FormBorderStyle.FixedSingle;
+      MinimizeBox = false;
+      MaximizeBox = false;
+      FormBorderStyle = FormBorderStyle.FixedSingle;
       message.Text = msg ;
-      this.StartPosition = FormStartPosition.CenterScreen ;
+      StartPosition = FormStartPosition.CenterScreen ;
     }
   }
 
@@ -26,8 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
     public static DialogResult Show(string message, string title)
     {
-      CustomMsgBox msg =new CustomMsgBox(message);
-      msg.Text = title;
+      CustomMsgBox msg = new( message ) { TopMost = true, Text = title } ;
       return msg.ShowDialog();
     }
   }
