@@ -244,7 +244,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo, passPointPosition, passPointDirection! ) ;
       }
 
-      return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo, passPointPosition, passPointDirection!, secondPassPointPosition, secondPassPointDirection, GetAddInType() == AddInType.Electrical ) ;
+      var allowedTiltedPiping = GetAddInType() == AddInType.Electrical ;
+      return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo, passPointPosition, passPointDirection!, secondPassPointPosition, secondPassPointDirection, allowedTiltedPiping ) ;
 
     }
 
