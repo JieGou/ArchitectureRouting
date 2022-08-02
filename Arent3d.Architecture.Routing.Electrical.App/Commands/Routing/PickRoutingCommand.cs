@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var isRouteBetweenPowerConnectors = IsRouteBetweenPowerConnectors( listConnectors, registrationOfBoardDataModels ) ;
       if ( isRouteBetweenPowerConnectors ) return executeResultValue ;
       
-      using var progress = ShowProgressBar( "Routing...", false ) ;
+      using var progress = ShowProgressBar( "Generating pull box...", false ) ;
       List<string> boards = new() ;
       List<XYZ> pullBoxPositions = new() ;
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
