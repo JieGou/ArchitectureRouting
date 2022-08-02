@@ -335,5 +335,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new WireLengthNotationStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get ShaftOpeningModel data from snoop DB.
+    /// </summary>
+    public static ShaftOpeningStorable GetShaftOpeningStorable( this Document document )
+    {
+      try {
+        return ShaftOpeningStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ShaftOpeningStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new ShaftOpeningStorable( document ) ;
+      }
+    }
   }
 }
