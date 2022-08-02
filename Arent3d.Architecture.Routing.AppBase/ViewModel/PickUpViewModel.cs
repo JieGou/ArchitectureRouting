@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<PickUpItemModel> _pickUpModels ;
     private readonly StorageService<Level, PickUpModel>? _storagePickUpServiceByLevel ;
     private readonly StorageService<DataStorage, PickUpModel>? _storagePickUpService ;
-    private readonly StorageService<Level, DetailTableModel> _storageDetailTableService ;
+    private readonly List<DetailTableItemModel> _detailTableModels ;
     private readonly SymbolInformationStorable _symbolInformationStorable ;
     private readonly CeedDetailStorable _ceedDetailStorable ;
     private readonly List<CeedModel> _ceedModels ;
@@ -209,8 +209,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
       _equipmentCategory = equipmentCategory ;
-
-      _storageDetailTableService = new StorageService<Level, DetailTableModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
+      
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null ) _ceedModels = ceedStorable.CeedModelData ;
 
@@ -234,9 +233,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( level == null ) {
         var dataStorage = document.FindOrCreateDataStorage<PickUpModel>( false ) ;
         _storagePickUpService = new StorageService<DataStorage, PickUpModel>( dataStorage ) ;
+        _detailTableModels = document.GetAllDatas<Level, DetailTableModel>().SelectMany( x => x.Data.DetailTableData ).ToList() ;
       }
-      else
+      else {
+        var storageDetailTableModel = new StorageService<Level, DetailTableModel>( level ) ;
+        _detailTableModels = storageDetailTableModel.Data.DetailTableData ;
         _storagePickUpServiceByLevel = new StorageService<Level, PickUpModel>( level ) ;
+      }
 
       // Get pick up data
       if ( string.IsNullOrEmpty( _version ) || _version == EquipmentCategoryViewModel.LatestVersion ) {
@@ -389,7 +392,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
               }
               var detailTableModelItemList = null != pickUpElement.Conduit ? 
-                _storageDetailTableService.Data.DetailTableData.Where( x =>
+                _detailTableModels.Where( x =>
                 {
                   var routeNameArray = x.RouteName.Split( '_' ) ;
                   var startRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
@@ -515,7 +518,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         {
           var routes = RouteCache.Get( DocumentKey.Get( _document ) ) ;
           var ecoMode = FindEcoMode( relatedRouteName, routes ) ;
-          var detailTable = _storageDetailTableService.Data.DetailTableData.FirstOrDefault( x=>x.RouteName.Contains(routeName)) ;
+          var detailTable = _detailTableModels.FirstOrDefault( x=>x.RouteName.Contains(routeName)) ;
           wireBook = detailTable != null ? detailTable.WireBook : FindWireBookDefault( ceedSetCode, materialCode.MaterialCode.Split( '-' ).First(), ecoMode ) ;
         }
 
@@ -763,7 +766,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var isPickUpByFromConnector = toConnector != null && ( toConnector.Name == ElectricalRoutingFamilyType.PressureConnector.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ) ;
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
-      if ( toConnector == null || (_storageDetailTableService.Data.DetailTableData.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null
+      if ( toConnector == null || (_detailTableModels.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null
            &&  toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
