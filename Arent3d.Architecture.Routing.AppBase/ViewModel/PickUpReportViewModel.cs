@@ -135,7 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _fileName = string.Empty ;
       _fileNames = new List<string>() ;
       CreateCheckBoxList() ;
-      InitPickUpModels() ;
+      InitPickUpModels(pickUpItemModels) ;
     }
 
     private void InitPickUpModels(List<PickUpItemModel>? pickUpItemModels = null)
