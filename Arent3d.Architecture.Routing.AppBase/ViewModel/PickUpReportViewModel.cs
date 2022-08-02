@@ -3,7 +3,6 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
 using System ;
 using System.Collections.ObjectModel ;
-using System.Collections.Specialized ;
 using System.Globalization ;
 using System.IO ;
 using System.Linq ;
@@ -12,27 +11,23 @@ using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
-using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using NPOI.XSSF.UserModel ;
 using NPOI.SS.UserModel ;
 using NPOI.SS.Util ;
-using BorderStyle = NPOI.SS.UserModel.BorderStyle ;
 using CheckBox = System.Windows.Controls.CheckBox ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using RadioButton = System.Windows.Controls.RadioButton ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.StorableCaches ;
-using MoreLinq ;
-using MoreLinq.Extensions ;
-using NPOI.OpenXmlFormats.Spreadsheet ;
-using NPOI.SS.Formula.Functions ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using CellType = NPOI.SS.UserModel.CellType ;
-using FillPattern = NPOI.SS.UserModel.FillPattern ;
-using MarginType = NPOI.SS.UserModel.MarginType ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
+using MoreLinq ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -61,11 +56,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string SummaryTemplateFileName = "拾い出し集計表_template.xls" ;
     private const string ConfirmationTemplateFileName = "拾い根拠確認表_template.xls" ;
     private const string ResourceFolderName = "resources" ;
+    public const string LatestVersion = "最新" ;
     
     private readonly Document _document ;
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
 
-    public ObservableCollection<PickUpModel> PickUpModels { get ; set ; }
+    public ObservableCollection<PickUpItemModel> PickUpModels { get ; set ; }
     public ObservableCollection<ListBoxItem> FileTypes { get ; set ; }
     public ObservableCollection<ListBoxItem> PickUpNumberTypes { get ; set ; }
     public ObservableCollection<ListBoxItem> OutputItems { get ; set ; }
@@ -118,10 +114,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public RelayCommand<Window> SetOptionCommand => new( SetOption ) ;
     
     
-    public PickUpReportViewModel( Document document )
+    public PickUpReportViewModel( Document document, List<PickUpItemModel>? pickUpItemModels = null)
     {
       _document = document ;
-      PickUpModels = new ObservableCollection<PickUpModel>() ;
+      PickUpModels = new ObservableCollection<PickUpItemModel>() ;
       FileTypes = new ObservableCollection<ListBoxItem>() ;
       PickUpNumberTypes = new ObservableCollection<ListBoxItem>() ;
       OutputItems = new ObservableCollection<ListBoxItem>() ;
@@ -134,9 +130,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       {
         _hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       }
-      
-      var detailSymbolStorable =  _document.GetDetailTableStorable() ;
-
 
       _pathName = string.Empty ;
       _fileName = string.Empty ;
@@ -145,12 +138,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       InitPickUpModels() ;
     }
 
-    private void InitPickUpModels()
+    private void InitPickUpModels(List<PickUpItemModel>? pickUpItemModels = null)
     {
-      var pickUpStorable = _document.GetAllStorables<PickUpStorable>().FirstOrDefault() ;
-      if ( pickUpStorable != null ) PickUpModels = new ObservableCollection<PickUpModel>( pickUpStorable.AllPickUpModelData ) ;
+      if ( pickUpItemModels == null ) {
+        var dataStorage = _document.FindOrCreateDataStorage<PickUpModel>( false ) ;
+        var storagePickUpService = new StorageService<DataStorage, PickUpModel>( dataStorage ) ;
+        var version = storagePickUpService.Data.PickUpData.Any() ? storagePickUpService.Data.PickUpData.Max( x => x.Version ) : string.Empty ;
+        if ( !string.IsNullOrEmpty( version ) ) {
+          PickUpModels = new ObservableCollection<PickUpItemModel>( storagePickUpService.Data.PickUpData.Where( x=>x.Version == version)) ;
+        }
+      }
+      else {
+        PickUpModels = new ObservableCollection<PickUpItemModel>( pickUpItemModels );
+      }
     }
-
+    
     private void GetSaveLocation()
     {
       const string fileName = "フォルダを選択してください.xlsx" ;
@@ -381,7 +383,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             
             rowStart = numberCount == 1 ? CreateHeaderConfirmation( sheet, rowStart, fileName, sheetName, level, scale, height ) : CreateTemplateConfirmation( workbook, workbook.GetSheetAt( 0 ), sheet, rowStart, fileName, sheetName, level, scale, height ) ;
             
-            List<KeyValuePair<string, List<PickUpModel>>> dictionaryDataPickUpModel = new List<KeyValuePair<string, List<PickUpModel>>>() ;
+            List<KeyValuePair<string, List<PickUpItemModel>>> dictionaryDataPickUpModel = new List<KeyValuePair<string, List<PickUpItemModel>>>() ;
             
             foreach ( var code in codeList ) {
               var dataPickUpModels = PickUpModels
@@ -394,7 +396,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                   dataPickUpModelExist.Value.AddRange( dataPickUpModel.PickUpModels );
                 }
                 else {
-                  dictionaryDataPickUpModel.Add( new KeyValuePair<string, List<PickUpModel>>(dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels) );
+                  dictionaryDataPickUpModel.Add( new KeyValuePair<string, List<PickUpItemModel>>(dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels) );
                 }
               }
             }
@@ -431,7 +433,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           
           rowStart = CreateHeaderSummary( sheet, rowStart, fileName, sheetName, levelColumns ) ;
           
-          List<KeyValuePair<string, List<PickUpModel>>> dictionaryDataPickUpModelSummary = new List<KeyValuePair<string, List<PickUpModel>>>() ;
+          List<KeyValuePair<string, List<PickUpItemModel>>> dictionaryDataPickUpModelSummary = new List<KeyValuePair<string, List<PickUpItemModel>>>() ;
           foreach ( var code in codeList ) {
             var dataPickUpModels = PickUpModels
               .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code )
@@ -442,7 +444,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 dataPickUpModelExist.Value.AddRange( dataPickUpModel.PickUpModels );
               }
               else {
-                dictionaryDataPickUpModelSummary.Add( new KeyValuePair<string, List<PickUpModel>>(dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels) );
+                dictionaryDataPickUpModelSummary.Add( new KeyValuePair<string, List<PickUpItemModel>>(dataPickUpModel.ProductCode, dataPickUpModel.PickUpModels) );
               }
             }
           }
@@ -550,7 +552,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     private int AddSummaryPickUpRow( 
-      List<PickUpModel> pickUpModels,
+      List<PickUpItemModel> pickUpModels,
       ISheet sheet, 
       int rowStart,
       IReadOnlyDictionary<int, string> levelColumns, 
@@ -583,7 +585,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return rowStart ;
     }
 
-    private List<string> GetPickUpNumbersList( List<PickUpModel> pickUpModels )
+    private List<string> GetPickUpNumbersList( List<PickUpItemModel> pickUpModels )
     {
       var pickUpNumberList = new List<string>() ;
       foreach ( var pickUpModel in pickUpModels.Where( pickUpModel => ! pickUpNumberList.Contains( pickUpModel.PickUpNumber ) ) ) {
@@ -593,7 +595,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return pickUpNumberList ;
     }
 
-    private int AddConfirmationPickUpRow( List<PickUpModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, int> pickUpNumberForConduitsToPullBox,
+    private int AddConfirmationPickUpRow( List<PickUpItemModel> pickUpModels, ISheet sheet, int rowStart, IReadOnlyDictionary<string, int> pickUpNumberForConduitsToPullBox,
       IWorkbook workbook, string fileName, string sheetName, string level, int scale, double height, ref int countNum , bool isLastItem = false)
     {
       if ( ! pickUpModels.Any() ) return rowStart ;
@@ -815,10 +817,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             (int.Parse( h.Buzaicd ) ==  int.Parse( p.ProductCode.Split( '-' ).First())) 
             && (settings.Contains( h.Syurui )) )) ;
 
-      PickUpModels = new ObservableCollection<PickUpModel>( newPickUpModels ) ;
+      PickUpModels = new ObservableCollection<PickUpItemModel>( newPickUpModels ) ;
     }
 
-    private bool IsLengthObject( PickUpModel pickUpModel )
+    private bool IsLengthObject( PickUpItemModel pickUpModel )
     {
       return pickUpModel.Tani == "m" ;
     }
@@ -858,7 +860,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return fromConnector != null && toConnector != null && fromConnector.GetConnectorFamilyType() == ConnectorFamilyType.Power && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox;
     }
     
-    private List<InforDisplay> GetInforDisplays(List<PickUpModel> pickUpModels, RouteCache routes)
+    private List<InforDisplay> GetInforDisplays(List<PickUpItemModel> pickUpModels, RouteCache routes)
     {
       var routesNameRef = pickUpModels.Select( x => x.RelatedRouteName ).Distinct() ;
       var inforDisplays = new List<InforDisplay>() ;
@@ -887,7 +889,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return (int)Math.Round((widthExcel * DefaultCharacterWidth + 5) / DefaultCharacterWidth * 256);
     }
     
-    private bool IsMoreTwoWireBook( List<PickUpModel> pickUpModels )
+    private bool IsMoreTwoWireBook( List<PickUpItemModel> pickUpModels )
     {
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
       if ( pickUpModels.Count < 2 ) return false ;
@@ -905,7 +907,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return wireBooks.Count > 1 ;
     }
 
-    private double CalculateTotalByFloor(List<PickUpModel> pickUpModels)
+    private double CalculateTotalByFloor(List<PickUpItemModel> pickUpModels)
     {
       double result = 0 ;
       if ( pickUpModels.Count < 1 ) return result ;
@@ -931,9 +933,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return result ;
     }
     
-    private List<PickUpModel> PickUpModelByNumber( PickUpViewModel.ProductType productType, List<PickUpModel> pickUpModels )
+    private List<PickUpItemModel> PickUpModelByNumber( PickUpViewModel.ProductType productType, List<PickUpItemModel> pickUpModels )
     {
-      List<PickUpModel> result = new() ;
+      List<PickUpItemModel> result = new() ;
       
       var equipmentType = productType.GetFieldName() ;
       var pickUpModelsByNumber = pickUpModels.Where( p => p.EquipmentType == equipmentType )
@@ -948,9 +950,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return result ;
     }
     
-    private List<PickUpModel> PickUpModelByProductCode( List<PickUpModel> pickUpModels )
+    private List<PickUpItemModel> PickUpModelByProductCode( List<PickUpItemModel> pickUpModels )
     {
-      List<PickUpModel> pickUpModelByProductCodes = new() ;
+      List<PickUpItemModel> pickUpModelByProductCodes = new() ;
       
       var pickUpModelsByProductCode = pickUpModels.GroupBy( x => x.ProductCode.Split( '-' ).First() )
         .Select( g => g.ToList() ) ;
@@ -966,7 +968,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if ( pickUpModel == null ) 
             continue ;
             
-          PickUpModel newPickUpModel = new(pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, $"{sumQuantity}", pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction, pickUpModel.ProductCode, pickUpModel.CeedSetCode, pickUpModel.DeviceSymbol, pickUpModel.Condition, pickUpModel.SumQuantity, pickUpModel.RouteName, null, pickUpModel.WireBook ) ;
+          PickUpItemModel newPickUpModel = new(pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, $"{sumQuantity}", pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction, pickUpModel.ProductCode, pickUpModel.CeedSetCode, pickUpModel.DeviceSymbol, pickUpModel.Condition, pickUpModel.SumQuantity, pickUpModel.RouteName, null, pickUpModel.WireBook ) ;
           
           pickUpModelByProductCodes.Add( newPickUpModel ) ;
         }
@@ -975,7 +977,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return pickUpModelByProductCodes ;
     }
     
-    private Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpModel> pickUpModelsByLevel )
+    private Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpItemModel> pickUpModelsByLevel )
     {
       var result = new Dictionary<string, int>() ;
       if ( pickUpModelsByLevel.All( x => string.IsNullOrEmpty( x.PickUpNumber ) ) ) return result ;

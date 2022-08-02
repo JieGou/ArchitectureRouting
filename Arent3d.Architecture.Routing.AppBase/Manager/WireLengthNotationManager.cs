@@ -9,6 +9,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -22,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const double MaxToleranceOfTextNotePosition = 0.001 ;
     private const double MaxDistanceBetweenTextNotes = 1.5 ;
     
-    private static List<string> GetPickUpNumbersList( IEnumerable<PickUpModel> pickUpModels )
+    private static List<string> GetPickUpNumbersList( IEnumerable<PickUpItemModel> pickUpModels )
     {
       var pickUpNumberList = new List<string>() ;
       
@@ -45,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       wireLengthNotationStorable.Save() ;
     }
     
-    public static void ShowWireLengthNotation( WireLengthNotationStorable wireLengthNotationStorable, Document document, Level level, List<PickUpModel> pickUpModels )
+    public static void ShowWireLengthNotation( WireLengthNotationStorable wireLengthNotationStorable, Document document, Level level, List<PickUpItemModel> pickUpModels )
     {
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var pickUpNumberOfPullBox = 0 ;
@@ -127,7 +128,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
     
     private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, bool isDisplayPickUpNumber, 
-      IEnumerable<PickUpModel> pickUpModels, List<TextNoteOfPickUpFigureModel> straightTextNoteOfPickUpFigureModels, List<TextNoteOfPickUpFigureModel> obliqueTextNoteOfPickUpFigureModels, ref int pickUpNumberOfPullBox )
+      IEnumerable<PickUpItemModel> pickUpModels, List<TextNoteOfPickUpFigureModel> straightTextNoteOfPickUpFigureModels, List<TextNoteOfPickUpFigureModel> obliqueTextNoteOfPickUpFigureModels, ref int pickUpNumberOfPullBox )
     {
       var pickUpModelsGroupsByRelatedRouteName = pickUpModels.GroupBy( p => p.RelatedRouteName ) ;
       var obliqueTextNoteOfPickUpFigureQuantities = new Dictionary<string, double>() ;
@@ -395,7 +396,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
     
-    public static Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpModel> pickUpModelsByLevel )
+    public static Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpItemModel> pickUpModelsByLevel )
     {
       var result = new Dictionary<string, int>() ;
       var pickUpModelsWithPickUpNumber = pickUpModelsByLevel.Where( x => ! string.IsNullOrEmpty( x.PickUpNumber ) ).ToList() ;

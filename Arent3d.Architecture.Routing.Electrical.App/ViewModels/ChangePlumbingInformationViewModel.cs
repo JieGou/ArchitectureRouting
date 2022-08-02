@@ -5,8 +5,8 @@ using System.Windows ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
@@ -143,17 +143,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     }
 
     public List<ChangePlumbingInformationModel> ChangePlumbingInformationModels { get ; set ; }
-    public List<DetailTableModel.ComboboxItemType> PlumbingTypes { get ; }
-    public List<DetailTableModel.ComboboxItemType> ClassificationsOfPlumbing { get ; }
-    public List<DetailTableModel.ComboboxItemType> ConcealmentOrExposure { get ; }
-    public List<DetailTableModel.ComboboxItemType> InOrOutDoor { get ; }
+    public List<DetailTableItemModel.ComboboxItemType> PlumbingTypes { get ; }
+    public List<DetailTableItemModel.ComboboxItemType> ClassificationsOfPlumbing { get ; }
+    public List<DetailTableItemModel.ComboboxItemType> ConcealmentOrExposure { get ; }
+    public List<DetailTableItemModel.ComboboxItemType> InOrOutDoor { get ; }
     public List<ConnectorInfo> ConnectorInfos { get ; }
 
     public ICommand SelectionChangedPlumbingTypeCommand => new RelayCommand( SetPlumbingSizes ) ;
     public ICommand SelectionChangedConcealmentOrExposureCommand => new RelayCommand( SelectionChangedConcealmentOrExposure ) ;
     public RelayCommand<Window> ApplyCommand => new(Apply) ;
     
-    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> classificationsOfPlumbing, List<DetailTableModel.ComboboxItemType> concealmentOrExposure, List<DetailTableModel.ComboboxItemType> inOrOutDoor, List<ConnectorInfo> connectorInfos )
+    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, List<ChangePlumbingInformationModel> changePlumbingInformationModels, List<DetailTableItemModel.ComboboxItemType> plumbingTypes, List<DetailTableItemModel.ComboboxItemType> classificationsOfPlumbing, List<DetailTableItemModel.ComboboxItemType> concealmentOrExposure, List<DetailTableItemModel.ComboboxItemType> inOrOutDoor, List<ConnectorInfo> connectorInfos )
     {
       _conduitsModelData = conduitsModelData ;
       var changePlumbingInformationModel = changePlumbingInformationModels.First() ;
