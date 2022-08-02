@@ -55,6 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private Dictionary<int, string> _pickUpNumbers ;
     private int _pickUpNumber ;
     private readonly string? _version ;
+    private EquipmentCategory? _equipmentCategory = null ;
 
     private string Version => _version ?? DateTime.Now.ToString( VersionDateTimeFormat ) ;
     public readonly List<PickUpItemModel> DataPickUpModels ;
@@ -207,6 +208,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _hiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
+      _equipmentCategory = equipmentCategory ;
 
       _storageDetailTableService = new StorageService<Level, DetailTableModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
@@ -360,6 +362,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             specification2 = ceedModel.CeedSetCode ;
             supplement = ceedModel.Name ;
             condition = ceedModel.Condition ;
+
+            if ( ceedModel.CeedSetCode == "B_08_F" ) 
+            {
+              var ceedModelNumber2 = ceedModel.CeedModelNumber ;
+            }
 
             var ceedModelNumber = ceedModel.CeedModelNumber ;
             // TODO: hiroisetcdmaster_normal.csvとhiroisetcdmaster_eco.csvの中身が全く一緒なので、hiroiSetCdMasterModelsに対してエコ/ノーマルモードの判定が必要ない
@@ -949,7 +956,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         if ( IsExportCsv ) {
           if ( ! _pickUpModels.Any() ) return ;
-          var pickUpReportViewModel = new PickUpReportViewModel( _document, _pickUpModels ) ;
+
+          var pickUpModels = new List<PickUpItemModel>() ;
+          if ( _equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
+            pickUpModels.AddRange( _pickUpModels.Where( p=> p.EquipmentType ==  ProductType.Conduit.GetFieldName() || p.EquipmentType == ProductType.Cable.GetFieldName()) ) ;
+          }
+
+          if ( _equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
+            var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+            pickUpModels.AddRange( pickUpConnectors ); 
+          }
+          
+          var pickUpReportViewModel = new PickUpReportViewModel( _document, pickUpModels ) ;
           
           var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
           dialog.ShowDialog() ;
