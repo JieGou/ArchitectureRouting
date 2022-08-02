@@ -1185,6 +1185,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
             newModel.CeedSetCode = string.Empty ;
             newModel.ModelNumber = string.Empty ;
+            newModel.Condition = string.Empty ;
             newModel.DeviceSymbol = string.Empty ;
             return newModel ;
           } ).OrderBy( p => p.Floor ).ToList() ;
@@ -1197,7 +1198,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
             newModel.Construction = string.Empty ;
             newModel.Classification = string.Empty ;
-            newModel.Condition = string.Empty ;
             newModel.Specification = string.Empty ;
             return newModel ;
           } ).OrderBy( p => p.Floor ).ToList() ;
