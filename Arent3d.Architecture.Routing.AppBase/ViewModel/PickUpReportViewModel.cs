@@ -387,7 +387,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             
             foreach ( var code in codeList ) {
               var dataPickUpModels = PickUpModels
-                .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.Floor == level )
+                .Where( p => p.ConstructionItems == sheetName && p.Construction == code && p.Floor == level )
                 .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             
               foreach ( var dataPickUpModel in dataPickUpModels ) {
@@ -436,7 +436,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           List<KeyValuePair<string, List<PickUpItemModel>>> dictionaryDataPickUpModelSummary = new List<KeyValuePair<string, List<PickUpItemModel>>>() ;
           foreach ( var code in codeList ) {
             var dataPickUpModels = PickUpModels
-              .Where( p => p.ConstructionItems == sheetName && p.Specification2 == code )
+              .Where( p => p.ConstructionItems == sheetName && p.Construction == code )
               .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             foreach ( var dataPickUpModel in dataPickUpModels ) {
               if ( dictionaryDataPickUpModelSummary.Any( l => l.Key == dataPickUpModel.ProductCode ) && ! IsLengthObject( dataPickUpModel.PickUpModels.First() ) ) {
@@ -544,10 +544,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<string> GetCodeList()
     {
       var codeList = new List<string>() ;
-      foreach ( var pickUpModel in PickUpModels.Where( pickUpModel => ! codeList.Contains( pickUpModel.Specification2 ) ) ) {
-        codeList.Add( pickUpModel.Specification2 ) ;
+      foreach ( var pickUpModel in PickUpModels.Where( pickUpModel => ! codeList.Contains( pickUpModel.Construction ) ) ) {
+        codeList.Add( pickUpModel.Construction ) ;
       }
-
       return codeList ;
     }
 
@@ -649,22 +648,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                   notSeenQuantitiesPullBox.Add( item.Direction, 0 ) ;
                 }
 
-                notSeenQuantitiesPullBox[ item.Direction ] += quantity ;
+                notSeenQuantitiesPullBox[ item.Direction ] += Math.Round(quantity,1) ;
               }
               else {
                 if ( ! notSeenQuantities.Keys.Contains( item.Direction ) ) {
                   notSeenQuantities.Add( item.Direction, 0 ) ;
                 }
 
-                notSeenQuantities[ item.Direction ] += quantity ;
+                notSeenQuantities[ item.Direction ] += Math.Round(quantity,1) ;
               }
             }
             else {
               if ( ! isLengthObject ) stringNotTani += string.IsNullOrEmpty( stringNotTani ) ? item.SumQuantity : $"＋{item.SumQuantity}" ;
-              seenQuantity += quantity ;
+              seenQuantity += Math.Round(quantity,1) ;
             }
 
-            totalBasedOnCreateTable += quantity ;
+            totalBasedOnCreateTable += Math.Round(quantity,1) ;
           }
 
           if ( seenQuantity > 0 ) {
@@ -916,17 +915,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
           var wireBook = pickUpModelByNumber.WireBook ;
           if ( ! string.IsNullOrEmpty( wireBook ) ) {
-            result += ( double.Parse( pickUpModelByNumber.Quantity ) * int.Parse( wireBook ) ) ;
+            result += ( Math.Round( double.Parse( pickUpModelByNumber.Quantity ), 1 ) ) * int.Parse( wireBook )  ;
           }
           else {
-            result += double.Parse( pickUpModelByNumber.Quantity ) ;
+            result += ( Math.Round( double.Parse( pickUpModelByNumber.Quantity ), 1 )) ;
           }
         }
       }
       else {
         foreach ( var item in pickUpModels ) {
           double.TryParse( item.Quantity, out var quantity ) ;
-          result += quantity ;
+          result += Math.Round(quantity, 1) ;
         }
       }
      
@@ -962,7 +961,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           .Select( g => g.ToList() ) ;
           
         foreach ( var pickUpModelByConstructionItemsAndConstruction in pickUpModelsByConstructionItemsAndConstruction ) {
-          var sumQuantity = Math.Round(pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ), 1) ;
+          var sumQuantity = pickUpModelByConstructionItemsAndConstruction.Sum( p => Math.Round(Convert.ToDouble( p.Quantity ), 1)) ;
             
           var pickUpModel = pickUpModelByConstructionItemsAndConstruction.FirstOrDefault() ;
           if ( pickUpModel == null ) 

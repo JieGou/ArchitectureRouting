@@ -868,7 +868,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           .Select( g => g.ToList() ) ;
           
         foreach ( var pickUpModelByConstructionItemsAndConstruction in pickUpModelsByConstructionItemsAndConstruction ) {
-           var sumQuantity = Math.Round(pickUpModelByConstructionItemsAndConstruction.Sum( p => Convert.ToDouble( p.Quantity ) ), 1) ;
+          var sumQuantity = pickUpModelByConstructionItemsAndConstruction.Sum( p => Math.Round(Convert.ToDouble( p.Quantity ), 1)) ;
             
           var pickUpModel = pickUpModelByConstructionItemsAndConstruction.FirstOrDefault() ;
           if ( pickUpModel == null ) 
@@ -1179,7 +1179,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       switch ( productType ) {
         case ProductType.Conduit :
         {
-          return pickUpModels.GroupBy( p => new { p.Construction, p.Classification, p.ProductName, p.Specification } ).Select( p =>
+          return pickUpModels.GroupBy( p => new { p.Construction, p.Classification, p.ProductName, p.Specification, p.Floor } ).Select( p =>
           {
             var newModel = p.First() ;
             newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
@@ -1192,7 +1192,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
         case ProductType.Connector :
         {
-          return pickUpModels.GroupBy( p => new { p.CeedSetCode, p.ModelNumber, p.Condition, p.DeviceSymbol } ).Select( p =>
+          return pickUpModels.GroupBy( p => new { p.CeedSetCode, p.ModelNumber, p.Condition, p.DeviceSymbol, p.Floor } ).Select( p =>
           {
             var newModel = p.First() ;
             newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
