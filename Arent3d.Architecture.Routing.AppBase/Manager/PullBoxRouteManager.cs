@@ -1203,19 +1203,49 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       double x = 0, y = 0, z = 0 ;
       if ( fromConduitDirection.X is 1 or -1 ) {
-        x = toPoint.X ;
-        y = fromPoint.Y ;
-        z = fromPoint.Z ;
+        if ( toConduitDirection.X is 1 or -1 || toConduitDirection.Y is 1 or -1 || toConduitDirection.Z is 1 or -1 ) {
+          x = toPoint.X ;
+          y = fromPoint.Y ;
+          z = fromPoint.Z ;
+        }
+        else {
+          var fromLine = new MathLib.Line( new Vector3d( fromPoint.X, fromPoint.Y, fromPoint.Z ), new Vector3d( fromConduitDirection.X, fromConduitDirection.Y, fromConduitDirection.Z ) ) ;
+          ( _, y, z ) = fromLine.GetPointAt( fromPoint.Y - toPoint.Y ) ;
+          x = toPoint.X ;
+        }
       }
       else if ( fromConduitDirection.Y is 1 or -1 ) {
-        x = fromPoint.X ;
-        y = toPoint.Y ;
-        z = fromPoint.Z ;
+        if ( toConduitDirection.X is 1 or -1 || toConduitDirection.Y is 1 or -1 || toConduitDirection.Z is 1 or -1 ) {
+          x = fromPoint.X ;
+          y = toPoint.Y ;
+          z = fromPoint.Z ;
+        }
+        else {
+          var fromLine = new MathLib.Line( new Vector3d( fromPoint.X, fromPoint.Y, fromPoint.Z ), new Vector3d( fromConduitDirection.X, fromConduitDirection.Y, fromConduitDirection.Z ) ) ;
+          ( x, _, z ) = fromLine.GetPointAt( fromPoint.X - toPoint.X ) ;
+          y = toPoint.Y ;
+        }
       }
       else if ( fromConduitDirection.Z is 1 or -1 ) {
         x = fromPoint.X ;
         y = fromPoint.Y ;
         z = toPoint.Z ;
+      }
+      else {
+        var toLine = new MathLib.Line( new Vector3d( toPoint.X, toPoint.Y, toPoint.Z ), new Vector3d( toConduitDirection.X, toConduitDirection.Y, toConduitDirection.Z ) ) ;
+        if ( toConduitDirection.X is 1 or -1 ) {
+          ( _, y, z ) = toLine.GetPointAt( toPoint.Y - fromPoint.Y ) ;
+          x = fromPoint.X ;
+        }
+        else if ( toConduitDirection.Y is 1 or -1 ) {
+          ( x, _, z ) = toLine.GetPointAt( toPoint.X - fromPoint.X ) ;
+          y = fromPoint.Y ;
+        }
+        else {
+          x = fromPoint.X ;
+          y = fromPoint.Y ;
+          z = fromPoint.Z ;
+        }
       }
 
       var position = new XYZ( x, y, z ) ;
