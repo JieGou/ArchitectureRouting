@@ -18,7 +18,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PickRoutingCommandBase : RoutingCommandBase<PickRoutingCommandBase.PickState>
   {
-    public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, XYZ? PassPointPosition, XYZ? PassPointDirection ) ;
+    // Todo: 斜めルーティングの場合はPullBoxを無視する
+    public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, XYZ? PassPointPosition, XYZ? PassPointDirection, XYZ? SecondPassPointPosition, XYZ? SecondPassPointDirection, bool IsNeedCreatePullBox ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
@@ -46,37 +47,108 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
       }
 
-      XYZ? passPointPosition = null ;
-      XYZ? passPointDirection = null ;
-      if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
-        ( passPointPosition, passPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult ) ;
-      }
-
       var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
       if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
 
       if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
 
-      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection ) ) ;
+      double passPointPositionDistance ;
+      using ( var trans = new Transaction( document, "Create MEP System Pipe Spec" ) ) {
+        trans.Start() ;
+        var pipeSpec = new MEPSystemPipeSpec( new RouteMEPSystem( document, property.GetSystemType(), property.GetCurveType() ), routingExecutor.FittingSizeCalculator ) ;
+        var bendRadius = pipeSpec.GetLongElbowSize( property.GetDiameter().DiameterValueToPipeDiameter() ) ;
+        passPointPositionDistance = bendRadius + property.GetDiameter() * 6 ;
+        trans.Commit() ;
+      }
+
+      XYZ? passPointPosition = null ;
+      XYZ? passPointDirection = null ;
+      XYZ? secondPassPointPosition = null ;
+      XYZ? secondPassPointDirection = null ;
+      
+      // Todo: 斜めルーティングの場合はPullBoxを無視する
+      var isNeedCreatePullBox = ! PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ;
+      
+      if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
+        ( passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult, passPointPositionDistance ) ;
+      }
+
+      // Todo: 斜めルーティングの場合はPullBoxを無視する
+      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection, isNeedCreatePullBox ) ) ;
+    }
+    
+    private ( XYZ?, XYZ?, XYZ?, XYZ? ) ShowPreviewLines( UIDocument uiDocument, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, double passPointPositionDistance )
+    {
+      XYZ? passPointPosition = null ;
+      XYZ? passPointDirection = null ;
+      XYZ? secondPassPointPosition = null ;
+      XYZ? secondPassPointDirection = null ;      
+      var document = uiDocument.Document ;
+      if ( document.ActiveView is ViewPlan ) {
+        var allRouteLines = PickCommandUtil.CreatePreviewLines( uiDocument.Document, fromPickResult, toPickResult ) ;
+
+        var previewLineIds = new List<ElementId>() ;
+        var allLineIds = new List<ElementId>() ;
+
+        allRouteLines.ForEach( rl =>
+        {
+          previewLineIds.AddRange( rl.previewLineIds ) ;
+          allLineIds.AddRange( rl.allLineIds ) ;
+        } ) ;
+
+        if ( previewLineIds.Any() && allLineIds.Any() ) {
+          if ( allRouteLines.Any( rl => rl.allowedTiltedPiping ) && allRouteLines.Count() == 1 ) {
+            var routeLines = allRouteLines.First( rl => rl.allowedTiltedPiping ) ;
+            var firstPasPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 0 ], document, true, true, passPointPositionDistance ) ;
+            passPointPosition = firstPasPoint.passPointPosition ;
+            passPointDirection = firstPasPoint.passPointDirection ;
+
+            var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document, true, true, passPointPositionDistance ) ;
+            secondPassPointPosition = secondPassPoint.passPointPosition ;
+            secondPassPointDirection = secondPassPoint.passPointDirection ;
+          }
+          else {
+            PreviewLineSelectionFilter previewLineSelectionFilter = new(previewLineIds) ;
+            var selectedRoute = uiDocument.Selection.PickObject( ObjectType.Element, previewLineSelectionFilter, "Select preview line." ) ;
+            var routeLines = allRouteLines.First( rl => rl.previewLineIds.Any( lineId => lineId == selectedRoute.ElementId ) ) ;
+            var isCreatePullBoxAtMiddlePoint = ! PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ;
+            var passPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 0 ], document, isCreatePullBoxAtMiddlePoint, true, passPointPositionDistance ) ;
+            passPointPosition = passPoint.passPointPosition ;
+            passPointDirection = passPoint.passPointDirection ;
+
+            if ( PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ) {
+              var secondPassPoint = GetPassPointPositionAndDirection( routeLines.previewLineIds[ 1 ], document, isPassPointInMiddle: false, isFromStartPoint: false, passPointPositionDistance ) ;
+              secondPassPointPosition = secondPassPoint.passPointPosition ;
+              secondPassPointDirection = secondPassPoint.passPointDirection ;
+            }
+          }
+
+          PickCommandUtil.RemovePreviewLines( document, allLineIds ) ;
+        }
+      }
+
+      return ( passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) ;
     }
 
-    private ( XYZ?, XYZ? ) ShowPreviewLines( UIDocument uiDocument, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    private static (XYZ? passPointPosition, XYZ? passPointDirection) GetPassPointPositionAndDirection(ElementId lineId,Document document, bool isPassPointInMiddle = true,bool isFromStartPoint = true,double passPointPositionDistance = 0 )
     {
-      var document = uiDocument.Document ;
-      var (previewLineIds, allLineIds) = PickCommandUtil.CreatePreviewLines( document, fromPickResult, toPickResult ) ;
-      if ( ! previewLineIds.Any() || ! allLineIds.Any() ) return ( null, null ) ;
-      PreviewLineSelectionFilter previewLineSelectionFilter = new( previewLineIds ) ;
-      var selectedRoute = uiDocument.Selection.PickObject( ObjectType.Element, previewLineSelectionFilter, "Select preview line." ) ;
-      var selectedLine = ( document.GetElement( selectedRoute.ElementId ) as DetailLine ) ! ;
-      var passPointLine = ( selectedLine.GeometryCurve as Line ) ! ;
-      var (x0, y0, z0) = passPointLine.GetEndPoint( 0 ) ;
-      var (x1, y1, z1) = passPointLine.GetEndPoint( 1 ) ;
-      var passPointPosition = new XYZ( ( x0 + x1 ) / 2, ( y0 + y1 ) / 2, ( z0 + z1 ) / 2 ) ;
+      var passPointLine = ( (DetailLine)document.GetElement( lineId ) ).GeometryCurve as Line ;
+      var p1 = passPointLine!.GetEndPoint( 0 ) ;
+      var p2 = passPointLine!.GetEndPoint( 1 ) ;
+      
       var passPointDirection = passPointLine.Direction ;
-
-      PickCommandUtil.RemovePreviewLines( document, allLineIds ) ;
-
-      return ( passPointPosition, passPointDirection ) ;
+      if ( isPassPointInMiddle ) {
+        var passPointPosition = ( p1 + p2 ) / 2 ;
+        return ( passPointPosition, passPointDirection ) ;
+      }
+      
+      var distance = p1.DistanceTo( p2 ) - passPointPositionDistance ;
+      {
+        var passPointPosition = isFromStartPoint
+          ? p1 + ( p2 - p1 ).Normalize() * distance
+          : p2 + ( p1 - p2 ).Normalize() * distance ;
+        return ( passPointPosition, passPointDirection ) ;
+      }
     }
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, MEPSystemType? systemType )
@@ -139,7 +211,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection) = pickState ;
+      // Todo: 斜めルーティングの場合はPullBoxを無視する
+      var (fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection, _) = pickState ;
 
       RouteGenerator.CorrectEnvelopes( document ) ;
       ChangeFromConnectorAndToConnectorColor( document, fromPickResult, toPickResult ) ;
@@ -152,10 +225,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return CreateNewSegmentListForRoutePick( toPickResult, fromPickResult, true, routeProperty, classificationInfo ) ;
       }
 
-      return CreateNewSegmentList( document, fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection ) ;
+      return CreateNewSegmentList( document, fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) ;
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, XYZ? passPointPosition, XYZ? passPointDirection )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, XYZ? passPointPosition, XYZ? passPointDirection , XYZ? secondPassPointPosition, XYZ? secondPassPointDirection)
     {
       var useConnectorDiameter = UseConnectorDiameter() ;
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
@@ -167,7 +240,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return new[] { ( name, segment ) } ;
       }
 
-      return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo, passPointPosition, passPointDirection! ) ;
+      if ( secondPassPointPosition == null ) {
+        return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo, passPointPosition, passPointDirection! ) ;
+      }
+
+      var allowedTiltedPiping = GetAddInType() == AddInType.Electrical ;
+      return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo, passPointPosition, passPointDirection!, secondPassPointPosition, secondPassPointDirection, allowedTiltedPiping ) ;
+
     }
 
     private (string RouteName, RouteSegment Segment) CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
@@ -222,6 +301,52 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return results ;
     }
 
+    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, IRouteProperty routeProperty,
+      MEPSystemClassificationInfo classificationInfo, XYZ passPointPosition, XYZ passPointDirection, XYZ? secondPassPointPosition, XYZ? secondPassPointDirection, bool allowedTiltedPiping )
+    {
+      var systemType = routeProperty.GetSystemType() ;
+      var curveType = routeProperty.GetCurveType() ;
+
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var nameBase = GetNameBase( systemType, curveType ) ;
+      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
+      var name = nameBase + "_" + nextIndex ;
+      routes.FindOrCreate( name ) ;
+
+      var diameter = routeProperty.GetDiameter() ;
+      var isRoutingOnPipeSpace = routeProperty.GetRouteOnPipeSpace() ;
+      var fromFixedHeight = routeProperty.GetFromFixedHeight() ;
+      var toFixedHeight = routeProperty.GetToFixedHeight() ;
+      var avoidType = routeProperty.GetAvoidType() ;
+      var shaftElementUniqueId = routeProperty.GetShaft()?.UniqueId ;
+
+      var results = new List<(string RouteName, RouteSegment Segment)>() ;
+      var passPointPositionZ = PassPointEndPoint.GetForcedFixedHeight( document, fromFixedHeight, fromEndPoint.GetLevelId( document ) ) ?? passPointPosition.Z ;
+      passPointPosition = new XYZ( passPointPosition.X, passPointPosition.Y, passPointPositionZ ) ;
+      var passPoint = document.AddPassPoint( name, passPointPosition, passPointDirection!, diameter * 0.5, fromEndPoint.GetLevelId( document ) ) ;
+      passPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toEndPoint.Key.GetElementUniqueId() ) ;
+      passPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromEndPoint.Key.GetElementUniqueId() ) ;
+      var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
+
+      if ( secondPassPointPosition != null ) {
+        var secondPassPointPositionZ = PassPointEndPoint.GetForcedFixedHeight( document, fromFixedHeight, fromEndPoint.GetLevelId( document ) ) ?? secondPassPointPosition.Z ;
+        secondPassPointPosition = new XYZ( secondPassPointPosition.X, secondPassPointPosition.Y, secondPassPointPositionZ ) ;
+        var secondPassPoint = document.AddPassPoint( name, secondPassPointPosition, secondPassPointDirection!, diameter * 0.5, fromEndPoint.GetLevelId( document ) ) ;
+        secondPassPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toEndPoint.Key.GetElementUniqueId() ) ;
+        secondPassPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromEndPoint.Key.GetElementUniqueId() ) ;
+        var secondPassPointEndPoint = new PassPointEndPoint( secondPassPoint ) ;
+      
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPointEndPoint, secondPassPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, secondPassPointEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+      }
+      else {
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPointEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+        results.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPointEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+      }
+
+      return results ;
+    }
     private static Level? GetLevel( Document document, IEndPoint endPoint )
     {
       if ( endPoint.GetReferenceConnector()?.Owner.GetLevelId() is not { } levelId ) return null ;
