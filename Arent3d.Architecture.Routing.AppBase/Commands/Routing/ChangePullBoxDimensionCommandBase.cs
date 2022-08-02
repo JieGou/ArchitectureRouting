@@ -50,12 +50,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     protected abstract AddInType GetAddInType() ;
-
-    public class PullBoxDimensions
-    {
-      public const string Depth = "Depth" ;
-      public const string Width = "Width" ;
-      public const string Height = "Height" ;
-    }
+  }
+  public static class PullBoxDimensions
+  {
+    public const string Depth = nameof(Depth) ;
+    public const string Width = nameof(Width) ;
+    public const string Height = nameof(Height) ;
   }
 }

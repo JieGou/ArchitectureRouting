@@ -258,7 +258,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailSymbolModel = conduits.Any() ? detailSymbolItemModels.FirstOrDefault( x => x.ConduitUniqueId.Equals( conduits.First().UniqueId ) ) : null;
       var plumbingType = null != detailSymbolModel ? detailSymbolModel.PlumbingType : DefaultPlumbingType ;
       if ( detailTableItemModels.Any() ) {
-        SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableItemModels, plumbingType ) ;
+        SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableItemModels, plumbingType, isFromCreateDetailTable && ! isReferenceDetailTableModels ) ;
       }
 
       if ( keyRoutingOnDetailSymbolModels.Any() ) {
@@ -537,13 +537,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       SetPlumbingDataForEachWiring( new List<DetailTableItemModel>(), conduitsModelData, ref detailTableRowsSinglePlumbing, plumbingType ) ;
     }
 
-    private static void SetPlumbingDataForEachWiring( List<DetailTableItemModel> detailTableData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableItemModel> detailTableItemModels, string plumbingType )
+    private static void SetPlumbingDataForEachWiring( List<DetailTableItemModel> detailTableData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableItemModel> detailTableItemModels, string plumbingType, bool isFromCreateDetailTable = false )
     {
       var newDetailTableItems = new List<DetailTableItemModel>() ;
       foreach ( var detailTableItemModel in detailTableItemModels ) {
         const int plumbingCount = 1 ;
         var oldDetailTableItems = detailTableData.Where( d => GetKeyRouting(d) == GetKeyRouting( detailTableItemModel ) && d.RouteName == detailTableItemModel.RouteName ).ToList() ;
         if ( ! oldDetailTableItems.Any() ) {
+          if ( isFromCreateDetailTable && ! string.IsNullOrEmpty( detailTableItemModel.PlumbingType ) ) plumbingType = detailTableItemModel.PlumbingType ;
           var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
           if(!conduitsModels.Any())
             continue;
@@ -713,7 +714,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                   parentDetailTable.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
                 }
                 parentDetailTable.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailTable, isMixConstructionItems ) ;
-                parentDetailTable.Remark = DetailTableViewModel.GetRemark( parentDetailTable.Remark, wireBook ) ;
+                parentDetailTable.Remark = DetailTableViewModel.GetRemark( parentDetailTable.Remark, int.TryParse(parentDetailTable.WireBook, out var value) ? value : 1 ) ;
                 parentDetailTable.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
                 parentDetailTable.IsMixConstructionItems = isMixConstructionItems ;
                 parentDetailTable.IsReadOnlyPlumbingSize = false ;

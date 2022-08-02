@@ -340,11 +340,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       instance.SetConnectorFamilyType( connectorType ?? ConnectorFamilyType.PullBox ) ;
       
-      var depthParam = instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Depth ) ;
+      var depthParam = instance.GetParameter( PullBoxDimensions.Depth ) ;
       depthParam?.Set( depthParam.AsDouble() * baseLengthOfLine ) ;
-      var widthParam =  instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Width ) ;
+      var widthParam =  instance.GetParameter( PullBoxDimensions.Width ) ;
       widthParam?.Set( widthParam.AsDouble() * baseLengthOfLine ) ;
-      var heightParam = instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Height ) ;
+      var heightParam = instance.GetParameter( PullBoxDimensions.Height ) ;
       heightParam?.Set( heightParam.AsDouble() * baseLengthOfLine ) ;
 
       return instance ;
@@ -733,8 +733,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       using Transaction t = new(document, "Update dimension of pull box") ;
       t.Start() ;
       if (!string.IsNullOrEmpty( buzaiCd ))
-        pullBox.ParametersMap.get_Item( MaterialCodeParameter )?.Set( buzaiCd ) ;
-      pullBox.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
+        pullBox.GetParameter( MaterialCodeParameter )?.Set( buzaiCd ) ;
+      pullBox.GetParameter( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
       storageService.Data.DetailSymbolData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
 
       if(positionLabel != null)
