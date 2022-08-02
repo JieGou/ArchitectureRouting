@@ -16,6 +16,8 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
+using MathLib ;
+using Line = Autodesk.Revit.DB.Line ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
@@ -49,13 +51,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var shaftElementUniqueId = parentRoute.UniqueShaftElementUniqueId ;
       var fromFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, isCreatePullBoxWithoutSettingHeight ? heightConnector : heightConnector + DefaultDistanceHeight ) ;
       var fromFixedHeightSecond = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightWire ) ;
+      var allowedTiltedPiping = true ;
 
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
       var name = nameBase + "_" + nextIndex ;
       routes.FindOrCreate( name ) ;
 
-      var (pullBoxFromEndPoint, pullBoxToEndPoint) = GetFromAndToConnectorEndPoint( pullBox, isCreatePullBoxWithoutSettingHeight, radius, routeDirection, fromDirection, toDirection ) ;
+      var (pullBoxFromEndPoint, pullBoxToEndPoint) = GetFromAndToConnectorEndPoint( document, pullBox, isCreatePullBoxWithoutSettingHeight, radius, routeDirection, fromDirection, toDirection ) ;
 
       var isBeforeSegment = true ;
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
@@ -69,10 +72,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( detector.IsPassingThrough( segment ) ) {
             isBeforeSegment = false ;
             firstHeight ??= fromFixedHeightFirst ;
-            var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, firstHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+            var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, firstHeight, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ;
             result.Add( ( parentRoute.RouteName, newSegment ) ) ;
             beforeSegments.Add( newSegment ) ;
-            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, null ) ) ) ;
+            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, null, allowedTiltedPiping ) ) ) ;
           }
           else {
             if ( ! isBeforeSegment ) {
@@ -88,8 +91,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             }
 
             var newSegment = isBeforeSegment ? 
-              new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId )
-              : new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+              new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping )
+              : new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ;
             result.Add( isBeforeSegment ? ( parentRoute.RouteName, newSegment ) : ( name, newSegment ) ) ;
             if ( isBeforeSegment ) beforeSegments.Add( newSegment ) ;
           }
@@ -108,7 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               if ( fromEndPointKey == pullBoxToEndPoint.Key ) {
                 name = routeName + "_" + index ;
                 result.AddRange( from branchSegment in beforeSegments select ( routeName, branchSegment ) ) ;
-                result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+                result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
                 connectorUniqueId = segment.ToEndPoint.Key.GetElementUniqueId() ;
                 GetPullBoxCeedCodes( document, ceedCodes, connectorUniqueId ) ;
                 if ( parentAndChildRoute.ContainsKey( parentRoute.RouteName ) ) {
@@ -119,7 +122,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                 }
               }
               else {
-                result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+                result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
               }
             }
             else {
@@ -130,7 +133,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
       else {
         result = GetSegments( document, routeRecords, ceedCodes, pullBox, parentRoute, detector, ref parentIndex, ref parentAndChildRoute, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, 
-          fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, radius, isCreatePullBoxWithoutSettingHeight, pullBoxFromEndPoint, pullBoxToEndPoint ) ;
+          fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, radius, isCreatePullBoxWithoutSettingHeight, pullBoxFromEndPoint, pullBoxToEndPoint, allowedTiltedPiping ) ;
       }
 
       if ( ceedCodes.Any() ) {
@@ -143,7 +146,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     private static List<(string RouteName, RouteSegment Segment)> GetSegments( Document document, List<(string RouteName, RouteSegment Segment)> routeRecords, List<string> ceedCodes, 
       FamilyInstance pullBox, Route parentRoute, RouteSegmentDetector detector, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, double? diameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeightFirst, FixedHeight? fromFixedHeightSecond, 
-      FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId, double? radius, bool isCreatePullBoxWithoutSettingHeight, ConnectorEndPoint pullBoxFromEndPoint, ConnectorEndPoint pullBoxToEndPoint )
+      FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId, double? radius, bool isCreatePullBoxWithoutSettingHeight, ConnectorEndPoint pullBoxFromEndPoint, ConnectorEndPoint pullBoxToEndPoint, bool allowedTiltedPiping )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
       string connectorUniqueId ;
@@ -159,8 +162,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         foreach ( var (routeName, segment) in routeRecords ) {
           if ( detector.IsPassingThrough( segment ) ) {
             name = routeName + "_" + index ;
-            result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+            result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
           }
           else {
             result.Add( ( routeName, segment ) ) ;
@@ -172,14 +175,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         return result ;
       }
 
-      var (mainPullBoxFromEndPoint, mainPullBoxToEndPoint) = GetFromAndToConnectorEndPoint( pullBox, isCreatePullBoxWithoutSettingHeight, radius, routeDirection, null, null ) ;
+      var (mainPullBoxFromEndPoint, mainPullBoxToEndPoint) = GetFromAndToConnectorEndPoint( document, pullBox, isCreatePullBoxWithoutSettingHeight, radius, routeDirection, null, null ) ;
       var beforeSegments = new List<RouteSegment>() ;
       foreach ( var segment in parentRoute.RouteSegments.EnumerateAll() ) {
         if ( segment == routeSegment ) {
           isBeforeSegment = false ;
-          var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, mainPullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+          var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, mainPullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ;
           result.Add( ( name, newSegment ) ) ;
-          result.Add( ( parentRoute.RouteName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, mainPullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+          result.Add( ( parentRoute.RouteName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, mainPullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
           beforeSegments.Add( newSegment ) ;
         }
         else {
@@ -196,8 +199,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           }
 
           var newSegment = isBeforeSegment 
-            ? new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) 
-            : new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+            ? new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) 
+            : new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ;
           result.Add( isBeforeSegment ? ( name, newSegment ) : ( parentRoute.RouteName, newSegment ) ) ;
           if ( isBeforeSegment ) beforeSegments.Add( newSegment ) ;
         }
@@ -217,9 +220,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var branchEndPoint = new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
             if ( fromEndPointKey == mainPullBoxToEndPoint.Key ) {
               result.AddRange( from branchSegment in beforeSegments select ( routeName, branchSegment ) ) ;
-              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
               name = routeName + "_" + (++index) ;
-              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
               connectorUniqueId = segment.ToEndPoint.Key.GetElementUniqueId() ;
               GetPullBoxCeedCodes( document, ceedCodes, connectorUniqueId ) ;
               if ( parentAndChildRoute.ContainsKey( parentRoute.RouteName ) ) {
@@ -230,13 +233,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               }
             }
             else {
-              result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+              result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
             }
           }
           else {
-            result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+            result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+            result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
           }
 
           connectorUniqueId = segment.ToEndPoint.Key.GetElementUniqueId() ;
@@ -251,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             if ( branchRouteDirection == null ) {
               if ( fromEndPointKey == mainPullBoxToEndPoint.Key ) {
                 result.AddRange( from branchSegment in beforeSegments select ( routeName, branchSegment ) ) ;
-                result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+                result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
                 if ( parentAndChildRoute.Any() ) {
                   parentAndChildRoute.First().Value.Add( routeName ) ;
                 }
@@ -260,15 +263,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                 }
               }
               else {
-                result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+                result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
               }
               connectorUniqueId = segment.ToEndPoint.Key.GetElementUniqueId() ;
               GetPullBoxCeedCodes( document, ceedCodes, connectorUniqueId ) ;
             }
             else {
-              var (_, branchPullBoxToEndPoint) = GetFromAndToConnectorEndPoint( pullBox, isCreatePullBoxWithoutSettingHeight, radius, branchRouteDirection, null, null ) ;
-              result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchPullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+              var (_, branchPullBoxToEndPoint) = GetFromAndToConnectorEndPoint( document, pullBox, isCreatePullBoxWithoutSettingHeight, radius, branchRouteDirection, null, null ) ;
+              result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
+              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchPullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, segment.ToFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping ) ) ) ;
               connectorUniqueId = segment.ToEndPoint.Key.GetElementUniqueId() ;
               GetPullBoxCeedCodes( document, ceedCodes, connectorUniqueId ) ;
             }
@@ -809,20 +812,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return false ;
     }
 
-    private static ( ConnectorEndPoint, ConnectorEndPoint ) GetFromAndToConnectorEndPoint( FamilyInstance pullBox, bool isCreatePullBoxWithoutSettingHeight, double? radius, XYZ routeDirection, XYZ? fromDirection, XYZ? toDirection )
+    private static ( ConnectorEndPoint, ConnectorEndPoint ) GetFromAndToConnectorEndPoint( Document document, FamilyInstance pullBox, bool isCreatePullBoxWithoutSettingHeight, double? radius, XYZ routeDirection, XYZ? fromDirection, XYZ? toDirection )
     {
       ConnectorEndPoint pullBoxFromEndPoint ;
       ConnectorEndPoint pullBoxToEndPoint ;
       if ( isCreatePullBoxWithoutSettingHeight ) {
         if ( fromDirection != null && toDirection != null ) {
+          var isRotateElement = false ;
           if ( fromDirection.X is 1 or -1 ) {
             pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( fromDirection.X is 1 ? RoutingElementExtensions.ConnectorPosition.Left : RoutingElementExtensions.ConnectorPosition.Right ), radius ) ;
           }
           else if ( fromDirection.Y is 1 or -1 ) {
             pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( fromDirection.Y is 1 ? RoutingElementExtensions.ConnectorPosition.Front : RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
           }
-          else {
+          else if ( fromDirection.Z is 1 or -1 ) {
             pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( fromDirection.Z is 1 ? RoutingElementExtensions.ConnectorPosition.Bottom : RoutingElementExtensions.ConnectorPosition.Top ), radius ) ;
+          }
+          else {
+            if ( toDirection.Z is 1 or -1 ) {
+              var pullBoxOrigin = ( pullBox.Location as LocationPoint )!.Point ;
+              var rotationAngle = Math.Atan2( fromDirection.Y, fromDirection.X ) ;
+              ElementTransformUtils.RotateElement( document, pullBox.Id, Line.CreateBound( pullBoxOrigin, pullBoxOrigin + XYZ.BasisZ ), rotationAngle ) ;
+              isRotateElement = true ;
+              pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Left ), radius ) ;
+            }
+            else {
+              pullBoxFromEndPoint = Math.Abs( fromDirection.X ) > Math.Abs( fromDirection.Y ) 
+                ? new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( fromDirection.X > 0 ? RoutingElementExtensions.ConnectorPosition.Left : RoutingElementExtensions.ConnectorPosition.Right ), radius ) 
+                : new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( fromDirection.Y < 0 ? RoutingElementExtensions.ConnectorPosition.Front : RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
+            }
           }
           
           if ( toDirection.X is 1 or -1 ) {
@@ -831,8 +849,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           else if ( toDirection.Y is 1 or -1 ) {
             pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( toDirection.Y is 1 ? RoutingElementExtensions.ConnectorPosition.Back : RoutingElementExtensions.ConnectorPosition.Front ), radius ) ;
           }
-          else {
+          else if ( toDirection.Z is 1 or -1 )  {
             pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( toDirection.Z is 1 ? RoutingElementExtensions.ConnectorPosition.Top : RoutingElementExtensions.ConnectorPosition.Bottom ), radius ) ;
+          }
+          else {
+            if ( fromDirection.Z is 1 or -1 ) {
+              if ( ! isRotateElement ) {
+                var pullBoxOrigin = ( pullBox.Location as LocationPoint )!.Point ;
+                var rotationAngle = Math.Atan2( toDirection.Y, toDirection.X ) ;
+                ElementTransformUtils.RotateElement( document, pullBox.Id, Line.CreateBound( pullBoxOrigin, pullBoxOrigin + XYZ.BasisZ ), rotationAngle ) ;
+              } 
+              pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Right ), radius ) ;
+            }
+            else {
+              pullBoxToEndPoint = Math.Abs( toDirection.X ) > Math.Abs( toDirection.Y ) 
+                ? new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( toDirection.X < 0 ? RoutingElementExtensions.ConnectorPosition.Left : RoutingElementExtensions.ConnectorPosition.Right ), radius ) 
+                : new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( toDirection.Y > 0 ? RoutingElementExtensions.ConnectorPosition.Front : RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
+            }
           }
         }
         else {
@@ -856,9 +889,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Bottom ), radius ) ;
             pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Top ), radius ) ;
           }
-          else {
+          else if ( Math.Abs( routeDirection.Z + 1 ) == 0 ) {
             pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Top ), radius ) ;
             pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Bottom ), radius ) ;
+          }
+          else {
+            pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Front ), radius ) ;
+            pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
           }
         }
       }
