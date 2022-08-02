@@ -18,7 +18,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PickRoutingCommandBase : RoutingCommandBase<PickRoutingCommandBase.PickState>
   {
-    public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, XYZ? PassPointPosition, XYZ? PassPointDirection,XYZ? SecondPassPointPosition, XYZ? SecondPassPointDirection ) ;
+    // Todo: 斜めルーティングの場合はPullBoxを無視する
+    public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, XYZ? PassPointPosition, XYZ? PassPointDirection, XYZ? SecondPassPointPosition, XYZ? SecondPassPointDirection, bool IsNeedCreatePullBox ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
@@ -64,11 +65,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       XYZ? passPointDirection = null ;
       XYZ? secondPassPointPosition = null ;
       XYZ? secondPassPointDirection = null ;
+      
+      // Todo: 斜めルーティングの場合はPullBoxを無視する
+      var isNeedCreatePullBox = ! PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ;
+      
       if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
         ( passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult, passPointPositionDistance ) ;
       }
 
-      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) ) ;
+      // Todo: 斜めルーティングの場合はPullBoxを無視する
+      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection, isNeedCreatePullBox ) ) ;
     }
     
     private ( XYZ?, XYZ?, XYZ?, XYZ? ) ShowPreviewLines( UIDocument uiDocument, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, double passPointPositionDistance )
@@ -205,7 +211,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection) = pickState ;
+      // Todo: 斜めルーティングの場合はPullBoxを無視する
+      var (fromPickResult, toPickResult, routeProperty, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection, _) = pickState ;
 
       RouteGenerator.CorrectEnvelopes( document ) ;
       ChangeFromConnectorAndToConnectorColor( document, fromPickResult, toPickResult ) ;

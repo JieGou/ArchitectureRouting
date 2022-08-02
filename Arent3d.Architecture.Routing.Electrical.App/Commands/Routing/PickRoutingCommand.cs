@@ -56,7 +56,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       if ( ! PullBoxRouteManager.IsGradeUnderThree( document ) ) return executeResultValue ;
 
       var registrationOfBoardDataModels = document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
-      var (fromPickResult, toPickResult, _, _, _, _, _,_) = state ;
+      
+      // Todo: 斜めルーティングの場合はPullBoxを無視する
+      var (fromPickResult, toPickResult, _, _, _, _, _, _, isNeedCreatePullBox) = state ;
+      if ( ! isNeedCreatePullBox ) return executeResultValue ;
+      
       var listConnectors = new List<Element>() { fromPickResult.PickedElement, toPickResult.PickedElement } ;
       var isRouteBetweenPowerConnectors = IsRouteBetweenPowerConnectors( listConnectors, registrationOfBoardDataModels ) ;
       if ( isRouteBetweenPowerConnectors ) return executeResultValue ;
