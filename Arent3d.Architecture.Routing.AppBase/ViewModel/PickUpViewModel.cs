@@ -197,9 +197,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         MessageBox.Show( "Don't have element.", "Result Message" ) ;
       }
       else {
-        var pickUpConduitByNumbers = PickUpModelByNumber( ProductType.Conduit ) ;
+        var pickUpConduitByNumbers = MergePickUpModels(PickUpModelByNumber( ProductType.Conduit ), ProductType.Conduit) ;
         var pickUpRackByNumbers = PickUpModelByNumber( ProductType.Cable ) ;
-        var pickUpModels = _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+        var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+        var pickUpModels = MergePickUpModels( pickUpConnectors, ProductType.Connector ) ;
         if ( pickUpConduitByNumbers.Any() ) pickUpModels.AddRange( pickUpConduitByNumbers ) ;
         if ( pickUpRackByNumbers.Any() ) pickUpModels.AddRange( pickUpRackByNumbers ) ;
         OriginPickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
@@ -1090,6 +1091,41 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( routeName ) ) return null ;
       var route = routes.SingleOrDefault( x => x.Key == routeName ) ;
       return route.Value.RouteSegments.LastOrDefault();
+    }
+    
+    private List<PickUpModel> MergePickUpModels( IEnumerable<PickUpModel> pickUpModels, ProductType productType )
+    {
+      switch ( productType ) {
+        case ProductType.Conduit :
+        {
+          return pickUpModels.GroupBy( p => new { p.Construction, p.Classification, p.ProductName, p.Specification } ).Select( p =>
+          {
+            var newModel = p.First() ;
+            newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
+            newModel.ConstructionItems = string.Empty ;
+            newModel.CeedSetCode = string.Empty ;
+            newModel.ModelNumber = string.Empty ;
+            newModel.Condition = string.Empty ;
+            return newModel ;
+          } ).OrderBy( p => p.Floor ).ToList() ;
+        }
+        case ProductType.Connector :
+        {
+          return pickUpModels.GroupBy( p => new { p.CeedSetCode, p.ModelNumber, p.Condition, p.DeviceSymbol } ).Select( p =>
+          {
+            var newModel = p.First() ;
+            newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
+            newModel.Construction = string.Empty ;
+            newModel.Classification = string.Empty ;
+            newModel.Specification = string.Empty ;
+            return newModel ;
+          } ).OrderBy( p => p.Floor ).ToList() ;
+        }
+        default :
+        {
+          return new List<PickUpModel>() ;
+        }  
+      }
     }
     
     public class MaterialCodeInfo
