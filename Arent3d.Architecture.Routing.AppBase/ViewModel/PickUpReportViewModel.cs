@@ -800,10 +800,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void GetPickModels()
     {
-      if ( ! IsOutputItemsEnable )
-        InitPickUpModels() ;
-      else
-        UpdatePickModels() ;
+      if ( IsOutputItemsEnable ) UpdatePickModels() ;
     }
 
     private void UpdatePickModels()
