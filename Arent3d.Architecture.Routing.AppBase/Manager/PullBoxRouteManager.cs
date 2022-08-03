@@ -894,8 +894,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Bottom ), radius ) ;
           }
           else {
-            pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Front ), radius ) ;
-            pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
+            var pullBoxOrigin = ( pullBox.Location as LocationPoint )!.Point ;
+            var rotationAngle = Math.Atan2( routeDirection.Y, routeDirection.X ) ;
+            ElementTransformUtils.RotateElement( document, pullBox.Id, Line.CreateBound( pullBoxOrigin, pullBoxOrigin + XYZ.BasisZ ), rotationAngle ) ;
+            pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Left ), radius ) ;
+            pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Right ), radius ) ;
           }
         }
       }
@@ -1171,6 +1174,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     public static PullBoxInfo GetPullBoxInfo( Document document, string routeName, FamilyInstance conduitFitting )
     {
+      var offset = ( 300.0 ).MillimetersToRevitUnits() ;
       var conduitFittingLocation = ( conduitFitting.Location as LocationPoint ) ! ;
       var conduitFittingPoint = conduitFittingLocation.Point ;
       var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == routeName ).ToList() ;
@@ -1202,6 +1206,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       double x = 0, y = 0, z = 0 ;
+      var ( xInterSection, yInterSection ) = GetInterSectionOfTwoLines( fromPoint.X, fromPoint.Y, fromConduitDirection.X, fromConduitDirection.Y, toPoint.X, toPoint.Y, toConduitDirection.X, toConduitDirection.Y ) ;
       if ( fromConduitDirection.X is 1 or -1 ) {
         if ( toConduitDirection.X is 1 or -1 || toConduitDirection.Y is 1 or -1 || toConduitDirection.Z is 1 or -1 ) {
           x = toPoint.X ;
@@ -1210,8 +1215,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         }
         else {
           var fromLine = new MathLib.Line( new Vector3d( fromPoint.X, fromPoint.Y, fromPoint.Z ), new Vector3d( fromConduitDirection.X, fromConduitDirection.Y, fromConduitDirection.Z ) ) ;
-          ( _, y, z ) = fromLine.GetPointAt( fromPoint.Y - toPoint.Y ) ;
-          x = toPoint.X ;
+          ( x, y, z ) = fromLine.GetPointAt( fromPoint.Y - toPoint.Y ) ;
+          if ( xInterSection != null ) x = (double) xInterSection - fromConduitDirection.X * offset ;
+          toConduitDirection = fromConduitDirection ;
         }
       }
       else if ( fromConduitDirection.Y is 1 or -1 ) {
@@ -1222,8 +1228,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         }
         else {
           var fromLine = new MathLib.Line( new Vector3d( fromPoint.X, fromPoint.Y, fromPoint.Z ), new Vector3d( fromConduitDirection.X, fromConduitDirection.Y, fromConduitDirection.Z ) ) ;
-          ( x, _, z ) = fromLine.GetPointAt( fromPoint.X - toPoint.X ) ;
-          y = toPoint.Y ;
+          ( x, y, z ) = fromLine.GetPointAt( fromPoint.X - toPoint.X ) ;
+          if ( yInterSection != null ) y = (double) yInterSection - fromConduitDirection.Y * offset ;
+          toConduitDirection = fromConduitDirection ;
         }
       }
       else if ( fromConduitDirection.Z is 1 or -1 ) {
@@ -1234,12 +1241,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       else {
         var toLine = new MathLib.Line( new Vector3d( toPoint.X, toPoint.Y, toPoint.Z ), new Vector3d( toConduitDirection.X, toConduitDirection.Y, toConduitDirection.Z ) ) ;
         if ( toConduitDirection.X is 1 or -1 ) {
-          ( _, y, z ) = toLine.GetPointAt( toPoint.Y - fromPoint.Y ) ;
-          x = fromPoint.X ;
+          ( x, y, z ) = toLine.GetPointAt( toConduitDirection.X * offset ) ;
+          if ( xInterSection != null ) x = (double) xInterSection + toConduitDirection.X * offset ;
+          fromConduitDirection = toConduitDirection ;
         }
         else if ( toConduitDirection.Y is 1 or -1 ) {
-          ( x, _, z ) = toLine.GetPointAt( toPoint.X - fromPoint.X ) ;
-          y = fromPoint.Y ;
+          ( x, y, z ) = toLine.GetPointAt( toConduitDirection.Y * offset ) ;
+          if ( yInterSection != null ) y = (double) yInterSection + toConduitDirection.Y * offset ;
+          fromConduitDirection = toConduitDirection ;
         }
         else {
           x = fromPoint.X ;
@@ -1251,6 +1260,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var position = new XYZ( x, y, z ) ;
       var level = document.GetAllElements<Level>().SingleOrDefault( l => l.Id == conduits.First().GetLevelId() ) ;
       return new PullBoxInfo( position, fromConduitDirection, toConduitDirection, level! ) ;
+    }
+
+    private static ( double?, double? ) GetInterSectionOfTwoLines( double x1, double y1, double u1, double a1, double x2, double y2, double u2, double a2 )
+    {
+      var b1 = -u1 ;
+      var b2 = -u2 ;
+      var c1 = a1 * x1 + b1 * y1 ;
+      var c2 = a2 * x2 + b2 * y2 ;
+      var delta = a1 * b2 - a2 * b1 ;
+      if ( delta == 0 ) return ( null, null ) ;
+      var x = ( b2 * c1 - b1 * c2 ) / delta ;
+      var y = ( a1 * c2 - a2 * c1 ) / delta ;
+      return ( x, y ) ;
     }
 
     public static IEnumerable<TextNote> GetTextNotesOfPullBox( Document document, bool isOnlyCalculatedSizePullBoxes = false)
