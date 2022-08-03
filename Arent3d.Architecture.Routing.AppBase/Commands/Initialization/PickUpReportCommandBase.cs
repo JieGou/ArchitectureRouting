@@ -1,4 +1,5 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -10,7 +11,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
 
-      var dialog = new PickUpReportDialog( document ) ;
+      var pickUpReportViewModel = new PickUpReportViewModel( document ) ;
+      var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
 
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {

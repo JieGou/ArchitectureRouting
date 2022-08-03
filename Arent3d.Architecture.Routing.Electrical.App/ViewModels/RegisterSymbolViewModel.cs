@@ -12,8 +12,6 @@ using System.Windows.Interop ;
 using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Architecture.Routing.Electrical.App.Extensions ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -133,7 +131,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             folderBrowserDialog.Reset() ;
             folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer ;
             folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
-            folderBrowserDialog.SelectedPath = String.IsNullOrEmpty(_registerSymbolStorable.BrowseFolderPath) ? readFileTxtIncludePath(path) : _registerSymbolStorable.BrowseFolderPath ;
+            folderBrowserDialog.SelectedPath = string.IsNullOrEmpty(_registerSymbolStorable.BrowseFolderPath) ? readFileTxtIncludePath(path) : _registerSymbolStorable.BrowseFolderPath ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
               _registerSymbolStorable.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
               writeFileTxtIncludePath(path, folderBrowserDialog.SelectedPath ) ;
