@@ -11,6 +11,7 @@ using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -402,7 +403,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
 
             var dictionaryDataPickUpModelOrder = dictionaryDataPickUpModel.OrderBy( x => x.Value.First().Tani == "m" ? 1 : 2).ThenBy( c => c.Value.First().ProductName ).ThenBy( c => c.Value.First().Standard ) ; ;
-            var pickUpNumberForConduitsToPullBox = GetPickUpNumberForConduitsToPullBox(_document,PickUpModels.Where( p=> p.Floor == level ).ToList()) ;
+            var pickUpNumberForConduitsToPullBox = WireLengthNotationManager.GetPickUpNumberForConduitsToPullBox(_document,PickUpModels.Where( p=> p.Floor == level ).ToList()) ;
             
             int countNum = 0 ;
 
@@ -800,10 +801,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void GetPickModels()
     {
-      if ( ! IsOutputItemsEnable )
-        InitPickUpModels() ;
-      else
-        UpdatePickModels() ;
+      if ( IsOutputItemsEnable ) UpdatePickModels() ;
     }
 
     private void UpdatePickModels()
@@ -882,12 +880,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return inforDisplays ;
     }
-
-    private int GetWidth256Excel( float widthExcel )
-    {
-      return (int)Math.Round((widthExcel * DefaultCharacterWidth + 5) / DefaultCharacterWidth * 256);
-    }
-    
     private bool IsMoreTwoWireBook( List<PickUpItemModel> pickUpModels )
     {
       var pickUpNumbers = GetPickUpNumbersList( pickUpModels ) ;
@@ -974,42 +966,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return pickUpModelByProductCodes ;
-    }
-    
-    private Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpItemModel> pickUpModelsByLevel )
-    {
-      var result = new Dictionary<string, int>() ;
-      if ( pickUpModelsByLevel.All( x => string.IsNullOrEmpty( x.PickUpNumber ) ) ) return result ;
-      var pullBoxIdWithPickUpNumbers = new Dictionary<string, int>() ;
-      var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      var pickUpNumberOfPullBox = pickUpModelsByLevel.Where( x => !string.IsNullOrEmpty( x.PickUpNumber ) ).Max( x => Convert.ToInt32( x.PickUpNumber ) ) ;
-      var routes = pickUpModelsByLevel.Select( x => x.RouteName ).Where( r => r != "" ).Distinct() ;
-      foreach ( var route in routes ) {
-        var conduitPickUpModel = pickUpModelsByLevel
-          .Where( p => p.RouteName == route && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() )
-          .GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } )
-          .FirstOrDefault() ;
-        if ( conduitPickUpModel == null ) continue ;
-
-        var pickUpModelsGroupsByRouteNameRef = conduitPickUpModel.PickUpModels.GroupBy( p => p.RelatedRouteName ) ;
-        foreach ( var pickUpModelsGroup in pickUpModelsGroupsByRouteNameRef ) {
-          var routeName = pickUpModelsGroup.Key ;
-          var lastRoute = routeCache.LastOrDefault( r => r.Key == routeName ) ;
-          var lastSegment = lastRoute.Value.RouteSegments.Last() ;
-          var pullBoxUniqueId = IsSegmentConnectedToPoPullBox( document, lastSegment ) ;
-          if ( string.IsNullOrEmpty( pullBoxUniqueId ) ) continue ;
-
-          if ( pullBoxIdWithPickUpNumbers.ContainsKey( pullBoxUniqueId ) )
-            result.Add( routeName, pullBoxIdWithPickUpNumbers[pullBoxUniqueId] );
-          else {
-            pickUpNumberOfPullBox++ ;
-            pullBoxIdWithPickUpNumbers.Add( pullBoxUniqueId, pickUpNumberOfPullBox );
-            result.Add( routeName, pickUpNumberOfPullBox );
-          }
-        }
-      }
-
-      return result; 
     }
     
     private string IsSegmentConnectedToPoPullBox( Document document, RouteSegment lastSegment )

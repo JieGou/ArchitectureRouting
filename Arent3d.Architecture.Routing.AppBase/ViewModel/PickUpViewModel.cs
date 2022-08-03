@@ -365,7 +365,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             specification2 = ceedModel.CeedSetCode ;
             supplement = ceedModel.Name ;
             condition = ceedModel.Condition ;
-
             var ceedModelNumber = ceedModel.CeedModelNumber ;
             // TODO: hiroisetcdmaster_normal.csvとhiroisetcdmaster_eco.csvの中身が全く一緒なので、hiroiSetCdMasterModelsに対してエコ/ノーマルモードの判定が必要ない
             var hiroiSetCdMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? _hiroiSetCdMasterEcoModels : _hiroiSetCdMasterNormalModels ;
