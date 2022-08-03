@@ -46,17 +46,19 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       CeedSetCode = string.Empty ;
       DeviceSymbol = string.Empty ;
       Condition = string.Empty ;
+      SumQuantity = string.Empty ;
       RouteName = string.Empty ;
       RelatedRouteName = string.Empty ;
       Version = string.Empty ;
+      WireBook = string.Empty ;
     }
 
     public PickUpItemModel( string? item, string? floor, string? constructionItems, string? equipmentType,
       string? productName, string? use, string? usageName, string? construction, string? modelNumber,
       string? specification, string? specification2, string? size, string? quantity, string? tani, string? supplement,
       string? supplement2, string? group, string? layer, string? classification, string? standard, string? pickUpNumber,
-      string? direction, string? productCode, string? ceedSetCode, string? deviceSymbol, string? condition,
-      string? routeName = null, string? relatedRouteName = null, string? version = null )
+      string? direction, string? productCode, string? ceedSetCode, string? deviceSymbol, string? condition, string? sumQuantity, 
+      string? routeName = null, string? relatedRouteName = null, string? version = null, string? wireBook = null )
     {
       Item = item ?? string.Empty ;
       Floor = floor ?? string.Empty ;
@@ -84,9 +86,11 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       CeedSetCode = ceedSetCode ?? string.Empty ;
       DeviceSymbol = deviceSymbol ?? string.Empty ;
       Condition = condition ?? string.Empty ;
+      SumQuantity = sumQuantity ?? string.Empty ;
       RouteName = routeName ?? string.Empty ;
       RelatedRouteName = relatedRouteName ?? string.Empty ;
       Version = version ?? string.Empty ;
+      WireBook = wireBook ?? string.Empty ;
     }
 
     [Field( Documentation = "Item" )]
@@ -166,6 +170,9 @@ namespace Arent3d.Architecture.Routing.Storages.Models
 
     [Field( Documentation = "Condition" )]
     public string Condition { get ; set ; }
+    
+    [Field( Documentation = "SumQuantity" )]
+    public string SumQuantity { get ; set ; }
 
     [Field( Documentation = "Route Name" )]
     public string RouteName { get ; set ; }
@@ -175,5 +182,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     
     [Field( Documentation = "Version" )]
     public string Version { get ; set ; }
+    
+    [Field( Documentation = "WireBook" )]
+    public string WireBook { get ; set ; }
   }
 }
