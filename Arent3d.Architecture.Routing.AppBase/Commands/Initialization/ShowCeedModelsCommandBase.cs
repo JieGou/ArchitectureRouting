@@ -105,8 +105,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
         TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        var txtPosition = new XYZ( point.X - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, point.Y + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
+        var txtPosition = new XYZ( point.X , point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, viewModel.SelectedDeviceSymbol, opts ) ;
+        doc.Regenerate();
+        ElementTransformUtils.MoveElement(doc, textNote.Id, Transform.CreateTranslation(-XYZ.BasisX * 0.5 * textNote.Width * defaultSymbolMagnification).OfPoint(txtPosition) - txtPosition);
 
         var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
         if ( deviceSymbolTextNoteType == null ) {
@@ -121,23 +123,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
-        
-        var txtConditionPosition = new XYZ( point.X - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-        var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, condition, opts ) ;
-
-        var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
-        if ( textNoteType == null ) {
-          Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
-          textNoteType = ( ele as TextNoteType )! ;
-          const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
-          Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
-          textSize.Set( .005 ) ;
-          textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-          textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
-        }
-
-        conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
-        groupIds.Add( conditionTextNote.Id ) ;
 
         return Result.Succeeded ;
       } ) ;
