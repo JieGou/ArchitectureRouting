@@ -140,6 +140,139 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsThroughShaft( Document document, Route route, FamilyInstance pullBox, double heightConnector, double heightWire,
+      XYZ routeDirection, bool isCreatePullBoxWithoutSettingHeight, string nameBase, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, XYZ? fromDirection = null, XYZ? toDirection = null,
+      FixedHeight? firstHeight = null, bool isWireEnteredShaft = false )
+    {
+      const int index = 1 ;
+      var (routeRecords, parentRoute) = GetRelatedBranchSegments( route ) ;
+
+      var diameter = parentRoute.UniqueDiameter ;
+      var radius = diameter * 0.5 ;
+      var isRoutingOnPipeSpace = parentRoute.UniqueIsRoutingOnPipeSpace ?? false ;
+      var toFixedHeight = parentRoute.UniqueToFixedHeight ;
+      var avoidType = parentRoute.UniqueAvoidType ?? AvoidType.Whichever ;
+      var shaftElementUniqueId = parentRoute.UniqueShaftElementUniqueId ;
+      var fromFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, isCreatePullBoxWithoutSettingHeight ? heightConnector : heightConnector + DefaultDistanceHeight ) ;
+      var fromFixedHeightSecond = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightWire ) ;
+
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
+      var name = nameBase + "_" + nextIndex ;
+      routes.FindOrCreate( name ) ;
+
+      var (pullBoxFromEndPoint, pullBoxToEndPoint) = GetFromAndToConnectorEndPoint( pullBox, isCreatePullBoxWithoutSettingHeight, radius, routeDirection, fromDirection, toDirection ) ;
+
+      var result = new List<(string RouteName, RouteSegment Segment)>() ;
+      var ceedCodes = new List<string>() ;
+      var beforeSegments = new List<RouteSegment>() ;
+      name = parentRoute.RouteName + "_" + parentIndex ;
+      parentIndex++ ;
+      foreach ( var segment in parentRoute.RouteSegments.EnumerateAll() ) {
+        firstHeight ??= fromFixedHeightFirst ;
+        var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType,
+          segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, firstHeight, fromFixedHeightFirst,
+          avoidType, shaftElementUniqueId ) ;
+        result.Add( ( parentRoute.RouteName, newSegment ) ) ;
+        beforeSegments.Add( newSegment ) ;
+        result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint,
+            segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType,
+            isWireEnteredShaft ? null : shaftElementUniqueId ) ) ) ;
+      }
+
+      var connectorUniqueId = parentRoute.RouteSegments.Last().ToEndPoint.Key.GetElementUniqueId() ;
+      GetPullBoxCeedCodes( document, ceedCodes, connectorUniqueId ) ;
+
+      if ( ! routeRecords.Any() ) return result ;
+      {
+        foreach ( var (routeName, segment) in routeRecords ) {
+          var passPointEndPointUniqueId = segment.FromEndPoint.Key.GetElementUniqueId() ;
+          if ( segment.FromEndPoint.DisplayTypeName == PassPointBranchEndPoint.Type ) {
+            var fromEndPointKey = GetFromEndPointKey( document, result, passPointEndPointUniqueId ) ?? pullBoxToEndPoint.Key ;
+            var branchEndPoint =
+              new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
+            if ( fromEndPointKey == pullBoxToEndPoint.Key ) {
+              name = routeName + "_" + index ;
+              result.AddRange( from branchSegment in beforeSegments select ( routeName, branchSegment ) ) ;
+              result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, 
+                isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+              connectorUniqueId = segment.ToEndPoint.Key.GetElementUniqueId() ;
+              GetPullBoxCeedCodes( document, ceedCodes, connectorUniqueId ) ;
+              if ( parentAndChildRoute.ContainsKey( parentRoute.RouteName ) )
+                parentAndChildRoute[ parentRoute.RouteName ].Add( routeName ) ;
+              else
+                parentAndChildRoute.Add( parentRoute.RouteName, new List<string> { routeName } ) ;
+            }
+            else {
+              result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, 
+                fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+            }
+          }
+          else {
+            result.Add( ( routeName, segment ) ) ;
+          }
+        }
+      }
+
+      if ( ! ceedCodes.Any() ) return result ;
+      var newCeedCode = string.Join( ";", ceedCodes ) ;
+      pullBox.TrySetProperty( ElectricalRoutingElementParameter.CeedCode, newCeedCode ) ;
+
+      return result ;
+    }
+
+    private static List<FamilyInstance> GetPullBoxesInShafts( Document document, Route route,
+      Element conduitFittingShaft, IReadOnlyCollection<XYZ> pullBoxPositions, bool isPickedFromBottomToTop )
+    {
+      var pullBoxesInShaft = new List<FamilyInstance>() ;
+
+      var conduitFittingPoint = ( conduitFittingShaft.Location as LocationPoint )?.Point ;
+      if ( conduitFittingPoint == null ) return pullBoxesInShaft ;
+
+      var pullBoxLocationPoint = pullBoxPositions.LastOrDefault() ;
+      if ( pullBoxLocationPoint == null ) return pullBoxesInShaft ;
+
+      if ( string.IsNullOrEmpty( route.UniqueShaftElementUniqueId ) ) return pullBoxesInShaft ;
+
+      var shaftElementUniqueId = route.UniqueShaftElementUniqueId ;
+      var shaft = document.GetElementById<Opening>( shaftElementUniqueId ?? string.Empty ) ;
+      if ( shaft == null ) return pullBoxesInShaft ;
+      var shaftLocation = GetShaftLocation( route, document ) ;
+      if ( shaftLocation == null ) return pullBoxesInShaft ;
+
+      pullBoxesInShaft = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .Where( c =>
+        {
+          if ( c.GetConnectorFamilyType() != ConnectorFamilyType.PullBox ) return false ;
+
+          var locationPoint = ( c.Location as LocationPoint )?.Point ;
+          if ( locationPoint == null || ! IsNearShaft( locationPoint, shaftLocation ) ||
+               pullBoxPositions.Any( p => IsAlmostOrEqual( p.Z, locationPoint.Z ) ) )
+            return false ;
+
+          if ( IsAlmostOrEqual( conduitFittingPoint.Z, locationPoint.Z ) ) return false ;
+
+          if ( isPickedFromBottomToTop )
+            return pullBoxLocationPoint.Z < locationPoint.Z && locationPoint.Z < conduitFittingPoint.Z ;
+
+          return pullBoxLocationPoint.Z > locationPoint.Z && locationPoint.Z > conduitFittingPoint.Z ;
+        } ).ToList() ;
+
+      if ( isPickedFromBottomToTop )
+        pullBoxesInShaft = pullBoxesInShaft.OrderBy( p =>
+        {
+          var locationPoint = ( p.Location as LocationPoint )?.Point ;
+          return locationPoint!.Z ;
+        } ).ToList() ;
+      else
+        pullBoxesInShaft = pullBoxesInShaft.OrderByDescending( p =>
+        {
+          var locationPoint = ( p.Location as LocationPoint )?.Point ;
+          return locationPoint!.Z ;
+        } ).ToList() ;
+      return pullBoxesInShaft ;
+    }
+
     private static List<(string RouteName, RouteSegment Segment)> GetSegments( Document document, List<(string RouteName, RouteSegment Segment)> routeRecords, List<string> ceedCodes, 
       FamilyInstance pullBox, Route parentRoute, RouteSegmentDetector detector, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, double? diameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeightFirst, FixedHeight? fromFixedHeightSecond, 
       FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId, double? radius, bool isCreatePullBoxWithoutSettingHeight, ConnectorEndPoint pullBoxFromEndPoint, ConnectorEndPoint pullBoxToEndPoint )
@@ -582,12 +715,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, bool isWireEnteredShaft, bool isPickedFromBottomToTop )
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSegmentsWithPullBoxShaft( Document document, IReadOnlyCollection<Route> executeResultValue, List<XYZ> pullBoxPositions, List<(FamilyInstance, XYZ?)> pullBoxElements, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, ref bool isWireEnteredShaft, bool isPickedFromBottomToTop )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
+      var conduitFittingsOfRoute = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => !string.IsNullOrEmpty( c.GetRouteName() ) && executeResultValue.Any( r => c.GetRouteName() == r.RouteName ) ).ToList() ;
       foreach ( var route in executeResultValue ) {
         if( route == null || string.IsNullOrEmpty( route.UniqueShaftElementUniqueId ) ) continue ;
-        var conduitFittingsOfRoute = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
         var shaftId = route.UniqueShaftElementUniqueId ;
         var fromHeight = route.UniqueFromFixedHeight ;
         var curveType = route.UniqueCurveType ;
@@ -599,20 +732,68 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var shaftLocation = GetShaftLocation( route, document ) ;
         if ( shaftLocation == null ) continue ;
         
-        var conduitFittingShaft = GetConduitFittingShaft( shaftLocation, conduitFittingsOfRoute, isWireEnteredShaft ? isPickedFromBottomToTop : !isPickedFromBottomToTop ) ;
-        if ( conduitFittingShaft == null ) continue ;
+        if ( ! pullBoxPositions.Any() ) {
+          var conduitFittingShaft = GetConduitFittingShaft( shaftLocation, conduitFittingsOfRoute.Where( c => !string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName() == route.Name ), !isPickedFromBottomToTop ) ;
+          if ( conduitFittingShaft == null ) continue ;
+          
+          var pullBoxInfo = GetPullBoxInShaftInfo( document, route.RouteName, conduitFittingShaft ) ;
+          var isSamePullBoxPositions = IsPullBoxExistInThePosition( document, pullBoxPositions, pullBoxInfo.Position ) ;
+          if ( isSamePullBoxPositions ) continue ;
 
-        var pullBoxInfo = GetPullBoxInfo( document, route.RouteName, conduitFittingShaft ) ;
-        var isSamePullBoxPositions = IsPullBoxExistInThePosition( document, pullBoxPositions, pullBoxInfo.Position ) ;
-        if ( isSamePullBoxPositions ) continue ;
+          var (originX, originY, originZ) = pullBoxInfo.Position ;
+          var fromDirection = pullBoxInfo.FromDirection ;
+          var toDirection = pullBoxInfo.ToDirection ;
+          var height = originZ - pullBoxInfo.Level.Elevation ;
+          
+          result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, fromHeight, true, false ).ToList() ;
+          if ( pullBoxElement != null ) pullBoxElements.Add( ( pullBoxElement, null ) ) ;
+          pullBoxPositions.Add( pullBoxInfo.Position ) ;
+        }
+        else {
+          var conduitFittingShaft = GetConduitFittingShaft( shaftLocation, conduitFittingsOfRoute, isPickedFromBottomToTop ) ;
+          if ( conduitFittingShaft == null || conduitFittingShaft.GetRouteName() != route.Name ) continue ;
 
-        var (originX, originY, originZ) = pullBoxInfo.Position ;
-        var fromDirection = pullBoxInfo.FromDirection ;
-        var toDirection = pullBoxInfo.ToDirection ;
-        var height = originZ - pullBoxInfo.Level.Elevation ;
-        result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height, pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, fromHeight, true, isWireEnteredShaft ).ToList() ;
-        if ( pullBoxElement != null ) pullBoxElements.Add( ( pullBoxElement, null ) ) ;
-        pullBoxPositions.Add( pullBoxInfo.Position ) ;
+          var pullBoxesInShaft = GetPullBoxesInShafts( document, route, conduitFittingShaft, pullBoxPositions, isPickedFromBottomToTop ) ;
+          if ( pullBoxesInShaft.Any() ) {
+            var pullBox = pullBoxesInShaft.First() ;
+            var pullBoxPosition = ( pullBox.Location as LocationPoint )!.Point ;
+            if ( pullBoxPosition == null ) continue ;
+
+            var levelOfPullBox = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).First( l => l.Id == pullBox.LevelId ) ;
+            var defaultDirectionThroughPullBoxInShaft =
+              isPickedFromBottomToTop ? new XYZ( 0, 0, 1 ) : new XYZ( 0, 0, -1 ) ;
+
+            var height = pullBoxPosition.Z - levelOfPullBox.Elevation ;
+
+            using Transaction t1 = new(document, "Get segments") ;
+            t1.Start() ;
+            result.AddRange( GetRouteSegmentsThroughShaft( document, route, pullBox, height, height,
+              defaultDirectionThroughPullBoxInShaft, true, nameBase!, ref parentIndex, ref parentAndChildRoute,
+              defaultDirectionThroughPullBoxInShaft, defaultDirectionThroughPullBoxInShaft, fromHeight ) ) ;
+            t1.Commit() ;
+
+            pullBoxElements.Add( ( pullBox, null ) ) ;
+            pullBoxPositions.Add( pullBoxPosition ) ;
+          }
+          else {
+            var pullBoxInfo = GetPullBoxInShaftInfo( document, route.RouteName, conduitFittingShaft ) ;
+            var isSamePullBoxPositions = IsPullBoxExistInThePosition( document, pullBoxPositions, pullBoxInfo.Position ) ;
+            if ( isSamePullBoxPositions ) continue ;
+
+            var (originX, originY, originZ) = pullBoxInfo.Position ;
+            var fromDirection = pullBoxInfo.FromDirection ;
+            var toDirection = pullBoxInfo.ToDirection ;
+            var height = originZ - pullBoxInfo.Level.Elevation ;
+
+            result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height,
+              pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex,
+              ref parentAndChildRoute, fromDirection, toDirection, fromHeight, true ).ToList() ;
+            if ( pullBoxElement != null ) pullBoxElements.Add( ( pullBoxElement, null ) ) ;
+            pullBoxPositions.Add( pullBoxInfo.Position ) ;
+            isWireEnteredShaft = true ;
+          }
+        }
+        
         return result ;
       }
 
@@ -1188,6 +1369,60 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       var position = new XYZ( x, y, z ) ;
       var level = document.GetAllElements<Level>().SingleOrDefault( l => l.Id == conduits.First().GetLevelId() ) ;
+      return new PullBoxInfo( position, fromConduitDirection, toConduitDirection, level! ) ;
+    }
+    
+    private static PullBoxInfo GetPullBoxInShaftInfo( Document document, string routeName, FamilyInstance conduitFitting )
+    {
+      var conduitFittingLocation = ( conduitFitting.Location as LocationPoint ) ! ;
+      var conduitFittingPoint = conduitFittingLocation.Point ;
+      var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      var fromMinDistance = double.MaxValue ;
+      var toMinDistance = double.MaxValue ;
+      var fromPoint = new XYZ() ;
+      var toPoint = new XYZ() ;
+      var fromConduitDirection = new XYZ() ;
+      var toConduitDirection = new XYZ() ;
+      foreach ( var conduit in conduits ) {
+        var fromConduitLocation = ( conduit.Location as LocationCurve ) ! ;
+        var fromConduitLine = ( fromConduitLocation.Curve as Line ) ! ;
+        var fromConduitPoint = fromConduitLine.GetEndPoint( 1 ) ;
+        var fromDistance = fromConduitPoint.DistanceTo( conduitFittingPoint ) ;
+        if ( fromDistance < fromMinDistance ) {
+          fromMinDistance = fromDistance ;
+          fromConduitDirection = fromConduitLine.Direction ;
+          fromPoint = fromConduitPoint ;
+        }
+
+        var toConduitLocation = ( conduit.Location as LocationCurve ) ! ;
+        var toConduitLine = ( toConduitLocation.Curve as Line ) ! ;
+        var toConduitPoint = toConduitLine.GetEndPoint( 0 ) ;
+        var toDistance = toConduitPoint.DistanceTo( conduitFittingPoint ) ;
+        if ( toDistance > toMinDistance ) continue ;
+        toMinDistance = toDistance ;
+        toConduitDirection = fromConduitLine.Direction ;
+        toPoint = toConduitPoint ;
+      }
+
+      double x = 0, y = 0, z = 0 ;
+      if ( fromConduitDirection.X is 1 or -1 ) {
+        x = toPoint.X ;
+        y = fromPoint.Y ;
+        z = fromPoint.Z ;
+      }
+      else if ( fromConduitDirection.Y is 1 or -1 ) {
+        x = fromPoint.X ;
+        y = toPoint.Y ;
+        z = fromPoint.Z ;
+      }
+      else if ( fromConduitDirection.Z is 1 or -1 ) {
+        x = fromPoint.X ;
+        y = fromPoint.Y ;
+        z = toPoint.Z ;
+      }
+
+      var position = new XYZ( x, y, z ) ;
+      var level = document.GetAllElements<Level>().SingleOrDefault( l => l.Id == conduitFitting.GetLevelId() ) ;
       return new PullBoxInfo( position, fromConduitDirection, toConduitDirection, level! ) ;
     }
 

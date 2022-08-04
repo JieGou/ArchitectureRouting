@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var isPickedFromBottomToTop = fromPickResult.PickedConnector!.Origin.Z < toPickResult.PickedConnector!.Origin.Z ;
       Dictionary<string, List<string>> parentAndChildRoute = new() ;
       for ( int i = 0 ; i < 50 ; i++ ) {
-        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, resultRoute, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute, isWireEnteredShaft, isPickedFromBottomToTop ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, resultRoute, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute, ref isWireEnteredShaft, isPickedFromBottomToTop ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
@@ -95,7 +95,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
         if ( ! isPassedShaft ) continue ;
         if ( isWireEnteredShaft ) break ;
-        isWireEnteredShaft = true ;
       }
       
       #region Change dimension of pullbox and set new label
