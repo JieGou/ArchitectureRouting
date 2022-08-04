@@ -69,12 +69,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var deletedFloorName = viewModel.DeletedFloorName ;
           SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
 
+          UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
+          LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
           if ( deletedFloorName.Any() ) {
             RemoveViews( document, deletedFloorName, uiDocument ) ;
           }
-
-          UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
-          LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
           return Result.Succeeded ;
         }
       }
@@ -183,7 +182,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         #region Import
 
-        var importTrans = new Transaction( doc ) ;
+        using var importTrans = new Transaction( doc ) ;
         importTrans.SetName( "Import" ) ;
         importTrans.Start() ;
         for ( var i = 0 ; i < completeImportDwgMappingModels.Count() ; i++ ) {
@@ -222,8 +221,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         #endregion
 
         #region Create 3D view
-        var create3D = new Transaction( doc ) ;
-        create3D.SetName( "Import" );
+        using var create3D = new Transaction( doc ) ;
+        create3D.SetName( "Create 3D View" );
         create3D.Start() ;
         var levelListOrderByElavation = doc.GetAllElements<Level>()
           .OfCategory( BuiltInCategory.OST_Levels ).Select( ToLevelInfo )
@@ -245,8 +244,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         #region Create 3D ALL view
 
         if ( firstViewPlan != null ) commandData.Application.ActiveUIDocument.ActiveView = firstViewPlan ;
-        var create3DTrans = new Transaction( doc ) ;
-        create3DTrans.SetName( "Import" ) ;
+        using var create3DTrans = new Transaction( doc ) ;
+        create3DTrans.SetName( "Create 3D ALL view" ) ;
         create3DTrans.Start() ;
         var threeDimensionalViewFamilyType = new FilteredElementCollector( doc ).OfClass( typeof( ViewFamilyType ) ).ToElements().Cast<ViewFamilyType>().FirstOrDefault( vft => vft.ViewFamily == ViewFamily.ThreeDimensional ) ;
         if ( threeDimensionalViewFamilyType != null ) {
@@ -260,21 +259,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         create3DTrans.Commit() ;
 
-        #endregion
-        
-        #region Remove view Arent dummy
-        var removeArentDummyView = new Transaction( doc ) ;
-        removeArentDummyView.SetName( "Import" ) ;
-        removeArentDummyView.Start() ;
-        List<ViewPlan> viewPlans = new List<ViewPlan>( new FilteredElementCollector( doc )
-          .OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>()
-          .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
-
-        if ( viewPlans.Count( x => x.Name != ArentDummyViewName ) > 1 ) {
-          var viewIdArentDummyView = viewPlans.Where( x => x.Name == ArentDummyViewName ).Select( p=>p.Id ).ToList() ;
-          doc.Delete( viewIdArentDummyView ) ;
-        }
-        removeArentDummyView.Commit() ;
         #endregion
       }
       catch ( Exception exception ) {
