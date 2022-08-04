@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d" x:Name="WdDefaultSettingDialog"
         WindowStartupLocation="CenterScreen"
-        Title="DefaultSettingDialog" Height="700" Width="1000" ResizeMode="NoResize">
+        Title="DefaultSettingDialog" Height="700" Width="1120" ResizeMode="NoResize">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -49,7 +49,7 @@
         <Grid Grid.Row="1" Margin="5,0,5,0" VerticalAlignment="Top">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="230" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
@@ -57,22 +57,22 @@
                     <Button Content="Load DWG"
                             Command="{Binding LoadDwgFilesCommand}"
                             Margin="0, 0,0,10"
-                            Width="90" />
+                            Width="210" />
                     <Button Content="階追加"
                             Command="{Binding AddModelBelowCurrentSelectedRowCommand}"
                             CommandParameter="{Binding ElementName=DtGrid}"
                             Margin="0, 0,0,10"
-                            Width="90" />
+                            Width="210" />
                     <Button Content="上へ"
                             Command="{Binding MoveUpCommand}"
                             CommandParameter="{Binding ElementName=DtGrid}"
                             Margin="0, 0,0,10"
-                            Width="90" />
+                            Width="210" />
                     <Button Content="下へ"
                             Command="{Binding MoveDownCommand}"
                             CommandParameter="{Binding ElementName=DtGrid}"
                             Margin="0, 0,0,10"
-                            Width="90" />
+                            Width="210" />
                 </StackPanel>
 
                 <DataGrid Grid.Column="1"
@@ -167,15 +167,63 @@
          <Grid Grid.Row="3" Margin="5,0,5,0" VerticalAlignment="Top">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="230" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Top" Orientation="Vertical" Margin="0, 0,10,0">
                     <Button 
-                            Content="デフォルト読込"
-                            Command="{ Binding LoadDefaultDbCommand}"
-                            HorizontalAlignment="Stretch" />
+                        Content="デフォルト読込"
+                        Command="{ Binding LoadDefaultDbCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+                    
+                    <Button
+                        Content="一括読込"
+                        Command="{ Binding LoadAllDbCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+                    
+                    <Button
+                        Content="電線・ケーブル一覧読み込み"
+                        Command="{ Binding LoadWiresAndCablesDataCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+
+                    <Button
+                        Content="電線管一覧読み込み"
+                        Command="{ Binding LoadConduitsDataCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+
+                    <Button
+                        Content="Load Hiroi Set Master Normal Data"
+                        Command="{ Binding LoadHiroiSetMasterNormalDataCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+
+                    <Button
+                        Content="Load Hiroi Set Master Eco Data"
+                        Command="{ Binding LoadHiroiSetMasterEcoDataCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+
+                    <Button
+                        Content="Load Hiroi Set Cd Master Normal Data"
+                        Command="{ Binding LoadHiroiSetCdMasterNormalDataCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+
+                    <Button
+                        Content="Load Hiroi Set Cd Master Eco Data"
+                        Command="{ Binding LoadHiroiSetCdMasterEcoDataCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+
+                    <Button
+                        Content="Load Hiroi Master Data"
+                        Command="{ Binding LoadHiroiMasterDataCommand}"
+                        HorizontalAlignment="Stretch" />
                 </StackPanel>
 
                 <DataGrid Grid.Column="1"
