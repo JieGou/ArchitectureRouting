@@ -10,6 +10,8 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -338,11 +340,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       instance.SetConnectorFamilyType( connectorType ?? ConnectorFamilyType.PullBox ) ;
       
-      var depthParam = instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Depth ) ;
+      var depthParam = instance.GetParameter( PullBoxDimensions.Depth ) ;
       depthParam?.Set( depthParam.AsDouble() * baseLengthOfLine ) ;
-      var widthParam =  instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Width ) ;
+      var widthParam =  instance.GetParameter( PullBoxDimensions.Width ) ;
       widthParam?.Set( widthParam.AsDouble() * baseLengthOfLine ) ;
-      var heightParam = instance.ParametersMap.get_Item( ChangePullBoxDimensionCommandBase.PullBoxDimensions.Height ) ;
+      var heightParam = instance.GetParameter( PullBoxDimensions.Height ) ;
       heightParam?.Set( heightParam.AsDouble() * baseLengthOfLine ) ;
 
       return instance ;
@@ -700,8 +702,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     public static void ChangeDimensionOfPullBoxAndSetLabel( Document document, FamilyInstance pullBox,
-      CsvStorable? csvStorable, DetailSymbolStorable detailSymbolStorable, PullBoxInfoStorable pullBoxInfoStorable,
-      List<ConduitsModel>? conduitsModelData, List<HiroiMasterModel>? hiroiMasterModels, double scale, string textLabel,
+      CsvStorable? csvStorable, StorageService<Level, DetailSymbolModel> storageService, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel,
+      List<ConduitsModel>? conduitsModelData, List<HiroiMasterModel>? hiroiMasterModels, string textLabel,
       XYZ? positionLabel, bool isAutoCalculatePullBoxSize, PullBoxModel? selectedPullBoxModel = null )
     {
       var defaultLabel = textLabel ;
@@ -711,7 +713,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       //Case 1: Automatically calculate dimension of pull box
       if ( isAutoCalculatePullBoxSize && csvStorable != null && conduitsModelData != null &&
            hiroiMasterModels != null ) {
-        var pullBoxModel = GetPullBoxWithAutoCalculatedDimension( document, pullBox, csvStorable, detailSymbolStorable,
+        var pullBoxModel = GetPullBoxWithAutoCalculatedDimension( document, pullBox, csvStorable, storageService,
           conduitsModelData, hiroiMasterModels ) ;
         if ( pullBoxModel != null ) {
           buzaiCd = pullBoxModel.Buzaicd ;
@@ -731,21 +733,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       using Transaction t = new(document, "Update dimension of pull box") ;
       t.Start() ;
       if (!string.IsNullOrEmpty( buzaiCd ))
-        pullBox.ParametersMap.get_Item( MaterialCodeParameter )?.Set( buzaiCd ) ;
-      pullBox.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
-      detailSymbolStorable.DetailSymbolModelData.RemoveAll( d => d.DetailSymbolId == pullBox.UniqueId ) ;
+        pullBox.GetParameter( MaterialCodeParameter )?.Set( buzaiCd ) ;
+      pullBox.GetParameter( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
+      storageService.Data.DetailSymbolData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
 
       if(positionLabel != null)
-        CreateTextNoteAndGroupWithPullBox( document, pullBoxInfoStorable, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       else 
-        ChangeLabelOfPullBox( document, pullBoxInfoStorable, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+        ChangeLabelOfPullBox( document, storagePullBoxInfoServiceByLevel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       t.Commit() ;
     }
 
-    private static void ChangeLabelOfPullBox( Document document, PullBoxInfoStorable pullBoxInfoStorable, Element pullBoxElement, string textLabel, bool isAutoCalculatePullBoxSize )
+    private static void ChangeLabelOfPullBox( Document document, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, Element pullBoxElement, string textLabel, bool isAutoCalculatePullBoxSize )
     {
       // Find text note compatible with pull box, change label if exists
-      var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
+      var pullBoxInfoModel = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
       var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel?.TextNoteUniqueId == t.UniqueId ) ;
       if ( textNote != null ) {
         textNote.Text = textLabel ;
@@ -755,27 +757,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    private static void CreateTextNoteAndGroupWithPullBox(Document doc, PullBoxInfoStorable pullBoxInfoStorable, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
+    private static void CreateTextNoteAndGroupWithPullBox(Document doc, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
     {
-      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
+      var newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize ;
+      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, newSize, false )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       
       var txtPosition = new XYZ( point.X, point.Y, point.Z ) ;
       
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
-
-      var textNoteType = textNote.TextNoteType ;
-      double newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize.MillimetersToRevitUnits() ;
-      textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( newSize ) ;
-      textNote.ChangeTypeId( textNoteType.Id ) ;
-
+      
       if ( isAutoCalculatePullBoxSize ) {
         var color = new Color( 255, 0, 0 ) ;
         ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
       }
 
-      pullBoxInfoStorable.PullBoxInfoModelData.Add( new PullBoxInfoModel( pullBox.UniqueId, textNote.UniqueId ) );
-      pullBoxInfoStorable.Save() ;
+      storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Add( new PullBoxInfoItemModel( pullBox.UniqueId, textNote.UniqueId ) );
+      storagePullBoxInfoServiceByLevel.SaveChange() ;
     }
 
     private static string GetPullBoxTextBox( int depth, int height, string text)
@@ -1028,6 +1026,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     {
       var sortConduits = new List<Element>() ;
       var toEndPoint = route.FirstToConnector()?.RoutingStartPosition ;
+      if ( toEndPoint == null ) return ;
       while ( sortConduits.Count != conduits.Count ) {
         var minDistance = double.MaxValue ;
         var nearestConduit = conduits.First() ;
@@ -1065,7 +1064,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     private static HiroiMasterModel? GetPullBoxWithAutoCalculatedDimension( Document document, Element pullBoxElement, CsvStorable csvStorable,
-      DetailSymbolStorable detailSymbolStorable, List<ConduitsModel> conduitsModelData, List<HiroiMasterModel> hiroiMasterModels )
+      StorageService<Level, DetailSymbolModel> storageService, List<ConduitsModel> conduitsModelData, List<HiroiMasterModel> hiroiMasterModels )
     {
       var conduitsFromPullBox = GetFromConnectorOfPullBox( document, pullBoxElement, true ) ;
       var conduitsToPullBox = GetFromConnectorOfPullBox( document, pullBoxElement ) ;
@@ -1078,28 +1077,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       conduitsFromPullBox = conduitsFromPullBox.Where( c => c is Conduit ).ToList() ;
       var groupConduits = conduitsFromPullBox.GroupBy( c => c.GetRepresentativeRouteName() ).Select( c => c.First() ) ;
       foreach ( var conduit in groupConduits )
-        AddWiringInformationCommandBase.CreateDetailSymbolModel( document, conduit, csvStorable, detailSymbolStorable,
+        AddWiringInformationCommandBase.CreateDetailSymbolModel( document, conduit, csvStorable, storageService,
           pullBoxElement.UniqueId ) ;
 
       var elementIds = conduitsFromPullBox.Select( c => c.UniqueId ).ToList() ;
-      var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable,
-        detailSymbolStorable, conduitsFromPullBox, elementIds, false ) ;
+      var (detailTableItemModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableItemAddWiringInfo( document, csvStorable,
+        storageService, conduitsFromPullBox, elementIds, false ) ;
 
-      var newDetailTableModels = DetailTableViewModel.SummarizePlumbing( detailTableModels, conduitsModelData,
-        detailSymbolStorable, new List<DetailTableModel>(), false, new Dictionary<string, string>() ) ;
+      var newDetailTableItemModels = DetailTableViewModel.SummarizePlumbing( detailTableItemModels, conduitsModelData,
+        storageService, new List<DetailTableItemModel>(), false, new Dictionary<string, string>() ) ;
 
-      var plumbingSizes = newDetailTableModels.Where( p => int.TryParse( p.PlumbingSize, out _ ) )
+      var plumbingSizes = newDetailTableItemModels.Where( p => int.TryParse( p.PlumbingSize, out _ ) )
         .Select( p => Convert.ToInt32( p.PlumbingSize ) ).ToArray() ;
       var (depth, width, height) = GetPullBoxDimension( plumbingSizes, isStraightDirection ) ;
 
       if ( depth == 0 || width == 0 || height == 0 )
         return null ;
-      var minPullBoxModelDepth = hiroiMasterModels.Where( p => p.Tani == TaniOfPullBox && p.Hinmei.Contains( HinmeiOfPullBox ) )
-        .Where( p =>
+      var satisfiedHiroiMasterModels = hiroiMasterModels
+        .Where( p => p.Tani == TaniOfPullBox && p.Hinmei.Contains( HinmeiOfPullBox ) ).Where( p =>
         {
           var (d, w, h) = ParseKikaku( p.Kikaku ) ;
           return d >= depth && w >= width && h >= height ;
-        } ).Min( x =>
+        } ).ToList() ;
+
+      if ( ! satisfiedHiroiMasterModels.Any() )
+        return null ;
+        
+      var minPullBoxModelDepth = satisfiedHiroiMasterModels.Min( x =>
         {
           var (d, _, _) = ParseKikaku( x.Kikaku ) ;
           return d ;
@@ -1184,16 +1188,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return new PullBoxInfo( position, fromConduitDirection, toConduitDirection, level! ) ;
     }
 
-    public static IEnumerable<TextNote> GetTextNotesOfPullBox( Document document, bool isOnlyCalculatedSizePullBoxes = false)
+    public static IEnumerable<TextNote> GetTextNotesOfPullBox( Document document, bool isOnlyCalculatedSizePullBoxes = false )
     {
-      var pullBoxes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
+      var pullBoxes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
       if ( isOnlyCalculatedSizePullBoxes )
         pullBoxes = pullBoxes.Where( e => Convert.ToBoolean( e.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
       var pullBoxUniqueIds = pullBoxes.Select( e => e.UniqueId ).ToList() ;
-      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
-      var pullBoxInfoModels = pullBoxInfoStorable.PullBoxInfoModelData.Where( p => pullBoxUniqueIds.Contains(p.PullBoxUniqueId) ) ;
-      var textNote = document.GetAllElements<TextNote>().Where( t => pullBoxInfoModels.Any(p => p.TextNoteUniqueId == t.UniqueId) ) ;
+      var level = document.ActiveView.GenLevel ;
+      var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
+      var pullBoxInfoModels = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData
+        .Where( p => pullBoxUniqueIds.Contains( p.PullBoxUniqueId ) ) ;
+      var textNote = document.GetAllElements<TextNote>()
+        .Where( t => pullBoxInfoModels.Any( p => p.TextNoteUniqueId == t.UniqueId ) ) ;
       return textNote ;
+    }
+    
+    public static string IsSegmentConnectedToPoPullBox( Document document, RouteSegment lastSegment )
+    {
+      var pullBoxUniqueId = string.Empty ;
+      var toEndPointKey = lastSegment.ToEndPoint.Key ;
+      var toElementId = toEndPointKey.GetElementUniqueId() ;
+      if ( string.IsNullOrEmpty( toElementId ) ) 
+        return pullBoxUniqueId ;
+      var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .FirstOrDefault( c => c.UniqueId == toElementId ) ;
+      if ( toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
+        pullBoxUniqueId = toConnector.UniqueId ;
+      return pullBoxUniqueId ;
     }
     
     private class ConduitInfo

@@ -18,16 +18,21 @@
         _classification = value ;
         OnPropertyChanged( nameof( Classification ) ) ;
 
-        if ( value is nameof( ClassificationType.露出 ) && IsConduit && CeedCode != string.Empty ) {
-          if ( CeedCode != string.Empty )
-            Quantity = Dash ;
-          AllowInputQuantity = false ;
-        }
-
-        if ( value is nameof( ClassificationType.隠蔽 ) && IsConduit ) {
-          if ( Quantity == Dash && CeedCode != string.Empty )
-            Quantity = DefaultQuantity ;
-          AllowInputQuantity = true ;
+        switch ( value ) {
+          case nameof( ClassificationType.露出 ) when IsConduit && CeedCode != string.Empty :
+          {
+            if ( CeedCode != string.Empty )
+              Quantity = Dash ;
+            AllowInputQuantity = false ;
+            break ;
+          }
+          case nameof( ClassificationType.隠蔽 ) when IsConduit :
+          {
+            if ( Quantity == Dash && CeedCode != string.Empty )
+              Quantity = DefaultQuantity ;
+            AllowInputQuantity = true ;
+            break ;
+          }
         }
       }
     }
@@ -70,17 +75,21 @@
         _constructionClassification = value ;
         OnPropertyChanged( nameof( ConstructionClassification ) ) ;
 
-        if ( value is nameof( ClassificationType.露出 ) && IsConduit ) {
-          Classification = nameof( ClassificationType.露出 ) ;
-          if ( CeedCode != string.Empty ) {
-            Quantity = Dash ;
-            AllowInputQuantity = false ;
-          }
-        }
+        switch ( value ) {
+          case nameof( ClassificationType.露出 ) when IsConduit :
+          {
+            Classification = nameof( ClassificationType.露出 ) ;
+            if ( CeedCode != string.Empty ) {
+              Quantity = Dash ;
+              AllowInputQuantity = false ;
+            }
 
-        if ( value is nameof( ConstructionClassificationType.地中埋設 ) or nameof( ConstructionClassificationType.床隠蔽 ) or nameof( ConstructionClassificationType.冷房配管共巻配線 ) && IsConduit ) {
-          Classification = nameof( ClassificationType.隠蔽 ) ;
-          AllowInputQuantity = true ;
+            break ;
+          }
+          case nameof( ConstructionClassificationType.地中埋設 ) or nameof( ConstructionClassificationType.床隠蔽 ) or nameof( ConstructionClassificationType.冷房配管共巻配線 ) when IsConduit :
+            Classification = nameof( ClassificationType.隠蔽 ) ;
+            AllowInputQuantity = true ;
+            break ;
         }
 
         if ( string.IsNullOrEmpty( Classification ) && value is (nameof( ConstructionClassificationType.天井ふところ ) or nameof( ConstructionClassificationType.ケーブルラック配線 ) or nameof( ConstructionClassificationType.二重床 ) ) && IsConduit ) {
@@ -122,7 +131,7 @@
       }
     }
 
-    private double _total = 0 ;
+    private double _total ;
 
     public double Total
     {
@@ -136,7 +145,7 @@
 
     public string Description { get ; set ; }
 
-    private bool _allowInputQuantity = false ;
+    private bool _allowInputQuantity ;
 
     public bool AllowInputQuantity
     {
@@ -148,7 +157,7 @@
       }
     }
 
-    private bool _allowChangeClassification = false ;
+    private bool _allowChangeClassification ;
 
     public bool AllowChangeClassification
     {

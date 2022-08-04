@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.Storable
 
     protected override void SetupAllFields( FieldGenerator generator )
     {
-      generator.SetArray<PickUpModel>( RackNotationModelField ) ;
+      generator.SetArray<RackNotationModel>( RackNotationModelField ) ;
     }
 
     public override string Name => StorableName ;

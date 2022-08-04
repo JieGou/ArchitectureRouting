@@ -54,6 +54,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [SplitButton( "arent3d.architecture.routing.settings.all", TitleKey = "Electrical.App.Panels.Routing.Settings.All" )]
         private static class AllSettings
         {
+          [Button( typeof( DefaultSettingCommand ), OnlyInitialized = true )]
+          private static class DefaultSettingCommandButton
+          {
+          }
+          
           [Button( typeof( LoadCsvFilesCommand ), OnlyInitialized = true )]
           private static class LoadCsvFilesCommandButton
           {
@@ -66,11 +71,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( CnsSettingCommand ), OnlyInitialized = true )]
           private static class CnsSettingCommandButton
-          {
-          }
-
-          [Button( typeof( DefaultSettingCommand ), OnlyInitialized = true )]
-          private static class DefaultSettingCommandButton
           {
           }
 
@@ -101,6 +101,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
           private static class ShowHeightSettingCommandButton
+          {
+          }
+          
+          [Button( typeof( PickUpNumberSettingCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
+          private static class PickUpNumberSettingCommandButton
           {
           }
         }
@@ -156,6 +161,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class SwitchPrintModeCommandButton
           {
           }
+          
+          [Button( typeof( PickUpFigureCreationCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
+          private static class PickUpFigureCreationCommandButton
+          {
+          }
+        }
+        
+        [Button( typeof( CreateDummyConduitsIn3DViewCommand ), OnlyInitialized = true )]
+        private static class CreateDummyConduitsIn3DViewCommandButton
+        {
         }
       }
 
@@ -318,6 +333,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         {
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton
+          {
+          }
+
+          [Button( typeof( ShowPickUpInformationByLevelCommand ), OnlyInitialized = true )]
+          private static class ShowPickUpInformationByLevelCommandButton
           {
           }
 

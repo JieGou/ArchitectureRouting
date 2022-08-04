@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="routeCondition"></param>
     public AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, IAutoRoutingEndPoint? parent, int priority, double edgeDiameter, bool isDirect, MEPSystemRouteCondition routeCondition )
     {
+      Id = Guid.NewGuid() ;
       EndPoint = endPoint ;
       IsStart = isFrom ;
       Priority = priority ;
@@ -96,8 +97,10 @@ namespace Arent3d.Architecture.Routing
     public bool AllowHorizontalBranches => true ;
     public bool IsDirect { get ; private set ; }
     public void SetIsDirect( bool isDirect ) => IsDirect = isDirect ;
+    public bool Is45ElbowRequired { get ; set ; }
     public bool IsRelatedWithDirectEndPoint { get ; set ; }
     public bool AllowThroughBatteryLimit => false ;
+    public BranchingDirectionType BranchingDirection { get ; set ; } = BranchingDirectionType.Auto ;
 
     /// <summary>
     /// Returns this end point's floating type. Now it always returns <see cref="RoutingPointType.OtherNozzle"/> (i.e. non-floated).
@@ -108,5 +111,7 @@ namespace Arent3d.Architecture.Routing
     /// Not used now. Always returns null.
     /// </summary>
     public ILayerStack? LinkedRack => null ;
+
+    public Guid Id { get ; }
   }
 }

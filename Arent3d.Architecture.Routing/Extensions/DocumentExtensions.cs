@@ -1,4 +1,5 @@
 ﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.StorableConverter ;
@@ -10,6 +11,41 @@ namespace Arent3d.Architecture.Routing.Extensions
 {
   public static class DocumentExtensions
   {
+
+    #region Filters
+
+    public static List<T> GetAllInstances<T>(this Document document) where T : Element
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().ToList();
+    }
+    
+    public static List<T> GetAllInstances<T>(this Document document, Func<T, bool> func ) where T : Element
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().Where(func).ToList();
+    }
+    
+    public static List<T> GetAllInstances<T>(this Document document, View view) where T : Element
+    {
+      var filter = new FilteredElementCollector( document, view.Id ) ;
+      return filter.OfClass(typeof(T)).OfType<T>().ToList();
+    }
+    
+    public static List<T> GetAllTypes<T>(this Document document) where T : ElementType
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass(typeof(T)).WhereElementIsElementType().OfType<T>().ToList();
+    }
+    
+    public static List<T> GetAllTypes<T>(this Document document, Func<T, bool> func ) where T : ElementType
+    {
+      var filter = new FilteredElementCollector( document ) ;
+      return filter.OfClass( typeof( T ) ).WhereElementIsElementType().OfType<T>().Where(func).ToList();
+    }
+
+    #endregion
+    
     /// <summary>
     /// Get Height settings data from snoop DB. <br />
     /// If there is no data, it is returned default settings
@@ -106,45 +142,6 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
-    /// Get pick up data from snoop DB.
-    /// </summary>
-    public static PickUpStorable GetPickUpStorable( this Document document )
-    {
-      try {
-        return PickUpStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( PickUpStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new PickUpStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get detail symbol data from snoop DB.
-    /// </summary>
-    public static DetailSymbolStorable GetDetailSymbolStorable( this Document document )
-    {
-      try {
-        return DetailSymbolStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailSymbolStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new DetailSymbolStorable( document ) ;
-      }
-    }
-    
-    /// <summary>
-    /// Get pull box data from snoop DB.
-    /// </summary>
-    public static PullBoxInfoStorable GetPullBoxInfoStorable( this Document document )
-    {
-      try {
-        return PullBoxInfoStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( PullBoxInfoStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new PullBoxInfoStorable( document ) ;
-      }
-    }
-
-    /// <summary>
     /// Get rack notation data from snoop DB.
     /// </summary>
     public static RackNotationStorable GetRackNotationStorable( this Document document )
@@ -156,7 +153,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new RackNotationStorable( document ) ;
       }
     }
-
+    
     /// <summary>
     /// Get limit rack data from snoop DB.
     /// </summary>
@@ -167,32 +164,6 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new LimitRackStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get detail table data from snoop DB.
-    /// </summary>
-    public static DetailTableStorable GetDetailTableStorable( this Document document )
-    {
-      try {
-        return DetailTableStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailTableStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new DetailTableStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get text note data from snoop DB.
-    /// </summary>
-    public static BorderTextNoteStorable GetBorderTextNoteStorable( this Document document )
-    {
-      try {
-        return BorderTextNoteStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( BorderTextNoteStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new BorderTextNoteStorable( document ) ;
       }
     }
 
@@ -333,6 +304,19 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new ChangePlumbingInformationStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get TextNotePickUpModel data from snoop DB.
+    /// </summary>
+    public static WireLengthNotationStorable GetWireLengthNotationStorable( this Document document )
+    {
+      try {
+        return WireLengthNotationModelStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WireLengthNotationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WireLengthNotationStorable( document ) ;
       }
     }
   }
