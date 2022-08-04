@@ -8,6 +8,7 @@ using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -15,6 +16,7 @@ using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using CategoryModel = Arent3d.Architecture.Routing.AppBase.Model.CategoryModel ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
@@ -32,6 +34,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceedModelData ;
     private List<RegistrationOfBoardDataModel> _registrationOfBoardDataModelData ;
+    private List<CategoryModel> _categoriesWithCeedCode ;
+    private List<CategoryModel> _categoriesWithoutCeedCode ;
 
     private const string CompressionFileName = "Csv File.zip" ;
 
@@ -49,6 +53,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allHiroiMasterModels = new List<HiroiMasterModel>() ;
       _ceedModelData = new List<CeedModel>() ;
       _registrationOfBoardDataModelData = new List<RegistrationOfBoardDataModel>() ;
+      _categoriesWithCeedCode = new List<CategoryModel>() ;
+      _categoriesWithoutCeedCode = new List<CategoryModel>() ;
     }
 
     private void Button_Save( object sender, RoutedEventArgs e )
@@ -569,7 +575,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private bool LoadCeedCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceedCodeFile, string equipmentSymbolsFile, string ceedCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath )
     {
       if ( File.Exists( equipmentSymbolsXlsxFilePath ) ) {
-        _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
+        ( _ceedModelData, _categoriesWithCeedCode, _categoriesWithoutCeedCode ) = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
         if ( _ceedModelData.Any() ) {
           correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
           correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
@@ -578,7 +584,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       if ( File.Exists( equipmentSymbolsXlsFilePath ) ) {
-        _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsFilePath) ;
+        ( _ceedModelData, _categoriesWithCeedCode, _categoriesWithoutCeedCode ) = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsFilePath) ;
         if ( _ceedModelData.Any() ) {
           correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
           correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
@@ -586,7 +592,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, string.Empty ) ;
+      ( _ceedModelData, _categoriesWithCeedCode, _categoriesWithoutCeedCode ) = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, string.Empty ) ;
       if ( _ceedModelData.Any() ) {
         correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
         return true ;

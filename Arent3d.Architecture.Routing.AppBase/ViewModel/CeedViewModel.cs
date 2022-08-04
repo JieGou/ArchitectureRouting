@@ -23,6 +23,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using MoreLinq ;
 using Button = System.Windows.Controls.Button ;
+using CategoryModel = Arent3d.Architecture.Routing.AppBase.Model.CategoryModel ;
 using CheckBox = System.Windows.Controls.CheckBox ;
 using ComboBox = System.Windows.Controls.ComboBox ;
 using DataGrid = System.Windows.Controls.DataGrid ;
@@ -380,7 +381,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       progress.Message = "Loading data..." ;
       var ceedStorable = _document.GetCeedStorable() ;
       {
-        var ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
+        var (ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode) = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
         if ( ! ceedModelData.Any() ) return ;
         _previousCeedModels = new List<CeedModel>( CeedModels ) ;
         CheckChangeColor( ceedModelData ) ;

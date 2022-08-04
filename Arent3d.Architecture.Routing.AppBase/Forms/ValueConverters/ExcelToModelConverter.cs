@@ -15,6 +15,7 @@ using NPOI.HSSF.UserModel ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
 using Application = Microsoft.Office.Interop.Excel.Application ;
+using CategoryModel = Arent3d.Architecture.Routing.AppBase.Model.CategoryModel ;
 using Image = System.Drawing.Image ;
 using Clipboard = System.Windows.Forms.Clipboard ;
 
@@ -73,10 +74,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         fs.Dispose() ;
       }
     }
-    
-    public static List<CeedModel> GetAllCeedModelNumber( string path, string path2 )
+
+    public static (List<CeedModel>, List<CategoryModel>, List<CategoryModel>) GetAllCeedModelNumber( string path, string path2 )
     {
-      List<CeedModel> ceedModelData = new List<CeedModel>() ;
+      List<CeedModel> ceedModelData = new() ;
+      List<CategoryModel> categoriesWithCeedCode = new() ;
+      List<CategoryModel> categoriesWithoutCeedCode = new() ;
 
       var equipmentSymbols = new List<EquipmentSymbol>() ;
       if ( ! string.IsNullOrEmpty( path2 ) ) equipmentSymbols = GetAllEquipmentSymbols( path2 ) ;
@@ -84,24 +87,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
       try {
         ISheet? workSheet = null ;
+        IWorkbook? wb = null ;
         switch ( string.IsNullOrEmpty( extension ) ) {
           case false when extension == ".xls" :
           {
-            HSSFWorkbook wb = new HSSFWorkbook( fs ) ;
+            wb = new HSSFWorkbook( fs ) ;
             workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
             break ;
           }
           case false when extension == ".xlsx" :
           {
-            XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
+            wb = new XSSFWorkbook( fs ) ;
             workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
             break ;
           }
         }
 
-        if ( workSheet == null ) return ceedModelData ;
-        const int startRow = 10 ;
-        const int ceedNameColumnIndex = 4 ;
+        if ( workSheet == null ) return ( ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
+        const int startRow = 7 ;
+        const int ceedNameColumnIndex = 5 ;
         var endRow = workSheet.LastRowNum ;
         Dictionary<int, int> blocks = new() ;
 
@@ -165,16 +169,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             var legendDisplayCell = workSheet.GetRow( j ).GetCell( 0 ) ;
             var legendDisplayValue = GetCellValue( legendDisplayCell ) ;
             if ( ! string.IsNullOrEmpty( legendDisplayValue ) ) legendDisplay = legendDisplayValue ;
-            
-            var ceedModelNumberCell = workSheet.GetRow( j ).GetCell( 1 ) ;
+
+            var ceedModelNumberCell = workSheet.GetRow( j ).GetCell( 2 ) ;
             var ceedModelNumber = GetCellValue( ceedModelNumberCell ) ;
             if ( ! string.IsNullOrEmpty( ceedModelNumber ) ) ceedModelNumbers.Add( ceedModelNumber ) ;
-            
-            var ceedSetCodeCell = workSheet.GetRow( j ).GetCell( 2 ) ;
+
+            var ceedSetCodeCell = workSheet.GetRow( j ).GetCell( 3 ) ;
             var ceedSetCode = GetCellValue( ceedSetCodeCell ) ;
             if ( ! string.IsNullOrEmpty( ceedSetCode ) ) ceedSetCodes.Add( ceedSetCode ) ;
 
-            var generalDisplayDeviceSymbolCell = workSheet.GetRow( j ).GetCell( 3 ) ;
+            var generalDisplayDeviceSymbolCell = workSheet.GetRow( j ).GetCell( 4 ) ;
             var generalDisplayDeviceSymbol = GetCellValue( generalDisplayDeviceSymbolCell ) ;
             if ( ! string.IsNullOrEmpty( generalDisplayDeviceSymbol ) && ! generalDisplayDeviceSymbol.Contains( "．" ) )
               generalDisplayDeviceSymbols = generalDisplayDeviceSymbol ;
@@ -183,11 +187,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             var modelName = GetCellValue( ceedNameCell ) ;
             if ( ! string.IsNullOrEmpty( modelName ) ) ceedName = modelName ;
 
-            var modelNumberCell = workSheet.GetRow( j ).GetCell( 5 ) ;
+            var modelNumberCell = workSheet.GetRow( j ).GetCell( 6 ) ;
             var modelNumber = GetCellValue( modelNumberCell ) ;
             if ( ! string.IsNullOrEmpty( modelNumber ) ) modelNumbers.Add( modelNumber ) ;
 
-            var symbolCell = workSheet.GetRow( j ).GetCell( 6 ) ;
+            var symbolCell = workSheet.GetRow( j ).GetCell( 7 ) ;
             var symbol = GetCellValue( symbolCell ) ;
             if ( ! string.IsNullOrEmpty( symbol ) && ! symbol.Contains( "又は" ) ) floorPlanSymbol = symbol ;
           }
@@ -237,16 +241,101 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
           i-- ;
         }
+
+        ( categoriesWithCeedCode, categoriesWithoutCeedCode ) = GetCategoriesOfCeedModel( wb! ) ;
       }
       catch ( Exception ) {
-        return new List<CeedModel>() ;
+        return ( new List<CeedModel>(), new List<CategoryModel>(), new List<CategoryModel>() ) ;
       }
       finally {
         fs.Close() ;
         fs.Dispose() ;
       }
 
-      return ceedModelData ;
+      return ( ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
+    }
+
+    private static ( List<CategoryModel>, List<CategoryModel> ) GetCategoriesOfCeedModel( IWorkbook wb )
+    {
+      List<CategoryModel> categoriesWithCeedCode = new() ;
+      List<CategoryModel> categoriesWithoutCeedCode = new() ;
+      const int startSheetIndex = 2 ;
+      var numberOfSheets = wb.NumberOfSheets ;
+      if ( numberOfSheets <= 2 ) return ( categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
+      try {
+        for ( var s = startSheetIndex ; s < numberOfSheets ; s++ ) {
+          var workSheet = wb.GetSheetAt( s ) ;
+          if ( workSheet == null ) continue ;
+          var parentCategoryName = workSheet.SheetName ;
+          parentCategoryName = parentCategoryName.Substring( parentCategoryName.IndexOf( "．", StringComparison.Ordinal ) ) ;
+          const int startRow = 5 ;
+          const int childColumnIndex = 2 ;
+          var endRow = workSheet.LastRowNum ;
+          Dictionary<string, int> blocks = new() ;
+          for ( var i = startRow ; i <= endRow ; i++ ) {
+            var childCategory = workSheet.GetRow( i ).GetCell( childColumnIndex ) ;
+            if ( childCategory == null || childCategory.CellStyle.IsHidden ) continue ;
+            var childCategoryValue = GetCellValue( childCategory ) ;
+            if ( string.IsNullOrEmpty( childCategoryValue ) ) continue ;
+            var ceedModelNumberCell = workSheet.GetRow( i ).GetCell( 0 ) ;
+            var ceedModelNumber = GetCellValue( ceedModelNumberCell ) ;
+
+            var ceedSetCodeCell = workSheet.GetRow( i ).GetCell( 1 ) ;
+            var ceedSetCode = GetCellValue( ceedSetCodeCell ) ;
+            
+            var modelNumberCell = workSheet.GetRow( i ).GetCell( 4 ) ;
+            var modelNumber = GetCellValue( modelNumberCell ) ;
+
+            if ( string.IsNullOrEmpty( ceedModelNumber ) && string.IsNullOrEmpty( ceedSetCode ) && string.IsNullOrEmpty( modelNumber ) ) {
+              blocks.Add( childCategoryValue, i ) ;
+            }
+          }
+
+          for ( var j = 0 ; j < blocks.Count ; j++ ) {
+            var (childCategoryName, startIndex) = blocks.ElementAt( j ) ;
+            var endIndex = j == blocks.Count - 1 ? endRow : blocks.ElementAt( j + 1 ).Value ;
+            for ( var i = startIndex ; i < endIndex ; i++ ) {
+              var ceedModelNumberCell = workSheet.GetRow( i ).GetCell( 0 ) ;
+              var ceedModelNumber = GetCellValue( ceedModelNumberCell ) ;
+              if ( string.IsNullOrEmpty( ceedModelNumber ) ) continue ;
+              var ceedSetCodeCell = workSheet.GetRow( i ).GetCell( 1 ) ;
+              var ceedSetCode = GetCellValue( ceedSetCodeCell ) ;
+              CreateCategories( string.IsNullOrEmpty( ceedSetCode ) ? categoriesWithoutCeedCode : categoriesWithCeedCode, parentCategoryName, childCategoryName, ceedModelNumber ) ;
+            }
+          }
+        }
+      }
+      catch {
+        return ( categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
+      }
+
+      return ( categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
+    }
+
+    private static void CreateCategories( List<CategoryModel> categories, string parentCategoryName, string childCategoryName, string ceedModelNumber )
+    {
+      if ( categories.Exists( c => c.Name == parentCategoryName ) ) {
+        var categoryWithoutCeedCode = categories.SingleOrDefault( c => c.Name == parentCategoryName ) ;
+        if ( categoryWithoutCeedCode!.SubCategories.Exists( c => c.Name == childCategoryName ) ) {
+          var subCategoryWithoutCeedCode = categoryWithoutCeedCode!.SubCategories.SingleOrDefault( c => c.Name == childCategoryName ) ;
+          var subCategory = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
+          subCategoryWithoutCeedCode!.SubCategories.Add( subCategory ) ;
+        }
+        else {
+          var subCategory = new CategoryModel { Name = childCategoryName, ParentName = parentCategoryName, IsExpanded = false, IsSelected = false } ;
+          var ceedCategory = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
+          subCategory.SubCategories.Add( ceedCategory ) ;
+          categoryWithoutCeedCode.SubCategories.Add( subCategory ) ;
+        }
+      }
+      else {
+        var categoryWithoutCeedCode = new CategoryModel { Name = parentCategoryName, ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
+        var subCategory = new CategoryModel { Name = childCategoryName, ParentName = parentCategoryName, IsExpanded = false, IsSelected = false } ;
+        var ceedCategory = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
+        subCategory.SubCategories.Add( ceedCategory ) ;
+        categoryWithoutCeedCode.SubCategories.Add( subCategory ) ;
+        categories.Add( categoryWithoutCeedCode ) ;
+      }
     }
 
     private static void CreateCeedModel( List<CeedModel> ceedModelData, List<EquipmentSymbol> equipmentSymbols, string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbols, List<string> modelNumbers, string floorPlanSymbol, string instrumentationSymbol, string ceedName, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages = false, bool isDummySymbol = false )
@@ -330,7 +419,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       else {
         var arrCeedSetCode = ceedModelNumber.Split( '_' ) ;
         var charCode = arrCeedSetCode.First() ;
-        var numberCode = int.Parse( arrCeedSetCode.ElementAt( 1 ) ) ;
+        var numberCode = arrCeedSetCode.Length > 2 ? int.Parse( arrCeedSetCode.ElementAt( 1 ) ) : 0 ;
         switch ( charCode ) {
           case "A" :
           case "B" :
@@ -408,6 +497,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             return ConnectorOneSideFamilyType.ConnectorOneSide19.GetFieldName() ;
           case "L" when ( numberCode is >= 5 and <= 9 ) :
           case "L" when ( numberCode is >= 11 and <= 17 ) :
+          case "L" when numberCode == 32 :
+          case "L" when numberCode == 33 :
             return ConnectorOneSideFamilyType.ConnectorOneSide20.GetFieldName() ;
           case "L" when numberCode == 18 :
             return ConnectorOneSideFamilyType.ConnectorOneSide21.GetFieldName() ;
@@ -441,6 +532,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             return ConnectorOneSideFamilyType.ConnectorOneSide35.GetFieldName() ;
           case "M" when numberCode == 8 :
             return ConnectorOneSideFamilyType.ConnectorOneSide36.GetFieldName() ;
+          default:
+            return defaultFloorPlanType ;
         }
       }
 
