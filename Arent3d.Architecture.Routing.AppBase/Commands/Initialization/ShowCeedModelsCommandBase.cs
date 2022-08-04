@@ -39,9 +39,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
       
       dlgCeedModel.ShowDialog() ;
-      if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
+      if ( ! ( dlgCeedModel.DialogResult ?? false ) ) 
+        return Result.Cancelled ;
+      
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
+      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) 
+        return Result.Succeeded ;
+      
       Element? element = null ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
@@ -61,25 +65,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         switch ( rooms.Count ) {
           case 0 :
-            TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
-            return Result.Cancelled ;
+            if ( viewModel.IsShowCondition ) {
+              condition = viewModel.SelectedCondition ;
+            }
+            else {
+              TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
+              return Result.Cancelled ;
+            }
+            break;
           case > 1 when CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() :
-          {
             var vm = new ArentRoomViewModel { Conditions = conditions } ;
             var view = new ArentRoomView { DataContext = vm } ;
             view.ShowDialog() ;
             if ( ! vm.IsCreate )
               return Result.Cancelled ;
 
+            if ( viewModel.IsShowCondition && viewModel.SelectedCondition != vm.SelectedCondition ) {
+              TaskDialog.Show( "Arent", "紛争状況" ) ;
+              return Result.Cancelled ;
+            }
+            
             condition = vm.SelectedCondition ;
             break ;
-          }
           case > 1 :
             TaskDialog.Show( "Arent", "指定された条件が見つかりませんでした。" ) ;
             return Result.Cancelled ;
           default :
           {
             if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
+              if ( viewModel.IsShowCondition && viewModel.SelectedCondition != value ) {
+                TaskDialog.Show( "Arent", "紛争状況" ) ;
+                return Result.Cancelled ;
+              }
               condition = value ;
             }
 

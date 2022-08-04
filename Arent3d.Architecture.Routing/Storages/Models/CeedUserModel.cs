@@ -8,9 +8,9 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     {
         [Field(Documentation = "Is Show Ceed Model Number")]
         public bool IsShowCeedModelNumber { get ; set ; }
-        
-        [Field(Documentation = "Is Show Condition")]
-        public bool IsShowCondition { get ; set ; }
+
+        [Field( Documentation = "Is Show Condition" )]
+        public bool IsShowCondition { get ; set ; } = true ;
         
         [Field(Documentation = "Connector Family Upload Data List")]
         public List<string> ConnectorFamilyUploadData { get ; set ; } = new() ;
