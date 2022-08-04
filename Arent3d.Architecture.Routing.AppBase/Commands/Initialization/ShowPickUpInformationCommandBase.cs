@@ -16,15 +16,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       ResetSymbolInformationData( document ) ;
-      
-      var vm = new EquipmentCategoryViewModel() ;
+
+      var level = GetLevel( document ) ;
+      var vm = new EquipmentCategoryViewModel( document, level ) ;
       var view = new EquipmentCategoryDialog() { DataContext = vm } ;
       view.ShowDialog() ;
       if ( !(view.DialogResult ?? false) ) {
         return Result.Cancelled ;
       }
-      
-      PickUpViewModel pickUpViewModel = new PickUpViewModel( document, vm.SelectedEquipmentCategory ) ;
+
+      var version = vm.SelectedPickUpVersion == EquipmentCategoryViewModel.LatestVersion ? null : vm.SelectedPickUpVersion ;
+      var pickUpViewModel = new PickUpViewModel( document, level, version, vm.SelectedEquipmentCategory ) ;
       var pickUpDialog = new PickupDialog( pickUpViewModel ) ;
       if(!pickUpViewModel.OriginPickUpModels.Any())
         return Result.Cancelled ;
@@ -69,5 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       ceedDetailStorable.Save() ;
       t.Commit() ;
     }
+    
+    protected virtual Level? GetLevel( Document document ) => null ;
   }
 }

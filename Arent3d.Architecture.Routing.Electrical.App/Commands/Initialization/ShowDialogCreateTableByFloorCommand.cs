@@ -11,7 +11,8 @@ using Autodesk.Revit.UI ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Autodesk.Revit.Attributes ;
 using static Arent3d.Architecture.Routing.AppBase.Commands.Initialization.CreateDetailTableCommandBase ;
 using static Arent3d.Architecture.Routing.AppBase.Commands.Initialization.ShowElectricSymbolsCommandBase ;
@@ -55,33 +56,33 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       if ( ! allConduits.Any() ) return Result.Cancelled ;
       var csvStorable = doc.GetCsvStorable() ;
-      var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
-      List<DetailTableModel> detailTableModelsOfAllFloors = new() ;
+      List<DetailTableItemModel> detailTableModelsAllFloors = new() ;
       try {
         return doc.Transaction( "TransactionName.Commands.Routing.ShowDialogCreateTableByFloorCommand".GetAppStringByKeyOrDefault( "Create detail table" ), _ =>
         {
           var message = string.Empty ;
           foreach ( var levelId in levelIds ) {
+            var level = (Level) doc.GetElement( levelId ) ;
             var conduitsByFloor = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
             var elementsByFloor = conduitsByFloor.Cast<Element>().ToList() ;
             var conduitsByFloorIds = conduitsByFloor.Select( p => p.UniqueId ).ToList() ;
-            var (detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTable( doc, csvStorable, detailSymbolStorable, elementsByFloor, conduitsByFloorIds, false, true ) ;
-            if ( ! detailTableModels.Any() ) continue ;
+            var storageService = new StorageService<Level, DetailSymbolModel>( level ) ;
+            var (detailTableItemModels, _, _) = CreateDetailTableItem( doc, csvStorable, storageService, elementsByFloor, conduitsByFloorIds, false ) ;
+            if ( ! detailTableItemModels.Any() ) continue ;
             if ( isCreateTableEachFloors ) {
-              var level = detailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Floor ) )?.Floor ?? string.Empty ;
-              var scheduleName = CreateDetailTableSchedule( doc, detailTableModels, level ) ;
+              var floorName = detailTableItemModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Floor ) )?.Floor ?? string.Empty ;
+              var scheduleName = CreateDetailTableSchedule( doc, detailTableItemModels, floorName ) ;
               message += string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ) + "\n" ;
             }
-
-            detailTableModelsOfAllFloors.AddRange( detailTableModels ) ;
+            
+            SaveDetailTableData( detailTableModelsAllFloors, level ) ;
+            detailTableModelsAllFloors.AddRange( detailTableItemModels ) ;
           }
 
           if ( ! isCreateTableEachFloors ) {
-            var scheduleName = CreateDetailTableSchedule( doc, detailTableModelsOfAllFloors, AllFloors ) ;
+            var scheduleName = CreateDetailTableSchedule( doc, detailTableModelsAllFloors, AllFloors ) ;
             message = string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ) ;
           }
-
-          SaveDetailTableData( detailTableModelsOfAllFloors, doc ) ;
           MessageBox.Show( message, "Message" ) ;
           return Result.Succeeded ;
         } ) ;
@@ -130,19 +131,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
-    private void SaveDetailTableData( IReadOnlyCollection<DetailTableModel> detailTableModels, Document doc )
+    private void SaveDetailTableData( IReadOnlyCollection<DetailTableItemModel> detailTableItemModels, Level level )
     {
       try {
-        var detailTableStorable = doc.GetDetailTableStorable() ;
-        if ( ! detailTableModels.Any() )
+        var storageService = new StorageService<Level, DetailTableModel>( level ) ;
+        if ( ! detailTableItemModels.Any() )
           return ;
         
-        var existedKeys = detailTableStorable.DetailTableModelData.Select( GetKeyRouting ).Distinct().ToList() ;
-        var itemNotInDb = detailTableModels.Where( d => ! existedKeys.Contains( GetKeyRouting(d) ) ).ToList() ;
+        var existedKeys = storageService.Data.DetailTableData.Select( GetKeyRouting ).Distinct().ToList() ;
+        var itemNotInDb = detailTableItemModels.Where( d => ! existedKeys.Contains( GetKeyRouting(d) ) ).ToList() ;
         
         if ( itemNotInDb.Any() ) 
-          detailTableStorable.DetailTableModelData.AddRange( itemNotInDb ) ;
-        detailTableStorable.Save() ;
+          storageService.Data.DetailTableData.AddRange( itemNotInDb ) ;
+        storageService.SaveChange() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
       }

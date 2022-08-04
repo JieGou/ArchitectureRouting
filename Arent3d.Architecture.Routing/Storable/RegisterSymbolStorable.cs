@@ -18,7 +18,6 @@ namespace Arent3d.Architecture.Routing.Storable
     
     public string BrowseFolderPath { get ; set ; }
     public string FolderSelectedPath { get ; set ; }
-    
 
     private RegisterSymbolStorable( DataStorage owner ) : base( owner, false )
     {
