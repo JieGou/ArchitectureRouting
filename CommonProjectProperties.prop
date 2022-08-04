@@ -3,7 +3,7 @@
         <AddOnVersion>0.9.0.0</AddOnVersion>
         <InformationalVersion>$(AddOnVersion)</InformationalVersion>
 
-        <CommonLibraryVersion>1.0.22.711</CommonLibraryVersion>
+        <CommonLibraryVersion>1.0.22.728</CommonLibraryVersion>
         <AssemblyVersion>$(AddOnVersion)</AssemblyVersion>
         <FileVersion>$(AddOnVersion)</FileVersion>
         <Version>$(AddOnVersion)</Version>
