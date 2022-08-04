@@ -547,7 +547,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           foreach ( var item in racks ) {
             var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth, 
-              notationModel.EndLineLeaderId, notationModel.EndPoint, notationModel.OrtherLineId ) ;
+              notationModel.EndLineLeaderId, notationModel.EndPoint, notationModel.OtherLineIds ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }

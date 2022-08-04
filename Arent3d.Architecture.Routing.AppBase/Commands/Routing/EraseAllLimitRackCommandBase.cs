@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     protected override (IReadOnlyCollection<string> limitRackIds,IReadOnlyCollection<LimitRackModel> limitRackModels) GetLimitRackIds( UIDocument ui, Document doc, LimitRackStorable limitRackStorable )
     {
-      var allLimitRack = GetAllLimitRackInstance( doc ) ;
+      var allLimitRack = GetAllLimitRackInstances( doc ) ;
       var allLimitRackIds = allLimitRack.Select( x => x.UniqueId ).EnumerateAll() ;
       return (allLimitRackIds,limitRackStorable.LimitRackModels.EnumerateAll()) ;
     }

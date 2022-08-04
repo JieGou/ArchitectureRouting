@@ -89,21 +89,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! string.IsNullOrEmpty( rackNotationModel.EndLineLeaderId ) )
         detailLineUniqueIds.Add( rackNotationModel.EndLineLeaderId ) ;
 
-      if ( rackNotationModel.OrtherLineId.Count > 0 )
-        detailLineUniqueIds.AddRange( rackNotationModel.OrtherLineId ) ;
+      if ( rackNotationModel.OtherLineIds.Count > 0 )
+        detailLineUniqueIds.AddRange( rackNotationModel.OtherLineIds ) ;
 
       if ( detailLineUniqueIds.Count == 0 )
         return ;
 
-      var eleIds = new List<ElementId>() ;
+      var elementIds = new List<ElementId>() ;
       foreach ( var detailLineUniqueId in detailLineUniqueIds.Distinct() ) {
         if ( document.GetElement( detailLineUniqueId ) is { } element ) {
-          eleIds.Add( element.Id ) ;
+          elementIds.Add( element.Id ) ;
         }
       }
 
-      if ( eleIds.Count > 0 )
-        document.Delete( eleIds ) ;
+      if ( elementIds.Count > 0 )
+        document.Delete( elementIds ) ;
     }
 
     private static void RemoveBoundaryCableTray( Document document, IEnumerable<string>? limitRackDetailIds )
@@ -121,16 +121,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       document.Delete( limitRackDetailIds.Select( document.GetElement ).Select( x => x.Id ).ToList() ) ;
     }
 
-    private static void RemoveLimitRackModelInStorable( LimitRackStorable limitRackStorable, IReadOnlyCollection<LimitRackModel> limitRackModelsToRemove )
+    private static void RemoveLimitRackModelInStorable( LimitRackStorable limitRackStorable, IReadOnlyCollection<LimitRackModel> limitRackModels )
     {
       if ( ! limitRackStorable.LimitRackModels.Any() ) return ;
-      foreach ( var limitRackModel in limitRackModelsToRemove ) {
+      foreach ( var limitRackModel in limitRackModels ) {
         limitRackStorable.LimitRackModels.Remove( limitRackModel ) ;
       }
       limitRackStorable.Save();
     }
 
-    protected static IEnumerable<FamilyInstance> GetAllLimitRackInstance(Document doc)
+    protected static IEnumerable<FamilyInstance> GetAllLimitRackInstances(Document doc)
     {
       var cableTrays = doc.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTray ) ;
       var cableTrayFittings = doc.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTrayFitting ) ;

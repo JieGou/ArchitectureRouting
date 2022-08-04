@@ -103,7 +103,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         transaction.Start() ;
         
-        RemoveLimitRackModelUnused( document, limitRackStorable ) ;
+        RemoveUnusedLimitRackModels( document, limitRackStorable ) ;
 
         foreach ( var limitRackCache in allLimitRackCaches) {
           var limitRackModel = new LimitRackModel( limitRackCache.rackIds, limitRackCache.rackDetailCurveIds ) ;
@@ -118,20 +118,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void RemoveLimitRackModelUnused(Document document, LimitRackStorable limitRackStorable)
+    private static void RemoveUnusedLimitRackModels(Document document, LimitRackStorable limitRackStorable)
     {
-      var limitRackModelsUnUses = new List<LimitRackModel>() ;
+      var unUsesLimitRackModels = new List<LimitRackModel>() ;
       if ( ! limitRackStorable.LimitRackModels.Any() ) return ;
       foreach ( var limitRackModel in limitRackStorable.LimitRackModels ) {
         var racks = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.RackTypeElements ) ;
         
         if (limitRackModel.RackIds.Any(rackId => racks.Any(rack=>rack.UniqueId == rackId))) continue;
-        limitRackModelsUnUses.Add( limitRackModel ) ;
+        unUsesLimitRackModels.Add( limitRackModel ) ;
       }
 
-      if ( ! limitRackModelsUnUses.Any() ) return ;
+      if ( ! unUsesLimitRackModels.Any() ) return ;
       
-      foreach ( var limitRackModel in limitRackModelsUnUses ) {
+      foreach ( var limitRackModel in unUsesLimitRackModels ) {
         limitRackStorable.LimitRackModels.Remove( limitRackModel ) ;
       }
 
