@@ -50,7 +50,8 @@
                               DisplayMemberPath="Name"
                               Width="200"
                               HorizontalAlignment="Left"
-                              Padding="5" />
+                              Padding="5" 
+                              IsEnabled="{Binding IsGradeSmallerThanFour}"/>
                 </StackPanel>
 
                 <StackPanel HorizontalAlignment="Center" Width="300" VerticalAlignment="Center" Margin="0 0  0 10">

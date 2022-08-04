@@ -81,6 +81,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
+    public bool IsGradeSmallerThanFour { get ; } = true ;
+
     public PullBoxViewModel( Document document )
     {
       GetPullBoxModels( document ) ;
@@ -92,6 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       IsAutoCalculatePullBoxSize = true ;
       if ( gradeMode > 3 ) {
         SelectedPullBox = PullBoxModels.FirstOrDefault( x => x.Buzaicd == DefaultBuzaicdForGradeModeThanThree ) ;
+        IsGradeSmallerThanFour = false ;
       }
     }
 
@@ -104,7 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<PullBoxModel> GetPullBoxModels( Document document )
     {
       var csvStorable = document.GetCsvStorable() ;
-      var allPullBoxHiroiMasterModel = csvStorable.HiroiMasterModelData.Where( hr => hr.Hinmei.Contains(PullBoxName) && !string.IsNullOrEmpty( hr.Kikaku )  ) ;
+      var allPullBoxHiroiMasterModel = csvStorable.HiroiMasterModelData.Where( hr => hr.Hinmei.Contains(PullBoxName)  ) ;
       var pullBoxModels = from hiroiMasterModel in allPullBoxHiroiMasterModel
         select new PullBoxModel( hiroiMasterModel ) ;
 
