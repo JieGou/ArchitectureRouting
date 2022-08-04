@@ -41,6 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void CmbKeyUp( object sender, KeyEventArgs e )
     {
+      
       var comboBox = (ComboBox) sender ;
       if ( e.Key == Key.Enter ) {
         ViewModel.Search() ;
