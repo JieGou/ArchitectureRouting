@@ -6,12 +6,12 @@
 
     public GradeSettingModel()
     {
-      GradeMode = 1 ;
+      GradeMode = 3 ;
     }
 
     public GradeSettingModel( int? gradeMode )
     {
-      GradeMode = gradeMode ?? 1 ;
+      GradeMode = gradeMode ?? 3 ;
     }
   }
 }

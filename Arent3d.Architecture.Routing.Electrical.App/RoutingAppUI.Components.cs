@@ -54,6 +54,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [SplitButton( "arent3d.architecture.routing.settings.all", TitleKey = "Electrical.App.Panels.Routing.Settings.All" )]
         private static class AllSettings
         {
+          [Button( typeof( DefaultSettingCommand ), OnlyInitialized = true )]
+          private static class DefaultSettingCommandButton
+          {
+          }
+          
           [Button( typeof( LoadCsvFilesCommand ), OnlyInitialized = true )]
           private static class LoadCsvFilesCommandButton
           {
@@ -66,11 +71,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( CnsSettingCommand ), OnlyInitialized = true )]
           private static class CnsSettingCommandButton
-          {
-          }
-
-          [Button( typeof( DefaultSettingCommand ), OnlyInitialized = true )]
-          private static class DefaultSettingCommandButton
           {
           }
 

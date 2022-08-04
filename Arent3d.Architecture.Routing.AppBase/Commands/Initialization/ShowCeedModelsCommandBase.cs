@@ -39,9 +39,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
       
       dlgCeedModel.ShowDialog() ;
-      if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
+      if ( ! ( dlgCeedModel.DialogResult ?? false ) ) 
+        return Result.Cancelled ;
+      
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
+      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) 
+        return Result.Succeeded ;
+      
       Element? element = null ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
@@ -61,25 +65,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         switch ( rooms.Count ) {
           case 0 :
-            TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
-            return Result.Cancelled ;
+            if ( viewModel.IsShowCondition ) {
+              condition = viewModel.SelectedCondition ;
+            }
+            else {
+              TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
+              return Result.Cancelled ;
+            }
+            break;
           case > 1 when CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() :
-          {
             var vm = new ArentRoomViewModel { Conditions = conditions } ;
             var view = new ArentRoomView { DataContext = vm } ;
             view.ShowDialog() ;
             if ( ! vm.IsCreate )
               return Result.Cancelled ;
 
+            if ( viewModel.IsShowCondition && viewModel.SelectedCondition != vm.SelectedCondition ) {
+              TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
+              return Result.Cancelled ;
+            }
+            
             condition = vm.SelectedCondition ;
             break ;
-          }
           case > 1 :
             TaskDialog.Show( "Arent", "指定された条件が見つかりませんでした。" ) ;
             return Result.Cancelled ;
           default :
           {
             if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
+              if ( viewModel.IsShowCondition && viewModel.SelectedCondition != value ) {
+                TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
+                return Result.Cancelled ;
+              }
               condition = value ;
             }
 
@@ -105,8 +122,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
         TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        var txtPosition = new XYZ( point.X - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, point.Y + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
+        var txtPosition = new XYZ( point.X , point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, viewModel.SelectedDeviceSymbol, opts ) ;
+        doc.Regenerate();
+        ElementTransformUtils.MoveElement(doc, textNote.Id, Transform.CreateTranslation(-XYZ.BasisX * 0.5 * textNote.Width * defaultSymbolMagnification).OfPoint(txtPosition) - txtPosition);
 
         var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
         if ( deviceSymbolTextNoteType == null ) {
@@ -121,23 +140,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
-        
-        var txtConditionPosition = new XYZ( point.X - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-        var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, condition, opts ) ;
-
-        var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
-        if ( textNoteType == null ) {
-          Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
-          textNoteType = ( ele as TextNoteType )! ;
-          const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
-          Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
-          textSize.Set( .005 ) ;
-          textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-          textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
-        }
-
-        conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
-        groupIds.Add( conditionTextNote.Id ) ;
 
         return Result.Succeeded ;
       } ) ;
