@@ -760,7 +760,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private static void CreateTextNoteAndGroupWithPullBox(Document doc, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
     {
       var newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize ;
-      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, newSize )!.Id ;
+      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, newSize, false )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       
       var txtPosition = new XYZ( point.X, point.Y, point.Z ) ;
