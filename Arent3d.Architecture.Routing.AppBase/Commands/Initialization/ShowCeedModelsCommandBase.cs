@@ -81,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               return Result.Cancelled ;
 
             if ( viewModel.IsShowCondition && viewModel.SelectedCondition != vm.SelectedCondition ) {
-              TaskDialog.Show( "Arent", "紛争状況" ) ;
+              TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
               return Result.Cancelled ;
             }
             
@@ -94,7 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           {
             if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
               if ( viewModel.IsShowCondition && viewModel.SelectedCondition != value ) {
-                TaskDialog.Show( "Arent", "紛争状況" ) ;
+                TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
                 return Result.Cancelled ;
               }
               condition = value ;
