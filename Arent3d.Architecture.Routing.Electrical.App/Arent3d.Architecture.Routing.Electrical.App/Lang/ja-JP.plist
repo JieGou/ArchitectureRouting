@@ -256,6 +256,11 @@
         <key>Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand</key>
         <string>配線３D表示モード</string>
 
+        <key>Electrical.App.Commands.Initialization.SelectedSwitchEcoNormalMode</key>
+        <string>通常/エコー切替</string>
+
+        
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
