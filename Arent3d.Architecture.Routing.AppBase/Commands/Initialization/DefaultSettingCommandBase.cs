@@ -69,11 +69,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var deletedFloorName = viewModel.DeletedFloorName ;
           SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
 
-          UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
-          LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
           if ( deletedFloorName.Any() ) {
             RemoveViews( document, deletedFloorName, uiDocument ) ;
           }
+
+          UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
+          LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
           return Result.Succeeded ;
         }
       }
@@ -164,7 +165,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           importDwgMappingModel.FullFilePath = fileItem != null ? fileItem.FullFilePath : "" ;
         }
 
-        Document doc = commandData.Application.ActiveUIDocument.Document ;
+        var uiDocument = commandData.Application.ActiveUIDocument ;
+        Document doc = uiDocument.Document ;
         var dwgImportOptions = new DWGImportOptions
         {
           ColorMode = ImportColorMode.Preserved,
@@ -259,6 +261,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         create3DTrans.Commit() ;
 
+        #endregion
+        
+        #region Remove view Arent dummy
+        var viewPlans = new List<ViewPlan>( new FilteredElementCollector( doc )
+          .OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>()
+          .Where( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+
+        var viewPlansWithoutDummy = viewPlans.Where( x => x.Name != ArentDummyViewName ).ToList() ;
+        if ( viewPlansWithoutDummy.Count > 1 ) {
+          var viewIdArentDummyView = viewPlans.Where( x => x.Name == ArentDummyViewName ).Select( p=>p.Id ).ToList() ;
+          if ( viewIdArentDummyView.Any() ) {
+            var pCurrView = uiDocument.ActiveView ;
+            uiDocument.RequestViewChange( pCurrView ) ;
+            uiDocument.ActiveView = viewPlansWithoutDummy[ 0 ] ;
+            
+            using var removeArentDummyView = new Transaction( doc ) ;
+            removeArentDummyView.SetName( "Remove view Arent dummy" ) ;
+            removeArentDummyView.Start() ;
+            doc.Delete( viewIdArentDummyView ) ;
+            removeArentDummyView.Commit() ;
+          }
+        }
         #endregion
       }
       catch ( Exception exception ) {
