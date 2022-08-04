@@ -109,7 +109,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         select new PullBoxModel( hiroiMasterModel ) ;
 
       var resultPullBoxModels = new List<PullBoxModel>() ;
-
+      var defaultPullBoxModel = pullBoxModels.FirstOrDefault( x => x.Buzaicd == DefaultBuzaicdForGradeModeThanThree ) ;
+      if ( defaultPullBoxModel != null )  resultPullBoxModels.Add(defaultPullBoxModel);
+      
       foreach ( var pullBoxModel in pullBoxModels ) {
         if ( resultPullBoxModels.Any( pb => pullBoxModel.Kikaku == pb.Kikaku ) ) {
           continue;
