@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       
-      var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable() ;
+      var limitRackStorable = document.GetLimitRackStorable() ;
       var limitRacks = GetLimitRackIds( uiDocument, document,limitRackStorable ) ;
       var boundaryCableTrayIds = GetBoundaryCableTrays( document, limitRacks.limitRackModels ).EnumerateAll() ;
       
@@ -127,7 +127,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var limitRackModel in limitRackModels ) {
         limitRackStorable.LimitRackModels.Remove( limitRackModel ) ;
       }
-      limitRackStorable.Save();
+
+      limitRackStorable.Save() ;
     }
 
     protected static IEnumerable<FamilyInstance> GetAllLimitRackInstances(Document doc)
