@@ -4,6 +4,7 @@ using System.IO ;
 using System.IO.Compression ;
 using System.Linq ;
 using System.Text ;
+using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
@@ -235,10 +236,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         using StreamReader reader = new StreamReader( path, Encoding.GetEncoding( "shift-jis" ), true ) ;
         List<string> lines = new List<string>() ;
         var startRow = 0 ;
+        string pattern = @",(?=(?:[^""]*""[^""]*"")*[^""]*$)";
         while ( ! reader.EndOfStream ) {
           var line = reader.ReadLine() ;
           if ( startRow > startLine ) {
-            var values = line!.Split( ',' ) ;
+            var values = Regex.Split(line!, pattern).ToArray();
 
             switch ( modelName ) {
               case ModelName.WiresAndCables :
