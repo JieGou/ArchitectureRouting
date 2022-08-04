@@ -20,8 +20,8 @@ namespace Arent3d.Architecture.Routing.Storable
 
     public List<CeedModel> CeedModelData { get ; set ; }
     public List<CeedModel> CeedModelUsedData { get ; set ; }
-    private List<CategoryModel> CategoriesWithCeedCode { get ; set ; }
-    private List<CategoryModel> CategoriesWithoutCeedCode { get ; set ; }
+    public List<CategoryModel> CategoriesWithCeedCode { get ; set ; }
+    public List<CategoryModel> CategoriesWithoutCeedCode { get ; set ; }
 
     public CeedStorable( DataStorage owner ) : base( owner, false )
     {

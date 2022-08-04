@@ -387,6 +387,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CheckChangeColor( ceedModelData ) ;
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+        ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithCeedCode ) ;
+        ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithoutCeedCode ) ;
+        Categories = new ObservableCollection<CategoryModel>( categoriesWithCeedCode ) ;
+        CategoriesPreview = new ObservableCollection<CategoryModel>( categoriesWithoutCeedCode ) ;
         _storageService.Data.IsShowOnlyUsingCode = false ;
         LoadData( ceedStorable ) ;
         checkBox.Visibility = Visibility.Hidden ;

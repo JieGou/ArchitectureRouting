@@ -119,6 +119,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( _ceedModelData.Any() ) {
           ceedStorable.CeedModelData = _ceedModelData ;
           ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+          ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithCeedCode ) ;
+          ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithoutCeedCode ) ;
         }
 
         var registrationOfBoardDataStorable = _document.GetRegistrationOfBoardDataStorable() ;

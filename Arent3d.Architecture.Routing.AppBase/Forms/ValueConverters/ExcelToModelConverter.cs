@@ -267,7 +267,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var workSheet = wb.GetSheetAt( s ) ;
           if ( workSheet == null ) continue ;
           var parentCategoryName = workSheet.SheetName ;
-          parentCategoryName = parentCategoryName.Substring( parentCategoryName.IndexOf( "．", StringComparison.Ordinal ) ) ;
+          parentCategoryName = parentCategoryName.Substring( parentCategoryName.IndexOf( "．", StringComparison.Ordinal ) + 1 ) ;
           const int startRow = 5 ;
           const int childColumnIndex = 2 ;
           var endRow = workSheet.LastRowNum ;

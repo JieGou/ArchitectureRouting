@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
@@ -55,5 +54,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     }
     
     public List<CategoryModel> SubCategories { get ; set ; } = new() ;
+
+    public static List<Arent3d.Architecture.Routing.Storable.Model.CategoryModel> ConvertCategoryModel( IEnumerable<CategoryModel> categoryModels )
+    {
+      var convertCategoriesModel = new List<Arent3d.Architecture.Routing.Storable.Model.CategoryModel>() ;
+      foreach ( var category in categoryModels ) {
+        var convertCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( category.Name, category.ParentName, category.IsExpanded, category.IsSelected ) ;
+        convertCategoriesModel.Add( convertCategory ) ;
+        foreach ( var subCategory in category.SubCategories ) {
+          var convertSubCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( subCategory.Name, subCategory.ParentName, subCategory.IsExpanded, subCategory.IsSelected ) ;
+          convertCategoriesModel.Add( convertSubCategory ) ;
+          foreach ( var ceedCodeNumberCategory in subCategory.SubCategories ) {
+            var convertCeedCodeNumberCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( ceedCodeNumberCategory.Name, ceedCodeNumberCategory.ParentName, ceedCodeNumberCategory.IsExpanded, ceedCodeNumberCategory.IsSelected ) ;
+            convertCategoriesModel.Add( convertCeedCodeNumberCategory ) ;
+          }
+        }
+      }
+
+      return convertCategoriesModel ;
+    }
   }
 }
