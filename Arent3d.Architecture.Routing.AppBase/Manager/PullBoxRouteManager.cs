@@ -732,6 +732,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( shaftLocation == null ) continue ;
         
         if ( ! pullBoxPositions.Any() ) {
+          // When wire enter shaft
           var conduitFittingShaft = GetConduitFittingShaft( shaftLocation, conduitFittingsOfRoute, !isPickedFromBottomToTop ) ;
           if ( conduitFittingShaft == null || conduitFittingShaft.GetRouteName() != route.Name ) continue ;
           
@@ -754,13 +755,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
           var pullBoxesInShaft = GetPullBoxesInShafts( document, route, conduitFittingShaft, pullBoxPositions, isPickedFromBottomToTop ) ;
           if ( pullBoxesInShaft.Any() ) {
+            // When wire go through shaft and cross pull boxes
             var pullBox = pullBoxesInShaft.First() ;
             var pullBoxPosition = ( pullBox.Location as LocationPoint )!.Point ;
             if ( pullBoxPosition == null ) continue ;
 
             var levelOfPullBox = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).First( l => l.Id == pullBox.LevelId ) ;
-            var defaultDirectionThroughPullBoxInShaft =
-              isPickedFromBottomToTop ? new XYZ( 0, 0, 1 ) : new XYZ( 0, 0, -1 ) ;
+            var defaultDirectionThroughPullBoxInShaft = isPickedFromBottomToTop ? new XYZ( 0, 0, 1 ) : new XYZ( 0, 0, -1 ) ;
 
             var height = pullBoxPosition.Z - levelOfPullBox.Elevation ;
 
@@ -775,6 +776,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             pullBoxPositions.Add( pullBoxPosition ) ;
           }
           else {
+            // When wire exit shaft
             var pullBoxInfo = GetPullBoxInShaftInfo( document, route.RouteName, conduitFittingShaft ) ;
             var isSamePullBoxPositions = IsPullBoxExistInThePosition( document, pullBoxPositions, pullBoxInfo.Position ) ;
             if ( isSamePullBoxPositions ) continue ;
@@ -870,11 +872,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           t.Commit() ;
 
           if ( isPullBoxInShaft ) {
-            var axisZOfPullBox = originZ + level?.Elevation ?? 0 ;
+            var heightPositionOfPullBox = originZ + level?.Elevation ?? 0 ;
             var shaftElementUniqueId = route.UniqueShaftElementUniqueId ;
             var shaft = document.GetElementById<Opening>( shaftElementUniqueId ?? string.Empty ) ;
             if ( shaft != null && GetShaftLocation( route, document ) is { } shaftLocation ) {
-              var reRoutesWithDirection = new List<( Route ReRoute, XYZ Direction, double HeightWire )>() ;
+              var routesWithDirection = new List<( Route ReRoute, XYZ Direction )>() ;
 
               var routeNameArray = route.RouteName.Split( '_' ) ;
               var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
@@ -885,12 +887,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                   if ( c.GetConnectorFamilyType() != ConnectorFamilyType.PullBox ) return false ;
 
                   var locationPoint = ( c.Location as LocationPoint )?.Point ;
-                  return locationPoint != null && IsNearShaft( locationPoint, shaftLocation )  && ! IsAlmostOrEqual( locationPoint.Z, axisZOfPullBox ) ;
+                  return locationPoint != null && IsNearShaft( locationPoint, shaftLocation )  && ! IsAlmostOrEqual( locationPoint.Z, heightPositionOfPullBox ) ;
                 } ).ToList() ;
 
               var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
               foreach ( var r in routeCache ) {
-                if ( reRoutesWithDirection.Any( re => re.ReRoute.RouteName == r.Key ) ) continue ;
+                if ( routesWithDirection.Any( re => re.ReRoute.RouteName == r.Key ) ) continue ;
                 
                 var rNameArray = r.Key.Split( '_' ) ;
                 var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
@@ -908,21 +910,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                   var toPullBoxPosition = ( toPullBox.Location as LocationPoint )?.Point ;
                   if ( fromPullBoxPosition == null || toPullBoxPosition == null ) continue ;
                   
-                  var fromPullBoxLevel = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).FirstOrDefault( p => p.Id == fromPullBox.LevelId ) ;
-                  if ( fromPullBoxPosition.Z < axisZOfPullBox && axisZOfPullBox < toPullBoxPosition.Z )
-                    reRoutesWithDirection.Add( ( r.Value, new XYZ(0, 0, 1), axisZOfPullBox - fromPullBoxLevel!.Elevation ) );
-                  else if ( fromPullBoxPosition.Z > axisZOfPullBox && axisZOfPullBox > toPullBoxPosition.Z )
-                    reRoutesWithDirection.Add( ( r.Value, new XYZ(0, 0, -1), axisZOfPullBox - fromPullBoxLevel!.Elevation ) );
+                  if ( fromPullBoxPosition.Z < heightPositionOfPullBox && heightPositionOfPullBox < toPullBoxPosition.Z )
+                    routesWithDirection.Add( ( r.Value, new XYZ(0, 0, 1) ) );
+                  else if ( fromPullBoxPosition.Z > heightPositionOfPullBox && heightPositionOfPullBox > toPullBoxPosition.Z )
+                    routesWithDirection.Add( ( r.Value, new XYZ(0, 0, -1) ) );
                 }
               }
 
-              if ( reRoutesWithDirection.Any() ) {
-                foreach ( var (reRoute, reRouteDirection, heightWire) in reRoutesWithDirection ) {
+              // Reroute old routes when new pull boxes are created
+              if ( routesWithDirection.Any() ) {
+                foreach ( var (reRoute, routeDirection) in routesWithDirection ) {
                   using Transaction t3 = new( document, "Get segments" ) ;
                   t3.Start() ;
                   result.AddRange( GetRouteSegmentsThroughShaft( document, reRoute, pullBox, originZ, originZ,
-                    reRouteDirection, true, nameBase, ref parentIndex, ref parentAndChildRoute,
-                    reRouteDirection, reRouteDirection, reRoute.UniqueFromFixedHeight, isWireEnteredShaft ) ) ;
+                    routeDirection, true, nameBase, ref parentIndex, ref parentAndChildRoute,
+                    routeDirection, routeDirection, reRoute.UniqueFromFixedHeight, isWireEnteredShaft ) ) ;
                   t3.Commit() ;
                 }
               }
