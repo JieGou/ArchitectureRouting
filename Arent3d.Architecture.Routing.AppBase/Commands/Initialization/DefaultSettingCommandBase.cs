@@ -3,7 +3,6 @@ using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Collections.Specialized ;
 using System.Linq ;
-using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -267,12 +266,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         #endregion
         
-        #region Remove view Arent dummy
         var viewPlans = new List<ViewPlan>( new FilteredElementCollector( doc )
           .OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>()
           .Where( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
 
         var viewPlansWithoutDummy = viewPlans.Where( x => x.Name != ArentDummyViewName ).ToList() ;
+        
+        #region Remove view Arent dummy
         if ( viewPlansWithoutDummy.Count > 1 ) {
           var viewIdArentDummyView = viewPlans.Where( x => x.Name == ArentDummyViewName ).Select( p=>p.Id ).ToList() ;
           if ( viewIdArentDummyView.Any() ) {
@@ -287,6 +287,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             removeArentDummyView.Commit() ;
           }
         }
+        #endregion
+        
+        #region Set view range
+        using var setViewRangeTransaction = new Transaction( doc, "Set View Range" ) ;
+        setViewRangeTransaction.Start() ;
+        
+        foreach ( var view in viewPlansWithoutDummy ) {
+          var pvr = view.GetViewRange() ;
+          pvr.SetOffset( PlanViewPlane.TopClipPlane, 4000.0 / 304.8 ) ;
+          pvr.SetOffset( PlanViewPlane.CutPlane, 3950.0 / 304.8 ) ;
+          pvr.SetOffset( PlanViewPlane.BottomClipPlane, 0.0 ) ;
+          view.SetViewRange( pvr ) ;
+        }
+
+        setViewRangeTransaction.Commit() ;
         #endregion
       }
       catch ( Exception exception ) {
