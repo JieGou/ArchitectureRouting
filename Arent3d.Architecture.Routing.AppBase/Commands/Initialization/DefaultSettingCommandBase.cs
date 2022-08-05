@@ -63,6 +63,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             return Result.Cancelled ;
 
           viewModel = dialog.ViewModel ;
+          
+          // Save default db
+          viewModel.SaveData() ;
+          
           var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
           var gradeMode = viewModel.SelectedGradeMode ;
           var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
