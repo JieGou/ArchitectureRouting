@@ -24,7 +24,7 @@
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="230" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -166,7 +166,7 @@
                 <TreeView.Resources>
                     <SolidColorBrush Color="Transparent" x:Key="{x:Static SystemColors.HighlightBrushKey}" />
                     <SolidColorBrush Color="Black" x:Key="{x:Static SystemColors.HighlightTextBrushKey}" />
-                    <HierarchicalDataTemplate DataType="{x:Type model:CategoryModel}" ItemsSource="{Binding CategoriesPreview}">
+                    <HierarchicalDataTemplate DataType="{x:Type model:CategoryModel}" ItemsSource="{Binding Categories}">
                         <StackPanel Orientation="Horizontal">
                             <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
                                    Source="../resources/icon_folder_16x16.png" />

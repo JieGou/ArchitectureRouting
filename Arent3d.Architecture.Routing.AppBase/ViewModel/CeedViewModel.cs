@@ -151,14 +151,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var categoryModels = GetCategoryModels() ;
         _categories = new ObservableCollection<CategoryModel>( categoryModels ) ;
 
-        CategorySelected = FindSelectedCategory( _categories ) ;
+        CategorySelected = FindSelectedCategory( _categories, true ) ;
 
         return _categories ;
       }
       set
       {
         _categories = value ;
-        CategorySelected = FindSelectedCategory( _categories ) ;
+        CategorySelected = FindSelectedCategory( _categories, true ) ;
         OnPropertyChanged() ;
       }
     }
@@ -167,7 +167,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public CategoryModel? CategorySelected
     {
-      get { return _categorySelected ??= FindSelectedCategory( Categories ) ; }
+      get { return _categorySelected ??= FindSelectedCategory( Categories, true ) ; }
       set => _categorySelected = value ;
     }
 
@@ -177,7 +177,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       {
         return new RelayCommand<System.Windows.Controls.TreeView>( tv => null != tv, _ =>
         {
-          CategorySelected = FindSelectedCategory( Categories ) ;
+          CategorySelected = FindSelectedCategory( Categories, true ) ;
         } ) ;
       }
     }
@@ -194,14 +194,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var categoryModels = GetCategoryModels() ;
         _categoriesPreview = new ObservableCollection<CategoryModel>( categoryModels ) ;
 
-        CategoryPreviewSelected = FindSelectedCategory( _categoriesPreview ) ;
+        CategoryPreviewSelected = FindSelectedCategory( _categoriesPreview, false ) ;
 
         return _categoriesPreview ;
       }
       set
       {
         _categoriesPreview = value ;
-        CategoryPreviewSelected = FindSelectedCategory( _categoriesPreview ) ;
+        CategoryPreviewSelected = FindSelectedCategory( _categoriesPreview, false ) ;
         OnPropertyChanged() ;
       }
     }
@@ -210,7 +210,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public CategoryModel? CategoryPreviewSelected
     {
-      get { return _categoryPreviewSelected ??= FindSelectedCategory( CategoriesPreview ) ; }
+      get { return _categoryPreviewSelected ??= FindSelectedCategory( CategoriesPreview, false ) ; }
       set => _categoryPreviewSelected = value ;
     }
 
@@ -220,7 +220,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       {
         return new RelayCommand<System.Windows.Controls.TreeView>( tv => null != tv, _ =>
         {
-          CategoryPreviewSelected = FindSelectedCategory( CategoriesPreview ) ;
+          CategoryPreviewSelected = FindSelectedCategory( CategoriesPreview, false ) ;
         } ) ;
       }
     }
@@ -270,6 +270,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
         else IsShowDiff = _storageService.Data.IsDiff ;
         _previewList = CeedModels ;
+        Categories = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithCeedCode ) ) ;
+        CategoriesPreview = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithoutCeedCode ) ) ;
       }
 
       _selectedCeedSetCode = string.Empty ;
@@ -342,23 +344,41 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return categoryModels ;
     }
 
-    private CategoryModel? FindSelectedCategory( IEnumerable<CategoryModel> categories )
+    private CategoryModel? FindSelectedCategory( IEnumerable<CategoryModel> categories, bool isCategoryWithCeedCode )
     {
       foreach ( var category in categories ) {
-        if ( category.IsSelected )
-          //find ceed model by category
-          return category ;
+        if ( category.IsSelected && string.IsNullOrEmpty( category.ParentName ) ) {
+          category.IsExpanded = ! category.IsExpanded ;
+          return null ;
+        }
 
-        if ( ! category.SubCategories.Any() )
+        if ( category.IsSelected && ! string.IsNullOrEmpty( category.ParentName ) ) {
+          return category ;
+        }
+
+        if ( ! category.Categories.Any() )
           continue ;
 
-        var subCategory = FindSelectedCategory( category.SubCategories ) ;
-        if ( null != subCategory )
-          //find ceed model by category
-          return subCategory ;
+        var subCategory = FindSelectedCategory( category.Categories, isCategoryWithCeedCode ) ;
+        if ( subCategory == null ) continue ;
+        ShowCeedModelAndPreviewByCategory( subCategory, isCategoryWithCeedCode ) ;
+        return category ;
       }
 
       return null ;
+    }
+    
+    public void ShowCeedModelAndPreviewByCategory( CategoryModel categoryModel, bool isCategoryWithCeedCode )
+    {
+      var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
+      CeedModels.Clear() ;
+      PreviewList.Clear() ;
+      var ceedCodeNumbers = categoryModel.CeedCodeNumbers.Select( c => c.Name ) ;
+      data = categoryModel.CeedCodeNumbers.Any() ? data.Where( c => ceedCodeNumbers.Contains( c.CeedModelNumber ) ).ToList() : data ;
+      foreach ( var dataModel in data ) {
+        if ( isCategoryWithCeedCode ) CeedModels.Add( dataModel ) ;
+        PreviewList.Add( dataModel ) ;
+      }
     }
 
     public void Load( CheckBox checkBox )
