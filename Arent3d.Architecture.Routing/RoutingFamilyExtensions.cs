@@ -115,7 +115,10 @@ namespace Arent3d.Architecture.Routing
     PressureConnector,
     
     [Family( "Pull Box", BuiltInCategory.OST_ElectricalFixtures )]
-    PullBox
+    PullBox,
+    
+    [Family( "Device Symbol Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
+    DeviceSymbolTag
   }
 
   public enum MechanicalRoutingFamilyType
