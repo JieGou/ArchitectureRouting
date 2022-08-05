@@ -39,15 +39,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       BtnReplaceSymbol.IsEnabled = false ;
     }
 
-    private void CmbKeyUp( object sender, KeyEventArgs e )
+    private void CmbKeyDown( object sender, KeyEventArgs e )
     {
-      
-      var comboBox = (ComboBox) sender ;
       if ( e.Key == Key.Enter ) {
         ViewModel.Search() ;
-      }
-      else {
-        comboBox.IsDropDownOpen = true ;
       }
     }
 
