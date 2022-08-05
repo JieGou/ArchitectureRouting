@@ -1194,7 +1194,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       switch ( productType ) {
         case ProductType.Conduit :
         {
-          return pickUpModels.GroupBy( p => new { p.Construction, p.Classification, p.ProductName, p.Specification, p.Floor } ).Select( p =>
+          return pickUpModels.GroupBy( p => new { p.Construction, p.Classification, p.ProductName, p.Specification, p.Floor, p.ConstructionItems } ).Select( p =>
           {
             var newModel = p.First() ;
             newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
@@ -1207,7 +1207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
         case ProductType.Connector :
         {
-          return pickUpModels.GroupBy( p => new { p.CeedSetCode, p.ModelNumber, p.Condition, p.DeviceSymbol, p.Floor } ).Select( p =>
+          return pickUpModels.GroupBy( p => new { p.CeedSetCode, p.ModelNumber, p.Condition, p.DeviceSymbol, p.Floor, p.ConstructionItems } ).Select( p =>
           {
             var newModel = p.First() ;
             newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
