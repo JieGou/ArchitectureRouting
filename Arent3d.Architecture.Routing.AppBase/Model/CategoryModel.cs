@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
@@ -53,24 +54,51 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       }
     }
     
-    public List<CategoryModel> SubCategories { get ; set ; } = new() ;
+    public List<CategoryModel> Categories { get ; set ; } = new() ;
+    
+    public List<CategoryModel> CeedCodeNumbers { get ; set ; } = new() ;
 
     public static List<Arent3d.Architecture.Routing.Storable.Model.CategoryModel> ConvertCategoryModel( IEnumerable<CategoryModel> categoryModels )
     {
       var convertCategoriesModel = new List<Arent3d.Architecture.Routing.Storable.Model.CategoryModel>() ;
       foreach ( var category in categoryModels ) {
-        var convertCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( category.Name, category.ParentName, category.IsExpanded, category.IsSelected ) ;
+        var convertCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( category.Name, category.ParentName, category.IsExpanded, category.IsSelected, false ) ;
         convertCategoriesModel.Add( convertCategory ) ;
-        foreach ( var subCategory in category.SubCategories ) {
-          var convertSubCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( subCategory.Name, subCategory.ParentName, subCategory.IsExpanded, subCategory.IsSelected ) ;
+        foreach ( var subCategory in category.Categories ) {
+          var convertSubCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( subCategory.Name, subCategory.ParentName, subCategory.IsExpanded, subCategory.IsSelected, false ) ;
           convertCategoriesModel.Add( convertSubCategory ) ;
-          foreach ( var ceedCodeNumberCategory in subCategory.SubCategories ) {
-            var convertCeedCodeNumberCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( ceedCodeNumberCategory.Name, ceedCodeNumberCategory.ParentName, ceedCodeNumberCategory.IsExpanded, ceedCodeNumberCategory.IsSelected ) ;
+          foreach ( var ceedCodeNumberCategory in subCategory.CeedCodeNumbers ) {
+            var convertCeedCodeNumberCategory = new Arent3d.Architecture.Routing.Storable.Model.CategoryModel( ceedCodeNumberCategory.Name, ceedCodeNumberCategory.ParentName, ceedCodeNumberCategory.IsExpanded, ceedCodeNumberCategory.IsSelected, true ) ;
             convertCategoriesModel.Add( convertCeedCodeNumberCategory ) ;
           }
         }
       }
 
+      return convertCategoriesModel ;
+    }
+    
+    public static List<CategoryModel> ConvertCategoryModel( ICollection<Arent3d.Architecture.Routing.Storable.Model.CategoryModel> categoryModels )
+    {
+      var convertCategoriesModel = new List<CategoryModel>() ;
+      var parentCategories = categoryModels.Where( c => string.IsNullOrEmpty( c.ParentName ) ) ;
+      var subCategories = categoryModels.Where( c => ! string.IsNullOrEmpty( c.ParentName ) && ! c.IsCeedCodeNumber ) ;
+      foreach ( var category in parentCategories ) {
+        var convertCategory = new CategoryModel { Name = category.Name, ParentName = category.ParentName, IsExpanded = category.IsExpanded, IsSelected = category.IsSelected } ;
+        convertCategoriesModel.Add( convertCategory ) ;
+      }
+        
+      foreach ( var category in subCategories ) {
+        var parentCategory = convertCategoriesModel.FirstOrDefault( c => c.Name == category.ParentName ) ;
+        if ( parentCategory == null ) continue ;
+        var convertCategory = new CategoryModel { Name = category.Name, ParentName = category.ParentName, IsExpanded = category.IsExpanded, IsSelected = category.IsSelected } ;
+        var ceedCodeNumbers = categoryModels.Where( c => c.ParentName == category.Name && ! c.IsCeedCodeNumber ) ;
+        foreach ( var ceedCodeNumberModel in ceedCodeNumbers ) {
+          var convertCeedCodeNumberModel = new CategoryModel { Name = ceedCodeNumberModel.Name, ParentName = ceedCodeNumberModel.ParentName, IsExpanded = ceedCodeNumberModel.IsExpanded, IsSelected = ceedCodeNumberModel.IsSelected } ;
+          convertCategory.CeedCodeNumbers.Add( convertCeedCodeNumberModel ) ;
+        }
+        parentCategory.Categories.Add( convertCategory ) ;
+      }
+      
       return convertCategoriesModel ;
     }
   }

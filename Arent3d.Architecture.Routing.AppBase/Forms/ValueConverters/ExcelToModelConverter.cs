@@ -294,6 +294,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           for ( var j = 0 ; j < blocks.Count ; j++ ) {
             var (childCategoryName, startIndex) = blocks.ElementAt( j ) ;
             var endIndex = j == blocks.Count - 1 ? endRow : blocks.ElementAt( j + 1 ).Value ;
+            childCategoryName = childCategoryName.Substring( childCategoryName.IndexOf( "．", StringComparison.Ordinal ) + 1 ) ;
             for ( var i = startIndex ; i < endIndex ; i++ ) {
               var ceedModelNumberCell = workSheet.GetRow( i ).GetCell( 0 ) ;
               var ceedModelNumber = GetCellValue( ceedModelNumberCell ) ;
@@ -315,26 +316,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
     private static void CreateCategories( List<CategoryModel> categories, string parentCategoryName, string childCategoryName, string ceedModelNumber )
     {
       if ( categories.Exists( c => c.Name == parentCategoryName ) ) {
-        var categoryWithoutCeedCode = categories.SingleOrDefault( c => c.Name == parentCategoryName ) ;
-        if ( categoryWithoutCeedCode!.SubCategories.Exists( c => c.Name == childCategoryName ) ) {
-          var subCategoryWithoutCeedCode = categoryWithoutCeedCode!.SubCategories.SingleOrDefault( c => c.Name == childCategoryName ) ;
-          var subCategory = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
-          subCategoryWithoutCeedCode!.SubCategories.Add( subCategory ) ;
+        var categoryOfCeedCode = categories.SingleOrDefault( c => c.Name == parentCategoryName ) ;
+        if ( categoryOfCeedCode!.Categories.Exists( c => c.Name == childCategoryName ) ) {
+          var subCategory = categoryOfCeedCode!.Categories.SingleOrDefault( c => c.Name == childCategoryName ) ;
+          var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
+          subCategory!.CeedCodeNumbers.Add( ceedCodeNumbers ) ;
         }
         else {
           var subCategory = new CategoryModel { Name = childCategoryName, ParentName = parentCategoryName, IsExpanded = false, IsSelected = false } ;
-          var ceedCategory = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
-          subCategory.SubCategories.Add( ceedCategory ) ;
-          categoryWithoutCeedCode.SubCategories.Add( subCategory ) ;
+          var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
+          subCategory.CeedCodeNumbers.Add( ceedCodeNumbers ) ;
+          categoryOfCeedCode.Categories.Add( subCategory ) ;
         }
       }
       else {
-        var categoryWithoutCeedCode = new CategoryModel { Name = parentCategoryName, ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
+        var categoryOfCeedCode = new CategoryModel { Name = parentCategoryName, ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
         var subCategory = new CategoryModel { Name = childCategoryName, ParentName = parentCategoryName, IsExpanded = false, IsSelected = false } ;
-        var ceedCategory = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
-        subCategory.SubCategories.Add( ceedCategory ) ;
-        categoryWithoutCeedCode.SubCategories.Add( subCategory ) ;
-        categories.Add( categoryWithoutCeedCode ) ;
+        var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false } ;
+        subCategory.CeedCodeNumbers.Add( ceedCodeNumbers ) ;
+        categoryOfCeedCode.Categories.Add( subCategory ) ;
+        categories.Add( categoryOfCeedCode ) ;
       }
     }
 
