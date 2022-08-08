@@ -222,9 +222,21 @@
 
                     <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="130" Visibility="Hidden" />
 
-                    <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" />
+                    <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" >
+                        <DataGridTextColumn.ElementStyle>
+                            <Style>
+                                <Setter Property="TextBlock.TextWrapping" Value="Wrap"></Setter>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
-                    <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" />
+                    <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" MaxWidth="300" >
+                        <DataGridTextColumn.ElementStyle>
+                            <Style>
+                                <Setter Property="TextBlock.TextWrapping" Value="Wrap"></Setter>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
                     <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" Width="*"
                                         Visibility="{Binding Path=Data, Converter={StaticResource  BooleanVisibilityConverter}, Source={StaticResource Proxy}}">
@@ -258,6 +270,11 @@
                                             <Setter Property="BorderBrush" Value="Red" />
                                         </MultiDataTrigger.Setters>
                                     </MultiDataTrigger>
+                                    
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="RoyalBlue" />
+                                        <Setter Property="BorderBrush" Value="RoyalBlue" />
+                                    </Trigger>
                                 </Style.Triggers>
                             </Style>
                         </DataGridTextColumn.CellStyle>

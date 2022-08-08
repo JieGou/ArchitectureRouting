@@ -103,12 +103,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _isShowCondition = value ;
         CeedModels.Clear();
         if ( _isShowCondition.HasValue ) {
+          var ceedModelHasWithCeedSetCode = _ceedModels.Where( c => ! string.IsNullOrEmpty( c.CeedSetCode ) ).ToList() ;
           if ( _isShowCondition.Value ) {
-            CeedModels.AddRange( _ceedModels );
+            var ceedModels = GroupCeedModelsByCeedCode( ceedModelHasWithCeedSetCode ) ;
+            CeedModels.AddRange( ceedModels ) ;
           }
           else {
-            CeedModels.AddRange( GroupCeedModel(_ceedModels) );
+            var ceedModels = GroupCeedModel( ceedModelHasWithCeedSetCode ) ;
+            ceedModels = GroupCeedModelsByCeedCode( ceedModels ) ;
+            CeedModels.AddRange( ceedModels ) ;
           }
+
+          Reset() ;
         }
         OnPropertyChanged();
       }
@@ -284,12 +290,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _ceedModels = ceedStorable.CeedModelData ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
-      foreach ( var dataModel in _ceedModels ) {
-        CeedModels.Add( dataModel ) ;
-        PreviewList.Add( dataModel ) ;
-      }
 
-      AddModelNumber( CeedModels ) ;
+      var ceedModelHasWithCeedSetCode = _ceedModels.Where( c => ! string.IsNullOrEmpty( c.CeedSetCode ) ).ToList() ;
+      var ceedModels = GroupCeedModelsByCeedCode( ceedModelHasWithCeedSetCode ) ;
+      CeedModels.AddRange( ceedModels ) ;
+
+      AddModelNumber( _ceedModels ) ;
       if ( ceedStorable.CeedModelUsedData.Any() )
         _usingCeedModel = ceedStorable.CeedModelUsedData ;
     }
@@ -298,10 +304,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       CeedModels.Clear() ;
       PreviewList.Clear() ;
-      foreach ( var dataModel in ceedModels ) {
-        CeedModels.Add( dataModel ) ;
-        PreviewList.Add( dataModel ) ;
-      }
+      var ceedModelHasWithCeedSetCode = ceedModels.Where( c => ! string.IsNullOrEmpty( c.CeedSetCode ) ).ToList() ;
+      var newCeedModels = GroupCeedModelsByCeedCode( ceedModelHasWithCeedSetCode ) ;
+      CeedModels.AddRange( newCeedModels ) ;
 
       AddModelNumber( CeedModels ) ;
     }
@@ -316,16 +321,35 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       ModelNumber.Clear() ;
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
-        var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;
-        foreach ( var modelNumber in modelNumbers ) {
-          if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber ) ;
+        if ( ceedModel.ModelNumber.IndexOf( '\n' ) >= 0 ) {
+          var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;
+          foreach ( var modelNumber in modelNumbers ) {
+            if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber ) ;
+          }
+        }
+        else if ( ceedModel.ModelNumber.IndexOf( ',' ) >= 0 )  {
+          var modelNumbers = ceedModel.ModelNumber.Split( ',' ) ;
+          foreach ( var modelNumber in modelNumbers ) {
+            if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber ) ;
+          }
+        }
+        else {
+          if ( ! ModelNumber.Contains( ceedModel.ModelNumber ) ) ModelNumber.Add( ceedModel.ModelNumber ) ;
         }
       }
 
       DeviceSymbols.Clear() ;
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ) ) {
-        if ( ! DeviceSymbols.Contains( ceedModel.GeneralDisplayDeviceSymbol ) )
-          DeviceSymbols.Add( ceedModel.GeneralDisplayDeviceSymbol ) ;
+        if ( ceedModel.GeneralDisplayDeviceSymbol.IndexOf( ',' ) >= 0 )  {
+          var generalDisplayDeviceSymbols = ceedModel.GeneralDisplayDeviceSymbol.Split( ',' ) ;
+          foreach ( var generalDisplayDeviceSymbol in generalDisplayDeviceSymbols ) {
+            if ( ! DeviceSymbols.Contains( generalDisplayDeviceSymbol ) ) DeviceSymbols.Add( generalDisplayDeviceSymbol ) ;
+          }
+        }
+        else {
+          if ( ! DeviceSymbols.Contains( ceedModel.GeneralDisplayDeviceSymbol ) )
+            DeviceSymbols.Add( ceedModel.GeneralDisplayDeviceSymbol ) ;
+        }
       }
       
       ResetComboboxValue() ;
@@ -375,10 +399,32 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       PreviewList.Clear() ;
       var ceedCodeNumbers = categoryModel.CeedCodeNumbers.Select( c => c.Name ) ;
       data = categoryModel.CeedCodeNumbers.Any() ? data.Where( c => ceedCodeNumbers.Contains( c.CeedModelNumber ) ).ToList() : data ;
-      foreach ( var dataModel in data ) {
-        if ( isCategoryWithCeedCode ) CeedModels.Add( dataModel ) ;
-        PreviewList.Add( dataModel ) ;
+      if ( isCategoryWithCeedCode ) {
+        var ceedModels = GroupCeedModelsByCeedCode( data ) ;
+        CeedModels.AddRange( ceedModels ) ;
       }
+      else {
+        PreviewList.AddRange( data ) ;
+      }
+    }
+
+    private List<CeedModel> GroupCeedModelsByCeedCode( IEnumerable<CeedModel> originCeedModels )
+    {
+      var newCeedModels = new List<CeedModel>() ;
+      var ceedModelGroupByCeedCode = originCeedModels.Where( c => ! string.IsNullOrEmpty( c.CeedSetCode ) ).GroupBy( c => c.CeedSetCode ) ;
+      foreach ( var ceedModels in ceedModelGroupByCeedCode ) {
+        var firstCeedModel = ceedModels.First() ;
+        var generalDisplayDeviceSymbols = ceedModels.Select( c => c.GeneralDisplayDeviceSymbol ).Distinct() ;
+        var generalDisplayDeviceSymbol = string.Join( ", ", generalDisplayDeviceSymbols ) ;
+        var modelNumbers = ceedModels.Select( c => c.ModelNumber ).Distinct() ;
+        var modelNumber = string.Join( ", ", modelNumbers ) ;
+        var ceedModel = new CeedModel( firstCeedModel.LegendDisplay, firstCeedModel.CeedModelNumber, firstCeedModel.CeedSetCode, generalDisplayDeviceSymbol, modelNumber, firstCeedModel.FloorPlanSymbol,
+          firstCeedModel.InstrumentationSymbol, firstCeedModel.Name, firstCeedModel.Base64InstrumentationImageString, firstCeedModel.Base64FloorPlanImages, firstCeedModel.FloorPlanType,
+          firstCeedModel.IsAdded, firstCeedModel.IsEditFloorPlan, firstCeedModel.IsEditInstrumentation, firstCeedModel.IsEditCondition ) ;
+        newCeedModels.Add( ceedModel ) ;
+      }
+
+      return newCeedModels ;
     }
 
     public void Load( CheckBox checkBox )
@@ -561,16 +607,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable == null ) return ;
       if ( _ceedModels.Any() ) {
-        var ceedModel = _ceedModels.First( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == SelectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == SelectedCeedModel.ModelNumber ) ;
-        if ( ceedModel != null ) {
+        var ceedModels = _ceedModels.Where( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode ) ;
+        foreach ( var ceedModel in ceedModels ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
           ceedStorable.CeedModelData = _ceedModels ;
         }
       }
 
       if ( _usingCeedModel.Any() ) {
-        var ceedModel = _usingCeedModel.FirstOrDefault( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == SelectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == SelectedCeedModel.ModelNumber ) ;
-        if ( ceedModel != null ) {
+        var ceedModels = _usingCeedModel.Where( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode ) ;
+        foreach ( var ceedModel in ceedModels ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
           ceedStorable.CeedModelUsedData = _usingCeedModel ;
         }
@@ -892,6 +938,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private bool IsChange( string oldItem, string newItem )
     {
       return oldItem != newItem ;
+    }
+
+    public void ShowPreviewList( string ceedSetCode )
+    {
+      var ceedModels = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
+      var ceedModelOfCeedCode = ceedModels.Where( c => c.CeedSetCode == ceedSetCode ).ToList() ;
+      PreviewList.Clear() ;
+      if ( ceedModelOfCeedCode.Any() ) {
+        PreviewList.AddRange( ceedModelOfCeedCode ) ;
+      }
     }
   }
 }

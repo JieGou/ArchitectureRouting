@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
         var parentCategory = convertCategoriesModel.FirstOrDefault( c => c.Name == category.ParentName ) ;
         if ( parentCategory == null ) continue ;
         var convertCategory = new CategoryModel { Name = category.Name, ParentName = category.ParentName, IsExpanded = category.IsExpanded, IsSelected = category.IsSelected } ;
-        var ceedCodeNumbers = categoryModels.Where( c => c.ParentName == category.Name && ! c.IsCeedCodeNumber ) ;
+        var ceedCodeNumbers = categoryModels.Where( c => c.ParentName == category.Name && c.IsCeedCodeNumber ) ;
         foreach ( var ceedCodeNumberModel in ceedCodeNumbers ) {
           var convertCeedCodeNumberModel = new CategoryModel { Name = ceedCodeNumberModel.Name, ParentName = ceedCodeNumberModel.ParentName, IsExpanded = ceedCodeNumberModel.IsExpanded, IsSelected = ceedCodeNumberModel.IsSelected } ;
           convertCategory.CeedCodeNumbers.Add( convertCeedCodeNumberModel ) ;
