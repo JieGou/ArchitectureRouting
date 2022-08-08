@@ -262,20 +262,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _usingCeedModel = new List<CeedModel>() ;
         _previousCeedModels = new List<CeedModel>() ;
         _previewList = new ObservableCollection<CeedModel>() ;
+        Categories = new ObservableCollection<CategoryModel>() ;
+        CategoriesPreview = new ObservableCollection<CategoryModel>() ;
       }
       else {
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
         _previousCeedModels = new List<CeedModel>( oldCeedStorable.CeedModelData ) ;
+        _previewList = new ObservableCollection<CeedModel>() ;
         IsShowCeedModelNumber = _storageService.Data.IsShowCeedModelNumber ;
         IsShowCondition = _storageService.Data.IsShowCondition ;
         IsShowOnlyUsingCode = _storageService.Data.IsShowOnlyUsingCode ;
-        AddModelNumber( CeedModels ) ;
+        AddModelNumber( _ceedModels ) ;
         if ( _usingCeedModel.Any() )
           IsExistUsingCode = true ;
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
         else IsShowDiff = _storageService.Data.IsDiff ;
-        _previewList = CeedModels ;
         Categories = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithCeedCode ) ) ;
         CategoriesPreview = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithoutCeedCode ) ) ;
       }
@@ -392,7 +394,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return null ;
     }
     
-    public void ShowCeedModelAndPreviewByCategory( CategoryModel categoryModel, bool isCategoryWithCeedCode )
+    private void ResetSelectedCategory( IEnumerable<CategoryModel> categories )
+    {
+      foreach ( var category in categories ) {
+        category.IsExpanded = false ;
+        category.IsSelected = false ;
+
+        if ( ! category.Categories.Any() ) continue ;
+
+        ResetSelectedCategory( category.Categories ) ;
+      }
+    }
+    
+    private void ShowCeedModelAndPreviewByCategory( CategoryModel categoryModel, bool isCategoryWithCeedCode )
     {
       var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
       CeedModels.Clear() ;
@@ -509,10 +523,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.Contains( _selectedDeviceSymbol ) ).ToList() ;
       data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.Contains( _selectedCeedSetCode ) ).ToList() ;
       data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.Contains( _selectedModelNumber ) ).ToList() ;
-      foreach ( var dataModel in data ) {
-        CeedModels.Add( dataModel ) ;
-        PreviewList.Add( dataModel ) ;
-      }
+      data = GroupCeedModelsByCeedCode( data ) ;
+      CeedModels.AddRange( data ) ;
+      ResetSelectedCategory( Categories ) ;
+      ResetSelectedCategory( CategoriesPreview ) ;
     }
 
     private void Reset()
