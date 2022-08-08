@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
+using Autodesk.Revit.DB.Electrical ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -81,9 +82,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var curveType = route.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection ) ;
+      var allowedTiltedPiping = CheckAllowedTiltedPiping( document, route.RouteName ) ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, null, allowedTiltedPiping ) ;
 
       return result ;
+    }
+
+    private bool CheckAllowedTiltedPiping( Document document, string routeName )
+    {
+      var routeNameArray = routeName.Split( '_' ) ;
+      var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      var conduitsOfRouteName = document.GetAllElements<Conduit>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => {
+        if ( c.GetRouteName() is not { } rName ) return false ;
+        var rNameArray = rName.Split( '_' ) ;
+        var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+        return strRouteName == mainRouteName ;
+      } ).ToList() ;
+      foreach ( var conduit in conduitsOfRouteName ) {
+        var conduitLocation = ( conduit.Location as LocationCurve ) ! ;
+        var conduitLine = (  conduitLocation.Curve as Line ) ! ;
+        var direction = conduitLine.Direction ;
+        if ( direction.X is 1 or -1 || direction.Y is 1 or -1 || direction.Z is 1 or -1 ) {
+        }
+        else {
+          return true ;
+        }
+      }
+      
+      return false ;
     }
 
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
