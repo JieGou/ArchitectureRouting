@@ -387,6 +387,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var subCategory = FindSelectedCategory( category.Categories, isCategoryWithCeedCode ) ;
         if ( subCategory == null ) continue ;
         ShowCeedModelAndPreviewByCategory( subCategory, isCategoryWithCeedCode ) ;
+        ResetSelectedCategory( isCategoryWithCeedCode ? CategoriesPreview : Categories ) ;
+        ResetComboboxValue() ;
         return category ;
       }
 
