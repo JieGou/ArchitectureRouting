@@ -624,7 +624,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var rackMap = rackMaps.FirstOrDefault( rm => rm.RouteName == routeName ) ;
 
-      if ( string.IsNullOrEmpty( rackMap.RouteName ) ) {
+      if ( rackMap is null ) {
         // Add new rack to cable tray collection
         var newRackMap = new RackMap( routeName ) ;
         newRackMap.RackIds.Add( rack.UniqueId ) ;
@@ -635,6 +635,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else {
           newRackMap.CableTrayFittings.Add( rack ) ;
         }
+        rackMaps.Add( newRackMap );
       }
       else {
         // Add new rack to cable tray collection
