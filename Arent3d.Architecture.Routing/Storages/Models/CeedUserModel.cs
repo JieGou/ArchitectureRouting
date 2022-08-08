@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
         public List<string> ConnectorFamilyUploadData { get ; set ; } = new() ;
         
         [Field(Documentation = "Is Show Only Using Code")]
-        public bool IsShowOnlyUsingCode { get ; set ; } = true ;
+        public bool IsShowOnlyUsingCode { get ; set ; }
         
         [Field(Documentation = "Is Difference")]
         public bool IsDiff { get ; set ; }

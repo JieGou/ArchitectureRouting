@@ -435,9 +435,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
-      data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.Contains( _selectedDeviceSymbol ) ).ToList() ;
-      data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.Contains( _selectedCeedSetCode ) ).ToList() ;
-      data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.Contains( _selectedModelNumber ) ).ToList() ;
+      data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.ToUpper().Contains( _selectedDeviceSymbol.ToUpper() ) ).ToList() ;
+      data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.ToUpper().Contains( _selectedCeedSetCode.ToUpper() ) ).ToList() ;
+      data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.ToUpper().Contains( _selectedModelNumber.ToUpper() ) ).ToList() ;
       foreach ( var dataModel in data ) {
         CeedModels.Add( dataModel ) ;
         PreviewList.Add( dataModel ) ;

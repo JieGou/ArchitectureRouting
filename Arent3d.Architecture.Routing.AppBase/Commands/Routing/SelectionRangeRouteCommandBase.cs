@@ -151,55 +151,69 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var nameBase = GetNameBase( systemType, curveType ) ;
       var routeName = nameBase + "_" + nextIndex ;
 
-      var (footPassPoint, passPoints) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, pipeSpec, powerConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
-      document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
+      if ( sensorConnectors.Count == 1 ) {
+        var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
+        var sensorConnectorEndPoint = new ConnectorEndPoint( sensorConnectors.First().GetTopConnectorOfConnectorFamily(), radius ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, sensorConnectorEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), sensorFixedHeight, sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ;
 
-      var allPassPoints = new List<FamilyInstance>() ;
-      if ( footPassPoint != null ) allPassPoints.Add( footPassPoint ) ;
-      allPassPoints.AddRange( passPoints ) ;
-      if ( IsAnyPassPointsInsideEnvelope( document, allPassPoints ) ) {
-        var allPassPointIds = allPassPoints.Select( p => p.UniqueId ).ToList() ;
-        document.Delete( allPassPointIds ) ;
-        MessageBox.Show( "Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope".GetDocumentStringByKeyOrDefault( document, "選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。" ), "Error" ) ;
-        return new List<(string RouteName, RouteSegment Segment)>() ;
+        // change color connectors
+        var allConnectors = new List<FamilyInstance> { powerConnector } ;
+        allConnectors.AddRange( sensorConnectors ) ;
+        ConfirmUnsetCommandBase.ResetElementColor( document, allConnectors ) ;
+
+        return new List<(string RouteName, RouteSegment Segment)> { ( routeName, segment ) } ;
       }
+      else {
+        var (footPassPoint, passPoints) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, pipeSpec, powerConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
+        document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
 
-      var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 1 ) ;
+        var allPassPoints = new List<FamilyInstance>() ;
+        if ( footPassPoint != null ) allPassPoints.Add( footPassPoint ) ;
+        allPassPoints.AddRange( passPoints ) ;
+        if ( IsAnyPassPointsInsideEnvelope( document, allPassPoints ) ) {
+          var allPassPointIds = allPassPoints.Select( p => p.UniqueId ).ToList() ;
+          document.Delete( allPassPointIds ) ;
+          MessageBox.Show( "Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope".GetDocumentStringByKeyOrDefault( document, "選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。" ), "Error" ) ;
+          return new List<(string RouteName, RouteSegment Segment)>() ;
+        }
 
-      // main route
-      var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
-      var powerConnectorEndPointKey = powerConnectorEndPoint.Key ;
-      {
-        var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
-        var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
-        var firstToEndPoint = secondFromEndPoints[ 0 ] ;
+        var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 1 ) ;
 
-        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), fromFixedHeight, sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
-        result.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
+        // main route
+        var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
+        var powerConnectorEndPointKey = powerConnectorEndPoint.Key ;
         {
-          var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
-          return ( routeName, segment ) ;
+          var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
+          var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
+          var firstToEndPoint = secondFromEndPoints[ 0 ] ;
+
+          result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), fromFixedHeight, sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+          result.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
+          {
+            var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+            return ( routeName, segment ) ;
+          } ) ) ;
+        }
+
+        var nextIndexSubRoute = nextIndex ;
+        // branch routes
+        result.AddRange( passPoints.Zip( sensorConnectors.Take( passPoints.Count ), ( pp, sensor ) =>
+        {
+          var subRouteName = nameBase + "_" + ( ++nextIndexSubRoute ) ;
+          var branchEndPoint = new PassPointBranchEndPoint( document, pp.UniqueId, radius, powerConnectorEndPointKey ) ;
+          var connectorEndPoint = new ConnectorEndPoint( sensor.GetTopConnectorOfConnectorFamily(), radius ) ;
+          var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+          return ( subRouteName, segment ) ;
         } ) ) ;
+        nextIndex = nextIndexSubRoute ;
+        // change color connectors
+        var allConnectors = new List<FamilyInstance> { powerConnector } ;
+        allConnectors.AddRange( sensorConnectors ) ;
+        ConfirmUnsetCommandBase.ResetElementColor( document, allConnectors ) ;
+
+        return result ;
       }
-
-      var nextIndexSubRoute = nextIndex ;
-      // branch routes
-      result.AddRange( passPoints.Zip( sensorConnectors.Take( passPoints.Count ), ( pp, sensor ) =>
-      {
-        var subRouteName = nameBase + "_" + ( ++nextIndexSubRoute ) ;
-        var branchEndPoint = new PassPointBranchEndPoint( document, pp.UniqueId, radius, powerConnectorEndPointKey ) ;
-        var connectorEndPoint = new ConnectorEndPoint( sensor.GetTopConnectorOfConnectorFamily(), radius ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
-        return ( subRouteName, segment ) ;
-      } ) ) ;
-      nextIndex = nextIndexSubRoute ;
-      // change color connectors
-      var allConnectors = new List<FamilyInstance> { powerConnector } ;
-      allConnectors.AddRange( sensorConnectors ) ;
-      ConfirmUnsetCommandBase.ResetElementColor( document, allConnectors ) ;
-
-      return result ;
-
+      
       static IEnumerable<FamilyInstance> EliminateSamePassPoints( FamilyInstance? firstPassPoint, IEnumerable<FamilyInstance> passPoints )
       {
         if ( null != firstPassPoint ) yield return firstPassPoint ;
