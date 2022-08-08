@@ -1,4 +1,5 @@
 using System.IO ;
+using System.IO.Compression ;
 using System.Linq ;
 using System.Reflection ;
 
@@ -25,7 +26,7 @@ namespace Arent3d.Architecture.Routing
     private const string MechanicalRoutingElementSharedParameterFileName = "MechanicalRoutingElementSharedParameters.txt" ;
     private const string ElectricalRoutingElementSharedParameterFileName = "ElectricalRoutingElementSharedParameters.txt" ;
 
-    private static readonly string AssetPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "Assets" ) ;
+    public static readonly string AssetPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "Assets" ) ;
 
     public static string GetFamilyPath( string familyName )
     {
@@ -88,6 +89,48 @@ namespace Arent3d.Architecture.Routing
       stream.Read(fileData, 0, fileData.Length);
 
       return fileData ;
+    }
+    
+    public static string? GetFolderCompressionFilePath( string? rootPath, string compressionFileName )
+    {
+      var fileData = ReadFileEmbededSource( compressionFileName ) ;
+      if ( null == fileData )
+        return null ;
+
+      var directoryPath = Path.Combine( rootPath ?? Path.GetTempPath(), Path.GetFileNameWithoutExtension( compressionFileName ) ) ;
+      ExtractFilesToFolder( directoryPath, fileData ) ;
+
+      return directoryPath ;
+    }
+
+    private static void ExtractFilesToFolder( string directoryPath, byte[] zippedBuffer )
+    {
+      if ( Directory.Exists( directoryPath ) ) {
+        string[] filePaths = Directory.GetFiles( directoryPath, "*.*", SearchOption.TopDirectoryOnly ) ;
+        if ( filePaths.Length > 0 ) {
+          foreach ( var filePath in filePaths ) {
+            File.SetAttributes( filePath, FileAttributes.Normal ) ;
+            File.Delete( filePath ) ;
+          }
+        }
+      }
+      else {
+        Directory.CreateDirectory( directoryPath ) ;
+      }
+
+      using var zippedStream = new MemoryStream( zippedBuffer ) ;
+      using var zipArchive = new ZipArchive( zippedStream ) ;
+      foreach ( var zipArchiveEntry in zipArchive.Entries ) {
+        if ( string.IsNullOrEmpty( zipArchiveEntry.Name ) ) continue ;
+        var pathFileName = Path.Combine( directoryPath, zipArchiveEntry.Name ) ;
+        if ( ! File.Exists( pathFileName ) ) {
+          zipArchiveEntry.ExtractToFile( pathFileName ) ;
+        }
+        else if ( File.GetLastAccessTime( pathFileName ) <= zipArchiveEntry.LastWriteTime ) {
+          File.SetAttributes( pathFileName, FileAttributes.Normal ) ;
+          zipArchiveEntry.ExtractToFile( pathFileName, true ) ;
+        }
+      }
     }
   }
 }
