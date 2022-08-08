@@ -47,21 +47,21 @@
         <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Left">
             <Label Content="セットコード" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5" Visibility="Hidden" />
             <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" Visibility="Hidden"
-                      PreviewKeyUp="CmbKeyUp"
+                      KeyDown="CmbKeyDown"
                       ItemsSource="{Binding CeedSetCodes}"
                       SelectedValue="{Binding SelectedCeedSetCode, Mode=TwoWay}"
                       Text="{Binding SelectedCeedSetCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                       IsTextSearchEnabled="False" />
             <Label Content="表示機器記号" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
             <ComboBox IsEditable="True" Width="200" Height="27"
-                      PreviewKeyUp="CmbKeyUp"
+                      KeyDown="CmbKeyDown"
                       ItemsSource="{Binding DeviceSymbols}"
                       SelectedValue="{Binding SelectedDeviceSymbolValue, Mode=TwoWay}"
                       Text="{Binding SelectedDeviceSymbolValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                       IsTextSearchEnabled="False" />
             <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
             <ComboBox IsEditable="True" Width="200" Height="27"
-                      PreviewKeyUp="CmbKeyUp"
+                      KeyDown="CmbKeyDown"
                       ItemsSource="{Binding ModelNumber}"
                       SelectedValue="{Binding SelectedModelNumber, Mode=TwoWay}"
                       Text="{Binding SelectedModelNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

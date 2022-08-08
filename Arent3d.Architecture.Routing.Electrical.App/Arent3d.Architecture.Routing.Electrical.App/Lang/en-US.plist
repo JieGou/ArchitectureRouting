@@ -253,6 +253,9 @@
         <key>Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand</key>
         <string>Show&#xA;Conduits in 3D</string>
 
+        <key>Electrical.App.Commands.Initialization.SelectedSwitchEcoNormalMode</key>
+        <string>Switch&#xA;Eco/Normal Mode</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>

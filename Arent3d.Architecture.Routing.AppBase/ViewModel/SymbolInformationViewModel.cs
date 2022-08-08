@@ -25,9 +25,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class SymbolInformationViewModel : NotifyPropertyChanged
   {
     public const string LenghtMaterialType = "長さ物" ;
-    private const double QuantityDefault = 100 ;
+    private const double QuantityDefault = 10 ;
     private const string UnitDefault = "m" ;
-    private const string TrajectoryDefault = "100" ;
+    private const string TrajectoryDefault = "10" ;
     private const string ConstructionClassificationDefault = "導圧管類" ;
 
     private const string ElectricalCategoryFileName = "ElectricalCategory.xlsx" ;
