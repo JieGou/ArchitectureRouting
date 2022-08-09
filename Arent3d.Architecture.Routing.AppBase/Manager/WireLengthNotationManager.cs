@@ -93,7 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( textNoteOfPickUpFigureModel.Position == null ) continue ;
 
         foreach ( var room in rooms ) {
-          var isOutOfRoom = RoomRouteManager.IsPickElementOutOfRoom( room, textNoteOfPickUpFigureModel.RelatedPosition ) ;
+          var isOutOfRoom = RoomRouteManager.IsPickedElementOutsideOfRoom( room, textNoteOfPickUpFigureModel.RelatedPosition ) ;
           if ( isOutOfRoom ) continue ;
           
           var reSizeRoomId = room.Id.IntegerValue ;

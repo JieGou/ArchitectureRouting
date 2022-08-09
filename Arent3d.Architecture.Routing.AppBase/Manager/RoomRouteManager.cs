@@ -293,7 +293,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return ( RoomEdge.Other, new XYZ( p1.X, p1.Y - thickness, p1.Z ) ) ;
     }
 
-    public static bool IsPickElementIsOutOfRoom( Document document, Reference element, XYZ elementEndPoint )
+    public static bool IsPickedElementOutsideOfRoom( Document document, Reference element, XYZ elementEndPoint )
     {
       var room = document.GetElement( element.ElementId ) ;
       if ( room == null ) return true ;
@@ -306,7 +306,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return elementEndPoint.X < p1.X || elementEndPoint.X > p2.X || elementEndPoint.Y > p1.Y || elementEndPoint.Y < p3.Y ;
     }
     
-    public static bool IsPickElementOutOfRoom( FamilyInstance room, XYZ elementEndPoint )
+    public static bool IsPickedElementOutsideOfRoom( FamilyInstance room, XYZ elementEndPoint )
     {
       var locationPoint = ( room.Location as LocationPoint ) ! ;
       var lenght = room.ParametersMap.get_Item( "Lenght" ).AsDouble() ;
