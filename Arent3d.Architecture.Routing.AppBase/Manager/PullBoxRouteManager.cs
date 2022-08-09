@@ -703,6 +703,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             toDirection = pullBoxInfo.ToDirection ;
           }
 
+          if ( level == null || direction == null )
+            return result ;
+          
           result = CreatePullBoxAndGetSegments( document, route, selectedConduit, originX, originY, height, level, direction, nameBase!, out var pullBoxElement, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection ).ToList() ;
           var pullBoxPosition = new XYZ( originX, originY, height ) ;
           if ( pullBoxElement != null ) pullBoxElements.Add( ( pullBoxElement, pullBoxPosition ) ) ;
@@ -857,22 +860,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreatePullBoxAndGetSegments( Document document, Route route, Element element, double originX, double originY, double originZ,
-      Level? level, XYZ? direction, string nameBase, out FamilyInstance? pullBox, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool isPullBoxInShaft = false, bool isWireEnteredShaft = true )
+      Level level, XYZ direction, string nameBase, out FamilyInstance? pullBox, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool isPullBoxInShaft = false, bool isWireEnteredShaft = true )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
       pullBox = null ;
       try {
         if( isPullBoxInShaft )
-          pullBox = FindPullBoxByLocation( document, originX, originY, originZ + level?.Elevation ?? 0 ) ;
+          pullBox = FindPullBoxByLocation( document, originX, originY, originZ + level.Elevation ) ;
         
         if ( ! isPullBoxInShaft || pullBox == null ) {
           using Transaction t = new( document, "Create pull box" ) ;
           t.Start() ;
-          pullBox = GenerateConnector( document, ElectricalRoutingFamilyType.PullBox, ConnectorFamilyType.PullBox, originX, originY, originZ , level!, route.RouteName ) ;
+          pullBox = GenerateConnector( document, ElectricalRoutingFamilyType.PullBox, ConnectorFamilyType.PullBox, originX, originY, originZ , level, route.RouteName ) ;
           t.Commit() ;
 
           if ( isPullBoxInShaft ) {
-            var heightPositionOfPullBox = originZ + level?.Elevation ?? 0 ;
+            var heightPositionOfPullBox = originZ + level.Elevation ;
             var shaftElementUniqueId = route.UniqueShaftElementUniqueId ;
             var shaft = document.GetElementById<Opening>( shaftElementUniqueId ?? string.Empty ) ;
             if ( shaft != null && GetShaftLocation( route, document ) is { } shaftLocation ) {
@@ -933,7 +936,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         }
         using Transaction t1 = new( document, "Get segments" ) ;
         t1.Start() ;
-        result.AddRange( GetRouteSegments( document, route, element, pullBox, originZ, originZ, direction!, true, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, firstHeight, isWireEnteredShaft ) ) ;
+        result.AddRange( GetRouteSegments( document, route, element, pullBox, originZ, originZ, direction, true, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, firstHeight, isWireEnteredShaft ) ) ;
         t1.Commit() ;
       }
       catch {
