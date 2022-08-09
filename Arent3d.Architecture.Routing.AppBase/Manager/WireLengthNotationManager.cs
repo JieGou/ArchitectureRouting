@@ -93,7 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( textNoteOfPickUpFigureModel.Position == null ) continue ;
 
         foreach ( var room in rooms ) {
-          var isOutOfRoom = RoomRouteManager.CheckPickElementIsInOrOutRoom( room, textNoteOfPickUpFigureModel.Position ) ;
+          var isOutOfRoom = RoomRouteManager.CheckPickElementIsOutOfRoom( room, textNoteOfPickUpFigureModel.RelatedPosition ) ;
           if ( isOutOfRoom ) continue ;
           
           var reSizeRoomId = room.Id.IntegerValue ;
@@ -117,11 +117,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       #endregion
       
       foreach ( var textNoteOfPickUpFigureModel in allTextNoteOfPickUpFigureModels ) {
-        // TODO: とりあえず動くために以下をコメントアウトします。
-        // if ( textNoteOfPickUpFigureModel.RoomId == null ) continue ;
-        // var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel, reSizeRooms[ (int)textNoteOfPickUpFigureModel.RoomId ] ) ;
-        
-        var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel ) ;
+        var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel, textNoteOfPickUpFigureModel.RoomId != null && reSizeRooms[ (int)textNoteOfPickUpFigureModel.RoomId ] ) ;
         if ( textNote != null )
           textNoteOfPickUpFigureModel.Id = textNote.UniqueId ;
       }
@@ -172,12 +168,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var fromPoint = line.GetEndPoint( 0 ) ;
             var toPoint = line.GetEndPoint( 1 ) ;
             var direction = line.Direction ;
-            var middlePoint = XyzUtil.GetMiddlePoint( fromPoint, toPoint, direction ) ;
+            var middlePointOfConduit = XyzUtil.GetMiddlePoint( fromPoint, toPoint ) ;
+            var middlePoint = GetPositionOfStraightTextNote( middlePointOfConduit, direction ) ;
             
             int counter;
             XYZ? position;
-            var positionOfStraightTextNote = straightTextNoteOfPickUpFigureModels.Where( x => x.Position != null &&
-              Math.Abs( x.RelatedPosition.X - middlePoint.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.RelatedPosition.Y - middlePoint.Y ) < MaxToleranceOfTextNotePosition )
+            var positionOfStraightTextNote = straightTextNoteOfPickUpFigureModels
+              .Where( x => Math.Abs( x.RelatedPosition.X - middlePointOfConduit.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.RelatedPosition.Y - middlePointOfConduit.Y ) < MaxToleranceOfTextNotePosition )
               .OrderBy( x => x.Counter ).LastOrDefault();
             if ( positionOfStraightTextNote == default ) {
               counter = 1 ;
@@ -186,13 +183,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             else if ( ! isToPullBox ) {
               var isLeftOrTop = positionOfStraightTextNote.Counter % 2 != 0 ;
               
+              position = GetPositionOfStraightTextNote( positionOfStraightTextNote.RelatedPosition, direction ) ;
               if ( direction.Y is 1 or -1 )
-                middlePoint = new XYZ( isLeftOrTop ? middlePoint.X + 1.7 + 1.5 * ( positionOfStraightTextNote.Counter - 1 ) / 2 : middlePoint.X - 1.5 * positionOfStraightTextNote.Counter / 2, middlePoint.Y, middlePoint.Z ) ;
+                position = new XYZ( isLeftOrTop ? middlePoint.X + 1.7 + 1.5 * ( positionOfStraightTextNote.Counter - 1 ) / 2 : middlePoint.X - 1.5 * positionOfStraightTextNote.Counter / 2, middlePoint.Y, middlePoint.Z ) ;
               else if ( direction.X is 1 or -1 )
-                middlePoint = new XYZ( middlePoint.X, isLeftOrTop ? middlePoint.Y - 1.7 - 1.5 * ( positionOfStraightTextNote.Counter - 1 ) / 2 : middlePoint.Y + 1.5 * positionOfStraightTextNote.Counter / 2, middlePoint.Z ) ;
+                position = new XYZ( middlePoint.X, isLeftOrTop ? middlePoint.Y - 1.7 - 1.5 * ( positionOfStraightTextNote.Counter - 1 ) / 2 : middlePoint.Y + 1.5 * positionOfStraightTextNote.Counter / 2, middlePoint.Z ) ;
 
               counter = positionOfStraightTextNote.Counter + 1 ;
-              position = positionOfStraightTextNote.RelatedPosition ;
             }
             else continue ;
 
@@ -208,7 +205,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var wireLengthNotationAlignment = WireLengthNotationAlignment.Horizontal ;
             if ( direction is { Y: 1 or -1 } )
               wireLengthNotationAlignment = WireLengthNotationAlignment.Vertical ;
-            var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( string.Empty, counter, position, middlePoint, strStraightTextNoteOfPickUpFigureQuantity, wireLengthNotationAlignment, null, null ) ;
+            var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( string.Empty, counter, positionOfStraightTextNote?.RelatedPosition ?? middlePointOfConduit, position, strStraightTextNoteOfPickUpFigureQuantity, wireLengthNotationAlignment, null, null ) ;
             straightTextNoteOfPickUpFigureModels.Add( textNoteOfPickUpFigureModel ) ;
           }
         }
@@ -228,6 +225,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           obliqueTextNoteOfPickUpFigureModels.Add( textNoteOfPickUpFigureModel );
         }
       }
+    }
+    
+    private static XYZ GetPositionOfStraightTextNote( XYZ middlePoint, XYZ direction )
+    {
+      if (direction.Y is 1 or -1) return new XYZ( middlePoint.X - 1.5 , middlePoint.Y, middlePoint.Z ) ;
+      
+      if (direction.X is 1 or -1) return new XYZ( middlePoint.X, middlePoint.Y + 1.5, middlePoint.Z ) ;
+
+      return middlePoint ;
     }
     
     private static void SetPositionForObliqueTextNoteOfPickUpFigure( RouteCache routeCache, Dictionary<string, List<Conduit>> conduitsOfRoutesForObliqueTextNote,

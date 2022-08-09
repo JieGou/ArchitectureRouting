@@ -17,13 +17,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         return check > 0 ? "clockwise" : "counterclockwise" ;
       }
       
-      public static XYZ GetMiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
-      {
-        if(direction.Y is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2 - 1.5 , ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
-      
-        if(direction.X is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2 + 1.5, fromPoint.Z ) ;
-      
-        return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
-      }
+      public static XYZ GetMiddlePoint( XYZ fromPoint, XYZ toPoint ) => new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
     }
 }
