@@ -20,7 +20,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DataContext = viewModel ;
       BtnReplaceSymbol.IsEnabled = false ;
       Style rowStyle = new( typeof( DataGridRow ) ) ;
-      //rowStyle.Setters.Add( new EventSetter( MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
       rowStyle.Setters.Add( new EventSetter( MouseLeftButtonUpEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
       ViewModel.DtGrid = DtGrid ;
@@ -85,19 +84,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.ShowPreviewList( selectedCeedModel.CeedSetCode ) ;
     }
 
-    // private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
-    // {
-    //   var selectedItem = (CeedModel) DtGrid.SelectedValue ;
-    //   ViewModel.SelectedDeviceSymbol = selectedItem.GeneralDisplayDeviceSymbol ;
-    //   ViewModel.SelectedCondition = selectedItem.Condition ;
-    //   ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
-    //   ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
-    //   ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
-    //   if ( string.IsNullOrEmpty( ViewModel.SelectedDeviceSymbol ) ) return ;
-    //   ViewModel.Save() ;
-    //   DialogResult = true ;
-    //   Close() ;
-    // }
+    private void PreviewListMouseDoubleClick( object sender, MouseButtonEventArgs e )
+    {
+      var listView = ( sender as ListView ) ! ;
+      if ( listView.SelectedValue == null ) return ;
+      var selectedItem = (CeedModel) listView.SelectedValue ;
+      ViewModel.SelectedDeviceSymbol = selectedItem.GeneralDisplayDeviceSymbol ;
+      ViewModel.SelectedCondition = selectedItem.Condition ;
+      ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
+      ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
+      ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
+      if ( string.IsNullOrEmpty( ViewModel.SelectedDeviceSymbol ) ) return ;
+      ViewModel.Save() ;
+      DialogResult = true ;
+      Close() ;
+    }
 
     private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
     {

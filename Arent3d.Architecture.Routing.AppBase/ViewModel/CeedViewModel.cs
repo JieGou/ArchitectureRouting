@@ -373,6 +373,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       foreach ( var category in categories ) {
         if ( category.IsSelected && string.IsNullOrEmpty( category.ParentName ) ) {
+          category.IsSelected = false ;
           category.IsExpanded = ! category.IsExpanded ;
           return null ;
         }
