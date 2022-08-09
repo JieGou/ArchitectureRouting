@@ -93,7 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( textNoteOfPickUpFigureModel.Position == null ) continue ;
 
         foreach ( var room in rooms ) {
-          var isOutOfRoom = RoomRouteManager.CheckPickElementIsOutOfRoom( room, textNoteOfPickUpFigureModel.RelatedPosition ) ;
+          var isOutOfRoom = RoomRouteManager.IsPickElementOutOfRoom( room, textNoteOfPickUpFigureModel.RelatedPosition ) ;
           if ( isOutOfRoom ) continue ;
           
           var reSizeRoomId = room.Id.IntegerValue ;
@@ -442,14 +442,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result; 
     }
     
-    private static bool IsNearPowerConnector( Document document, XYZ point )
+    private static bool IsNearPowerConnector( Document document, XYZ elementPoint )
     {
       var allPowerConnectors = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
         .Where( c => c.GetConnectorFamilyType() == ConnectorFamilyType.Power ) ;
       return allPowerConnectors.Any( c =>
       {
-        var locationPoint =  ( c.Location as LocationPoint )?.Point ;
-        return locationPoint != null && XyzUtil.GetDistanceIn2D( locationPoint, point ) < MaxDistanceBetweenTextNotes ;
+        var powerLocationPoint = ( c.Location as LocationPoint )?.Point ;
+        return powerLocationPoint != null && XyzUtil.GetDistanceIn2D( powerLocationPoint, elementPoint ) < MaxDistanceBetweenTextNotes ;
       } ) ;
     }
   }

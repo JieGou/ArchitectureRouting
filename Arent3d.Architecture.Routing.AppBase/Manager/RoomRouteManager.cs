@@ -293,7 +293,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return ( RoomEdge.Other, new XYZ( p1.X, p1.Y - thickness, p1.Z ) ) ;
     }
 
-    public static bool CheckPickElementIsInOrOutRoom( Document document, Reference element, XYZ elementEndPoint )
+    public static bool IsPickElementIsOutOfRoom( Document document, Reference element, XYZ elementEndPoint )
     {
       var room = document.GetElement( element.ElementId ) ;
       if ( room == null ) return true ;
@@ -303,10 +303,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var p1 = locationPoint.Point ;
       var p2 = new XYZ( p1.X + lenght, p1.Y, p1.Z ) ;
       var p3 = new XYZ( p2.X, p2.Y - width, p2.Z ) ;
-      return ! ( elementEndPoint.X > p1.X ) || ! ( elementEndPoint.X < p2.X ) || ! ( elementEndPoint.Y < p1.Y ) || ! ( elementEndPoint.Y > p3.Y ) ;
+      return elementEndPoint.X < p1.X || elementEndPoint.X > p2.X || elementEndPoint.Y > p1.Y || elementEndPoint.Y < p3.Y ;
     }
     
-    public static bool CheckPickElementIsOutOfRoom( FamilyInstance room, XYZ elementEndPoint )
+    public static bool IsPickElementOutOfRoom( FamilyInstance room, XYZ elementEndPoint )
     {
       var locationPoint = ( room.Location as LocationPoint ) ! ;
       var lenght = room.ParametersMap.get_Item( "Lenght" ).AsDouble() ;
@@ -314,7 +314,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var p1 = locationPoint.Point ;
       var p2 = new XYZ( p1.X + lenght, p1.Y, p1.Z ) ;
       var p3 = new XYZ( p2.X, p2.Y - width, p2.Z ) ;
-      return !( elementEndPoint.X >= p1.X ) || ! ( elementEndPoint.X <= p2.X ) || ! ( elementEndPoint.Y <= p1.Y ) || ! ( elementEndPoint.Y >= p3.Y ) ;
+      return elementEndPoint.X < p1.X || elementEndPoint.X > p2.X || elementEndPoint.Y > p1.Y || elementEndPoint.Y < p3.Y ;
     }
     
     public static RoomEdge GetPassPointPositionOutRoom( XYZ passPoint, XYZ p1, XYZ p2, XYZ p4 )
