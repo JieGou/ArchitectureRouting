@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       return RoutingSettingsAreInitialized( document ) ;
     }
 
-    private void LoadDefaultElectricalDb( Document document )
+    private static void LoadDefaultElectricalDb( Document document )
     {
       var activeViewName = document.ActiveView.Name ;
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       defaultSettingViewModel.LoadDefaultDb() ;
     }
     
-    private void LoadDefaultRegisterSymbols( Document document )
+    private static void LoadDefaultRegisterSymbols( Document document )
     {
       var path = AssetManager.GetFolderCompressionFilePath( AssetManager.AssetPath, DefaultRegisterSymbolCompressionFileName ) ;
       if ( path == null ) return ;
@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var registerSymbolStorable = document.GetRegisterSymbolStorable() ;
       
       using var transaction = new Transaction( document ) ;
-      transaction.Start( "Save Setting Data" ) ;
+      transaction.Start( "Save Symbol Data" ) ;
       registerSymbolStorable.FolderSelectedPath = path ;
       registerSymbolStorable.BrowseFolderPath = path ;
       registerSymbolStorable.Save() ;
