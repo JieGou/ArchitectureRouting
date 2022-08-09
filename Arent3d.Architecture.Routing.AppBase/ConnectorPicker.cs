@@ -428,6 +428,10 @@ namespace Arent3d.Architecture.Routing.AppBase
         return GetEndOfRouting( element, ( null == firstConnector ) ) ;
       }
       else {
+        if ( addInType == AddInType.Electrical && isLeakRoute ) {
+          var cons = element.GetConnectors() ;
+          return cons.Count() > 0 ? ( true, cons.First() ) : ( false, null ) ;
+        }
         return CreateConnectorInOutFamily( uiDocument, element, message, firstConnector, addInType, isLeakRoute ) ;
       }
     }
