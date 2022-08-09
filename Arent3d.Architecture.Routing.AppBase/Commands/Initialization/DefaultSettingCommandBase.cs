@@ -101,12 +101,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var floorName = view.Name ;
         HeightSettingStorable settingStorables = doc.GetHeightSettingStorable() ;
         var height = settingStorables.HeightSettingsData.Values.FirstOrDefault( x => x.LevelId.ToString() == view.GenLevel.Id.ToString() )?.Elevation ?? 0 ;
+        
         var scale = view.Scale ;
 
         importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, floorName, height, scale ) ) ;
       }
       
-      return importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ;
+      var importDwgMappingModelsOrder = importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ;
+      var result = new List<ImportDwgMappingModel>() ;
+      result.Add( importDwgMappingModelsOrder[0] );
+      for ( int i = 1 ; i < importDwgMappingModelsOrder.Count ; i++ ) {
+        var height = importDwgMappingModelsOrder[ i ].FloorHeight - importDwgMappingModelsOrder[ i - 1 ].FloorHeight ;
+        var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsOrder[ i ].FileName, importDwgMappingModelsOrder[ i ].FloorName, importDwgMappingModelsOrder[ i ].FloorHeight,
+          importDwgMappingModelsOrder[ i ].Scale, height ) ;
+        result.Add( importDwgModel );
+      }
+
+      return result ;
     }
     
     private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, int gradeMode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
@@ -144,10 +155,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       foreach ( var item in importDwgMappingModels ) {
         var oldImportDwgMappingModel = defaultSettingStorable.ImportDwgMappingData.SingleOrDefault( i => i.FloorName == item.FloorName ) ;
         if ( oldImportDwgMappingModel == null ) {
-          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale ) ) ;
+          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, item.FloorHeightDisplay ) ) ;
         }
         else {
-          oldImportDwgMappingModel.FloorHeight = item.FloorHeight ;
+          oldImportDwgMappingModel.FloorHeightDisplay = item.FloorHeightDisplay ;
           oldImportDwgMappingModel.Scale = item.Scale ;
         }
       }

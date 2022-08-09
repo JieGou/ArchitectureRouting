@@ -93,6 +93,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       } 
     }
     
+    private double _floorHeightDisplay ;
+
+    public double FloorHeightDisplay
+    {
+      get => _floorHeightDisplay ;
+      set
+      {
+        _floorHeightDisplay = value ;
+        OnPropertyChanged() ;
+      }
+    }
+    
     public string this[ string columnName ]
     {
       get
@@ -115,7 +127,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _isDeleted = true ;
     }
 
-    public ImportDwgMappingModel( string fileName, string floorName, double floorHeight, int scale )
+    public ImportDwgMappingModel( string fileName, string floorName, double floorHeight, int scale, double floorHeightDisplay = 0 )
     {
       Id = Guid.NewGuid().ToString() ;
       _fullFilePath = fileName ;
@@ -125,6 +137,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _scale = scale ;
       _isEnabled = true ;
       _isDeleted = true ;
+      _floorHeightDisplay = floorHeightDisplay ;
     }
     
     public ImportDwgMappingModel( Storable.Model.ImportDwgMappingModel item, bool isNotDeleted )
@@ -137,6 +150,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _scale = item.Scale ;
       _isEnabled = false ;
       _isDeleted = isNotDeleted ;
+      _floorHeightDisplay = item.FloorHeightDisplay ;
     }
 
     public static double GetDefaultSymbolMagnification( Document document )

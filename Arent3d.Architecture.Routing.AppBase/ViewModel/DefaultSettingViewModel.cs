@@ -177,8 +177,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( index < 0 ) return ;
       var importDwgMappingModels = ImportDwgMappingModels.ToList() ;
       var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
+      var currentMaxHeightDisplay = importDwgMappingModels.Max( x => x.FloorHeightDisplay ) ;
 
-      ImportDwgMappingModels.Insert( index + 1, new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
+      ImportDwgMappingModels.Insert( index + 1, new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale, currentMaxHeightDisplay + floorHeightDistance ) ) ;
     }
 
 
