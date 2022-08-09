@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   public static class WireLengthNotationManager
   {
     private const double MaxToleranceOfTextNotePosition = 0.001 ;
-    private const double MaxDistanceBetweenTextNotes = 1.5 ;
+    private const double MaxDistanceBetweenTextNotes = 3 ;
     
     private static List<string> GetPickUpNumbersList( IEnumerable<PickUpItemModel> pickUpModels )
     {
@@ -103,8 +103,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                 if ( x.Position == null ) return false ;
                 var xDistance = Math.Abs( x.Position.X - textNoteOfPickUpFigureModel.Position.X ) ;
                 var yDistance = Math.Abs( x.Position.Y - textNoteOfPickUpFigureModel.Position.Y ) ;
-                return xDistance < MaxDistanceBetweenTextNotes && yDistance < MaxDistanceBetweenTextNotes &&
-                       xDistance >= MaxToleranceOfTextNotePosition && yDistance >= MaxToleranceOfTextNotePosition ;
+                return  XyzUtil.GetDistanceIn2D( x.Position, textNoteOfPickUpFigureModel.Position ) < MaxDistanceBetweenTextNotes &&
+                        xDistance >= MaxToleranceOfTextNotePosition && yDistance >= MaxToleranceOfTextNotePosition ;
               } ) && ! IsNearPowerConnector( document, textNoteOfPickUpFigureModel.Position ) )
             reSizeRooms[ reSizeRoomId ] = true ;
 
@@ -449,8 +449,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return allPowerConnectors.Any( c =>
       {
         var locationPoint =  ( c.Location as LocationPoint )?.Point ;
-        return locationPoint != null && ( Math.Abs( locationPoint.X - point.X ) < MaxDistanceBetweenTextNotes || Math.Abs( locationPoint.Y - point.Y ) < MaxDistanceBetweenTextNotes ) ;
+        return locationPoint != null && XyzUtil.GetDistanceIn2D( locationPoint, point ) < MaxDistanceBetweenTextNotes ;
       } ) ;
-    } 
+    }
   }
 }
