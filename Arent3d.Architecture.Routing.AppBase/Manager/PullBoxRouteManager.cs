@@ -1524,7 +1524,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var baseLengthOfLine = scale / 100d ;
       double minDistance = ( 400.0 ).MillimetersToRevitUnits() * baseLengthOfLine;
 
-      return pullBoxes.FirstOrDefault( p =>
+      return pullBoxes.SingleOrDefault( p =>
       {
         var locationPoint = ( p.Location as LocationPoint )?.Point ;
         return locationPoint != null && locationPoint.DistanceTo( new XYZ( originX, originY, originZ ) ) < minDistance ;
