@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var cnsStorable = document.GetCnsSettingStorable() ;
         var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) document.ActiveView ).GenLevel ) ;
         
-        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical ) ;
+        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical, x => x is Conduit ) ;
         
         CreateDetailSymbolModel( document, pickInfo.Element, csvStorable, storageService) ;
         var conduits = new List<Element> { pickInfo.Element } ;

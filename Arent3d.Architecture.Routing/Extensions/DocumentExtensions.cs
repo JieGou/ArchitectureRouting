@@ -251,13 +251,14 @@ namespace Arent3d.Architecture.Routing.Extensions
 
     public static string GetDefaultConstructionItem( this Document document )
     {
+      const string defaultConstructionItem = "未設定" ; // 工事項目設定ではデフォルトが設定されていない場合、デフォルトの工事項目を「未設定」とする
       try {
         var cnsSettingStorable = GetCnsSettingStorable( document ) ;
-        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault(x=>x.IsDefaultItemChecked) ;
-        return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : String.Empty ;
+        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault( x => x.IsDefaultItemChecked ) ;
+        return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : defaultConstructionItem ;
       }
       catch ( Exception ) {
-        return String.Empty;
+        return defaultConstructionItem ;
       }
     }
 
