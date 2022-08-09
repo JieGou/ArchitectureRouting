@@ -21,8 +21,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   public static class WireLengthNotationManager
   {
     private const double MaxToleranceOfTextNotePosition = 0.001 ;
-    private const double MaxDistanceBetweenTextNotes = 3 ;
-    
+    private static readonly double MaxDistanceBetweenTextNotes = 950.0.MillimetersToRevitUnits() ;
+
     private static List<string> GetPickUpNumbersList( IEnumerable<PickUpItemModel> pickUpModels )
     {
       var pickUpNumberList = new List<string>() ;
