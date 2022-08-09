@@ -62,8 +62,11 @@ namespace Arent3d.Architecture.Routing.AppBase
         }
 
         var conn = compatiblePickResult?.SubRoute?.GetReferenceConnector() ?? compatiblePickResult?.PickedConnector ;
-
-        var (result, connector) = FindConnector( uiDocument, element, message, conn, addInType, isLeakRoute ) ;
+        (bool result, Connector? connector) = (false, null);
+        if (AddInType.Electrical == addInType && isLeakRoute)
+          (result, connector) = GetFirstConnector( element, conn, Domain.DomainCableTrayConduit ) ;
+        else
+          (result, connector) = FindConnector( uiDocument, element, message, conn, addInType, isLeakRoute ) ;
         if ( false == result ) continue ;
 
         if ( null != connector ) {
@@ -429,6 +432,24 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
       else {
         return CreateConnectorInOutFamily( uiDocument, element, message, firstConnector, addInType, isLeakRoute ) ;
+      }
+    }
+    
+    private static (bool Result, Connector? Connector) GetFirstConnector( Element element,  Connector? firstConnector, Domain connectorDomain )
+    {
+      if ( element.IsAutoRoutingGeneratedElement() ) {
+        return GetEndOfRouting( element, ( null == firstConnector ) ) ;
+      }
+      else
+      {
+        var cons = element.GetConnectors();
+        foreach (var con in cons)
+        {
+          if(con == null || con.IsConnected || con.Domain != connectorDomain)
+            continue;
+          return (true, con);
+        }
+        return (false, null);
       }
     }
 
