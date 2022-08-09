@@ -15,6 +15,7 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using MathLib ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
+using Rectangle = MathLib.Rectangle ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -44,6 +45,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       UIApplication uiApp = commandData.Application;
       UIDocument uiDocument = commandData.Application.ActiveUIDocument ;
       Document document = uiDocument.Document ;
+      var uiView = uiApp.ActiveUIDocument.GetActiveUIView() ;
+      var rec = uiView != null ? uiView.GetWindowRectangle() : null ;
+      
       try {
         var routingExecutor = GetRoutingExecutor() ;
 
@@ -65,8 +69,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( sv.CreateMode == 0 ) {
           LineExternal lineExternal = new( uiApp ) ;
           XYZ prevPoint = fromPickResult.GetOrigin() ;
+          Ending_Buttons dlg = new Ending_Buttons() ;
           try {
             lineExternal.PickedPoints.Add( prevPoint ) ;
+            if ( rec != null ) {
+              dlg.Topmost = true ;
+              dlg.Show();
+              dlg.Top = rec.Top *1.0 ;
+              dlg.Left = rec.Left *1.0 ;
+              dlg.FocusRevit();
+            }
+            
+            
             while ( true ) {
               lineExternal.DrawingServer.BasePoint = prevPoint ;
               lineExternal.DrawExternal() ;
@@ -83,8 +97,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
           catch ( OperationCanceledException ) {
             // when the user hits ESC, to exits from the while loop
+            if ( dlg.isCancel ) {
+              TaskDialog.Show( "test", "command is cancelled!" ) ;
+              return OperationResult<LeakState>.Cancelled ;
+            }
           }
           finally {
+            dlg.Hide();
             lineExternal.Dispose() ;
           }
         }
@@ -300,6 +319,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( string.IsNullOrEmpty( wireTypeName ) ) return ;
       var routeNames = executeResultValue.Select( r => r.RouteName ).Distinct().ToHashSet() ;
       ChangeWireTypeCommand.ChangeWireType( document, routeNames, wireTypeName, true ) ;
+    }
+
+    private static Ending_Buttons? wpf_btns = null ;
+    private static void Show2ButtonDialog()
+    {
+      wpf_btns = new Ending_Buttons() ;
+      wpf_btns.Show();
+    }
+    
+    private static void Hide2ButtonDialog()
+    {
+      if(wpf_btns != null)
+        wpf_btns.Hide();
+      wpf_btns = null ;
     }
   }
 }
