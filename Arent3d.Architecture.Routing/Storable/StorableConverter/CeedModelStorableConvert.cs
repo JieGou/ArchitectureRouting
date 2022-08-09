@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       FloorPlanSymbol,
       InstrumentationSymbol,
       Name,
+      DwgNumber,
       Base64InstrumentationImageString,
       Base64FloorPlanImages,
       FloorPlanType,
@@ -40,6 +41,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.FloorPlanSymbol, customTypeValue.FloorPlanSymbol ) ;
       serializerObject.AddNonNull( SerializeField.InstrumentationSymbol, customTypeValue.InstrumentationSymbol ) ;
       serializerObject.AddNonNull( SerializeField.Name, customTypeValue.Name ) ;
+      serializerObject.AddNonNull( SerializeField.DwgNumber, customTypeValue.DwgNumber ) ;
       serializerObject.AddNonNull( SerializeField.Base64InstrumentationImageString, customTypeValue.Base64InstrumentationImageString ) ;
       serializerObject.AddNonNull( SerializeField.Base64FloorPlanImages, customTypeValue.Base64FloorPlanImages ) ;
       serializerObject.AddNullable( SerializeField.FloorPlanType, customTypeValue.FloorPlanType ) ;
@@ -63,6 +65,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var floorPlanSymbol = deserializer.GetString( SerializeField.FloorPlanSymbol ) ;
       var instrumentationSymbol = deserializer.GetString( SerializeField.InstrumentationSymbol ) ;
       var name = deserializer.GetString( SerializeField.Name ) ;
+      var dwgNumber = deserializer.GetString( SerializeField.DwgNumber ) ;
       var base64InstrumentationImageString = deserializer.GetString( SerializeField.Base64InstrumentationImageString ) ;
       var base64FloorPlanImages = deserializer.GetString( SerializeField.Base64FloorPlanImages ) ;
       var floorPlanType = deserializer.GetString( SerializeField.FloorPlanType ) ;
@@ -71,7 +74,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var isEditInstrumentation = deserializer.GetBool( SerializeField.IsEditInstrumentation ) ;
       var isEditCondition = deserializer.GetBool( SerializeField.IsEditCondition ) ;
 
-      return new CeedModel( legendDisplay!, ceedModelNumber!, ceedSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, base64InstrumentationImageString!, base64FloorPlanImages!, floorPlanType!, isAdded!, isEditFloorPlan!, isEditInstrumentation!, isEditCondition! ) ;
+      return new CeedModel( legendDisplay!, ceedModelNumber!, ceedSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, dwgNumber!, base64InstrumentationImageString!, base64FloorPlanImages!, floorPlanType!, isAdded!, isEditFloorPlan!, isEditInstrumentation!, isEditCondition! ) ;
     }
   }
 }

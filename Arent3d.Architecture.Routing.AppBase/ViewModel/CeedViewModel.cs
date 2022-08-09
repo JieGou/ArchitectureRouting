@@ -434,7 +434,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var modelNumbers = ceedModels.Select( c => c.ModelNumber ).Distinct() ;
         var modelNumber = string.Join( ", ", modelNumbers ) ;
         var ceedModel = new CeedModel( firstCeedModel.LegendDisplay, firstCeedModel.CeedModelNumber, firstCeedModel.CeedSetCode, generalDisplayDeviceSymbol, modelNumber, firstCeedModel.FloorPlanSymbol,
-          firstCeedModel.InstrumentationSymbol, firstCeedModel.Name, firstCeedModel.Base64InstrumentationImageString, firstCeedModel.Base64FloorPlanImages, firstCeedModel.FloorPlanType,
+          firstCeedModel.InstrumentationSymbol, firstCeedModel.Name, firstCeedModel.DwgNumber, firstCeedModel.Base64InstrumentationImageString, firstCeedModel.Base64FloorPlanImages, firstCeedModel.FloorPlanType,
           firstCeedModel.IsAdded, firstCeedModel.IsEditFloorPlan, firstCeedModel.IsEditInstrumentation, firstCeedModel.IsEditCondition ) ;
         newCeedModels.Add( ceedModel ) ;
       }
