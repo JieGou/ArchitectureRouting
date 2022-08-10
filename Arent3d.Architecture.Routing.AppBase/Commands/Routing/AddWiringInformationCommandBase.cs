@@ -86,13 +86,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var result = dialog.ShowDialog() ;
         
         while ( result is false && viewModel.IsAddReference ) {
-          WiringDetailSymbolFilter detailSymbolFilter = new() ;
+          TagPickFilter detailSymbolFilter = new() ;
           List<string> detailSymbolIds = new() ;
           try {
             var pickedDetailSymbols = uiDocument.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
             foreach ( var pickedDetailSymbol in pickedDetailSymbols ) {
-              var detailSymbol = document.GetAllElements<TextNote>().ToList().FirstOrDefault( x => x.Id == pickedDetailSymbol.ElementId ) ;
-              if ( detailSymbol != null && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
+              if ( uiDocument.Document.GetElement(pickedDetailSymbol) is IndependentTag detailSymbol && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
                 detailSymbolIds.Add( detailSymbol.UniqueId ) ;
               }
             }
@@ -233,18 +232,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return routeNames ;
     }
   }
-  public class WiringDetailSymbolFilter : ISelectionFilter
+  public class TagPickFilter : ISelectionFilter
   {
-    private const string DetailSymbolType = "DetailSymbol-TNT" ;
     public bool AllowElement( Element element )
     {
-      if ( element.GetBuiltInCategory() != BuiltInCategory.OST_TextNotes )
+      if ( element is not IndependentTag independentTag )
         return false ;
 
-      if ( element.GroupId != ElementId.InvalidElementId )
+      var elementType = element.Document.GetElement( independentTag.GetTypeId() ) ;
+      if ( elementType is not FamilySymbol familySymbol )
         return false ;
 
-      return element.Name.StartsWith( DetailSymbolType ) ;
+      return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() ;
     }
 
     public bool AllowReference( Reference r, XYZ p )

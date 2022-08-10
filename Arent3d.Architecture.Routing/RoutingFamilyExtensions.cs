@@ -117,8 +117,8 @@ namespace Arent3d.Architecture.Routing
     [Family( "Pull Box", BuiltInCategory.OST_ElectricalFixtures )]
     PullBox,
     
-    [Family( "Device Symbol Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
-    DeviceSymbolTag
+    [Family( "Symbol Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
+    SymbolContentTag
   }
 
   public enum MechanicalRoutingFamilyType

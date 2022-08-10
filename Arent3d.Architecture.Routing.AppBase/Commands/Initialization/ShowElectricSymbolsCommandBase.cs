@@ -88,16 +88,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           errorMess = string.Empty ;
           continue ;
         }
-        var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
-        var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
+        var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.FromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.FromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.FromConnectorInfo.ModelNumber ) ;
+        var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.ToConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.ToConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.ToConnectorInfo.ModelNumber ) ;
         if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
 
         if ( fromConnectorCeedModel != null && showCeedModelSymbols.Any( legend => legend == fromConnectorCeedModel.LegendDisplay ) ) {
-          ceedModelList.Add( new( fromConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, routeName! ) ) ;
+          ceedModelList.Add( new( fromConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.FromConnectorUniqueId, routeName! ) ) ;
         }
 
         if ( toConnectorCeedModel != null && showCeedModelSymbols.Any( legend => legend == toConnectorCeedModel.LegendDisplay ) ) {
-          ceedModelList.Add( new( toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId, routeName! ) ) ;
+          ceedModelList.Add( new( toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.ToConnectorUniqueId, routeName! ) ) ;
         }
       }
       
@@ -176,7 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     }
 
   
-    private static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo, string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
+    private static (string FromConnectorUniqueId, ConnectorInfo FromConnectorInfo, string ToConnectorUniqueId, ConnectorInfo ToConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
     {
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ) ;
       Element? fromConnector = null ;

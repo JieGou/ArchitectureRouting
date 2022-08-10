@@ -41,11 +41,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
         {
           var allElementSelected = selection.GetElementIds() ;
-          if ( ! allElementSelected.Any() ) return Result.Cancelled ;
-          var connectorsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
-            .Where( e => ( allElementSelected.Contains( e.Id ) || allElementSelected.Contains( e.GroupId ) ) 
-                         && e is FamilyInstance f && f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() 
-                         && f.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
+          if ( ! allElementSelected.Any() ) 
+            return Result.Cancelled ;
+          
+          var connectorsSelected = doc.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
+            .Where( e => allElementSelected.Contains( e.Id ) && 
+                         e.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() && 
+                         e.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
           var conduitsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => allElementSelected.Contains( e.Id ) ).ToList() ;
           var conduitAndConnectorDic = GetConduitAndConnector( doc, connectorsSelected, conduitsSelected ) ;
           if ( ! conduitAndConnectorDic.Any() ) return Result.Cancelled ;
@@ -85,7 +87,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
 
-    private Dictionary<Element, Element> GetConduitAndConnector( Document document, List<Element> connectors, List<Element> conduits )
+    private Dictionary<Element, Element> GetConduitAndConnector( Document document, List<FamilyInstance> connectors, List<Element> conduits )
     {
       var conduitAndConnectorDic = new Dictionary<Element, Element>() ;
       if ( connectors.Any() ) {
@@ -103,9 +105,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
 
       if ( conduits.Any() ) {
-        var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
-          .Where( e => e is FamilyInstance f && f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() 
-                            && f.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
+        var allConnectors = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
+          .Where( f => f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() && 
+                       f.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
         var allConduitWithDirectionByZ = conduits.Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => ( ( c.Location as LocationCurve )?.Curve as Line )?.Origin ?? new XYZ() ) ;
         foreach ( var (conduit, (x, y, _)) in allConduitWithDirectionByZ ) {
           var connectorOfConduit = allConnectors.Where( c => c.Location is LocationPoint connectorLocation && Math.Abs( connectorLocation.Point.X - x ) < 0.01 && Math.Abs( connectorLocation.Point.Y - y ) < 0.01 ) ;

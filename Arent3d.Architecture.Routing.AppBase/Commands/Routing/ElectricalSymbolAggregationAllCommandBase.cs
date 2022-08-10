@@ -18,9 +18,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       try {
         var uiDocument = commandData.Application.ActiveUIDocument ;
-        Document document = uiDocument.Document ;
+        var document = uiDocument.Document ;
         
-        List<Element> selectedConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId || ( e is FamilyInstance f && f.GetConnectorFamilyType() != null ) ).ToList() ;
+        var selectedConnectors = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GetConnectorFamilyType() != null ).ToList() ;
 
         var ceedStoreable = document.GetCeedStorable() ;
         var listCeedModel = ceedStoreable.CeedModelData ;
