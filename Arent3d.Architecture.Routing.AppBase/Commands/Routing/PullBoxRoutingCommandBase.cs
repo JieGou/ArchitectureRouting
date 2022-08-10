@@ -82,29 +82,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var curveType = route.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
-      var allowedTiltedPiping = CheckAllowedTiltedPiping( document, route.RouteName ) ;
+      var allowedTiltedPiping = CheckAllowedTiltedPiping( route.GetAllConnectors().ToList() ) ;
       var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, null, allowedTiltedPiping ) ;
 
       return result ;
     }
 
-    private bool CheckAllowedTiltedPiping( Document document, string routeName )
+    private bool CheckAllowedTiltedPiping( ICollection<Connector> connectors )
     {
-      var routeNameArray = routeName.Split( '_' ) ;
-      var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      var conduitsOfRouteName = document.GetAllElements<Conduit>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => {
-        if ( c.GetRouteName() is not { } rName ) return false ;
-        var rNameArray = rName.Split( '_' ) ;
-        var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
-        return strRouteName == mainRouteName ;
-      } ).ToList() ;
-      foreach ( var conduit in conduitsOfRouteName ) {
-        var conduitLocation = ( conduit.Location as LocationCurve ) ! ;
-        var conduitLine = (  conduitLocation.Curve as Line ) ! ;
-        var direction = conduitLine.Direction ;
-        if ( direction.X is 1 or -1 || direction.Y is 1 or -1 || direction.Z is 1 or -1 ) {
-        }
-        else {
+      if ( ! connectors.Any() ) return false ;
+      foreach ( var connector in connectors ) {
+        var (x, y, z) = ( connector.Owner as FamilyInstance )!.FacingOrientation ;
+        if ( x is not ( 1 or -1 ) && y is not ( 1 or -1 ) && z is not ( 1 or -1 ) ) {
           return true ;
         }
       }
