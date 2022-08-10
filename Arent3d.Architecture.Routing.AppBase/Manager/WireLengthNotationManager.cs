@@ -117,9 +117,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       #endregion
       
       foreach ( var textNoteOfPickUpFigureModel in allTextNoteOfPickUpFigureModels ) {
-        if ( textNoteOfPickUpFigureModel.RoomId == null ) continue ;
-
-        var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel, reSizeRooms[ (int)textNoteOfPickUpFigureModel.RoomId ] ) ;
+        // TODO: とりあえず動くために以下をコメントアウトします。
+        // if ( textNoteOfPickUpFigureModel.RoomId == null ) continue ;
+        // var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel, reSizeRooms[ (int)textNoteOfPickUpFigureModel.RoomId ] ) ;
+        
+        var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel ) ;
         if ( textNote != null )
           textNoteOfPickUpFigureModel.Id = textNote.UniqueId ;
       }

@@ -185,7 +185,7 @@
         <string>明細記号作成</string>
 
         <key>Electrical.App.Commands.Initialization.ConfirmUnsetCommand</key>
-        <string>未設定確認</string>
+        <string>工事項目未設定確認</string>
         
         <key>Electrical.App.Commands.Initialization.BulkHighlightOffCommand</key>
         <string>一括&#xA;ハイライトオフ</string>
