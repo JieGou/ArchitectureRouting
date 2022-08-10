@@ -23,6 +23,7 @@
                           SelectionMode="Single">
                     <DataGrid.Resources>
                         <Style x:Key="errorStyle" TargetType="{x:Type TextBox}">
+                            <EventSetter Event="LostFocus" Handler="CellValueChanged" />
                             <Setter Property="Padding" Value="-2" />
                             <Style.Triggers>
                                 <Trigger Property="Validation.HasError" Value="True">

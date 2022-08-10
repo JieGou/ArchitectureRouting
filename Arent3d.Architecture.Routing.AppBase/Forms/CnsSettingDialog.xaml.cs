@@ -7,12 +7,14 @@ using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using System.ComponentModel ;
+using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Arent3d.Revit.UI.Forms;
+using Group = Autodesk.Revit.DB.Group ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -369,5 +371,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       tx.Commit();
     }
     
+    private void CellValueChanged( object sender, RoutedEventArgs e )
+    {
+      var textBox = ( (TextBox) sender ) ;
+      var input = textBox.Text ;
+      Match m = Regex.Match(input, @"[\[/\?\]\*\\]");
+      bool nameIsValid = ( ! m.Success && ( ! string.IsNullOrEmpty(input) ) && ( input.Length <= 31 ) );
+
+      if ( ! nameIsValid ) 
+      {
+        MessageBox.Show( @" 入力された工事項目名称が正しくありません。次のいずれかを確認してください。" + "\n" 
+                                                                   + @"・名前が31文字以上になっている。" + "\n" 
+                                                                   + @"・ふさわしくない文字が入っている「：」「/」など。" + "\n" 
+                                                                   + @"・名前が空白になっている。" , "Error") ;
+        textBox.Text = string.Empty ;
+      }
+    }
   }
 }
