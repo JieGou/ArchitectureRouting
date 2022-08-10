@@ -98,13 +98,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         dialog.ShowDialog() ;
 
         while ( dialog.DialogResult is false && viewModel.IsAddReference ) {
-          TagPickFilter tagPickFilter = new() ;
+          TextNotePickFilter textNotePickFilter = new() ;
           List<string> detailSymbolIds = new() ;
           
           try {
-            var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, tagPickFilter ) ;
+            var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, textNotePickFilter ) ;
             foreach ( var pickedDetailSymbol in pickedDetailSymbols ) {
-              if ( uiDoc.Document.GetElement(pickedDetailSymbol) is IndependentTag detailSymbol && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
+              if ( uiDoc.Document.GetElement(pickedDetailSymbol) is TextNote detailSymbol && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
                 detailSymbolIds.Add( detailSymbol.UniqueId ) ;
               }
             }
@@ -944,18 +944,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return detailTableItemModelRowGroupNoMixConstructionItems == null && detailTableItemModelRowGroupMixConstructionItems != null ;
     }
 
-    private class TagPickFilter : ISelectionFilter
+    private class TextNotePickFilter : ISelectionFilter
     {
+      private const string DetailSymbolType = "DetailSymbol-TNT" ;
       public bool AllowElement( Element element )
       {
-        if ( element is not IndependentTag independentTag )
-          return false ;
-
-        var elementType = element.Document.GetElement( independentTag.GetTypeId() ) ;
-        if ( elementType is not FamilySymbol familySymbol )
-          return false ;
-
-        return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() ;
+        return element.GetBuiltInCategory() == BuiltInCategory.OST_TextNotes && element.Name.StartsWith( DetailSymbolType ) ;
       }
 
       public bool AllowReference( Reference r, XYZ p )
