@@ -15,7 +15,6 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using MathLib ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
-using Rectangle = MathLib.Rectangle ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
