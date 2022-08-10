@@ -259,7 +259,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         #region Create 3D ALL view
 
-        if ( firstViewPlan != null ) commandData.Application.ActiveUIDocument.ActiveView = firstViewPlan ;
+        View? view3dAll = null ;
         using var create3DTrans = new Transaction( doc ) ;
         create3DTrans.SetName( "Create 3D ALL view" ) ;
         create3DTrans.Start() ;
@@ -271,6 +271,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( current3DView != null ) doc.Delete( current3DView.Id ) ;
           current3DView = View3D.CreateIsometric( doc, threeDimensionalViewFamilyType.Id ) ;
           current3DView.Name = view3DName ;
+          view3dAll = (View) current3DView  ;
         }
 
         create3DTrans.Commit() ;
@@ -314,6 +315,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         setViewRangeTransaction.Commit() ;
         #endregion
+
+        if ( view3dAll != null ) 
+        {
+          uiDocument.RequestViewChange(view3dAll);
+        }
       }
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
