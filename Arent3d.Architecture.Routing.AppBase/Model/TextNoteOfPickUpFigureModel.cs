@@ -12,9 +12,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     public string Content { get ; set ; }
     public WireLengthNotationAlignment PickUpAlignment { get ; set ; }
     public XYZ? Direction { get ; set ; }
-    public int? RoomId { get ; set ; }
+    public string? BoardId { get ; set ; }
 
-    public TextNoteOfPickUpFigureModel( string id, int counter, XYZ relatedPosition, XYZ? position, string content, WireLengthNotationAlignment pickUpAlignment, XYZ? direction, int? roomId )
+    public TextNoteOfPickUpFigureModel( string id, int counter, XYZ relatedPosition, XYZ? position, string content, WireLengthNotationAlignment pickUpAlignment, XYZ? direction, string? boardId )
     {
       Id = id ;
       Counter = counter ;
@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       Content = content ;
       PickUpAlignment = pickUpAlignment ;
       Direction = direction ;
-      RoomId = roomId ;
+      BoardId = boardId ;
     }
   }
 }
