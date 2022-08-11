@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     private const double VerticalOffset = 0.1 ;
     private const string FallMarkTextNoteTypeName = "1.5mm_FallMarkText" ;
+    private const string DefaultParentPlumbingType = "E" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -101,7 +102,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           ? $"{existingPlumbingInfo.PlumbingType}"
           : $"{detailTableItemModel?.PlumbingType}" ;
 
-      if ( string.IsNullOrEmpty( fallMarkNoteString ) ) return ;
+      if ( string.IsNullOrEmpty( fallMarkNoteString ) ) 
+        fallMarkNoteString = DefaultParentPlumbingType ;
 
       var fallMarkTextNote = CreateFallMarkNote( document, fallMarkNoteString, fallMarkPoint ) ;
       fallMarkInstance.GetParameter( "FallMarkTextNoteId" )?.Set( fallMarkTextNote.UniqueId ) ;
