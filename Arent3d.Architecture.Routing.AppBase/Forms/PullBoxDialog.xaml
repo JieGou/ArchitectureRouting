@@ -3,31 +3,75 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:converter="clr-namespace:Arent3d.Architecture.Routing.AppBase.Converters"
         mc:Ignorable="d"
-        WindowStartupLocation="CenterScreen" x:Name="WdPullBoxView"
-        Title="PullBoxDialog" Height="220" Width="350" ResizeMode="NoResize">
+        WindowStartupLocation="CenterScreen"
+        VerticalAlignment="Center"
+        HorizontalAlignment="Center"
+        Title="PullBoxDialog"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        x:Name="WdPullBoxView">
+    <Window.Resources>
+        <converter:InvertBooleanVisibilityConverter x:Key="InvertBooleanVisibilityConverter" />
+    </Window.Resources>
     <Grid>
-        <Border Padding="10">
-            <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center" >
-                <CheckBox IsChecked="{Binding IsCreatePullBoxWithoutSettingHeight}" Content="高さ変更なしのプルボックスを作成する" HorizontalAlignment="Left" Width="250" Margin="0, 10" 
-                          Checked="CreatePullBoxWithoutSettingHeight_Checked" 
-                          Unchecked="CreatePullBoxWithoutSettingHeight_UnChecked" />
-                <StackPanel x:Name="SettingHeightPanel" Height="90">
+        <Border Padding="20">
+            <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <CheckBox IsChecked="{Binding IsCreatePullBoxWithoutSettingHeight}" Content="高さ変更なしのプルボックスを作成する"
+                          HorizontalAlignment="Left" Width="250" Margin="0, 10" />
+                <CheckBox IsChecked="{Binding  IsAutoCalculatePullBoxSize}" Content="プルボックスのサイズを自動計算する"
+                          Margin="0 10" />
+                <StackPanel
+                    Visibility="{Binding IsCreatePullBoxWithoutSettingHeight, Converter={StaticResource InvertBooleanVisibilityConverter}}">
                     <StackPanel Orientation="Horizontal" Margin="0, 10">
-                        <Label Content="プルボックスの高さ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" Margin="0 0 5 0" />
-                        <TextBox HorizontalAlignment="Left" Width="200" PreviewTextInput="NumberValidationTextBox" Padding="5" Text="{Binding HeightConnector}"/>
+                        <Label Content="プルボックスの高さ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100"
+                               Margin="0 0 5 0" />
+                        <TextBox HorizontalAlignment="Left" Width="200" PreviewTextInput="NumberValidationTextBox"
+                                 Padding="5" Text="{Binding HeightConnector}" />
                     </StackPanel>
-                
-                    <StackPanel Orientation="Horizontal" Margin="0 0  0 10">
-                        <Label Content="配線の高さ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" Margin="0 0 5 0" />
-                        <TextBox HorizontalAlignment="Left" Width="200" PreviewTextInput="NumberNegativeValidationTextBox" Padding="5" Text="{Binding HeightWire}"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
+                        <Label Content="配線の高さ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100"
+                               Margin="0 0 5 0" />
+                        <TextBox HorizontalAlignment="Left" Width="200"
+                                 PreviewTextInput="NumberNegativeValidationTextBox" Padding="5"
+                                 Text="{Binding HeightWire}" />
                     </StackPanel>
                 </StackPanel>
-                
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Width="300" VerticalAlignment="Center" Margin="0 0  0 10">
-                    <Button Content="作成" Margin="120 0" Width="70" Height="25" 
-                            Command="{Binding Path=OkCommand}" 
+
+                <StackPanel Orientation="Horizontal"
+                            Margin="0 0 0 10"
+                            Visibility="{Binding IsAutoCalculatePullBoxSize,Converter={StaticResource InvertBooleanVisibilityConverter}}">
+                    <TextBlock Text="プルボックスのサイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100"
+                               Margin="0 0 5 0" />
+                    <ComboBox ItemsSource="{Binding PullBoxModels}"
+                              SelectedItem="{Binding SelectedPullBox}"
+                              Width="200"
+                              HorizontalAlignment="Left"
+                              Padding="5"
+                              IsEnabled="{Binding IsGradeSmallerThanFour}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}"></TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Buzaicd}" Value="032025">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel HorizontalAlignment="Center" Width="300" VerticalAlignment="Center" Margin="0 0  0 10">
+                    <Button Content="作成" Margin="0 10 0 10" Width="70" Height="25"
+                            HorizontalAlignment="Center"
+                            Command="{Binding Path=OkCommand}"
                             CommandParameter="{Binding ElementName=WdPullBoxView}" />
                 </StackPanel>
             </StackPanel>

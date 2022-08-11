@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.message.Font = new System.Drawing.Font( "Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ( (byte) ( 0 ) ) ) ;
       this.message.Location = new System.Drawing.Point( 12, 9 ) ;
       this.message.Name = "message" ;
-      this.message.Size = new System.Drawing.Size( 304, 81 ) ;
+      this.message.Size = new System.Drawing.Size( 320, 80 ) ;
       this.message.TabIndex = 0 ;
       this.message.Text = "message" ;
       // 
@@ -48,7 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font ;
       this.AutoScroll = true ;
       this.BackColor = System.Drawing.Color.White ;
-      this.ClientSize = new System.Drawing.Size( 328, 99 ) ;
+      this.ClientSize = new System.Drawing.Size( 345, 90 ) ;
       this.Controls.Add( this.message ) ;
       this.Name = "CustomMsgBox" ;
       this.ShowIcon = false ;

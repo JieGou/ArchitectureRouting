@@ -47,7 +47,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( elementFromToPower is FamilyInstance familyInstanceFromToPower ) {
             familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
             familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
-            familyInstanceFromToPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
             var elevationParameter = elementFromToPower.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ) ;
             elevationParameter?.Set( 0.0 ) ;
           }
@@ -59,16 +58,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
 
           var defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-          var noteWidth = .12 ;
-          // make sure note width works for the text type
-          var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
-          var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
-          if ( noteWidth < minWidth ) {
-            noteWidth = minWidth ;
-          }
-          else if ( noteWidth > maxWidth ) {
-            noteWidth = maxWidth ;
-          }
 
           TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
@@ -76,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           ? viewModel.CellSelectedAutoControlPanel 
           : viewModel.CellSelectedSignalDestination ;
         var txtPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, text, opts ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text, opts ) ;
         var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
         if ( textNoteType == null ) {
           var elementType = textNote.TextNoteType.Duplicate( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName ) ;

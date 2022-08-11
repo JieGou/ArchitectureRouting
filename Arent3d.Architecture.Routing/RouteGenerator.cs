@@ -6,10 +6,11 @@ using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -54,7 +55,7 @@ namespace Arent3d.Architecture.Routing
 
           var edgeDiameter = subRoute.GetDiameter() ;
           var spec = new MEPSystemPipeSpec( mepSystem, fittingSizeCalculator ) ;
-          var routeCondition = new MEPSystemRouteCondition( spec, edgeDiameter, subRoute.AvoidType ) ;
+          var routeCondition = new MEPSystemRouteCondition( spec, edgeDiameter, subRoute.AvoidType, subRoute.AllowedTiltedPiping ) ;
 
           dic.Add( key, routeCondition ) ;
         }
@@ -79,7 +80,7 @@ namespace Arent3d.Architecture.Routing
       EraseRoutes( _document, RoutingTargetGroups.SelectMany( group => group ).SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ;
     }
 
-    public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints )
+    public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints, bool isEraseAllRoutes = false, bool isEraseSelectedRoutes = false )
     {
       var hashSet = ( routeNames as ISet<string> ) ?? routeNames.ToHashSet() ;
 
@@ -89,6 +90,8 @@ namespace Arent3d.Architecture.Routing
         list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
       }
 
+      ErasePullBoxes( document, hashSet, list.ToList(), isEraseAllRoutes, isEraseSelectedRoutes ) ;
+        
       List<string> elementIds = list.Select( elm => elm.UniqueId ).Distinct().ToList() ;
       RemoveRouteDetailSymbol( document, elementIds ) ;
 
@@ -98,6 +101,77 @@ namespace Arent3d.Architecture.Routing
         // erase routes, too.
         RouteCache.Get( DocumentKey.Get( document ) ).Drop( hashSet ) ;
       }
+    }
+
+    private static void ErasePullBoxes( Document document, ISet<string> routeNames, List<Element> conduits, bool isEraseAllRoutes, bool isEraseSelectedRoutes )
+    {
+      List<string> pullBoxIds = new() ;
+      var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
+      if ( isEraseAllRoutes ) {
+        pullBoxIds.AddRange( pullBoxes.Select( p => p.UniqueId ) ) ;
+      }
+      else if ( isEraseSelectedRoutes ) {
+        pullBoxes = GetPullBoxes( pullBoxes, conduits ) ;
+        if ( pullBoxes.Any() ) {
+          var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => e.GetRouteName() is { } routeName && ! routeNames.Contains( routeName ) ).ToList() ;
+          pullBoxes = GetPullBoxIsNotConnected( pullBoxes, allConduits ).Distinct().ToList() ;
+        }
+
+        if( pullBoxes.Any() ) pullBoxIds.AddRange( pullBoxes.Select( p => p.UniqueId ) ) ;
+      }
+
+      if ( ! pullBoxIds.Any() ) return ;
+      {
+        var level = document.ActiveView.GenLevel ;
+        if ( level != null ) {
+          var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
+          var pullBoxInfoModels = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).ToList() ;
+          var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
+          if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
+          foreach ( var pullBoxInfoModel in pullBoxInfoModels ) {
+            storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( pullBoxInfoModel ) ;
+          }
+        }
+        
+        document.Delete( pullBoxIds ) ;
+      }
+    }
+    
+    private static List<Element> GetPullBoxIsNotConnected( List<Element> pullBoxes, List<Element> allConduits )
+    {
+      var pullBoxIsNotConnected = new List<Element>() ;
+      foreach ( var pullBox in pullBoxes ) {
+        if ( GetPullBoxesOfRoute( new List<Element>{ pullBox }, allConduits, true ) == null && GetPullBoxesOfRoute( new List<Element>{ pullBox }, allConduits, false ) == null )  
+          pullBoxIsNotConnected.Add( pullBox ) ;
+      }
+      
+      return pullBoxIsNotConnected ;
+    }
+
+    private static List<Element> GetPullBoxes( List<Element> allPullBox, List<Element> conduitsOfRoute )
+    {
+      List<Element> pullBoxes = new() ;
+      var pullBox = GetPullBoxesOfRoute( allPullBox, conduitsOfRoute, true ) ;
+      if ( pullBox != null ) pullBoxes.Add( pullBox ) ;
+      pullBox = GetPullBoxesOfRoute( allPullBox, conduitsOfRoute, false ) ;
+      if ( pullBox != null ) pullBoxes.Add( pullBox ) ;
+      return pullBoxes ;
+    }
+    
+    private static Element? GetPullBoxesOfRoute( List<Element> allPullBox, List<Element> conduitsOfRoute, bool isFrom )
+    {
+      foreach ( var conduit in conduitsOfRoute ) {
+        var endPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
+        if ( ! endPoint.Any() ) continue ;
+        var endPointKey = endPoint.First().Key ;
+        var elementId = endPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( elementId ) ) continue ;
+        var pullBox = allPullBox.FirstOrDefault( c => c.UniqueId == elementId ) ;
+        if ( pullBox == null || pullBox.IsTerminatePoint() || pullBox.IsPassPoint() ) continue ;
+        return pullBox ;
+      }
+
+      return null ;
     }
 
     protected override void OnGenerationStarted()
@@ -203,46 +277,51 @@ namespace Arent3d.Architecture.Routing
 
     private static void RemoveRouteDetailSymbol( Document document, List<string> elementIds )
     {
-      var detailSymbolStorable = document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? document.GetDetailSymbolStorable() ;
-      if ( ! detailSymbolStorable.DetailSymbolModelData.Any() ) return ;
-      var detailSymbolModels = new List<DetailSymbolModel>() ;
-      foreach ( var detailSymbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => elementIds.Contains( d.ConduitId ) ).ToList() ) {
+      var allDatas = document.GetAllDatas<Level, DetailSymbolModel>().ToList() ;
+      if ( ! allDatas.Any() ) 
+        return ;
+      
+      var detailSymbolItemModels = new List<DetailSymbolItemModel>() ;
+      foreach ( var detailSymbolItemModel in allDatas.Select(x => x.Data.DetailSymbolData).SelectMany(x => x).Where( d => elementIds.Contains( d.ConduitUniqueId ) ).ToList() ) {
         // delete symbol
-        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == detailSymbolModel.DetailSymbolId ).Select( t => t.Id ).FirstOrDefault() ;
+        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == detailSymbolItemModel.DetailSymbolUniqueId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( symbolId != null ) document.Delete( symbolId ) ;
-        foreach ( var lineId in detailSymbolModel.LineIds.Split( ',' ) ) {
+        foreach ( var lineId in detailSymbolItemModel.LineUniqueIds.Split( ',' ) ) {
           var id = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.UniqueId == lineId ).Select( e => e.Id ).FirstOrDefault() ;
           if ( id != null ) document.Delete( id ) ;
         }
 
-        detailSymbolModels.Add( detailSymbolModel ) ;
+        detailSymbolItemModels.Add( detailSymbolItemModel ) ;
       }
 
-      if ( ! detailSymbolModels.Any() ) return ;
-      foreach ( var detailSymbolModel in detailSymbolModels ) {
-        detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+      if ( ! detailSymbolItemModels.Any() ) 
+        return ;
+      foreach ( var (level, data) in allDatas ) {
+        foreach ( var detailSymbolModel in detailSymbolItemModels ) {
+          if(data.DetailSymbolData.Contains(detailSymbolModel))
+            data.DetailSymbolData.Remove( detailSymbolModel ) ;
+        }
+        level.SetData(data);
       }
-
-      var detailSymbols = detailSymbolModels.Select( d => d.DetailSymbolId ).Distinct().ToList() ;
-      if ( detailSymbolStorable.DetailSymbolModelData.Any() && detailSymbols.Count == 1 ) {
-        var detailSymbolModel = detailSymbolModels.FirstOrDefault() ;
+      
+      var detailSymbols = detailSymbolItemModels.Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
+      if ( allDatas.Select(x => x.Data.DetailSymbolData).SelectMany(x => x).Any() && detailSymbols.Count == 1 ) {
+        var detailSymbolModel = detailSymbolItemModels.FirstOrDefault() ;
         if ( detailSymbolModel!.IsParentSymbol ) {
-          var detailSymbolModelParent = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == detailSymbolModel.DetailSymbol && d.Code == detailSymbolModel.Code && d.IsParentSymbol ) ;
+          var detailSymbolModelParent = allDatas.Select(x => x.Data.DetailSymbolData).SelectMany(x => x).FirstOrDefault( d => d.DetailSymbol == detailSymbolModel.DetailSymbol && d.Code == detailSymbolModel.Code && d.IsParentSymbol ) ;
           if ( detailSymbolModelParent == null ) {
-            UpdateSymbolOfConduitSameSymbolAndDifferentCode( document, detailSymbolStorable.DetailSymbolModelData, detailSymbolModel.DetailSymbol, detailSymbolModel.Code ) ;
+            UpdateSymbolOfConduitSameSymbolAndDifferentCode( document, allDatas.Select(x => x.Data.DetailSymbolData).SelectMany(x => x).ToList(), detailSymbolModel.DetailSymbol, detailSymbolModel.Code ) ;
           }
         }
       }
-
-      detailSymbolStorable.Save() ;
     }
 
-    private static void UpdateSymbolOfConduitSameSymbolAndDifferentCode( Document doc, List<DetailSymbolModel> detailSymbolModels, string detailSymbol, string code )
+    private static void UpdateSymbolOfConduitSameSymbolAndDifferentCode( Document doc, List<DetailSymbolItemModel> detailSymbolItemModels, string detailSymbol, string code )
     {
-      var firstChildSymbol = detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != code ) ;
+      var firstChildSymbol = detailSymbolItemModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != code ) ;
       if ( firstChildSymbol == null ) return ;
       {
-        var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+        var detailSymbolIds = detailSymbolItemModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolUniqueId ).Distinct().ToList() ;
         foreach ( var id in detailSymbolIds ) {
           var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == id ) ;
           if ( textElement == null ) continue ;
@@ -250,7 +329,7 @@ namespace Arent3d.Architecture.Routing
           CreateNewTextNoteType( doc, textNote, 0 ) ;
         }
 
-        foreach ( var detailSymbolModel in detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).ToList() ) {
+        foreach ( var detailSymbolModel in detailSymbolItemModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).ToList() ) {
           detailSymbolModel.IsParentSymbol = true ;
         }
       }
@@ -271,6 +350,61 @@ namespace Arent3d.Architecture.Routing
 
       // Change the text notes type to the new type
       textNote.ChangeTypeId( textNoteType!.Id ) ;
+    }
+
+    public static void GetAllRelatedBranches( Document document, ICollection<Route> routes, Dictionary<string, string> routeNameDictionary )
+    {
+      var relatedBranches = new List<Route>() ;
+      var dic = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var allRouteNames = routes.Select( r => r.RouteName ).Distinct().ToHashSet() ;
+      foreach ( var route in routes ) {
+        var routeName = route.RouteName ;
+        var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == routeName ) ;
+        if ( conduitOfRoute == null ) continue ;
+        var representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+        if ( string.IsNullOrEmpty( representativeRouteName ) ) continue ;
+        var allBranchRouteNames = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => ! allRouteNames.Contains( e.GetRouteName() ! ) && ( representativeRouteName == routeName ? e.GetRepresentativeRouteName() == routeName : e.GetRepresentativeRouteName() == representativeRouteName ) ).Select( e => e.GetRouteName() ! ).Distinct() ;
+        foreach ( var branchRouteName in allBranchRouteNames ) {
+          if ( false == dic.TryGetValue( branchRouteName, out var branchRoute ) ) continue ;
+          relatedBranches.Add( branchRoute ) ;
+          allRouteNames.Add( branchRouteName ) ;
+          if ( ! routeNameDictionary.ContainsKey( branchRouteName ) ) {
+            routeNameDictionary.Add( branchRouteName, representativeRouteName! ) ;
+          }
+        }
+      }
+      
+      routes.AddRange( relatedBranches ) ;
+    }
+
+    public static void GetRelatedBranchRouteNames( Document document, IEnumerable<string> routeNames, Dictionary<string, string> routeNameDictionary )
+    {
+      foreach ( var routeName in routeNames ) {
+        var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == routeName ) ;
+        if ( conduitOfRoute == null ) continue ;
+        var representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+        if ( string.IsNullOrEmpty( representativeRouteName ) ) continue ;
+        var allBranchRouteNames = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => e.GetRouteName() != routeName && ( representativeRouteName == routeName ? e.GetRepresentativeRouteName() == routeName : e.GetRepresentativeRouteName() == representativeRouteName ) ).Select( e => e.GetRouteName() ! ).Distinct() ;
+        foreach ( var branchRouteName in allBranchRouteNames ) {
+          if ( ! routeNameDictionary.ContainsKey( branchRouteName ) ) {
+            routeNameDictionary.Add( branchRouteName, representativeRouteName! ) ;
+          }
+        }
+      }
+    }
+
+    public static void ChangeRepresentativeRouteName( Document document, Dictionary<string, string> routeNameDictionary )
+    {
+      using Transaction transactionChangeRepresentativeRouteName = new( document ) ;
+      transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
+      foreach ( var (routeName, parentRouteName ) in routeNameDictionary ) {
+        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+        foreach ( var conduit in conduits ) {
+          conduit.TrySetProperty( RoutingParameter.RepresentativeRouteName, parentRouteName ) ;
+        }
+      }
+
+      transactionChangeRepresentativeRouteName.Commit() ;
     }
   }
 }

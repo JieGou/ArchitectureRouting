@@ -173,7 +173,10 @@
         <string>読み込みdb保存</string>
 
         <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
-        <string>拾い</string>
+        <string>拾い（全ての階）</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationByLevelCommand</key>
+        <string>拾い（作業の階）</string>
 
         <key>Electrical.App.Commands.Initialization.PickUpReportCommand</key>
         <string>拾い書出力</string>
@@ -182,7 +185,10 @@
         <string>明細記号作成</string>
 
         <key>Electrical.App.Commands.Initialization.ConfirmUnsetCommand</key>
-        <string>未設定確認</string>
+        <string>工事項目未設定確認</string>
+        
+        <key>Electrical.App.Commands.Initialization.BulkHighlightOffCommand</key>
+        <string>一括&#xA;ハイライトオフ</string>
 
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>表分割</string>
@@ -226,8 +232,14 @@
         <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
         <string>部材情報付きシンボル</string>
 
-        <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
-        <string>プルボックス作成</string>
+        <key>Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
+        <string>プルボックス配置</string>
+
+        <key>Electrical.App.Commands.Routing.ChangePullBoxDimensionCommand</key>
+        <string>プルボックス&#xA;自動計算</string>
+
+        <key>Electrical.App.Commands.Routing.EraseSelectedPullBoxCommand</key>
+        <string>プルボックス削除</string>
 
         <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
         <string>電気シンボル集計</string>
@@ -240,6 +252,14 @@
         
         <key>Electrical.App.Commands.Routing.AddWiringInformation</key>
         <string>配線情報追加</string>
+
+        <key>Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand</key>
+        <string>配線３D表示モード</string>
+
+        <key>Electrical.App.Commands.Initialization.SelectedSwitchEcoNormalMode</key>
+        <string>通常/エコ切替</string>
+
+        
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -313,6 +333,12 @@
         <key>TransactionName.Commands.Routing.SelectRangeRoute</key>
         <string>選択範囲配線</string>
 
+        <key>TransactionName.Commands.Initialization.PickUpFigureCreation</key>
+        <string>電線長さ表示</string>
+
+        <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
+        <string>拾い番号設定</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>自動ルーティング初期化エラー</string>
@@ -325,6 +351,15 @@
         <string>From-Toの終点を選択してください。</string>
         <key>Dialog.Commands.Routing.PickRouting.PickEndPointOverSubRoute</key>
         <string>From-Toの行き先を選択してください。</string>
+
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.ReferenceTable</key>
+        <string>明細追加する参照情報を選択してください。</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.Table</key>
+        <string>明細表の挿入先を選択してください。</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.CTLFile</key>
+        <string>CTLファイルを選択してください。</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.AfterGrouping</key>
+        <string>配管がまとめられているため、電線本数が変更できません。</string>
 
         <key>Dialog.Commands.Routing.PickAndReRoute.Pick</key>
         <string>再ルーティングしたいFrom-Toを選択してください。</string>
@@ -490,6 +525,18 @@
         
         <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
         <string>仮プルボックスの配</string>
+
+        <key> Electrical.App.Commands.Initialization.ChangePullBoxDimensionCommand</key>
+        <string>プルボックス&#xA;自動計算</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpFigureCreationCommand</key>
+        <string>電線長さ表示</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
+        <string>拾い番号設定</string>
+
+        <key>Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
+        <string>印刷モード切替</string>
     </dict>
 </plist>
 

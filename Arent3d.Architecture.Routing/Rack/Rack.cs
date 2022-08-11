@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing.Rack
 
     public Rack( Box3d volumeBox, double beamInterval, double sideBeamWidth, double sideBeamHeight )
     {
+      RackId = Guid.NewGuid() ;
       LayerGroups = new ILayerGroup[] { new LayerGroup( this ) } ;
       Box = volumeBox ;
       BeamInterval = beamInterval ;
@@ -29,6 +30,7 @@ namespace Arent3d.Architecture.Routing.Rack
     public bool IsPipeRack { get ; } = true ;
     public bool IsMainRack { get ; set ; }
     public string Name { get ; set ; } = string.Empty ;
+    public Guid RackId { get ; }
 
     public Vector3d Center => _box.Center ;
     public Vector3d Size => _box.Size ;

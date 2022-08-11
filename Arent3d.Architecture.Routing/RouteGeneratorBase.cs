@@ -67,9 +67,9 @@ namespace Arent3d.Architecture.Routing
       } ) ;
 
       using ( var mainProgress = progressData?.Reserve( 0.9 ) ) {
-        var reporter = ( null == mainProgress ? new ProgressReporter() : new ProgressReporter( mainProgress ) ) ;
-        var token = mainProgress?.CancellationToken ?? CancellationToken.None ;
-        mainProgress.ForEach( targetToIndex.Count, ApiForAutoRouting.Execute( StructureGraph, RoutingTargetGroups.SelectMany( group => group ), CollisionCheckTree, reporter, token ), item =>
+        var routingResult = ExecuteAutoRouting( mainProgress ) ;
+
+        mainProgress.ForEach( targetToIndex.Count, routingResult, item =>
         {
           var (src, result) = item ;
           if ( src is not TAutoRoutingTarget srcTarget ) throw new InvalidOperationException() ;
@@ -90,6 +90,13 @@ namespace Arent3d.Architecture.Routing
       }
 
       progressData?.ThrowIfCanceled() ;
+    }
+
+    private IEnumerable<(IAutoRoutingTarget, IAutoRoutingResult)> ExecuteAutoRouting( IProgressData? mainProgress )
+    {
+      using var routingProgress = mainProgress?.Reserve( 0.2 ) ;
+      var token = routingProgress?.CancellationToken ?? CancellationToken.None ;
+      return ApiForAutoRouting.Execute( StructureGraph, RoutingTargetGroups.SelectMany( group => group ), CollisionCheckTree, null, token ) ;
     }
   }
 }

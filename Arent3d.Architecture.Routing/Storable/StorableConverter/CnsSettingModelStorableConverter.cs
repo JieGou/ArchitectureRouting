@@ -14,6 +14,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
             Sequence,
             CategoryName,
             IsDefaultItemChecked,
+            IsHighLighted
         }
 
         protected override CnsSettingModel Deserialize(Element storedElement, IDeserializerObject deserializerObject)
@@ -23,8 +24,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
             int sequence = Convert.ToInt32(deserializer.GetInt(SerializeField.Sequence));
             var isDefaultItemChecked = deserializer.GetBool(SerializeField.IsDefaultItemChecked);
             string categoryName = deserializer.GetString(SerializeField.CategoryName)?.ToString() ?? string.Empty;
+            var isHightLighted = deserializer.GetBool(SerializeField.IsHighLighted)??false;
 
-            return new CnsSettingModel(sequence, categoryName, isDefaultItemChecked ?? false);
+            return new CnsSettingModel(sequence, categoryName, isDefaultItemChecked ?? false){IsHighLighted = isHightLighted};
         }
 
         protected override ISerializerObject Serialize(Element storedElement, CnsSettingModel customTypeValue)
@@ -34,7 +36,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
             serializerObject.Add(SerializeField.Sequence, customTypeValue.Sequence);
             serializerObject.Add(SerializeField.IsDefaultItemChecked, customTypeValue.IsDefaultItemChecked);
             serializerObject.AddNonNull(SerializeField.CategoryName, customTypeValue.CategoryName);
-            
+            serializerObject.Add( SerializeField.IsHighLighted,customTypeValue.IsHighLighted);
             return serializerObject;
         }
     }

@@ -2,7 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -34,8 +34,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               document.Delete( fallMarkInstanceIds ) ; // remove marks are displaying
               document.Delete( fallMarkTextNoteInstanceIds ) ;
             }
-            else
+            else {
               CreateFallMarkForConduitWithVerticalDirection( document ) ;
+            }
 
             return Result.Succeeded ;
           } ) ;
@@ -65,7 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ).FirstOrDefault() ??
                    throw new InvalidOperationException() ;
 
-      var detailTableModels = conduitWithZDirection.GetDetailTableModelsFromConduits( document ).ToList() ;
+      var detailTableModels = conduitWithZDirection.GetDetailTableItemsFromConduits( document ).ToList() ;
 
       foreach ( var conduit in conduitWithZDirection ) {
         GenerateFallMarks( document, symbol, conduit, detailTableModels ) ;
@@ -73,7 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     }
 
     private static void GenerateFallMarks( Document document, FamilySymbol symbol, Conduit conduit,
-      IEnumerable<DetailTableModel> detailTableModels )
+      IEnumerable<DetailTableItemModel> detailTableItemModels )
     {
       var level = conduit.ReferenceLevel ;
       var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() +
@@ -93,12 +94,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           x.ConduitId == conduit.UniqueId ) ;
 
 
-      var detailTableModel = detailTableModels.FirstOrDefault( dtm => dtm.RouteName == routeName ) ;
+      var detailTableItemModel = detailTableItemModels.FirstOrDefault( dtm => dtm.RouteName == routeName ) ;
 
       var fallMarkNoteString =
         existingPlumbingInfo != null && ! string.IsNullOrEmpty( existingPlumbingInfo.PlumbingSize )
           ? $"{existingPlumbingInfo.PlumbingType}"
-          : $"{detailTableModel?.PlumbingType}" ;
+          : $"{detailTableItemModel?.PlumbingType}" ;
 
       if ( string.IsNullOrEmpty( fallMarkNoteString ) ) return ;
 
@@ -169,6 +170,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         .Set( ParamUtils.ToColorParameterValue( 255, 128, 64 ) ) ;
 
       return fallMarkTextNoteType ?? throw new InvalidOperationException() ;
+    }
+
+    public static void RemoveDisplayingFallMark(Document document)
+    {
+      var fallMarkInstances = GetExistedFallMarkInstances( document ) ;
+      var fallMarkInstanceIds = fallMarkInstances.Select( instance => instance.Id ).ToList() ;
+      if ( fallMarkInstanceIds.Any() ) {
+        var fallMarkTextNoteInstanceIds = GetExistedFallMarkTextNoteInstancesIds( document, fallMarkInstances ) ;
+        document.Delete( fallMarkInstanceIds ) ; // remove marks are displaying
+        document.Delete( fallMarkTextNoteInstanceIds ) ;
+      }
     }
   }
 }

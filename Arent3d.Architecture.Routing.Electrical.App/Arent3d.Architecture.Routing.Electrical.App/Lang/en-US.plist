@@ -196,6 +196,9 @@
         <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
         <string>Pick Up</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationByLevelCommand</key>
+        <string>Pick Up&#xA;By Floor</string>
+
         <key>Electrical.App.Commands.Initialization.PickUpReportCommand</key>
         <string>Pick Up&#xA;Output</string>
 
@@ -204,6 +207,9 @@
 
         <key>Electrical.App.Commands.Initialization.ConfirmUnsetCommand</key>
         <string>Confirm Unset</string>
+
+        <key>Electrical.App.Commands.Initialization.BulkHighlightOffCommand</key>
+        <string>Bulk Highlight Off</string>
 
         <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
         <string>Create Room</string>
@@ -234,12 +240,21 @@
 
         <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
         <string>Create Pullbox</string>
+
+        <key> Electrical.App.Commands.Routing.ChangePullBoxDimensionCommand</key>
+        <string>Change Pullbox Dimension</string>
       
         <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
         <string>Electrical Symbol&#xA;Aggregation</string>
 
         <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregationAll</key>
         <string>Electrical Symbol&#xA;Aggregation All</string>
+
+        <key>Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand</key>
+        <string>Show&#xA;Conduits in 3D</string>
+
+        <key>Electrical.App.Commands.Initialization.SelectedSwitchEcoNormalMode</key>
+        <string>Switch&#xA;Eco/Normal Mode</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -313,11 +328,26 @@
         <key>TransactionName.Commands.Routing.OffsetSetting</key>
         <string>Offset Setting</string>
 
+        <key>TransactionName.Commands.Initialization.PickUpFigureCreation</key>
+        <string>Pick Up Diagram</string>
+
+        <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
+        <string>Pick Up Number Setting</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>
         <key>Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup</key>
         <string>Failed to set up some routing families or parameters.</string>
+
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.ReferenceTable</key>
+        <string>Please select the row on the reference detail table.</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.Table</key>
+        <string>Please select a row on the detail table.</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.CTLFile</key>
+        <string>Please select ctl file.</string>
+        <key>Arent3d.Architecture.Routing.AppBase.ViewModel.Select.AfterGrouping</key>
+        <string>Not allowed to change the number of wires after the grouping.</string>
 
         <key>Dialog.Commands.Rack.PS.FileName</key>
         <string>Pipe space list file</string>
@@ -503,9 +533,20 @@
   
         <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
         <string>Pull Box</string>
+
+        <key> Electrical.App.Commands.Initialization.ChangePullBoxDimensionCommand</key>
+        <string>Change Pullbox Dimension</string>
+
+        <key> Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
+        <string>Switch to&#xA;Print Mode</string>
         
         <key>Electrical.App.Commands.Routing.EraseSelectedPullBoxCommand</key>
         <string>Delete Pull Box</string>
-        
+
+        <key>Electrical.App.Commands.Initialization.PickUpFigureCreationCommand</key>
+        <string>Pick Up&#xA;Diagram</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
+        <string>Pick Up&#xA;Number Setting</string>
     </dict>
 </plist>

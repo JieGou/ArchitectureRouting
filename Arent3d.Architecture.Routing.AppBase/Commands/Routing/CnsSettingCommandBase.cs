@@ -125,7 +125,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var rackList = selectedElements.ToList() ;
                 if ( ! rackList.Any() ) {
                   message = "No Racks are selected." ;
-                  return Result.Cancelled ;
+                  break ;
                 }
 
                 // set value to "Construction Item" property
@@ -148,7 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var elementList = selectedElements.ToList() ;
                 if ( ! elementList.Any() ) {
                   message = "No Elements are selected." ;
-                  return Result.Cancelled ;
+                  break ;
                 }
 
                 // set value to "Construction Item" property
@@ -174,8 +174,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     parentGroup.UngroupMembers() ;
                   }
                 }
-                
-                var listConduits = elementList.Where( x => x is Conduit ).ToList() ;
+
                 var listApplyElement = new List<Element>() ;
                 listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
                 listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(document, elementList) );
@@ -194,7 +193,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var elementList = selectedElements.ToList() ;
                 if ( ! elementList.Any() ) {
                   message = "No Elements are selected." ;
-                  return Result.Cancelled ;
+                  break ;
                 }
 
                 var constructionItemList = new ObservableCollection<string>(cnsStorables.CnsSettingData.Select( x=>x.CategoryName ).ToList()) ;
@@ -255,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
           
           if (isConnectorsHaveConstructionItem && cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
-              (cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector || cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.All )) {
+              (cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector || cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.All || cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Range )) {
             foreach ( var item in connectorGroups ) {
               // create group for updated connector (with new property) and related text note if any
               List<ElementId> groupIds = new List<ElementId>() ;
