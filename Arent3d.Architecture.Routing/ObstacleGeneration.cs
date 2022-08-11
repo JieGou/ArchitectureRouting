@@ -18,11 +18,8 @@ namespace Arent3d.Architecture.Routing
     public static List<IList<Box3d>> GetAllObstacleRoomBoxForElectricalRouting( Document doc )
     {
       var allRooms = GetAllRoomsInCurrentAndLinkDocument( doc ) ;
-      var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
-      var otherRooms = allRooms.Except( livingRooms ) ;
-      var livingListBox3d = GetObstacleRoomBoxes( livingRooms ) ;
-      var otherListBox3d = GetObstacleRoomBoxes( otherRooms.ToList() ) ;
-      _listRoomBox3dInCurrentProject = new List<IList<Box3d>> { livingListBox3d, otherListBox3d } ;
+      var listAllOf3dBoxes = GetObstacleRoomBoxes( allRooms.ToList() ) ;
+      _listRoomBox3dInCurrentProject = new List<IList<Box3d>> { listAllOf3dBoxes } ;
       return _listRoomBox3dInCurrentProject ;
     }
     
