@@ -194,7 +194,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var viewFamily = new FilteredElementCollector( doc ).OfClass( typeof( ViewFamilyType ) ).Cast<ViewFamilyType>().First( x => x.ViewFamily == ViewFamily.FloorPlan ) ;
         var allCurrentLevels = new FilteredElementCollector( doc ).OfClass( typeof( Level ) ).ToList() ;
         var allCurrentViewPlans = new FilteredElementCollector( doc ).OfClass( typeof( ViewPlan ) ).ToList() ;
-
+        ViewPlan? firstViewPlan = null ;
+        
         #region Import
 
         using var importTrans = new Transaction( doc ) ;
@@ -228,7 +229,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           importDwgLevel.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
           if ( isNewView ) doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out ElementId importElementId ) ;
-          
+          if ( i == 0 ) firstViewPlan = viewPlan ;
         }
 
         importTrans.Commit() ;
@@ -258,6 +259,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         #region Create 3D ALL view
 
+        if ( firstViewPlan != null ) commandData.Application.ActiveUIDocument.ActiveView = firstViewPlan ;
         View? view3dAll = null ;
         using var create3DTrans = new Transaction( doc ) ;
         create3DTrans.SetName( "Create 3D ALL view" ) ;
