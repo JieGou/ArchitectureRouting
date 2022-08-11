@@ -54,8 +54,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
        
       List<string> listSymbolInforDel = new() ;
       foreach ( var symbolInformation in symbolInformations ) {
-        if ( listGroup.All( x => null == Enumerable.FirstOrDefault<ElementId>( x.GetMemberIds(), y => y.ToString() == symbolInformation.Id ) ) ) {
-          listSymbolInforDel.Add( symbolInformation.Id ) ; 
+        if ( listGroup.All( x => null == Enumerable.FirstOrDefault<ElementId>( x.GetMemberIds(), y => y.ToString() == symbolInformation.SymbolUniqueId ) ) ) {
+          listSymbolInforDel.Add( symbolInformation.SymbolUniqueId ) ; 
         } 
       }
 
@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       using Transaction t = new(document, "Delete symbol infos that have been deleted") ;
       t.Start() ;
-      symbolInformations.RemoveAll( x => listSymbolInforDel.Contains( x.Id ) ) ;
+      symbolInformations.RemoveAll( x => listSymbolInforDel.Contains( x.SymbolUniqueId ) ) ;
       ceedDetails.RemoveAll( x => listSymbolInforDel.Contains( x.ParentId ) ) ;
       symbolInformationStorable.AllSymbolInformationModelData = symbolInformations ;
       ceedDetailStorable.AllCeedDetailModelData = ceedDetails ;

@@ -929,7 +929,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       foreach ( var symbolInformation in symbolInformations ) {
         var floor = symbolInformation.Floor ;
-        foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.Id ) ) {
+        foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.SymbolUniqueId ) ) {
           PickUpItemModel newPickUpModel = new( null, floor, DefaultConstructionItem, ProductType.Conduit.GetFieldName(), ceedDetail.Specification, null, null, ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, 
             ceedDetail.ProductName, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Total.ToString( CultureInfo.InvariantCulture ), ceedDetail.Unit, ceedDetail.Supplement, null, null, null,
             ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode, null, null, null,ceedDetail.Total.ToString( CultureInfo.InvariantCulture ) ) ;

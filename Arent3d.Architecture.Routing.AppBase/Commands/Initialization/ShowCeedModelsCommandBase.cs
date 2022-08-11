@@ -32,7 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var defaultConstructionItem = doc.GetDefaultConstructionItem() ;
       
-      var viewModel = new CeedViewModel( commandData ) ;
+      var viewModel = new CeedViewModel( doc ) ;
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
       
       dlgCeedModel.ShowDialog() ;

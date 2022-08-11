@@ -135,6 +135,10 @@ namespace Arent3d.Architecture.Routing
     [Parameter( "bd2c2a04-5b41-40f4-b59b-bbb50f5d1c74", "Symbol Content", DataType.Text, ParameterVisibility.ReadOnlyOnHasValue, DescriptionKey = "Symbol Content")]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
     SymbolContent,
+    
+    [Parameter( "05a6c3f6-ce5b-4bcb-a683-4087b928fe6d", "Text", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Text")]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
+    Text,
 
     #region Schedules
 
