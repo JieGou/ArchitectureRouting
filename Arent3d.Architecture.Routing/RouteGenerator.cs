@@ -111,7 +111,11 @@ namespace Arent3d.Architecture.Routing
         pullBoxIds.AddRange( pullBoxes.Select( p => p.UniqueId ) ) ;
       }
       else if ( isEraseSelectedRoutes ) {
-        pullBoxes = GetPullBoxes( pullBoxes, conduits ) ;
+        foreach ( var name in routeNames ) {
+          var conduitsOfRoute = conduits.Where( cd => cd.GetRouteName() == name ).ToList() ;
+          pullBoxes.AddRange( GetPullBoxes( pullBoxes, conduitsOfRoute ) ) ;
+        }
+
         if ( pullBoxes.Any() ) {
           var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => e.GetRouteName() is { } routeName && ! routeNames.Contains( routeName ) ).ToList() ;
           pullBoxes = GetPullBoxIsNotConnected( pullBoxes, allConduits ).Distinct().ToList() ;
