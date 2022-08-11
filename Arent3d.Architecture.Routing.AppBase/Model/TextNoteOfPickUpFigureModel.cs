@@ -5,7 +5,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
 {
   public class TextNoteOfPickUpFigureModel
   {
-    public string Id { get ; set ; }
+    public TextNote? TextNote { get ; set ; }
     public int Counter { get ; set ; }
     public XYZ RelatedPosition { get ; set ; }
     public XYZ? Position { get ; set ; }
@@ -14,9 +14,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     public XYZ? Direction { get ; set ; }
     public string? BoardId { get ; set ; }
 
-    public TextNoteOfPickUpFigureModel( string id, int counter, XYZ relatedPosition, XYZ? position, string content, WireLengthNotationAlignment pickUpAlignment, XYZ? direction, string? boardId )
+    public TextNoteOfPickUpFigureModel( TextNote? textNote, int counter, XYZ relatedPosition, XYZ? position, string content, WireLengthNotationAlignment pickUpAlignment, XYZ? direction, string? boardId )
     {
-      Id = id ;
+      TextNote = textNote ;
       Counter = counter ;
       RelatedPosition = relatedPosition ;
       Position = position ;
