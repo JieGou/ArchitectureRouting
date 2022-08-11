@@ -109,6 +109,12 @@
                         </DataGridTextColumn>
                         
                         <DataGridTextColumn Header="階高" Width="100" CanUserSort="False">
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="{x:Type TextBox}">
+                                    <EventSetter Event="LostFocus" Handler="CellValueChanged" />
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                            
                             <DataGridTextColumn.Binding>
                                 <Binding Path="FloorHeightDisplay" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />

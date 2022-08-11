@@ -106,15 +106,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, floorName, height, scale ) ) ;
       }
-      
-      var importDwgMappingModelsOrder = importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ;
+
+      var importDwgMappingModelsGroup = importDwgMappingModels.OrderBy( x => x.FloorHeight ).GroupBy( x => x.FloorHeight ).Select( x=>x.ToList() ).ToList() ;
       var result = new List<ImportDwgMappingModel>() ;
-      result.Add( importDwgMappingModelsOrder[0] );
-      for ( int i = 1 ; i < importDwgMappingModelsOrder.Count ; i++ ) {
-        var height = importDwgMappingModelsOrder[ i ].FloorHeight - importDwgMappingModelsOrder[ i - 1 ].FloorHeight ;
-        var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsOrder[ i ].FileName, importDwgMappingModelsOrder[ i ].FloorName, importDwgMappingModelsOrder[ i ].FloorHeight,
-          importDwgMappingModelsOrder[ i ].Scale, height ) ;
-        result.Add( importDwgModel );
+
+      // Add first item
+      foreach ( var importDwgMappingModelGroup in importDwgMappingModelsGroup[0] ) {
+        result.Add( importDwgMappingModelGroup );
+      }
+
+      for ( int i = 1 ; i < importDwgMappingModelsGroup.Count ; i++ ) {
+        var heightCurrentLevel = importDwgMappingModelsGroup[ i ].First().FloorHeight ;
+        var heightPreviousLevel = importDwgMappingModelsGroup[ i - 1 ].First().FloorHeight ;
+        var height = heightCurrentLevel - heightPreviousLevel ;
+        
+        foreach ( var importDwgMappingModelGroup in importDwgMappingModelsGroup[i] ) {
+          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelGroup.FileName, importDwgMappingModelGroup.FloorName, importDwgMappingModelGroup.FloorHeight,
+            importDwgMappingModelGroup.Scale, height ) ;
+          result.Add( importDwgModel );
+        }
       }
 
       return result ;
@@ -159,6 +169,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
         else {
           oldImportDwgMappingModel.FloorHeightDisplay = item.FloorHeightDisplay ;
+          oldImportDwgMappingModel.FloorHeight = item.FloorHeight ;
           oldImportDwgMappingModel.Scale = item.Scale ;
         }
       }

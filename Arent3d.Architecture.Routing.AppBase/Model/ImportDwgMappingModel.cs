@@ -152,6 +152,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _isDeleted = isNotDeleted ;
       _floorHeightDisplay = item.FloorHeightDisplay ;
     }
+    
+    public ImportDwgMappingModel(string id,string fileName, string floorName, double floorHeight, int scale, double floorHeightDisplay = 0 )
+    {
+      Id = id ;
+      _fullFilePath = fileName ;
+      _fileName = ! string.IsNullOrEmpty( fileName ) ? Path.GetFileName( fileName ) : "" ;
+      _floorName = floorName ;
+      _floorHeight = floorHeight ;
+      _scale = scale ;
+      _isEnabled = true ;
+      _isDeleted = true ;
+      _floorHeightDisplay = floorHeightDisplay ;
+    }
 
     public static double GetDefaultSymbolMagnification( Document document )
     {
