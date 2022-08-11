@@ -188,6 +188,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
       var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
       var hiroiSetCdMasterEcoModelData = csvStorable.HiroiSetCdMasterEcoModelData ;
+      var registrationOfBoardDataModels = doc.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       var storageServiceForDetailTable = new StorageService<Level, DetailTableModel>( storageServiceForDetailSymbol.Owner ) ;
       var detailTableModelsData = storageServiceForDetailTable.Data.DetailTableData ;
@@ -232,7 +233,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             conduits = new List<Element> { conduitOfFirstRoute } ;
           }
           
-          AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, csvStorable.WiresAndCablesModelData, detailTableItemModels, conduits, parentDetailSymbolModel!, true, isMixConstructionItems ) ;
+          AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, csvStorable.WiresAndCablesModelData, registrationOfBoardDataModels, detailTableItemModels, conduits, parentDetailSymbolModel!, true, isMixConstructionItems ) ;
           var routeNameArray = parentRouteName.Split( '_' ) ;
           parentRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
           routeNames = routeNames.Where( n =>
@@ -251,7 +252,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             conduits = new List<Element> { conduitOfFirstRoute } ;
           }
 
-          AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, csvStorable.WiresAndCablesModelData, detailTableItemModels, conduits, childDetailSymbolItemModel, false, isMixConstructionItems ) ;
+          AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, csvStorable.WiresAndCablesModelData, registrationOfBoardDataModels, detailTableItemModels, conduits, childDetailSymbolItemModel, false, isMixConstructionItems ) ;
         }
       }
 
@@ -855,7 +856,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return string.Empty ;
     }
 
-    private static void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, ICollection<DetailTableItemModel> detailTableItemModels, List<Element> pickedObjects, DetailSymbolItemModel detailSymbolItemModel, bool isParentRoute, bool mixConstructionItems )
+    private static void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, IEnumerable<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, IEnumerable<HiroiSetMasterModel> hiroiSetMasterNormalModelData, IEnumerable<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData,
+      IEnumerable<HiroiSetMasterModel> hiroiSetMasterEcoModelData, IReadOnlyCollection<HiroiMasterModel> hiroiMasterModelData, IReadOnlyCollection<WiresAndCablesModel> wiresAndCablesModelData, IEnumerable<RegistrationOfBoardDataModel> registrationOfBoardDataModels, ICollection<DetailTableItemModel> detailTableItemModels, List<Element> pickedObjects,
+      DetailSymbolItemModel detailSymbolItemModel, bool isParentRoute, bool mixConstructionItems )
     {
       var element = pickedObjects.FirstOrDefault( p => p.UniqueId == detailSymbolItemModel.ConduitUniqueId ) ;
       string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
@@ -882,85 +885,63 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( ! string.IsNullOrEmpty( item.MaterialCode8 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode8 ).ToString() ) ;
 
           if ( ! listMaterialCode.Any() ) continue ;
-          var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
-          foreach ( var master in masterModels ) {
-            var wireType = master.Type ;
-            var wireSize = master.Size1 ;
-            var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
-            var wiresAndCablesModel = wiresAndCablesModelData
-              .FirstOrDefault( w => 
-                w.WireType == wireType 
-                && w.DiameterOrNominal == wireSize
-                && ( ( w.NumberOfHeartsOrLogarithm == "0" && master.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && master.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
-            if ( wiresAndCablesModel == null ) continue ;
-            var signalType = wiresAndCablesModel.Classification ;
-            var wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
-            
-            var wireSizesOfWireType = wiresAndCablesModelData
-              .Where( w => w.WireType == wireType )
-              .Select( w => w.DiameterOrNominal )
-              .Distinct()
-              .ToList() ;
-            var wireSizes = wireSizesOfWireType.Any() ? 
-              ( from wireSizeType in wireSizesOfWireType select new DetailTableItemModel.ComboboxItemType( wireSizeType, wireSizeType ) ).ToList() 
-              : new List<DetailTableItemModel.ComboboxItemType>() ;
-            
-            var wireStripsOfWireType = wiresAndCablesModelData
-              .Where( w => w.WireType == wireType && w.DiameterOrNominal == wireSize )
-              .Select( w => w.NumberOfHeartsOrLogarithm == "0" ? "-" : w.NumberOfHeartsOrLogarithm + w.COrP )
-              .Distinct()
-              .ToList() ;
-            var wireStrips = wireStripsOfWireType.Any() ? 
-              ( from wireStripType in wireStripsOfWireType select new DetailTableItemModel.ComboboxItemType( wireStripType, wireStripType ) ).ToList() 
-              : new List<DetailTableItemModel.ComboboxItemType>() ;
 
-            var plumbingItemTypes = new List<DetailTableItemModel.ComboboxItemType> { new( constructionItem, constructionItem ) } ;
-            
-            var detailTableItemModel = new DetailTableItemModel( 
-              false, 
-              floor, 
-              ceedCode,
-              detailSymbolItemModel.DetailSymbol,
-              detailSymbolItemModel.DetailSymbolUniqueId, 
-              detailSymbolItemModel.FromConnectorUniqueId, 
-              detailSymbolItemModel.ToConnectorUniqueId, 
-              wireType, 
-              wireSize,
-              wireStrip, 
-              "1", 
-              string.Empty, 
-              string.Empty, 
-              string.Empty,
-              plumbingType, 
-              string.Empty,
-              string.Empty, 
-              constructionClassification, 
-              signalType, 
-              constructionItem, 
-              constructionItem,
-              remark, 
-              wireCrossSectionalArea, 
-              detailSymbolItemModel.CountCableSamePosition,
-              detailSymbolItemModel.RouteName,
-              isEcoMode, isParentRoute, 
-              ! isParentRoute, 
-              string.Empty, 
-              string.Empty, 
-              true,
-              mixConstructionItems, 
-              string.Empty, 
-              false, 
-              false, 
-              false,
-              wireSizes,
-              wireStrips, 
-              new List<DetailTableItemModel.ComboboxItemType>(), 
-              new List<DetailTableItemModel.ComboboxItemType>(), 
-              plumbingItemTypes ) ;
-            detailTableItemModels.Add( detailTableItemModel ) ;
-          }
+          detailTableItemModels.AddRange( CreateDetailTableItemModelsByMaterialCode( hiroiMasterModelData, wiresAndCablesModelData, detailSymbolItemModel, isParentRoute, mixConstructionItems, listMaterialCode,
+            constructionItem, floor, ceedCode, plumbingType, constructionClassification, remark, isEcoMode ) ) ;
         }
       }
+      //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
+      else if ( registrationOfBoardDataModels.FirstOrDefault( x => x.SignalDestination == detailSymbolItemModel.Code ) is { } registrationOfBoardDataModel ) {
+        List<string> listMaterialCode = new() ;
+        if ( registrationOfBoardDataModel.MaterialCode1.Length > 2 && ! listMaterialCode.Exists( m => m == Convert.ToInt32( registrationOfBoardDataModel.MaterialCode1 ).ToString() ) )
+          listMaterialCode.Add( Convert.ToInt32( registrationOfBoardDataModel.MaterialCode1 ).ToString() ) ;
+
+        if ( registrationOfBoardDataModel.MaterialCode2.Length > 2 && ! listMaterialCode.Exists( m => m == Convert.ToInt32( registrationOfBoardDataModel.MaterialCode2 ).ToString() ) )
+          listMaterialCode.Add( Convert.ToInt32( registrationOfBoardDataModel.MaterialCode2 ).ToString() ) ;
+
+        if ( listMaterialCode.Any() ) {
+          detailTableItemModels.AddRange( CreateDetailTableItemModelsByMaterialCode( hiroiMasterModelData, wiresAndCablesModelData, detailSymbolItemModel, isParentRoute, mixConstructionItems, listMaterialCode, 
+            constructionItem, floor, detailSymbolItemModel.Code, plumbingType, "", "", isEcoMode ) ) ;
+        }
+      }
+    }
+
+    private static IEnumerable<DetailTableItemModel> CreateDetailTableItemModelsByMaterialCode( IEnumerable<HiroiMasterModel> hiroiMasterModelData, IReadOnlyCollection<WiresAndCablesModel> wiresAndCablesModelData, DetailSymbolItemModel detailSymbolItemModel, bool isParentRoute,
+      bool mixConstructionItems, List<string> listMaterialCode, string constructionItem, string floor, string ceedCode, string plumbingType, string? constructionClassification, string remark, string isEcoMode )
+    {
+      var detailTableItemModels = new List<DetailTableItemModel>() ;
+      var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
+      foreach ( var master in masterModels ) {
+        var wireType = master.Type ;
+        var wireSize = master.Size1 ;
+        var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
+        var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize 
+          && ( ( w.NumberOfHeartsOrLogarithm == "0" && master.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && master.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+        if ( wiresAndCablesModel == null ) continue ;
+        var signalType = wiresAndCablesModel.Classification ;
+        var wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+
+        var wireSizesOfWireType = wiresAndCablesModelData.Where( w => w.WireType == wireType ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
+        var wireSizes = wireSizesOfWireType.Any() ? ( from wireSizeType in wireSizesOfWireType select new DetailTableItemModel.ComboboxItemType( wireSizeType, wireSizeType ) ).ToList() : new List<DetailTableItemModel.ComboboxItemType>() ;
+
+        var wireStripsOfWireType = wiresAndCablesModelData.Where( w => w.WireType == wireType && w.DiameterOrNominal == wireSize )
+          .Select( w => w.NumberOfHeartsOrLogarithm == "0" ? "-" : w.NumberOfHeartsOrLogarithm + w.COrP ).Distinct().ToList() ;
+        var wireStrips = wireStripsOfWireType.Any() ? ( from wireStripType in wireStripsOfWireType select new DetailTableItemModel.ComboboxItemType( wireStripType, wireStripType ) ).ToList() : new List<DetailTableItemModel.ComboboxItemType>() ;
+
+        var plumbingItemTypes = new List<DetailTableItemModel.ComboboxItemType> { new(constructionItem, constructionItem) } ;
+
+        var detailTableItemModel = new DetailTableItemModel( false, floor, ceedCode, detailSymbolItemModel.DetailSymbol,
+          detailSymbolItemModel.DetailSymbolUniqueId, detailSymbolItemModel.FromConnectorUniqueId,
+          detailSymbolItemModel.ToConnectorUniqueId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty,
+          string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, constructionItem,
+          constructionItem, remark, wireCrossSectionalArea, detailSymbolItemModel.CountCableSamePosition,
+          detailSymbolItemModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, string.Empty, string.Empty, true,
+          mixConstructionItems, string.Empty, false, false, false, wireSizes, wireStrips,
+          new List<DetailTableItemModel.ComboboxItemType>(), new List<DetailTableItemModel.ComboboxItemType>(), plumbingItemTypes ) ;
+        detailTableItemModels.Add( detailTableItemModel ) ;
+      }
+      
+      return detailTableItemModels;
     }
 
     private static bool CheckMixConstructionItems( List<DetailTableItemModel> detailTableModelsData, List<string> keyRoutings )
