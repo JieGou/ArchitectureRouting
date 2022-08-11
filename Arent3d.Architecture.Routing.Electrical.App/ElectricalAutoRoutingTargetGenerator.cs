@@ -57,14 +57,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
       return new[]
       {
-        new AutoRoutingTarget( Document, subRoute, priority, fromAutoRoutingEndPoint, shaftAutoRoutingEndPoint1, trueFromFixedBopHeight, true ),
-        new AutoRoutingTarget( Document, subRoute, priority, shaftAutoRoutingEndPoint2, toAutoRoutingEndPoint, trueToFixedBopHeight, true ),
+        new AutoRoutingTarget( Document, subRoute, priority, fromAutoRoutingEndPoint, shaftAutoRoutingEndPoint1, trueFromFixedBopHeight ),
+        new AutoRoutingTarget( Document, subRoute, priority, shaftAutoRoutingEndPoint2, toAutoRoutingEndPoint, trueToFixedBopHeight ),
       } ;
     }
 
     private IReadOnlyCollection<AutoRoutingTarget> GenerateNormalAutoRoutingTarget( IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
     {
-      return new[] { new AutoRoutingTarget( Document, subRoutes, priorities, routeConditionDictionary, true ) } ;
+      return new[] { new AutoRoutingTarget( Document, subRoutes, priorities, routeConditionDictionary ) } ;
     }
   }
 }
