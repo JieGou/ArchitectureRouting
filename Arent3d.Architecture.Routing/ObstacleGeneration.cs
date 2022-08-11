@@ -15,25 +15,25 @@ namespace Arent3d.Architecture.Routing
   {
     private static List<IList<Box3d>> _listRoomBox3dInCurrentProject = new() ;
 
-    public static List<List<Box3d>> GetAllObstacleRoomBoxForElectricalRouting( Document doc )
+    public static List<IList<Box3d>> GetAllObstacleRoomBoxForElectricalRouting( Document doc )
     {
       var allRooms = GetAllRoomsInCurrentAndLinkDocument( doc ) ;
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
       var otherRooms = allRooms.Except( livingRooms ) ;
       var livingListBox3d = GetObstacleRoomBoxes( livingRooms ) ;
       var otherListBox3d = GetObstacleRoomBoxes( otherRooms.ToList() ) ;
-      _listRoomBox3dInCurrentProject = new List<List<Box3d>> { livingListBox3d, otherListBox3d } ;
+      _listRoomBox3dInCurrentProject = new List<IList<Box3d>> { livingListBox3d, otherListBox3d } ;
       return _listRoomBox3dInCurrentProject ;
     }
     
-    public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc )
+    public static List<IList<Box3d>> GetAllObstacleRoomBox( Document doc )
     {
       var allRooms = GetAllRoomsInCurrentAndLinkDocument( doc ) ;
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
       var otherRooms = allRooms.Except( livingRooms ) ;
       var livingListBox3d = CreateBox3dFromDividedRoom( livingRooms ) ;
       var otherListBox3d = CreateBox3dFromDividedRoom( otherRooms.ToList() ) ;
-      _listRoomBox3dInCurrentProject = new List<List<Box3d>> { livingListBox3d, otherListBox3d } ;
+      _listRoomBox3dInCurrentProject = new List<IList<Box3d>> { livingListBox3d, otherListBox3d } ;
       return _listRoomBox3dInCurrentProject ;
     }
 
