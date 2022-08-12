@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
     xmlns:CnsSettingRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.CnsSettingRules"
+    Title="工事項目設定"
     mc:Ignorable="d"
     WindowStartupLocation="CenterScreen"
     Closing="CnsSettingDialog_Closing"
