@@ -159,8 +159,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         symbolInstance.Document.Regenerate();
       }
       
-      MoveTag( symbolInstance, tag, viewModel.SelectedSymbolCoordinate ) ;
       EditTag( tag, viewModel ) ;
+      if(viewModel.SymbolInformation.IsShowText)
+        MoveTag( symbolInstance, tag, viewModel.SelectedSymbolCoordinate ) ;
 
       return tag ;
     }
@@ -182,6 +183,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         activeView.UnhideElements(new List<ElementId>{ tag.Id });
       else
         activeView.HideElements(new List<ElementId>{ tag.Id });
+      
+      tag.Document.Regenerate();
     }
 
     private static void MoveTag( FamilyInstance symbolInstance, IndependentTag tag, SymbolCoordinate symbolCoordinate )
@@ -201,13 +204,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       switch ( symbolCoordinate ) {
         case SymbolCoordinate.上 :
         {
-          var transform = Transform.CreateTranslation( XYZ.BasisY * ( 0.5 * symbolHeight + Offset + 0.5 * tagHeight ) * scale ) ;
+          var transform = Transform.CreateTranslation( XYZ.BasisY * ( 0.5 * symbolHeight + Offset * scale + 0.5 * tagHeight ) ) ;
           toPoint = transform.OfPoint( symbolLocation ) ;
           break;
         }
         case SymbolCoordinate.左:
         {
-          var transform = Transform.CreateTranslation( -XYZ.BasisX * ( 0.5 * symbolWidth + Offset + 0.5 * tagWidth ) * scale ) ;
+          var transform = Transform.CreateTranslation( -XYZ.BasisX * ( 0.5 * symbolWidth + Offset * scale + 0.5 * tagWidth ) ) ;
           toPoint = transform.OfPoint( symbolLocation ) ;
           break;
         }
@@ -218,13 +221,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
         case SymbolCoordinate.右:
         {
-          var transform = Transform.CreateTranslation( XYZ.BasisX * ( 0.5 * symbolWidth + Offset + 0.5 * tagWidth ) * scale ) ;
+          var transform = Transform.CreateTranslation( XYZ.BasisX * ( 0.5 * symbolWidth + Offset * scale + 0.5 * tagWidth ) ) ;
           toPoint = transform.OfPoint( symbolLocation ) ;
           break;
         }
         case SymbolCoordinate.下:
         {
-          var transform = Transform.CreateTranslation( -XYZ.BasisY * ( 0.5 * symbolHeight + Offset + 0.5 * tagHeight ) * scale ) ;
+          var transform = Transform.CreateTranslation( -XYZ.BasisY * ( 0.5 * symbolHeight + Offset * scale + 0.5 * tagHeight ) ) ;
           toPoint = transform.OfPoint( symbolLocation ) ;
           break;
         }
