@@ -64,7 +64,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var viewModel = new SymbolInformationViewModel( uiDocument.Document, symbolModel ) ;
         var dialog = new SymbolInformationDialog( viewModel ) ;
-        var ceedDetailStorable = uiDocument.Document.GetCeedDetailStorable() ;
 
         if ( dialog.ShowDialog() != true || null == point ) 
           return Result.Failed ;
@@ -75,6 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         ( symbolInstance, tag ) = CreateOrEditSymbolInstance( uiDocument.Document, symbolInstance, tag, new XYZ(point.X, point.Y, heightSymbol), viewModel ) ;
         symbolModel = SaveData( storable, symbolInstance, tag, viewModel ) ;
 
+        var ceedDetailStorable = uiDocument.Document.GetCeedDetailStorable() ;
         ceedDetailStorable.AllCeedDetailModelData.RemoveAll( x => x.ParentId == symbolModel.SymbolUniqueId ) ;
         ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
         ceedDetailStorable.Save() ;
@@ -128,8 +128,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         document.Regenerate();
       }
 
-      if ( symbolInstance.LookupParameter( ParameterName ) is { } parameter && Math.Abs( parameter.AsDouble() - viewModel.SymbolInformation.Height.MillimetersToRevitUnits() / 2 ) > GeometryHelper.Tolerance ) 
+      if ( symbolInstance.LookupParameter( ParameterName ) is { } parameter && Math.Abs( parameter.AsDouble() - viewModel.SymbolInformation.Height.MillimetersToRevitUnits() / 2 ) > GeometryHelper.Tolerance ) {
         parameter.Set( viewModel.SymbolInformation.Height.MillimetersToRevitUnits() / 2 ) ;
+        document.Regenerate();
+      }
 
       var overrideGraphic = document.ActiveView.GetElementOverrides( symbolInstance.Id ) ;
       var color = SymbolColor.DictSymbolColor[ viewModel.SymbolInformation.Color ] ;
@@ -169,7 +171,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static void EditTag(IndependentTag tag, SymbolInformationViewModel viewModel )
     {
       var familySymbolTag = tag.GetValidTypes().Select( x => tag.Document.GetElement( x ) ).OfType<FamilySymbol>().SingleOrDefault( x => x.Name == $"{viewModel.SymbolInformation.CharacterHeight}mm" ) ;
-      if ( null != familySymbolTag ) {
+      if ( null != familySymbolTag && tag.Document.GetElement(tag.GetTypeId()).Name != familySymbolTag.Name) {
         tag.ChangeTypeId( familySymbolTag.Id ) ;
         tag.Document.Regenerate();
       }
