@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         xmlns:model="clr-namespace:Arent3d.Architecture.Routing.AppBase.Model"
@@ -14,6 +13,7 @@
         d:DataContext="{d:DesignInstance {x:Type local:DesignCeedViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <cvt:BooleanVisibilityConverter x:Key="BooleanVisibilityConverter"/>
+        <cvt:HalfFullWidthConverter x:Key="HalfFullWidthConverter" />
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -222,7 +222,8 @@
 
                     <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="130" Visibility="Hidden" />
 
-                    <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" />
+                    <DataGridTextColumn Header="一般表示用機器記号" CanUserSort="False" IsReadOnly="True" MinWidth="130" 
+                                        Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True, Converter={StaticResource HalfFullWidthConverter}}"/>
 
                     <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" />
 

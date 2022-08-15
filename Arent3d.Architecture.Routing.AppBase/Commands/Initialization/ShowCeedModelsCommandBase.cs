@@ -123,7 +123,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var txtPosition = new XYZ( point.X , point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, viewModel.SelectedDeviceSymbol, opts ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, StringWidthUtils.ToFullWidth(viewModel.SelectedDeviceSymbol ?? string.Empty) , opts ) ;
         doc.Regenerate();
         ElementTransformUtils.MoveElement(doc, textNote.Id, Transform.CreateTranslation(-XYZ.BasisX * 0.5 * textNote.Width * defaultSymbolMagnification).OfPoint(txtPosition) - txtPosition);
 
