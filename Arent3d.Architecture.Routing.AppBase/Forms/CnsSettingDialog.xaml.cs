@@ -391,7 +391,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedItem = _cnsSettingViewModel.CnsSettingModels.Last() ;
       if ( selectedItem == null ) return true ;
       var input = selectedItem.CategoryName ;
-      Match m = Regex.Match(input, @"[\[/\?\]\*\\:]");
+      Match m = Regex.Match(input, @"[\[/\?\]\*\\:\']");
       bool nameIsValid = ( ! m.Success && ( ! string.IsNullOrEmpty(input) ) && ( input.Length <= 31 ) );
 
       if ( ! nameIsValid ) 
