@@ -42,6 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedItem = ( (CnsSettingModel) grdCategories.SelectedItem ) ;
       if ( selectedItem.CategoryName == "未設定" ) return ;
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidNameConstructionItem() ) return ;
       grdCategories.IsReadOnly = false ;
       _isEditModel = true ;
       grdCategories.CurrentCell = new DataGridCellInfo( grdCategories.SelectedItem, grdCategories.Columns[ 1 ] ) ; 
@@ -71,6 +72,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           e.Cancel = true ;
           return ;
         }
+
+        if ( ! IsValidNameConstructionItem() ) {
+          _editingRowIndex = e.Row.GetIndex() ;
+          _isEditModel = false ;
+          e.Cancel = true ;
+          return ;
+        }
       }
 
       _isEditModel = false ;
@@ -80,6 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void AddNewRow_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( !IsValidNameConstructionItem() ) return ;
       if ( _cnsSettingViewModel.AddRowCommand.CanExecute( null ) )
         _cnsSettingViewModel.AddRowCommand.Execute( null ) ;
       grdCategories.IsReadOnly = false ;
@@ -95,6 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedItem = ( (CnsSettingModel) grdCategories.SelectedItem ) ;
       if ( selectedItem.CategoryName == "未設定" ) return ;
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidNameConstructionItem() ) return ;
       if ( _cnsSettingViewModel.DeleteRowCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.DeleteRowCommand.Execute( grdCategories.SelectedIndex ) ;
     }
@@ -102,6 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Export_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidNameConstructionItem() ) return ;
       if ( _cnsSettingViewModel.WriteFileCommand.CanExecute( null ) )
         _cnsSettingViewModel.WriteFileCommand.Execute( null ) ;
     }
@@ -109,6 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Import_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidNameConstructionItem() ) return ;
       if ( _cnsSettingViewModel.ReadFileCommand.CanExecute( null ) )
         _cnsSettingViewModel.ReadFileCommand.Execute( null ) ;
       try {
@@ -127,6 +139,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void AllElementsApply_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidNameConstructionItem() ) return ;
       Close_Dialog() ;
       if ( _cnsSettingViewModel.SetConstructionItemForAllCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.SetConstructionItemForAllCommand.Execute( grdCategories.SelectedIndex ) ;
@@ -135,6 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Save_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidNameConstructionItem() ) return ;
       Close_Dialog() ;
       if ( _cnsSettingViewModel.SaveCommand.CanExecute( null ) )
         _cnsSettingViewModel.SaveCommand.Execute( null ) ;
@@ -269,6 +283,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void ApplyRangSelection_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidNameConstructionItem() ) return ;
       Close_Dialog() ;
       if ( _cnsSettingViewModel.ApplyRangSelectionCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.ApplyRangSelectionCommand.Execute( grdCategories.SelectedIndex ) ;
@@ -371,11 +386,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       tx.Commit();
     }
     
-    private void CellValueChanged( object sender, RoutedEventArgs e )
+    private bool IsValidNameConstructionItem()
     {
-      var textBox = ( (TextBox) sender ) ;
-      var input = textBox.Text ;
-      Match m = Regex.Match(input, @"[\[/\?\]\*\\]");
+      var selectedItem = _cnsSettingViewModel.CnsSettingModels.Last() ;
+      if ( selectedItem == null ) return true ;
+      var input = selectedItem.CategoryName ;
+      Match m = Regex.Match(input, @"[\[/\?\]\*\\:]");
       bool nameIsValid = ( ! m.Success && ( ! string.IsNullOrEmpty(input) ) && ( input.Length <= 31 ) );
 
       if ( ! nameIsValid ) 
@@ -384,8 +400,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                                                                    + @"・名前が31文字以上になっている。" + "\n" 
                                                                    + @"・ふさわしくない文字が入っている「：」「/」など。" + "\n" 
                                                                    + @"・名前が空白になっている。" , "Error") ;
-        textBox.Text = string.Empty ;
+        selectedItem.CategoryName = string.Empty ;
+        return false ;
       }
+      return true;
     }
   }
 }
