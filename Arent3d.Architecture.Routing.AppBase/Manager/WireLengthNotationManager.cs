@@ -162,7 +162,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           var conduitsOfLastRoute = allConduitsOfRoutes[lastRoute.Key] ;
           var toConnectorPosition = lastSegment.ToEndPoint.RoutingStartPosition ;
 
-          var pullBoxUniqueId = PullBoxRouteManager.IsSegmentConnectedToPoPullBox( document, lastSegment ) ;
+          var pullBoxUniqueId = PullBoxRouteManager.IsSegmentConnectedToPullBox( document, lastSegment ) ;
           var isToPullBox = ! string.IsNullOrEmpty( pullBoxUniqueId ) ;
 
           var nearestConduit = FindNearestConduit( document, conduitsOfLastRoute, toConnectorPosition, true ) ??
@@ -420,7 +420,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           var routeName = pickUpModelsGroup.Key ;
           var lastRoute = routeCache.LastOrDefault( r => r.Key == routeName ) ;
           var lastSegment = lastRoute.Value.RouteSegments.Last() ;
-          var pullBoxUniqueId = PullBoxRouteManager.IsSegmentConnectedToPoPullBox( document, lastSegment ) ;
+          var pullBoxUniqueId = PullBoxRouteManager.IsSegmentConnectedToPullBox( document, lastSegment ) ;
           if ( string.IsNullOrEmpty( pullBoxUniqueId ) ) continue ;
             
           if ( pullBoxIdWithPickUpNumbers.ContainsKey( pullBoxUniqueId ) )

@@ -5,12 +5,12 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.NewLimitRackCommand", DefaultString = "Create Limit Rack" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.NewLimitRackSelectionRangeCommand", DefaultString = "Create Limit Rack (Selection Range)" )]
   [Image( "resources/rack.png" )]
-  public class NewLimitRackCommand : NewLimitRackCommandBase
+  public class NewLimitRackSelectionRangeCommand : NewLimitRackCommandBase
   {
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
     protected override bool IsCircle => false ;
-    protected override bool IsSelectionRange => false ;
+    protected override bool IsSelectionRange => true ;
   }
 }

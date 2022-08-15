@@ -641,21 +641,60 @@ namespace Arent3d.Architecture.Routing
       return ( From: fromList, To: toList ) ;
     }
 
-    public static IEnumerable<(MEPCurve, SubRoute)> CollectAllMultipliedRoutingElements( this Document document, int multiplicity )
+    public static IEnumerable<(MEPCurve MEPCurve, SubRoute SubRoute)> CollectAllMultipliedRoutingElements( this Document document, int multiplicity )
+    {
+      return document.CollectAllMultipliedRoutingElements( document.GetAllElementsOfRoute<MEPCurve>(), multiplicity ) ;
+    }
+
+    public static IEnumerable<(MEPCurve MEPCurve, SubRoute SubRoute)> CollectAllMultipliedRoutingElements(
+      this Document document, IEnumerable<MEPCurve?> mepCurves, int multiplicity )
     {
       if ( multiplicity < 2 ) throw new ArgumentOutOfRangeException( nameof( multiplicity ) ) ;
-
+    
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-
-      foreach ( var mepCurve in document.GetAllElementsOfRoute<MEPCurve>() ) {
-        if ( mepCurve.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
+    
+      foreach ( var mepCurve in mepCurves ) {
+        if ( mepCurve?.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
         if ( mepCurve.GetRepresentativeSubRoute() != subRouteInfo ) continue ;
         if ( routes.GetSubRoute( subRouteInfo ) is not { } subRoute ) continue ;
         if ( subRoute.GetMultiplicity() < multiplicity ) continue ;
-
+    
         yield return ( mepCurve, subRoute ) ;
       }
     }
+    
+    // public static IEnumerable<(MEPCurve MEPCurve, SubRoute SubRoute)> CollectAllMultipliedRoutingElements(
+    //   this Document document, IEnumerable<MEPCurve?> mepCurves, int multiplicity )
+    // {
+    //   if ( multiplicity < 2 ) throw new ArgumentOutOfRangeException( nameof( multiplicity ) ) ;
+    //
+    //   var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+    //
+    //   var routingElementsGroupByRouteName = new Dictionary<string, List<(MEPCurve MEPCurve, SubRoute SubRoute)>>() ;
+    //   foreach ( var mepCurve in mepCurves ) {
+    //     if ( mepCurve?.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
+    //     if ( mepCurve.GetRepresentativeSubRoute() != subRouteInfo ) continue ;
+    //     if ( routes.GetSubRoute( subRouteInfo ) is not { } subRoute ) continue ;
+    //     if ( subRoute.GetMultiplicity() < 2 ) continue ;
+    //     
+    //     var conduit = mepCurve as Conduit ;
+    //     var routeName = conduit?.GetRouteName() ?? string.Empty ;
+    //     if ( string.IsNullOrEmpty( routeName ) ) continue ;
+    //     
+    //     if ( ! routingElementsGroupByRouteName.ContainsKey( routeName ) )
+    //       routingElementsGroupByRouteName.Add( routeName, new List<(MEPCurve MEPCurve, SubRoute SubRoute)> { ( mepCurve, subRoute ) } ) ;
+    //     else
+    //       routingElementsGroupByRouteName[ subRoute.Route.RouteName ].Add( ( mepCurve, subRoute ) ) ;
+    //   }
+    //   
+    //   return routingElementsGroupByRouteName.Where( p =>
+    //     {
+    //       var sumMultiplicity = p.Value.GroupBy( s => new { s.SubRoute.Route.RouteName, s.SubRoute.SubRouteIndex } )
+    //         .Sum( t => t.First().SubRoute.GetMultiplicity() ) ;
+    //       return sumMultiplicity >= multiplicity ;
+    //     } )
+    //     .SelectMany( p => p.Value ).Where( p => p.SubRoute.GetMultiplicity() >= 2 ) ;
+    // }
 
     #endregion
 

@@ -306,6 +306,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), fromConnectorId ) ;
+      
+      // set route name
+      var routeName = conduit.GetRouteName() ;
+      if ( ! string.IsNullOrEmpty( routeName ) ) {
+        var routeNameArray = routeName!.Split( '_' ) ;
+        routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+        instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
+      }
 
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
@@ -342,7 +350,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       var length = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ).AsDouble() ;
       var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document, "継手外径" ) ).AsDouble() ;
-      var bendRadius = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) ).AsDouble() ;
 
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTrayFitting ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
 
@@ -350,7 +357,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
 
       // set cable tray Bend Radius
-      bendRadius = cableTrayDefaultBendRadius == 0 ? ( RatioBendRadius * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
+      var bendRadius = cableTrayDefaultBendRadius == 0 ? ( RatioBendRadius * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
       SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadius ) ; // TODO may be must change when FamilyType change
 
       // set cable rack length
@@ -365,6 +372,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), fromConnectorId ) ;
+      
+      // set route name
+      var routeName = conduit.GetRouteName() ;
+      if ( ! string.IsNullOrEmpty( routeName ) ) {
+        var routeNameArray = routeName!.Split( '_' ) ;
+        routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+        instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
+      }
+
 
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {
@@ -412,14 +428,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var rackNotationStorable = doc.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? doc.GetRackNotationStorable() ;
       RemoveNotationUnused( doc, rackNotationStorable ) ;
-      Dictionary<string, Dictionary<double, List<FamilyInstance>>> directionXRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
-      Dictionary<string, Dictionary<double, List<FamilyInstance>>> directionYRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
+      var directionXRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
+      var directionYRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
       foreach ( var rack in racks ) {
         var widthRack = Math.Round( rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble(), 4 ) ;
-        var fromConnectorId = GetFromConnectorId( doc, rack ) ;
+        var routeName = rack.GetPropertyString( RoutingParameter.RouteName ) ?? string.Empty ;
+        if ( string.IsNullOrEmpty( routeName ) ) continue ;
+        
         if ( rack.HandOrientation.X is 1.0 or -1.0 ) {
-          if ( directionXRacks.ContainsKey( fromConnectorId ) ) {
-            Dictionary<double, List<FamilyInstance>> xRacks = directionXRacks[ fromConnectorId ] ;
+          if ( directionXRacks.ContainsKey( routeName ) ) {
+            var xRacks = directionXRacks[ routeName ] ;
             if ( xRacks.ContainsKey( widthRack ))
               xRacks[ widthRack ].Add( rack );
             else {
@@ -427,13 +445,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
           }
           else {
-            Dictionary<double, List<FamilyInstance>> xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
-            directionXRacks.Add( fromConnectorId, xRacks ) ;
+            var xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
+            directionXRacks.Add( routeName, xRacks ) ;
           }
         }
         else if ( rack.HandOrientation.Y is 1.0 or -1.0 ) {
-          if ( directionYRacks.ContainsKey( fromConnectorId ) ) {
-            Dictionary<double, List<FamilyInstance>> yRacks = directionYRacks[ fromConnectorId ] ;
+          if ( directionYRacks.ContainsKey( routeName ) ) {
+            var yRacks = directionYRacks[ routeName ] ;
             if ( yRacks.ContainsKey( widthRack ))
               yRacks[ widthRack ].Add( rack );
             else {
@@ -441,8 +459,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
           }
           else {
-            Dictionary<double, List<FamilyInstance>> xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
-            directionYRacks.Add( fromConnectorId, xRacks ) ;
+            var xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
+            directionYRacks.Add( routeName, xRacks ) ;
           }
         }
       }
