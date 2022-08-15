@@ -46,7 +46,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
 
-        var point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        XYZ? point ;
+        try {
+          point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        }
+        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+          return Result.Cancelled ;
+        }
         var condition = "屋外" ; // デフォルトの条件
         
         var symbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
