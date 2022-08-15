@@ -292,9 +292,7 @@
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <Image Source="{Binding FloorPlanImages}" Stretch="None" />
-                                <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding GeneralDisplayDeviceSymbol }" Margin="5,0,0,0" />
+                                <ContentControl Content="{Binding Canvas}" />
                             </StackPanel>
                         </DataTemplate>
                     </ListView.ItemTemplate>

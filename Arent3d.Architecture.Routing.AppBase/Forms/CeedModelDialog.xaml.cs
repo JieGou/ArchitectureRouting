@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DataContext = viewModel ;
       BtnReplaceSymbol.IsEnabled = false ;
       Style rowStyle = new( typeof( DataGridRow ) ) ;
-      rowStyle.Setters.Add( new EventSetter( MouseLeftButtonUpEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
+      rowStyle.Setters.Add( new EventSetter( PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
       ViewModel.DtGrid = DtGrid ;
       if ( ViewModel.IsExistUsingCode ) {
@@ -88,7 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var listView = ( sender as ListView ) ! ;
       if ( listView.SelectedValue == null ) return ;
-      var selectedItem = (CeedModel) listView.SelectedValue ;
+      var selectedItem = (CeedViewModel.PreviewListInfo) listView.SelectedValue ;
       ViewModel.SelectedDeviceSymbol = selectedItem.GeneralDisplayDeviceSymbol ;
       ViewModel.SelectedCondition = selectedItem.Condition ;
       ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
