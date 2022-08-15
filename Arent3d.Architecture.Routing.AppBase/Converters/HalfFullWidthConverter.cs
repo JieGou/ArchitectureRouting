@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Converters
             if ( value is not string str || string.IsNullOrEmpty( str ) )
                 return string.Empty ;
 
-            return StringWidthUtils.ToFullWidth( str ) ;
+            return StringWidthUtils.IsHalfWidth( str ) ? StringWidthUtils.ToFullWidth( str ) : str;
         }
 
         public object ConvertBack( object value, Type targetType, object parameter, CultureInfo culture )

@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+#pragma warning disable CS0649
 
 namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 {

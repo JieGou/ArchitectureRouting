@@ -23,6 +23,11 @@ namespace Arent3d.Architecture.Routing
             return sb.ToString();
         }
 
+        public static bool IsHalfWidth( string str )
+        {
+            return str.IsNormalized( NormalizationForm.FormKC ) ;
+        }
+
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         private static extern int LCMapString(uint Locale, uint dwMapFlags, string lpSrcStr, int cchSrc, StringBuilder lpDestStr, int cchDest);
     }
