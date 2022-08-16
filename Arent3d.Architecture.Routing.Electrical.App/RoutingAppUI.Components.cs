@@ -132,7 +132,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
 
-          [Button( typeof( ShowFallMarkCommand ), OnlyInitialized = true )]
+          [Button( typeof( ShowFallMarkCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
           private static class ShowFallMarkCommandButton
           {
           }
