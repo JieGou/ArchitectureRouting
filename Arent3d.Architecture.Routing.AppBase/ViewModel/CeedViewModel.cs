@@ -3,16 +3,15 @@ using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
-using System.Reflection ;
 using System.Text ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
-using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -33,8 +32,6 @@ using Line = Autodesk.Revit.DB.Line ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 using MessageBox = System.Windows.MessageBox ;
 using Path = System.IO.Path ;
-using Point = System.Windows.Point ;
-using Polyline = System.Windows.Shapes.Polyline ;
 using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -1013,11 +1010,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var dwgNumber = ceedModel.DwgNumber ;
         if ( string.IsNullOrEmpty( ceedModel.DwgNumber ) ) {
           if ( string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ) continue ;
-          var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.FloorPlanSymbol ) ;
+          var canvas = DrawCanvasManager.CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.FloorPlanSymbol ) ;
           PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
         }
         else {
-          var filePath = Get2DSymbolDwgPath( dwgNumber ) ;
+          var filePath = DrawCanvasManager.Get2DSymbolDwgPath( dwgNumber ) ;
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
           _document.Import( filePath, dwgImportOptions, view, out ElementId elementId ) ;
@@ -1027,11 +1024,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             Options opt = new() ;
             foreach ( GeometryObject geoObj in dwg.get_Geometry( opt ) ) {
               if ( geoObj is not GeometryInstance inst ) continue ;
-              CreateCurveFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
+              DrawCanvasManager.CreateCurveFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
             }
           }
         
-          var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty ) ;
+          var canvas = DrawCanvasManager.CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty ) ;
           PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
         
           t.Start() ;
@@ -1039,240 +1036,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           t.Commit() ;
         }
       }
-    }
-
-    private Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol )
-    {
-      const double scale = 15 ;
-      const double defaultOffset = 40 ;
-      var rotateTransform = new RotateTransform( 90, 0, 0 ) ;
-      Canvas canvasPanel = new()
-      {
-        Background = new SolidColorBrush( Colors.Black ),
-        Width = 245,
-        Height = 80
-      } ;
-      try {
-        foreach ( var line in lines ) {
-          var (x1, y1, _) = line.GetEndPoint( 0 ) ;
-          var (x2, y2, _) = line.GetEndPoint( 1 ) ;
-
-          x1 = x1.RevitUnitsToMillimeters() * scale ;
-          y1 = y1.RevitUnitsToMillimeters() * scale ;
-          x2 = x2.RevitUnitsToMillimeters() * scale ;
-          y2 = y2.RevitUnitsToMillimeters() * scale ;
-          
-          var newLine = new System.Windows.Shapes.Line
-          {
-            Stroke = new SolidColorBrush( Colors.Green ),
-            StrokeThickness = 2,
-            X1 = x1,
-            Y1 = y1,
-            X2 = x2,
-            Y2 = y2,
-            RenderTransform = rotateTransform,
-          } ;
-
-          Canvas.SetTop( newLine, defaultOffset ) ;
-          Canvas.SetLeft( newLine, defaultOffset ) ;
-          canvasPanel.Children.Add( newLine ) ;
-        }
-
-        var scaleOfArc = scale ;
-        foreach ( var arc in arcs ) {
-          var centerX = arc.Center.X.RevitUnitsToMillimeters() ;
-          var centerY = arc.Center.Y.RevitUnitsToMillimeters() ;
-          var diameter = ( arc.Radius * 2 ).RevitUnitsToMillimeters() ;
-          if ( arc == arcs.First() ) {
-            scaleOfArc = GetScale( diameter, scale, ! arc.IsClosed ) ;
-          }
-          var newDiameter = diameter * scaleOfArc ;
-          if ( arc.IsClosed ) {
-            var newEllipse = new System.Windows.Shapes.Ellipse()
-            {
-              Stroke = new SolidColorBrush( Colors.Green ),
-              StrokeThickness = 2,
-              Width = newDiameter, 
-              Height = newDiameter
-            } ;
-
-            Canvas.SetTop( newEllipse, defaultOffset + centerY * scaleOfArc - newDiameter / 2 ) ;
-            Canvas.SetLeft( newEllipse, defaultOffset + centerX * scaleOfArc - newDiameter / 2 ) ;
-            canvasPanel.Children.Add( newEllipse ) ;
-          }
-          else {
-            var firstPoint = arc.GetEndPoint( 0 ) ;
-            var secondPoint = arc.GetEndPoint( 1 ) ;
-            var startPoint = new Point( firstPoint.X.RevitUnitsToMillimeters() * scaleOfArc, firstPoint.Y.RevitUnitsToMillimeters() * scaleOfArc ) ;
-            var endPoint = new Point( secondPoint.X.RevitUnitsToMillimeters() * scaleOfArc, secondPoint.Y.RevitUnitsToMillimeters() * scaleOfArc ) ;
-            var arcSegment = new ArcSegment( endPoint, new Size( newDiameter / 2, newDiameter / 2 ), 0, false, SweepDirection.Clockwise, true ) ;
-            var segments = new PathSegmentCollection { arcSegment } ;
-            var figure = new PathFigure( startPoint, segments, false ) ;
-            var figures = new PathFigureCollection { figure } ;
-            var pathGeometry = new PathGeometry( figures ) ;
-            var arcRotateTransform = new RotateTransform( 90, centerX, centerY ) ;
-            var newPath = new System.Windows.Shapes.Path()
-            {
-              Stroke = new SolidColorBrush( Colors.Green ), 
-              StrokeThickness = 2, 
-              Data = pathGeometry,
-              RenderTransform = arcRotateTransform,
-            } ;
-            Canvas.SetTop( newPath, defaultOffset ) ;
-            Canvas.SetLeft( newPath, defaultOffset ) ;
-            canvasPanel.Children.Add( newPath ) ;
-          }
-        }
-        
-        foreach ( var point in points ) {
-          double diameter = 0 ;
-          if ( arcs.Any() ) {
-            diameter = ( arcs.First().Radius * 2 ).RevitUnitsToMillimeters() ;
-          }
-          var (x, y, _) = point.Coord ;
-          var scaleOfPoint = GetScale( diameter, scale, arcs.Any() && ! arcs.First().IsClosed ) ;
-          x = x.RevitUnitsToMillimeters() * scaleOfPoint ;
-          y = y.RevitUnitsToMillimeters() * scaleOfPoint ;
-          var newPoint = new System.Windows.Shapes.Line
-          {
-            Stroke = new SolidColorBrush( Colors.Green ),
-            StrokeThickness = 2,
-            X1 = x,
-            Y1 = y,
-            X2 = x + 1,
-            Y2 = y
-          } ;
-          
-          Canvas.SetTop( newPoint, defaultOffset ) ;
-          Canvas.SetLeft( newPoint, defaultOffset ) ;
-          canvasPanel.Children.Add( newPoint ) ;
-        }
-
-        if ( polyLines.Any() ) {
-          var scaleOfLine = scale ;
-          foreach ( var polyline in polyLines ) {
-            var pointsOfPolyLine = new PointCollection() ;
-            var ptsList = polyline.GetCoordinates() ;
-            if ( polyline == polyLines.First() ) {
-              scaleOfLine = GetScale( ptsList, scale ) ;
-            }
-            for ( var i = 0 ; i < ptsList.Count; i++ ) {
-              var x = ptsList.ElementAt( i ).X.RevitUnitsToMillimeters() * scaleOfLine ;
-              var y = ptsList.ElementAt( i ).Y.RevitUnitsToMillimeters() * scaleOfLine ;
-              pointsOfPolyLine.Add( new Point( x, y ) ) ;
-            }
-
-            var newPolyline = new Polyline
-            {
-              Stroke = new SolidColorBrush( Colors.Green ), 
-              StrokeThickness = 2, 
-              FillRule = FillRule.Nonzero,
-              Points = pointsOfPolyLine,
-              RenderTransform = rotateTransform,
-            } ;
-            
-            Canvas.SetTop( newPolyline, defaultOffset ) ;
-            Canvas.SetLeft( newPolyline, defaultOffset ) ;
-            canvasPanel.Children.Add( newPolyline ) ;
-          }
-        }
-      }
-      catch {
-        //
-      }
-
-      if ( ! string.IsNullOrEmpty( floorPlanSymbol ) ) {
-        TextBlock txtFloorPlanSymbol = new()
-        {
-          FontSize = 19, 
-          Text = floorPlanSymbol, 
-          Foreground = Brushes.Green
-        } ;
-        Canvas.SetTop( txtFloorPlanSymbol, 20 ) ;
-        Canvas.SetLeft( txtFloorPlanSymbol, defaultOffset ) ;
-        canvasPanel.Children.Add( txtFloorPlanSymbol ) ;
-      }
-      
-      TextBlock txt = new()
-      {
-        FontSize = 19, 
-        Text = deviceSymbol, 
-        Foreground = Brushes.White
-      } ;
-      Canvas.SetTop( txt, 20 ) ;
-      Canvas.SetLeft( txt, 70 ) ;
-      canvasPanel.Children.Add( txt ) ;
-
-      return canvasPanel ;
-    }
-
-    private double GetScale( ICollection<XYZ> points, double scale )
-    {
-      for ( var i = 0 ; i < points.Count - 1 ; i++ ) {
-        var length = points.ElementAt( i ).DistanceTo( points.ElementAt( i + 1 ) ).RevitUnitsToMillimeters() ;
-        if ( length >= 5 )
-          return scale / 4 ;
-        if ( length >= 3 )
-          return scale / 2 ;
-      }
-
-      return scale ;
-    }
-    
-    private double GetScale( double diameter, double scale, bool isArc = false )
-    {
-      if ( diameter > 5 )
-          return scale / 4 ;
-      if ( ( diameter > 3 && ! isArc ) || ( diameter >= 2 && isArc ) )
-          return scale / 2 ;
-
-      return scale ;
-    }
-
-    private void CreateCurveFromGeometryObject( GeometryElement geometryElement, ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, ICollection<Autodesk.Revit.DB.Point> points )
-    {
-      try {
-        foreach ( GeometryObject geoObj in geometryElement ) {
-          switch ( geoObj ) {
-            case Line line :
-            {
-              lines.Add( line ) ;
-              break ;
-            }
-            case Arc arc :
-            {
-              arcs.Add( arc ) ;
-              break ;
-            }
-            case Autodesk.Revit.DB.Point point :
-            {
-              points.Add( point ) ;
-              break ;
-            }
-            case PolyLine polyline :
-            {
-              polyLines.Add( polyline ) ;
-
-              break ;
-            }
-            case GeometryInstance geometryInstance :
-              CreateCurveFromGeometryObject( geometryInstance.SymbolGeometry, lines, arcs, polyLines, points ) ;
-              break ;
-          }
-        }
-      }
-      catch {
-        //
-      }
-    }
-    
-    private static string Get2DSymbolDwgPath( string dwgNumber )
-    {
-      const string folderName = "2D Symbol DWG" ;
-      string directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
-      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
-      var fileName = dwgNumber + ".dwg" ;
-      return Path.Combine( resourcesPath, folderName, fileName ) ;
     }
 
     public class PreviewListInfo

@@ -12,6 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class CeedModelDialog : Window
   {
+    private const string Message = "Can't create connector with this ceed code " ;
     private CeedViewModel ViewModel => (CeedViewModel) DataContext ;
 
     public CeedModelDialog( CeedViewModel viewModel )
@@ -94,10 +95,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
       ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
       ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
-      if ( string.IsNullOrEmpty( ViewModel.SelectedDeviceSymbol ) ) return ;
-      ViewModel.Save() ;
-      DialogResult = true ;
-      Close() ;
+      if ( string.IsNullOrEmpty( ViewModel.SelectedDeviceSymbol ) ) {
+        MessageBox.Show( Message, "Message" ) ;
+      }
+      else {
+        ViewModel.Save() ;
+        DialogResult = true ;
+        Close() ;
+      }
     }
 
     private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
