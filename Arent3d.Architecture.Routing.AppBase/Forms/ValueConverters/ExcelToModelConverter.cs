@@ -131,10 +131,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           i-- ;
         }
 
-        var listFloorPlanImages = GetSymbolImages( path, blocks, "G10", "G" ) ;
+        #region Load Image (Comment out)
 
-        #region Load Instrumentation Image (Comment out)
-
+        //var listFloorPlanImages = GetSymbolImages( path, blocks, "G10", "G" ) ;
         //var listInstrumentationImages = GetSymbolImages( path, blocks, "G8", "G" ) ;
 
         #endregion
@@ -201,46 +200,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             if ( ! string.IsNullOrEmpty( dwgNumberValue ) ) dwgNumber = dwgNumberValue ;
           }
 
-          var symbolBytes = listFloorPlanImages.Where( b => b.Position == firstIndexGroup + 1 ).ToList().OrderBy( b => b.MarginLeft ) ;
-          var floorPlanImages = symbolBytes.Select( b => b.Image ).ToList() ;
+          var floorPlanImages = new List<Image>() ;
           var instrumentationImages = new List<Image>() ;
 
-          #region Load Instrumentation Image (Comment out)
+          #region Load Image (Comment out)
 
+          //var symbolBytes = listFloorPlanImages.Where( b => b.Position == firstIndexGroup + 1 ).ToList().OrderBy( b => b.MarginLeft ) ;
+          //var floorPlanImages = symbolBytes.Select( b => b.Image ).ToList() ;
           //var instrumentationSymbolBytes = listInstrumentationImages.Where( b => b.Position == firstIndexGroup + 1).ToList().OrderBy(b=>b.MarginLeft) ;
           //var instrumentationImages = instrumentationSymbolBytes.Select( b => b.Image ).ToList() ;
 
           #endregion
 
           if ( ! ceedModelNumbers.Any() ) {
-            switch ( floorPlanImages.Count ) {
-              case 1 when string.IsNullOrEmpty( floorPlanSymbol ) :
-                CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, true ) ;
-                break ;
-              case > 1 :
-                floorPlanSymbol = DefaultSymbol ;
-                CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, false, true ) ;
-                break ;
-              default :
-                CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages ) ;
-                break ;
-            }
+            CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages ) ;
           }
           else {
             for ( var k = 0 ; k < ceedModelNumbers.Count ; k++ ) {
               var ceedSetCode = ceedSetCodes.Any() ? ceedSetCodes[ k ] : string.Empty ;
-              switch ( floorPlanImages.Count ) {
-                case 1 when string.IsNullOrEmpty( floorPlanSymbol ) :
-                  CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, true ) ;
-                  break ;
-                case > 1 :
-                  floorPlanSymbol = DefaultSymbol ;
-                  CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, false, true ) ;
-                  break ;
-                default :
-                  CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages ) ;
-                  break ;
-              }
+              CreateCeedModel( ceedModelData, equipmentSymbols, legendDisplay, ceedModelNumbers[ k ], ceedSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages ) ;
             }
           }
 
@@ -259,6 +237,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
       return ( ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
     }
+    
+    private enum CategoriesName
+    {
+      中央監視装置,
+      他社設備盤,
+      拾い用シンボル,
+      拾い情報なし
+    }
 
     private static ( List<CategoryModel>, List<CategoryModel> ) GetCategoriesOfCeedModel( IWorkbook wb )
     {
@@ -268,6 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       var numberOfSheets = wb.NumberOfSheets ;
       if ( numberOfSheets <= 2 ) return ( categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
       try {
+        var categoriesWithoutCeedCodeName = ( (CategoriesName[]) Enum.GetValues( typeof( CategoriesName ) ) ).Select( c => c.GetFieldName() ).ToList() ;
         for ( var s = startSheetIndex ; s < numberOfSheets ; s++ ) {
           var workSheet = wb.GetSheetAt( s ) ;
           if ( workSheet == null ) continue ;
@@ -299,14 +286,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           for ( var j = 0 ; j < blocks.Count ; j++ ) {
             var (childCategoryName, startIndex) = blocks.ElementAt( j ) ;
             var endIndex = j == blocks.Count - 1 ? endRow : blocks.ElementAt( j + 1 ).Value ;
-            childCategoryName = childCategoryName.Substring( childCategoryName.IndexOf( "．", StringComparison.Ordinal ) + 1 ) ;
+            childCategoryName = childCategoryName.Substring( childCategoryName.IndexOf( "．", StringComparison.Ordinal ) + 1 ).Trim() ;
             for ( var i = startIndex ; i < endIndex ; i++ ) {
               var ceedModelNumberCell = workSheet.GetRow( i ).GetCell( 0 ) ;
               var ceedModelNumber = GetCellValue( ceedModelNumberCell ) ;
               if ( string.IsNullOrEmpty( ceedModelNumber ) ) continue ;
-              var ceedSetCodeCell = workSheet.GetRow( i ).GetCell( 1 ) ;
-              var ceedSetCode = GetCellValue( ceedSetCodeCell ) ;
-              CreateCategories( string.IsNullOrEmpty( ceedSetCode ) ? categoriesWithoutCeedCode : categoriesWithCeedCode, parentCategoryName, childCategoryName, ceedModelNumber ) ;
+              var categoryWithoutCeedCode = categoriesWithoutCeedCodeName.FirstOrDefault( c => parentCategoryName.Contains( c ) )  ;
+              CreateCategories( string.IsNullOrEmpty( categoryWithoutCeedCode ) ? categoriesWithCeedCode : categoriesWithoutCeedCode, parentCategoryName, childCategoryName, ceedModelNumber ) ;
             }
           }
         }
@@ -351,22 +337,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       var otherSymbolModelNumber = new List<string>() ;
       foreach ( var symbol in symbols ) {
         var generalDisplayDeviceSymbol = symbol.Normalize( NormalizationForm.FormKC ) ;
-        if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) continue ;
-        if ( equipmentSymbols.Any() ) {
-          var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
-          if ( modelNumberList.Any() ) {
-            foreach ( var modelNumber in modelNumberList ) {
+        if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) {
+          if ( modelNumbers.Any() ) {
+            foreach ( var modelNumber in modelNumbers ) {
               AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
+          }
+          else {
+            AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+          }
+        }
+        else {
+          if ( equipmentSymbols.Any() ) {
+            var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
+            if ( modelNumberList.Any() ) {
+              foreach ( var modelNumber in modelNumberList ) {
+                AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+              }
 
-            otherSymbolModelNumber.AddRange( modelNumberList ) ;
+              otherSymbolModelNumber.AddRange( modelNumberList ) ;
+            }
+            else {
+              symbolsNotHaveModelNumber.Add( symbol ) ;
+            }
           }
           else {
             symbolsNotHaveModelNumber.Add( symbol ) ;
           }
-        }
-        else {
-          symbolsNotHaveModelNumber.Add( symbol ) ;
         }
       }
 
@@ -404,12 +401,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
     private static void AddCeedModel( ICollection<CeedModel> ceedModelData, string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string ceedName, string dwgNumber, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages, bool isDummySymbol )
     {
       var floorPlanType = SetFloorPlanType( ceedModelNumber, generalDisplayDeviceSymbol, floorPlanSymbol ) ;
-      if ( isFloorPlanImages )
-        ceedModelData.Add( new CeedModel( legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, string.Empty, floorPlanType ) ) ;
-      else if ( isDummySymbol )
-        ceedModelData.Add( new CeedModel( legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanType ) ) ;
-      else
-        ceedModelData.Add( new CeedModel( legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, string.Empty, string.Empty, floorPlanType ) ) ;
+      ceedModelData.Add( new CeedModel( legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, string.Empty, string.Empty, floorPlanType ) ) ;
     }
 
     private static string SetFloorPlanType( string ceedModelNumber, string generalDisplayDeviceSymbol, string floorPlanSymbol )
@@ -423,124 +415,130 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           return ConnectorOneSideFamilyType.ConnectorOneSide34.GetFieldName() ;
       }
       else {
-        var arrCeedSetCode = ceedModelNumber.Split( '_' ) ;
-        var charCode = arrCeedSetCode.First() ;
-        var numberCode = arrCeedSetCode.Length > 2 ? int.Parse( arrCeedSetCode.ElementAt( 1 ) ) : 0 ;
-        switch ( charCode ) {
-          case "A" :
-          case "B" :
-          case "C" :
-          case "D" when ( numberCode is >= 1 and <= 6 ) :
-          case "D" when ( numberCode is >= 12 and <= 14 ) :
-          case "G" when ( numberCode is >= 1 and <= 4 ) :
-          case "G" when numberCode == 12 :
-          case "G" when numberCode == 15 :
-          case "H" when numberCode == 7 :
-          case "H" when numberCode == 12 :
-          case "H" when numberCode == 14 :
-          case "L" when numberCode == 27 :
-          case "M" when numberCode == 5 :
-          case "N" when ( numberCode is >= 1 and <= 2 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() ;
-          case "D" when ( numberCode is >= 7 and <= 11 ) :
-          case "D" when numberCode == 15 :
-          case "H" when numberCode == 3 :
-          case "H" when numberCode == 8 :
-          case "H" when numberCode == 13 :
-          case "H" when numberCode == 15 :
-          case "H" when numberCode == 16 :
-          case "H" when ( numberCode is >= 19 and <= 22 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide2.GetFieldName() ;
-          case "E" :
-          case "H" when numberCode == 9 :
-          case "H" when numberCode == 10 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide5.GetFieldName() ;
-          case "F" when ( numberCode is >= 1 and <= 12 ) :
-          case "F" when ( numberCode is >= 18 and <= 23 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide6.GetFieldName() ;
-          case "F" when ( numberCode is >= 13 and <= 15 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide7.GetFieldName() ;
-          case "F" when ( numberCode is >= 16 and <= 17 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide8.GetFieldName() ;
-          case "G" when ( numberCode is >= 5 and <= 11 ) :
-          case "G" when numberCode == 14 :
-          case "H" when numberCode == 4 :
-          case "H" when numberCode == 5 :
-          case "H" when numberCode == 23 :
-          case "I" when numberCode != 16 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide9.GetFieldName() ;
-          case "H" when ( numberCode is >= 1 and <= 2 ) :
-          case "H" when numberCode == 11 :
-          case "H" when ( numberCode is >= 17 and <= 18 ) :
-          case "H" when numberCode == 24 :
-          case "I" :
-          case "K" :
-          case "mb" :
-          case "L" when numberCode == 21 :
-          case "N" when ( numberCode is >= 3 and <= 6 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide10.GetFieldName() ;
-          case "lp" when ( numberCode <= 22 && numberCode != 13 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide11.GetFieldName() ;
-          case "lp" when numberCode == 13 :
-          case "lp" when numberCode == 23 :
-          case "lp" when numberCode == 24 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide12.GetFieldName() ;
-          case "M" when numberCode == 7 :
-          case "th" when numberCode == 33 :
-          case "th" when numberCode == 34 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide13.GetFieldName() ;
-          case "lp" when ( numberCode is >= 34 and <= 42 ) :
-          case "J" when numberCode == 1 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide14.GetFieldName() ;
-          case "lp" when ( numberCode is >= 25 and <= 33 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide15.GetFieldName() ;
-          case "lp" when numberCode == 43 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide16.GetFieldName() ;
-          case "lp" when ( numberCode is >= 44 and <= 49 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide17.GetFieldName() ;
-          case "L" when ( numberCode is >= 1 and <= 4 ) :
-          case "L" when numberCode == 10 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide19.GetFieldName() ;
-          case "L" when ( numberCode is >= 5 and <= 9 ) :
-          case "L" when ( numberCode is >= 11 and <= 17 ) :
-          case "L" when numberCode == 32 :
-          case "L" when numberCode == 33 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide20.GetFieldName() ;
-          case "L" when numberCode == 18 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide21.GetFieldName() ;
-          case "L" when numberCode == 19 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide22.GetFieldName() ;
-          case "L" when numberCode == 20 :
-          case "L" when numberCode == 31 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide23.GetFieldName() ;
-          case "th" when numberCode == 14 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide24.GetFieldName() ;
-          case "L" when numberCode == 22 :
-          case "L" when ( numberCode is >= 24 and <= 26 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide25.GetFieldName() ;
-          case "L" when numberCode == 23 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide26.GetFieldName() ;
-          case "th" when numberCode == 16 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide27.GetFieldName() ;
-          case "L" when numberCode == 28 :
-          case "th" when numberCode == 18 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide28.GetFieldName() ;
-          case "th" when numberCode == 17 :
-          case "th" when numberCode == 32 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide29.GetFieldName() ;
-          case "L" when numberCode == 29 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide30.GetFieldName() ;
-          case "op" :
-            return ConnectorOneSideFamilyType.ConnectorOneSide31.GetFieldName() ;
-          case "M" when ( numberCode is >= 1 and <= 4 ) :
-            return ConnectorOneSideFamilyType.ConnectorOneSide33.GetFieldName() ;
-          case "M" when numberCode == 6 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide35.GetFieldName() ;
-          case "M" when numberCode == 8 :
-            return ConnectorOneSideFamilyType.ConnectorOneSide36.GetFieldName() ;
-          default:
-            return defaultFloorPlanType ;
+        try {
+          var arrCeedSetCode = ceedModelNumber.Split( '_' ) ;
+          var charCode = arrCeedSetCode.First() ;
+          var numberCode = arrCeedSetCode.Length > 1 ? int.Parse( arrCeedSetCode.ElementAt( 1 ).Substring( 0, 2 ) ) : 0 ;
+          switch ( charCode ) {
+            case "A" :
+            case "B" :
+            case "C" :
+            case "D" when ( numberCode is >= 1 and <= 6 ) :
+            case "D" when ( numberCode is >= 12 and <= 14 ) :
+            case "G" when ( numberCode is >= 1 and <= 4 ) :
+            case "G" when numberCode == 12 :
+            case "G" when numberCode == 15 :
+            case "H" when numberCode == 7 :
+            case "H" when numberCode == 12 :
+            case "H" when numberCode == 14 :
+            case "L" when numberCode == 27 :
+            case "M" when numberCode == 5 :
+            case "N" when ( numberCode is >= 1 and <= 2 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() ;
+            case "D" when ( numberCode is >= 7 and <= 11 ) :
+            case "D" when numberCode == 15 :
+            case "H" when numberCode == 3 :
+            case "H" when numberCode == 8 :
+            case "H" when numberCode == 13 :
+            case "H" when numberCode == 15 :
+            case "H" when numberCode == 16 :
+            case "H" when ( numberCode is >= 19 and <= 22 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide2.GetFieldName() ;
+            case "E" :
+            case "H" when numberCode == 9 :
+            case "H" when numberCode == 10 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide5.GetFieldName() ;
+            case "F" when ( numberCode is >= 1 and <= 12 ) :
+            case "F" when ( numberCode is >= 18 and <= 23 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide6.GetFieldName() ;
+            case "F" when ( numberCode is >= 13 and <= 15 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide7.GetFieldName() ;
+            case "F" when ( numberCode is >= 16 and <= 17 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide8.GetFieldName() ;
+            case "G" when ( numberCode is >= 5 and <= 11 ) :
+            case "G" when numberCode == 14 :
+            case "H" when numberCode == 4 :
+            case "H" when numberCode == 5 :
+            case "H" when numberCode == 23 :
+            case "I" when numberCode != 16 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide9.GetFieldName() ;
+            case "H" when ( numberCode is >= 1 and <= 2 ) :
+            case "H" when numberCode == 11 :
+            case "H" when ( numberCode is >= 17 and <= 18 ) :
+            case "H" when numberCode == 24 :
+            case "I" :
+            case "K" :
+            case "mb" :
+            case "L" when numberCode == 21 :
+            case "N" when ( numberCode is >= 3 and <= 6 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide10.GetFieldName() ;
+            case "lp" when ( numberCode <= 22 && numberCode != 13 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide11.GetFieldName() ;
+            case "lp" when numberCode == 13 :
+            case "lp" when numberCode == 23 :
+            case "lp" when numberCode == 24 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide12.GetFieldName() ;
+            case "M" when numberCode == 7 :
+            case "th" when numberCode == 33 :
+            case "th" when numberCode == 34 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide13.GetFieldName() ;
+            case "lp" when ( numberCode is >= 34 and <= 42 ) :
+            case "J" when numberCode == 1 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide14.GetFieldName() ;
+            case "lp" when ( numberCode is >= 25 and <= 33 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide15.GetFieldName() ;
+            case "lp" when numberCode == 43 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide16.GetFieldName() ;
+            case "lp" when ( numberCode is >= 44 and <= 49 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide17.GetFieldName() ;
+            case "L" when ( numberCode is >= 1 and <= 4 ) :
+            case "L" when numberCode == 10 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide19.GetFieldName() ;
+            case "L" when ( numberCode is >= 5 and <= 9 ) :
+            case "L" when ( numberCode is >= 11 and <= 17 ) :
+            case "L" when numberCode == 32 :
+            case "L" when numberCode == 33 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide20.GetFieldName() ;
+            case "L" when numberCode == 18 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide21.GetFieldName() ;
+            case "L" when numberCode == 19 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide22.GetFieldName() ;
+            case "L" when numberCode == 20 :
+            case "L" when numberCode == 31 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide23.GetFieldName() ;
+            case "th" when numberCode == 14 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide24.GetFieldName() ;
+            case "L" when numberCode == 22 :
+            case "L" when ( numberCode is >= 24 and <= 26 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide25.GetFieldName() ;
+            case "L" when numberCode == 23 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide26.GetFieldName() ;
+            case "th" when numberCode == 16 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide27.GetFieldName() ;
+            case "L" when numberCode == 28 :
+            case "th" when numberCode == 18 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide28.GetFieldName() ;
+            case "th" when numberCode == 17 :
+            case "th" when numberCode == 32 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide29.GetFieldName() ;
+            case "L" when numberCode == 29 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide30.GetFieldName() ;
+            case "op" :
+              return ConnectorOneSideFamilyType.ConnectorOneSide31.GetFieldName() ;
+            case "M" when ( numberCode is >= 1 and <= 4 ) :
+              return ConnectorOneSideFamilyType.ConnectorOneSide33.GetFieldName() ;
+            case "M" when numberCode == 6 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide35.GetFieldName() ;
+            case "M" when numberCode == 8 :
+              return ConnectorOneSideFamilyType.ConnectorOneSide36.GetFieldName() ;
+            default:
+              return defaultFloorPlanType ;
+          }
         }
+        catch {
+          return defaultFloorPlanType ;
+        }
+        
       }
 
       return defaultFloorPlanType ;
