@@ -48,6 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<CeedModel> _usingCeedModel ;
     private List<CeedModel> _previousCeedModels ;
     private readonly StorageService<Level, CeedUserModel> _storageService ;
+    private List<string> _ceedModelNumberOfPreviewCategories ;
 
     public DataGrid DtGrid ;
 
@@ -108,14 +109,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _isShowCondition = value ;
         CeedModels.Clear();
         if ( _isShowCondition.HasValue ) {
-          var ceedModelHasWithCeedSetCode = _ceedModels.Where( c => ! string.IsNullOrEmpty( c.CeedSetCode ) ).ToList() ;
           if ( _isShowCondition.Value ) {
-            var ceedModels = GroupCeedModelsByCeedCode( ceedModelHasWithCeedSetCode ) ;
+            var ceedModels = GroupCeedModelsByCeedModelNumber( _ceedModels ) ;
             CeedModels.AddRange( ceedModels ) ;
           }
           else {
-            var ceedModels = GroupCeedModel( ceedModelHasWithCeedSetCode ) ;
-            ceedModels = GroupCeedModelsByCeedCode( ceedModels ) ;
+            var ceedModels = GroupCeedModel( _ceedModels ) ;
+            ceedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
             CeedModels.AddRange( ceedModels ) ;
           }
 
@@ -269,12 +269,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _previewList = new ObservableCollection<PreviewListInfo>() ;
         Categories = new ObservableCollection<CategoryModel>() ;
         CategoriesPreview = new ObservableCollection<CategoryModel>() ;
+        _ceedModelNumberOfPreviewCategories = new List<string>() ;
       }
       else {
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
         _previousCeedModels = new List<CeedModel>( oldCeedStorable.CeedModelData ) ;
         _previewList = new ObservableCollection<PreviewListInfo>() ;
+        Categories = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithCeedCode ) ) ;
+        CategoriesPreview = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithoutCeedCode ) ) ;
+        _ceedModelNumberOfPreviewCategories = CategoryModel.GetCeedModelNumbers( oldCeedStorable.CategoriesWithoutCeedCode ) ;
         IsShowCeedModelNumber = _storageService.Data.IsShowCeedModelNumber ;
         IsShowCondition = _storageService.Data.IsShowCondition ;
         IsShowOnlyUsingCode = _storageService.Data.IsShowOnlyUsingCode ;
@@ -283,8 +287,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           IsExistUsingCode = true ;
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
         else IsShowDiff = _storageService.Data.IsDiff ;
-        Categories = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithCeedCode ) ) ;
-        CategoriesPreview = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithoutCeedCode ) ) ;
       }
 
       _selectedCeedSetCode = string.Empty ;
@@ -298,8 +300,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CeedModels.Clear() ;
       PreviewList.Clear() ;
 
-      var ceedModelHasWithCeedSetCode = _ceedModels.Where( c => ! string.IsNullOrEmpty( c.CeedSetCode ) ).ToList() ;
-      var ceedModels = GroupCeedModelsByCeedCode( ceedModelHasWithCeedSetCode ) ;
+      var ceedModels = GroupCeedModelsByCeedModelNumber( _ceedModels ) ;
       CeedModels.AddRange( ceedModels ) ;
 
       AddModelNumber( _ceedModels ) ;
@@ -311,8 +312,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       CeedModels.Clear() ;
       PreviewList.Clear() ;
-      var ceedModelHasWithCeedSetCode = ceedModels.Where( c => ! string.IsNullOrEmpty( c.CeedSetCode ) ).ToList() ;
-      var newCeedModels = GroupCeedModelsByCeedCode( ceedModelHasWithCeedSetCode ) ;
+      var newCeedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
       CeedModels.AddRange( newCeedModels ) ;
 
       AddModelNumber( CeedModels ) ;
@@ -366,7 +366,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       List<CategoryModel> categoryModels = new() ;
 
-      var categoryModel1 = new CategoryModel { Name = "Category 1", ParentName = string.Empty, IsExpanded = false, IsSelected = true } ;
+      var categoryModel1 = new CategoryModel { Name = "Category 1", ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
       categoryModels.Add( categoryModel1 ) ;
 
       var categoryModel2 = new CategoryModel { Name = "Category 2", ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
@@ -422,7 +422,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var ceedCodeNumbers = categoryModel.CeedCodeNumbers.Select( c => c.Name ) ;
       data = categoryModel.CeedCodeNumbers.Any() ? data.Where( c => ceedCodeNumbers.Contains( c.CeedModelNumber ) ).ToList() : data ;
       if ( isCategoryWithCeedCode ) {
-        var ceedModels = GroupCeedModelsByCeedCode( data ) ;
+        data = data.Where( c => ! _ceedModelNumberOfPreviewCategories.Contains( c.CeedModelNumber ) ).ToList() ;
+        var ceedModels = GroupCeedModelsByCeedModelNumber( data ) ;
         CeedModels.AddRange( ceedModels ) ;
       }
       else {
@@ -430,11 +431,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private List<CeedModel> GroupCeedModelsByCeedCode( IEnumerable<CeedModel> originCeedModels )
+    private List<CeedModel> GroupCeedModelsByCeedModelNumber( IEnumerable<CeedModel> originCeedModels )
     {
       var newCeedModels = new List<CeedModel>() ;
-      var ceedModelGroupByCeedCode = originCeedModels.Where( c => ! string.IsNullOrEmpty( c.CeedSetCode ) ).GroupBy( c => c.CeedSetCode ) ;
-      foreach ( var ceedModels in ceedModelGroupByCeedCode ) {
+      var ceedModelGroupByCeedModelNumber = originCeedModels.GroupBy( c => ( c.CeedModelNumber, c.Name ) ) ;
+      foreach ( var ceedModels in ceedModelGroupByCeedModelNumber ) {
         var firstCeedModel = ceedModels.First() ;
         var generalDisplayDeviceSymbols = ceedModels.Select( c => c.GeneralDisplayDeviceSymbol ).Distinct() ;
         var generalDisplayDeviceSymbol = string.Join( ", ", generalDisplayDeviceSymbols ) ;
@@ -479,6 +480,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithoutCeedCode ) ;
         Categories = new ObservableCollection<CategoryModel>( categoriesWithCeedCode ) ;
         CategoriesPreview = new ObservableCollection<CategoryModel>( categoriesWithoutCeedCode ) ;
+        _ceedModelNumberOfPreviewCategories = CategoryModel.GetCeedModelNumbers( ceedStorable.CategoriesWithoutCeedCode ) ;
         _storageService.Data.IsShowOnlyUsingCode = false ;
         LoadData( ceedStorable ) ;
         checkBox.Visibility = Visibility.Hidden ;
@@ -531,7 +533,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.ToUpper().Contains( _selectedDeviceSymbol.ToUpper() ) ).ToList() ;
       data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.ToUpper().Contains( _selectedCeedSetCode.ToUpper() ) ).ToList() ;
       data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.ToUpper().Contains( _selectedModelNumber.ToUpper() ) ).ToList() ;
-      data = GroupCeedModelsByCeedCode( data ) ;
+      data = GroupCeedModelsByCeedModelNumber( data ) ;
       CeedModels.AddRange( data ) ;
       ResetSelectedCategory( Categories ) ;
       ResetSelectedCategory( CategoriesPreview ) ;
@@ -629,7 +631,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable == null ) return ;
       if ( _ceedModels.Any() ) {
-        var ceedModels = _ceedModels.Where( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode ) ;
+        List<CeedModel> ceedModels = GetCeedModels( _ceedModels ) ;
         foreach ( var ceedModel in ceedModels ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
           ceedStorable.CeedModelData = _ceedModels ;
@@ -637,7 +639,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       if ( _usingCeedModel.Any() ) {
-        var ceedModels = _usingCeedModel.Where( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode ) ;
+        List<CeedModel> ceedModels = GetCeedModels( _usingCeedModel ) ;
         foreach ( var ceedModel in ceedModels ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
           ceedStorable.CeedModelUsedData = _usingCeedModel ;
@@ -653,6 +655,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
       }
+    }
+
+    private List<CeedModel> GetCeedModels( IEnumerable<CeedModel> allCeedModels )
+    {
+      List<CeedModel> ceedModels ;
+      if ( string.IsNullOrEmpty( SelectedCeedModel!.CeedModelNumber ) ) {
+        if ( string.IsNullOrEmpty( SelectedCeedModel!.GeneralDisplayDeviceSymbol ) ) {
+          ceedModels = allCeedModels.Where( c => c.CeedModelNumber == SelectedCeedModel!.CeedModelNumber && c.GeneralDisplayDeviceSymbol == SelectedCeedModel!.GeneralDisplayDeviceSymbol && c.Name == SelectedCeedModel!.Name ).ToList() ;
+        }
+        else {
+          var generalDisplayDeviceSymbols = SelectedCeedModel!.GeneralDisplayDeviceSymbol.Split( ',' ) ;
+          ceedModels = allCeedModels.Where( c => c.CeedModelNumber == SelectedCeedModel!.CeedModelNumber && generalDisplayDeviceSymbols.Contains( c.GeneralDisplayDeviceSymbol ) && c.Name == SelectedCeedModel!.Name ).ToList() ;
+        }
+      }
+      else {
+        ceedModels = allCeedModels.Where( c => c.CeedModelNumber == SelectedCeedModel!.CeedModelNumber ).ToList() ;
+      }
+
+      return ceedModels ;
     }
 
     private void UpdateDataGridAfterReplaceFloorPlanSymbol( DataGrid dataGrid, string floorPlanType )
@@ -962,13 +983,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return oldItem != newItem ;
     }
 
-    public void ShowPreviewList( string ceedSetCode )
+    public void ShowPreviewList( CeedModel? ceedModel )
     {
-      var ceedModels = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
-      var ceedModelOfCeedCode = ceedModels.Where( c => c.CeedSetCode == ceedSetCode ).ToList() ;
       PreviewList.Clear() ;
-      if ( ! ceedModelOfCeedCode.Any() ) return ;
-      CreatePreviewList( ceedModelOfCeedCode ) ;
+      if ( ceedModel == null ) return ;
+      var ceedModels = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
+      ceedModels = GetCeedModels( ceedModels ) ;
+      if ( ! ceedModels.Any() ) return ;
+      CreatePreviewList( ceedModels ) ;
     }
 
     private void CreatePreviewList( List<CeedModel> ceedModelOfCeedCode )
@@ -989,31 +1011,37 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var polyLines = new List<PolyLine>() ;
         var points = new List<Autodesk.Revit.DB.Point>() ;
         var dwgNumber = ceedModel.DwgNumber ;
-        if ( string.IsNullOrEmpty( ceedModel.DwgNumber ) ) continue ;
-        var filePath = Get2DSymbolDwgPath( dwgNumber ) ;
-        using Transaction t = new( _document, "Save data" ) ;
-        t.Start() ;
-        _document.Import( filePath, dwgImportOptions, view, out ElementId elementId ) ;
-        t.Commit() ;
-
-        if ( _document.GetElement( elementId ) is ImportInstance dwg ) {
-          Options opt = new() ;
-          foreach ( GeometryObject geoObj in dwg.get_Geometry( opt ) ) {
-            if ( geoObj is not GeometryInstance inst ) continue ;
-            CreateCurveFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
-          }
+        if ( string.IsNullOrEmpty( ceedModel.DwgNumber ) ) {
+          if ( string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ) continue ;
+          var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.FloorPlanSymbol ) ;
+          PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
         }
+        else {
+          var filePath = Get2DSymbolDwgPath( dwgNumber ) ;
+          using Transaction t = new( _document, "Save data" ) ;
+          t.Start() ;
+          _document.Import( filePath, dwgImportOptions, view, out ElementId elementId ) ;
+          t.Commit() ;
+
+          if ( _document.GetElement( elementId ) is ImportInstance dwg ) {
+            Options opt = new() ;
+            foreach ( GeometryObject geoObj in dwg.get_Geometry( opt ) ) {
+              if ( geoObj is not GeometryInstance inst ) continue ;
+              CreateCurveFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
+            }
+          }
         
-        var canvas = CreateCanvas( lines, arcs, polyLines, points, ceedModel.GeneralDisplayDeviceSymbol ) ;
-        PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
+          var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty ) ;
+          PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
         
-        t.Start() ;
-        _document.Delete( elementId ) ;
-        t.Commit() ;
+          t.Start() ;
+          _document.Delete( elementId ) ;
+          t.Commit() ;
+        }
       }
     }
 
-    private Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, ICollection<Autodesk.Revit.DB.Point> points, string deviceSymbol )
+    private Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol )
     {
       const double scale = 15 ;
       const double defaultOffset = 40 ;
@@ -1044,7 +1072,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             Y2 = y2,
             RenderTransform = rotateTransform,
           } ;
-          
+
           Canvas.SetTop( newLine, defaultOffset ) ;
           Canvas.SetLeft( newLine, defaultOffset ) ;
           canvasPanel.Children.Add( newLine ) ;
@@ -1151,6 +1179,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       catch {
         //
+      }
+
+      if ( ! string.IsNullOrEmpty( floorPlanSymbol ) ) {
+        TextBlock txtFloorPlanSymbol = new()
+        {
+          FontSize = 19, 
+          Text = floorPlanSymbol, 
+          Foreground = Brushes.Green
+        } ;
+        Canvas.SetTop( txtFloorPlanSymbol, 20 ) ;
+        Canvas.SetLeft( txtFloorPlanSymbol, defaultOffset ) ;
+        canvasPanel.Children.Add( txtFloorPlanSymbol ) ;
       }
       
       TextBlock txt = new()

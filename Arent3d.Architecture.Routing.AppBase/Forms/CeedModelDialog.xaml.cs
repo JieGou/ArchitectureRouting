@@ -81,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedCeedModel = ( ( (DataGridRow) sender ).DataContext as CeedModel ) ! ;
       ViewModel.SelectedCeedModel = selectedCeedModel ;
       BtnReplaceSymbol.IsEnabled = true ;
-      ViewModel.ShowPreviewList( selectedCeedModel.CeedSetCode ) ;
+      ViewModel.ShowPreviewList( selectedCeedModel ) ;
     }
 
     private void PreviewListMouseDoubleClick( object sender, MouseButtonEventArgs e )
