@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
-        Title="Ending_Buttons" Topmost="True" Height="80" Width="130" ResizeMode="NoResize" WindowStyle="None">
+        Title="Ending_Buttons" Height="80" Width="130" ResizeMode="NoResize" WindowStyle="None" ShowInTaskbar="False">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="65" />

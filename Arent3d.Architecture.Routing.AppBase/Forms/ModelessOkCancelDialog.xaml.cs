@@ -2,6 +2,7 @@ using System ;
 using System.Runtime.InteropServices ;
 using System.Windows ;
 using System.Drawing ;
+using System.Windows.Interop ;
 using System.Windows.Threading ;
 using Autodesk.Revit.UI ;
 
@@ -20,6 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       IsCancel = true ;
       InitializeComponent() ;
+      var helper = new WindowInteropHelper( this ) { Owner = Autodesk.Windows.ComponentManager.ApplicationWindow } ;
     }
     
     private void OnClickFinish( object sender, RoutedEventArgs e )
