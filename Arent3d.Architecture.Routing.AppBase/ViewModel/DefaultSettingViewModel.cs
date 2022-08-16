@@ -175,15 +175,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void AddModelBelowCurrentSelectedRow( DataGrid dtGrid )
     {
-      const int floorHeightDistance = 3000 ;
       int index = dtGrid.SelectedIndex ;
       if ( ! ImportDwgMappingModels.Any() ) return ;
       if ( index < 0 ) return ;
-      var importDwgMappingModels = ImportDwgMappingModels.ToList() ;
-      var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
-      var currentMaxHeightDisplay = importDwgMappingModels.Max( x => x.FloorHeightDisplay ) ;
+      var importDwgMappingModelExist = ImportDwgMappingModels[ index ] ;
+      var importDwgMappingModel = new ImportDwgMappingModel( string.Empty, string.Empty, importDwgMappingModelExist.FloorHeight, Scale ) ;
 
-      ImportDwgMappingModels.Insert( index + 1, new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale, currentMaxHeightDisplay + floorHeightDistance ) ) ;
+      _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay );
+      ImportDwgMappingModels.Insert( index + 1, importDwgMappingModel ) ;
     }
 
 
@@ -191,18 +190,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var index = dtGrid.SelectedIndex ;
       if ( index == 0 ) return ;
+      
+      if ( index - 1 <= 0 ) 
+      {
+        MessageBox.Show( "Cannot move up", "Error" ) ; return;
+      }
       Swap( ImportDwgMappingModels, index, index - 1 ) ;
-      dtGrid.SelectedIndex = index - 1 ;
+      var selectedIndex = index - 1 ;
+      
+      MoveFloorHeight( selectedIndex ) ; 
+      dtGrid.SelectedIndex = selectedIndex ;
     }
 
     private void MoveDown( DataGrid dtGrid )
     {
       var index = dtGrid.SelectedIndex ;
       if ( index == ImportDwgMappingModels.Count() - 1 ) return ;
+      if ( index <= 0 ) {
+        MessageBox.Show( "Cannot move down", "Error" ) ; return;
+      }
       Swap( ImportDwgMappingModels, index, index + 1 ) ;
-      dtGrid.SelectedIndex = index + 1 ;
-    }
+      var selectedIndex =  index + 1 ;
 
+    
+      MoveFloorHeight( selectedIndex - 1) ;
+      dtGrid.SelectedIndex = selectedIndex ;
+    }
+    
     private void Swap( ObservableCollection<ImportDwgMappingModel> list, int indexA, int indexB )
     {
       ( list[ indexA ], list[ indexB ] ) = ( list[ indexB ], list[ indexA ] ) ;
@@ -635,8 +649,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       LoadData( dialog.SelectedPath ) ;
     }
     
-    
-
     private void LoadData( string folderPath )
     {
       var listCsvFileModel = new ObservableCollection<CsvFileModel>() ;
@@ -950,7 +962,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return result ;
     }
     
-    public void UpdateFloorHeight(ImportDwgMappingModel selectedItem )
+    public void UpdateFloorHeight( ImportDwgMappingModel selectedItem )
     {
       if ( ! _oldValueFloor.ContainsKey(selectedItem.Id )) return ;
       var importDwgMappingModelFloorHeight = _oldValueFloor[ selectedItem.Id ] ;
@@ -989,6 +1001,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( i == selectedIndex ) continue ;
         var newImportDwgMappingModel = ImportDwgMappingModels[ i ] ;
         newImportDwgMappingModel.FloorHeight = newImportDwgMappingModel.FloorHeightDisplay + newImportDwgMappingModels.Last().FloorHeight ;
+        newImportDwgMappingModels.Add( newImportDwgMappingModel );
+
+      }
+      
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( CalculateFloorHeight(newImportDwgMappingModels) ) ;
+    }
+
+    private void MoveFloorHeight( int selectedIndex )
+    {
+      var newImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
+      for ( var i = 0 ; i < ImportDwgMappingModels.Count ; i++ ) {
+        if ( i < selectedIndex ) 
+        {
+          newImportDwgMappingModels.Add( ImportDwgMappingModels[ i ] ) ;
+          continue ;
+        };
+        var newImportDwgMappingModel = ImportDwgMappingModels[ i ] ;
+        var lastNewImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
+        newImportDwgMappingModel.FloorHeight = newImportDwgMappingModel.FloorHeightDisplay + (lastNewImportDwgMappingModel?.FloorHeight ?? 0);
         newImportDwgMappingModels.Add( newImportDwgMappingModel );
 
       }
