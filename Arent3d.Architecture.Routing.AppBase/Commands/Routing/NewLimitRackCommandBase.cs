@@ -10,7 +10,6 @@ using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Utility ;
-using Autodesk.Revit.ApplicationServices ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -28,7 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
     private readonly Dictionary<ElementId, List<Connector>> _elbowsToCreate = new() ;
     private readonly Dictionary<string, double> _routeLengthCache = new() ;
-    private readonly Dictionary<string, Dictionary<int, double>> _routeMaxWidthCache = new() ;
+    private readonly Dictionary<string, double> _routeMaxWidthDictionary = new() ;
     private static readonly double WidthCableTrayDefault2D = 300d.MillimetersToRevitUnits() ;
     private const string TransactionKey = "TransactionName.Commands.Rack.CreateLimitCableRack" ;
     private static readonly string TransactionName = TransactionKey.GetAppStringByKeyOrDefault( "Create Limit Cable" ) ;
@@ -47,55 +46,71 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var allConduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
-        .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>().ToList() ;
 
-      UIApplication uiApp = commandData.Application ;
-      Application app = uiApp.Application ;
+      var uiApp = commandData.Application ;
+      var app = uiApp.Application ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       try {
         var result = document.Transaction( TransactionName, _ =>
         {
           var racks = new List<FamilyInstance>() ;
           var fittings = new List<FamilyInstance>() ;
-          List<(MEPCurve, SubRoute)> elements ;
+          Dictionary<string, List<MEPCurve>> routingElementGroups ;
           if ( IsSelectionRange ) {
             var pickedObjects = uiDocument.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
             if ( ! pickedObjects.Any() ) return Result.Cancelled ;
-            
-            elements = document.CollectAllMultipliedRoutingElements( pickedObjects.Select( p => p as MEPCurve ), MinNumberOfMultiplicity ).ToList() ;
+
+            var pickedMepCurves = new List<MEPCurve>() ;
+            foreach ( var pickedObject in pickedObjects )
+              if ( pickedObject is MEPCurve mepCurve )
+                pickedMepCurves.Add( mepCurve ) ;
+
+            routingElementGroups = document.CollectAllMultipliedRoutingElements( pickedMepCurves, MinNumberOfMultiplicity ) ;
           }
           else 
-            elements = document.CollectAllMultipliedRoutingElements( MinNumberOfMultiplicity ).ToList() ;
+            routingElementGroups = document.CollectAllMultipliedRoutingElements( MinNumberOfMultiplicity ) ;
 
-          foreach ( var element in elements ) {
-            var (mepCurve, subRoute) = element ;
-            if ( ! ( GetLengthOfRoute( subRoute.Route.RouteName, elements, document ) >= MinLengthOfConduit ) )
-              continue ;
-            var conduit = ( mepCurve as Conduit )! ;
-            var cableRackWidth = CalcCableRackMaxWidth( element, elements, document ) ;
-
-            CreateCableRackForConduit( uiDocument, conduit, cableRackWidth, racks ) ;
+          var representativeMepCurvesFromRoutingElements = routingElementGroups.SelectMany( s => s.Value ).Where( p =>
+          {
+            if ( p.GetSubRouteInfo() is not { } subRouteInfo ) return false;
+            return p.GetRepresentativeSubRoute() == subRouteInfo ;
+          } ).ToList() ;
+          
+          foreach ( var routingElementGroup in routingElementGroups ) {
+            foreach ( var representativeMepCurve in routingElementGroup.Value ) {
+              if ( representativeMepCurve?.GetSubRouteInfo() is not { } subRouteInfo || representativeMepCurve.GetRepresentativeSubRoute() != subRouteInfo ) 
+                continue ;
               
-            //Get conduits before pull box
-            var routeName = conduit.GetRouteName() ;
-            if ( string.IsNullOrEmpty( routeName ) ) continue ;
+              if ( ! ( GetLengthOfRoute( representativeMepCurve.GetRouteName()!, representativeMepCurvesFromRoutingElements, document ) >= MinLengthOfConduit ) )
+                continue ;
+            
+              var representativeConduit = ( representativeMepCurve as Conduit )! ;
 
-            var routeNameArray = routeName!.Split( '_' ) ;
-            routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-            var conduitsOfRoute = allConduits.Where( c =>
-            {
-              if ( subRoute.GetSubRouteGroup().Any( s => s.RouteName == c.GetRouteName() ) ) 
-                return false ;
+              double cableRackWidth ;
+              if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) )
+                cableRackWidth = _routeMaxWidthDictionary[ routingElementGroup.Key ] ;
+              else {
+                cableRackWidth = routingElementGroup.Value.GroupBy( s => s.GetRouteName() ).Sum( p =>
+                {
+                  var routeName = p.First().GetRouteName() ?? string.Empty ;
+                  if ( string.IsNullOrEmpty( routeName ) ) return 0 ;
+                  
+                  var route = routes.FirstOrDefault( s => s.Key == routeName ) ;
+                  return ( route.Value.UniqueDiameter?.RevitUnitsToMillimeters() ?? 0 ) + 10 ;
+                } ) ;
+                cableRackWidth = ( 120 + cableRackWidth ) * 0.6;
                 
-              var rName = c.GetRouteName() ;
-              if ( string.IsNullOrEmpty( rName ) ) return false ;
+                foreach ( var width in CableTrayWidthMapping ) {
+                  if ( ! ( cableRackWidth <= width ) ) continue ;
+                  cableRackWidth = width ;
+                  break ;
+                }
                 
-              var rNameArray = rName!.Split( '_' ) ;
-              rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
-              return routeName == rName ;
-            } ) ;
-              
-            conduitsOfRoute.ForEach( c => CreateCableRackForConduit( uiDocument, c, cableRackWidth, racks ));
+                _routeMaxWidthDictionary.Add( routingElementGroup.Key, cableRackWidth );
+              }
+
+              CreateCableRackForConduit( uiDocument, representativeConduit, cableRackWidth, racks ) ;
+            }
           }
 
           foreach ( var elbow in _elbowsToCreate ) {
@@ -611,83 +626,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     /// <summary>
-    /// Calculate cable rack width base on sum diameter of route
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="subRoute"></param>
-    /// <returns></returns>
-    private double CalcCableRackWidth( Document document, SubRoute subRoute )
-    {
-      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      var sumDiameter = subRoute.GetSubRouteGroup().Sum( s => routes.GetSubRoute( s )?.GetDiameter().RevitUnitsToMillimeters() + 10 ) + 120 ;
-      var cableTrayWidth = 0.6 * sumDiameter ;
-      foreach ( var width in CableTrayWidthMapping ) {
-        if ( ! ( cableTrayWidth <= width ) ) continue ;
-        
-        cableTrayWidth = width ;
-        return cableTrayWidth.Value ;
-      }
-
-      return cableTrayWidth!.Value ;
-    }
-
-    /// <summary>
-    /// Calculate cable rack max width
-    /// </summary>
-    /// <param name="element"></param>
-    /// <param name="elements"></param>
-    /// <param name="document"></param>
-    /// <returns></returns>
-    private double CalcCableRackMaxWidth( (MEPCurve, SubRoute) element, IEnumerable<(MEPCurve, SubRoute)> elements, Document document )
-    {
-      var routeName = element.Item2.Route.RouteName ;
-      var routeElements = elements.Where( x => x.Item2.Route.RouteName == routeName ) ;
-      var maxWidth = 0.0 ;
-      if ( _routeMaxWidthCache.ContainsKey( routeName ) ) {
-        var elbowsConnected = element.Item1.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd().Select( c => c.Owner ).OfType<FamilyInstance>().ToList() ;
-        var straightsConnected = element.Item1.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd().Select( c => c.Owner ).OfType<Conduit>().ToList() ;
-        if ( elbowsConnected.Any() && straightsConnected.Any() && null != element.Item2.PreviousSubRoute && straightsConnected.First().GetSubRouteIndex()!.Value == element.Item2.PreviousSubRoute!.SubRouteIndex ) {
-          var key = _routeMaxWidthCache[ routeName ].Keys.Where( x => x <= element.Item2.PreviousSubRoute!.SubRouteIndex ).Max() ;
-          return _routeMaxWidthCache[ routeName ][ key ] ;
-        }
-        else if ( elbowsConnected.Any() && ( null == element.Item2.PreviousSubRoute || ( null != element.Item2.PreviousSubRoute && straightsConnected.Any() && straightsConnected.First().GetSubRouteIndex()!.Value != element.Item2.PreviousSubRoute!.SubRouteIndex ) ) && ! _routeMaxWidthCache[ routeName ].ContainsKey( element.Item2.SubRouteIndex ) ) {
-          maxWidth = CalcCableRackWidth( document, element.Item2 ) ;
-          _routeMaxWidthCache[ routeName ].Add( element.Item2.SubRouteIndex, maxWidth ) ;
-          return maxWidth ;
-        }
-        else {
-          var key = _routeMaxWidthCache[ routeName ].Keys.Where( x => x <= element.Item2.SubRouteIndex ).Max() ;
-          return _routeMaxWidthCache[ routeName ][ key ] ;
-        }
-      }
-      else {
-        foreach ( var (_, subRoute) in routeElements ) {
-          var cableTrayWidth = CalcCableRackWidth( document, subRoute ) ;
-          if ( cableTrayWidth > maxWidth ) {
-            maxWidth = cableTrayWidth ;
-          }
-        }
-
-        var routeWidths = new Dictionary<int, double> { { element.Item2.SubRouteIndex, maxWidth } } ;
-        _routeMaxWidthCache.Add( routeName, routeWidths ) ;
-        return maxWidth ;
-      }
-    }
-
-    /// <summary>
     /// Calculate cable rack length
     /// </summary>
     /// <param name="routeName"></param>
     /// <param name="elements"></param>
     /// <param name="document"></param>
     /// <returns></returns>
-    private double GetLengthOfRoute( string routeName, IEnumerable<(MEPCurve, SubRoute)> elements, Document document )
+    private double GetLengthOfRoute( string routeName, IEnumerable<MEPCurve> elements, Document document )
     {
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
       if ( _routeLengthCache.ContainsKey( routeName ) ) {
         return _routeLengthCache[ routeName ] ;
       }
 
-      var routeLength = elements.Where( x => x.Item2.Route.RouteName == routeName ).Sum( x => ( x.Item1 as Conduit )!.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ) ;
+      var routeLength = elements.Where( x =>
+      {
+        var rName = x.GetRouteName() ?? string.Empty ;
+        if ( string.IsNullOrEmpty( rName ) ) return false ;
+        var rNameArray = rName.Split( '_' ) ;
+        rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+        return rName == routeName ;
+      } ).Sum( x => ( x as Conduit )!.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ) ;
 
       _routeLengthCache.Add( routeName, routeLength ) ;
 
