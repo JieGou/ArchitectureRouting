@@ -37,6 +37,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
             else {
               CreateFallMarkForConduitWithVerticalDirection( document ) ;
+              
+              // Hide fall marks in 3D View
+              var views = document.GetAllElements<View>().Where( v => v is View3D ) ;
+              var fallMarks = GetExistedFallMarkInstances( document ) ;
+              var fallMarkIds = fallMarks.Select( instance => instance.Id ).ToList() ;
+              foreach ( var view in views )
+                view.HideElements( fallMarkIds ) ;
             }
 
             return Result.Succeeded ;
