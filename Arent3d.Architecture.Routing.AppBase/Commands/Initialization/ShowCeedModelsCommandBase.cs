@@ -1,8 +1,10 @@
 ﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -118,12 +120,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
           familyInstance.SetProperty(ElectricalRoutingElementParameter.SymbolContent, viewModel.SelectedDeviceSymbol ?? string.Empty);
+          familyInstance.SetProperty(ElectricalRoutingElementParameter.Quantity, 1);
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
-        var deviceSymbolTagType = doc.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+        var deviceSymbolTagType = doc.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault(x => x.LookupParameter("Is Hide Quantity").AsInteger() == 1) ?? throw new InvalidOperationException() ;
         IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ(point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z) ) ;
-        
+
+        var symbolContentParameter = element.get_Parameter( ElectricalRoutingElementParameter.Quantity.GetParameterGuid() ) ;
+        if ( null != symbolContentParameter ) {
+          var connectorUpdater = new ConnectorUpdater( doc.Application.ActiveAddInId ) ;
+          if ( ! UpdaterRegistry.IsUpdaterRegistered( connectorUpdater.GetUpdaterId() ) ) {
+            UpdaterRegistry.RegisterUpdater( connectorUpdater, doc ) ;
+          }
+          
+          var changeType = Element.GetChangeTypeParameter(symbolContentParameter) ;
+          UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), doc, new List<ElementId> { element.Id }, changeType ) ;
+        }
+
         if ( element.HasParameter( switch2DSymbol ) ) 
           element.SetProperty( switch2DSymbol, true ) ;
         
