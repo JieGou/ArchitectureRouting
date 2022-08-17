@@ -122,30 +122,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    private void SymbolApply_Click( object sender, RoutedEventArgs e )
-    {
-      if ( CheckDuplicateName( e ) ) return ;
-      Close_Dialog() ;
-      if ( _cnsSettingViewModel.SetConstructionItemForSymbolsCommand.CanExecute( grdCategories.SelectedIndex ) )
-        _cnsSettingViewModel.SetConstructionItemForSymbolsCommand.Execute( grdCategories.SelectedIndex ) ;
-    }
-
-    private void ConduitsApply_Click( object sender, RoutedEventArgs e )
-    {
-      if ( CheckDuplicateName( e ) ) return ;
-      Close_Dialog() ;
-      if ( _cnsSettingViewModel.SetConstructionItemForConduitsCommand.CanExecute( grdCategories.SelectedIndex ) )
-        _cnsSettingViewModel.SetConstructionItemForConduitsCommand.Execute( grdCategories.SelectedIndex ) ;
-    }
-    
-    private void RacksApply_Click( object sender, RoutedEventArgs e )
-    {
-      if ( CheckDuplicateName( e ) ) return ;
-      Close_Dialog() ;
-      if ( _cnsSettingViewModel.SetConstructionItemForRacksCommand.CanExecute( grdCategories.SelectedIndex ) )
-        _cnsSettingViewModel.SetConstructionItemForRacksCommand.Execute( grdCategories.SelectedIndex ) ;
-    }
-    
     private void AllElementsApply_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;

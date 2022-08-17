@@ -254,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
           
           if (isConnectorsHaveConstructionItem && cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
-              (cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector || cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.All )) {
+              (cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector || cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.All || cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Range )) {
             foreach ( var item in connectorGroups ) {
               // create group for updated connector (with new property) and related text note if any
               List<ElementId> groupIds = new List<ElementId>() ;
