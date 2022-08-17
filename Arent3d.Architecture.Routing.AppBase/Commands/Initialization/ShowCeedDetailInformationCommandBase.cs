@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       
-      string pickedText ;
+      string ceedSetCode, deviceSymbol, modelNumber ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var textNoteFilter = new TextNotePickFilter() ;
       
@@ -37,21 +37,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( null == connector )
           return Result.Cancelled ;
         
-        connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
-        if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) 
+        connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) ;
+        if ( string.IsNullOrEmpty( ceedCode ) ) 
           return Result.Cancelled ;
         
-        var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
-        pickedText = ceedSetCode.FirstOrDefault() ?? string.Empty ;
+        var ceedCodeModel = ceedCode!.Split( ':' ).ToList() ;
+        ceedSetCode = ceedCodeModel.FirstOrDefault() ?? string.Empty ;
+        deviceSymbol = ceedCodeModel.Count > 1 ? ceedCodeModel.ElementAt( 1 ) : string.Empty ;
+        modelNumber = ceedCodeModel.Count > 2 ? ceedCodeModel.ElementAt( 2 ) : string.Empty ;
       }
       catch {
         return Result.Cancelled ;
       }
 
-      if ( string.IsNullOrEmpty( pickedText ) ) 
+      if ( string.IsNullOrEmpty( ceedSetCode ) ) 
         return Result.Cancelled ;
 
-      var dataContext = new CeedDetailInformationViewModel( document, pickedText ) ;
+      var dataContext = new CeedDetailInformationViewModel( document, ceedSetCode, deviceSymbol, modelNumber ) ;
       var ceedDetailInformationView = new CeedDetailInformationView { DataContext = dataContext};
       ceedDetailInformationView.ShowDialog() ;
       

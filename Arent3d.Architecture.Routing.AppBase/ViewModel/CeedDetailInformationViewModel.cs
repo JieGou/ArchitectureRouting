@@ -58,6 +58,28 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged() ;
       }
     }
+    
+    private string? _modelNumber ;
+    public string ModelNumber
+    {
+      get => _modelNumber ??= string.Empty ;
+      set
+      {
+        _modelNumber = value.Trim() ;
+        OnPropertyChanged() ;
+      }
+    }
+    
+    private string? _deviceSymbol ;
+    public string DeviceSymbol
+    {
+      get => _deviceSymbol ??= string.Empty ;
+      set
+      {
+        _deviceSymbol = value.Trim() ;
+        OnPropertyChanged() ;
+      }
+    }
 
     private ObservableCollection<string>? _constructionClassifications ;
     public ObservableCollection<string> ConstructionClassifications
@@ -112,10 +134,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public bool DialogResult { get ; set ; }
 
-    public CeedDetailInformationViewModel( Document document, string pickedText )
+    public CeedDetailInformationViewModel( Document document, string ceedSetCode, string deviceSymbol, string modelNumber )
     {
       _document = document ;
-      SetCode = pickedText ;
+      SetCode = ceedSetCode ;
+      DeviceSymbol = deviceSymbol ;
+      ModelNumber = modelNumber ;
     }
 
     #region Commands
