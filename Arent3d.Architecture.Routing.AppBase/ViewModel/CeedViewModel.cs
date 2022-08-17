@@ -318,7 +318,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ResetSelectedCategory( CategoriesPreview ) ;
     }
 
-    private List<CeedModel> GetUsingCeedModel( IEnumerable<CeedModel> ceedModels )
+    public static List<CeedModel> GetUsingCeedModel( IEnumerable<CeedModel> ceedModels )
     {
       var usingCeedModel = ceedModels.Where( c => c.LegendDisplay == LengendDisplay ).ToList() ;
       return usingCeedModel ;
