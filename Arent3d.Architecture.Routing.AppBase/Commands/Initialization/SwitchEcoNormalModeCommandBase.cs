@@ -70,26 +70,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return listApplyConduit ;
     }
 
-    private IList<Element> GetAllConnectorInProject( Document document )
-    {
-      var familyInstances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).ToElements().ToList() ;
-      var textNotes = new FilteredElementCollector( document ).OfClass( typeof( TextNote ) ).ToElements().ToList() ;
-      var connectorList = familyInstances.Concat( textNotes ).ToList() ;
-      connectorList = connectorList.Where( elem => elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ).ToList() ;
-      return connectorList ;
-    }
-
     private Result SwitchModeForProject( Document document, ref string message, bool isEcoMode )
     {
       var conduitList = GetAllConduitInProject( document ) ;
-      var connectorList = GetAllConnectorInProject( document ) ;
+      var connectorList = document.GetAllElements<FamilyInstance>().OfCategory(BuiltInCategorySets.OtherElectricalElements).ToList() ;
       using var transaction = new Transaction( document, TransactionName ) ;
       transaction.Start() ;
       var failureOptions = transaction.GetFailureHandlingOptions() ;
       failureOptions.SetFailuresPreprocessor( new FailurePreprocessor() ) ;
       transaction.SetFailureHandlingOptions( failureOptions ) ;
       SetModeForConduit( conduitList, isEcoMode ) ;
-      SetModeForConnector( connectorList, isEcoMode, document ) ;
+      SetModeForConnector( connectorList, isEcoMode ) ;
       transaction.Commit() ;
 
       ShowResult( message ) ;
@@ -103,7 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       MessageBox.Show( SelectElementDialogMessageKey.GetAppStringByKeyOrDefault( SelectRangeMessage ), SelectElementDialogTitleKey.GetAppStringByKeyOrDefault( DialogMessageTitle ), MessageBoxButtons.OK ) ;
       var selectedElements = uiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit or CableTray ).ToList() ;
       var conduitList = selectedElements.Where( elem => BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) && elem is FamilyInstance or Conduit ).ToList() ;
-      var connectorList = selectedElements.Where( elem => ( elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ) && elem is FamilyInstance or TextNote ).ToList() ;
+      var connectorList = selectedElements.OfType<FamilyInstance>().Where( elem => BuiltInCategorySets.OtherElectricalElements.Any(x => x == elem.GetBuiltInCategory())).ToList() ;
       if ( ! conduitList.Any() && ! connectorList.Any() ) message = NoItemSelectedMessage ;
 
       var listApplyConduit = ConduitUtil.GetConduitRelated( document, conduitList ) ;
@@ -113,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       failureOptions.SetFailuresPreprocessor( new FailurePreprocessor() ) ;
       transaction.SetFailureHandlingOptions( failureOptions ) ;
       SetModeForConduit( listApplyConduit, isEcoMode ) ;
-      SetModeForConnector( connectorList, isEcoMode, document ) ;
+      SetModeForConnector( connectorList, isEcoMode ) ;
       transaction.Commit() ;
 
       ShowResult( message ) ;
@@ -127,34 +118,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;
     }
 
-    private void SetModeForConnector( ICollection<Element> elements, bool isEcoMode, Document document )
+    private void SetModeForConnector( IList<FamilyInstance> elements, bool isEcoMode)
     {
-      if ( elements.Count == 0 ) return ;
-      var connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
+      if ( !elements.Any()) 
+        return ;
+      
       foreach ( var connector in elements ) {
-        if ( document.GetElement( connector.GroupId ) is Group parentGroup ) {
-          // ungroup before set property
-          var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-          var listTextNoteIds = new List<ElementId>() ;
-          // ungroup textNote before ungroup connector
-          foreach ( var group in attachedGroup ) {
-            var ids = group.GetMemberIds() ;
-            listTextNoteIds.AddRange( ids ) ;
-            group.UngroupMembers() ;
-          }
-
-          connectorGroups.Add( connector.Id, listTextNoteIds ) ;
-          parentGroup.UngroupMembers() ;
-        }
-
-        connector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;
-      }
-
-      foreach ( var (key, value) in connectorGroups ) {
-        // create group for updated connector (with new property) and related text note if any
-        var groupIds = new List<ElementId> { key } ;
-        groupIds.AddRange( value ) ;
-        document.Create.NewGroup( groupIds ) ;
+        if(connector.HasParameter(ElectricalRoutingElementParameter.IsEcoMode))
+          connector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;
       }
     }
 

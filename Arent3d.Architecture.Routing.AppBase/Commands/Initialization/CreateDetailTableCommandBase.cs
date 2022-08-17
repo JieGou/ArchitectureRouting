@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -97,14 +98,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         dialog.ShowDialog() ;
 
         while ( dialog.DialogResult is false && viewModel.IsAddReference ) {
-          DetailSymbolPickFilter detailSymbolFilter = new() ;
+          TextNotePickFilter textNotePickFilter = new() ;
           List<string> detailSymbolIds = new() ;
           
           try {
-            var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
+            var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, textNotePickFilter ) ;
             foreach ( var pickedDetailSymbol in pickedDetailSymbols ) {
-              var detailSymbol = doc.GetAllElements<TextNote>().ToList().FirstOrDefault( x => x.Id == pickedDetailSymbol.ElementId ) ;
-              if ( detailSymbol != null && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
+              if ( uiDoc.Document.GetElement(pickedDetailSymbol) is TextNote detailSymbol && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
                 detailSymbolIds.Add( detailSymbol.UniqueId ) ;
               }
             }
@@ -126,18 +126,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         if ( isExistDetailTableItemModel || dialog.DialogResult == true ) {
           if ( viewModel.RoutesWithConstructionItemHasChanged.Any() ) {
-            var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, viewModel.RoutesWithConstructionItemHasChanged ) ;
-            if ( connectorGroups.Any() ) {
-              using Transaction transaction = new( doc, "Group connector" ) ;
-              transaction.Start() ;
-              foreach ( var (connectorId, textNoteIds) in connectorGroups ) {
-                // create group for updated connector (with new property) and related text note if any
-                List<ElementId> groupIds = new() { connectorId } ;
-                groupIds.AddRange( textNoteIds ) ;
-                doc.Create.NewGroup( groupIds ) ;
-              }
-              transaction.Commit() ;
-            }
+            UpdateConnectorWithConstructionItem( doc, viewModel.RoutesWithConstructionItemHasChanged ) ;
           }
           
           if ( viewModel.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
@@ -775,37 +764,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         string.Join( "-", detailTableItemModel.PlumbingType + detailTableItemModel.PlumbingSize, detailTableItemModel.SignalType, detailTableItemModel.RouteName, GetKeyRouting(detailTableItemModel), detailTableItemModel.CopyIndex, detailTableItemModel.ConstructionItems ) ;
     }
 
-    private Dictionary<ElementId, List<ElementId>> UpdateConnectorAndConduitConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )
+    private void UpdateConnectorWithConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )
     {
-      Dictionary<ElementId, List<ElementId>> connectorGroups = new() ;
-      List<Element> allConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
-      using Transaction transaction = new( document, "Group connector" ) ;
+      var allConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
+      
+      using Transaction transaction = new( document, "Change Parameter Connector" ) ;
       transaction.Start() ;
+      
       foreach ( var (routeName, constructionItem) in routesChangedConstructionItem ) {
         var elements = GetToConnectorAndConduitOfRoute( document, allConnector, routeName ) ;
         foreach ( var element in elements ) {
-          if ( document.GetElement( element.GroupId ) is Group parentGroup ) {
-            // ungroup before set property
-            var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-            List<ElementId> listTextNoteIds = new() ;
-            // ungroup textNote before ungroup connector
-            foreach ( var group in attachedGroup ) {
-              var ids = group.GetMemberIds() ;
-              listTextNoteIds.AddRange( ids ) ;
-              group.UngroupMembers() ;
-            }
-
-            connectorGroups.Add( element.Id, listTextNoteIds ) ;
-            parentGroup.UngroupMembers() ;
-          }
-
-          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem ) ;
+          if(element.HasParameter(ElectricalRoutingElementParameter.ConstructionItem))
+            element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem ) ;
         }
       }
 
       transaction.Commit() ;
-
-      return connectorGroups ;
     }
 
     private void UpdateDetailSymbolPlumbingType( Document document, StorageService<Level, DetailSymbolModel> storageService, Dictionary<string, string> detailSymbolsChangedPlumbingType )
@@ -970,12 +944,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return detailTableItemModelRowGroupNoMixConstructionItems == null && detailTableItemModelRowGroupMixConstructionItems != null ;
     }
 
-    private class DetailSymbolPickFilter : ISelectionFilter
+    private class TextNotePickFilter : ISelectionFilter
     {
       private const string DetailSymbolType = "DetailSymbol-TNT" ;
-      public bool AllowElement( Element e )
+      public bool AllowElement( Element element )
       {
-        return ( e.GetBuiltInCategory() == BuiltInCategory.OST_TextNotes && e.GroupId == ElementId.InvalidElementId && e.Name.Contains( DetailSymbolType ) ) ;
+        return element.GetBuiltInCategory() == BuiltInCategory.OST_TextNotes && element.Name.StartsWith( DetailSymbolType ) ;
       }
 
       public bool AllowReference( Reference r, XYZ p )

@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -19,8 +18,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public abstract class ShowCeedModelsCommandBase : IExternalCommand
   {
     public const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
-    private const string ConditionTextNoteTypeName = "1.5mm_ConditionText" ; 
-    
 
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
 
@@ -35,23 +32,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var defaultConstructionItem = doc.GetDefaultConstructionItem() ;
       
-      var viewModel = new CeedViewModel( commandData ) ;
+      var viewModel = new CeedViewModel( doc ) ;
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
       
       dlgCeedModel.ShowDialog() ;
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) 
         return Result.Cancelled ;
       
-      ICollection<ElementId> groupIds = new List<ElementId>() ;
       if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) 
         return Result.Succeeded ;
       
-      Element? element = null ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
 
-        var point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        XYZ? point ;
+        try {
+          point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        }
+        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+          return Result.Cancelled ;
+        }
         var condition = "屋外" ; // デフォルトの条件
         
         var symbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
@@ -111,54 +112,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        element = GenerateConnector( uiDoc, point.X, point.Y, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
+        var element = GenerateConnector( uiDoc, point.X, point.Y, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
         var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
         if ( element is FamilyInstance familyInstance ) {
-          element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
-          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
+          familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
+          familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
+          var deviceSymbol = viewModel.SelectedDeviceSymbol ?? string.Empty ;
+          var text = StringWidthUtils.IsHalfWidth( deviceSymbol ) ? StringWidthUtils.ToFullWidth( deviceSymbol ) : deviceSymbol ;
+          familyInstance.SetProperty(ElectricalRoutingElementParameter.SymbolContent, text);
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
-        var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
-        TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
-
-        var txtPosition = new XYZ( point.X , point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-        var deviceSymbol = viewModel.SelectedDeviceSymbol ?? string.Empty ;
-        var text = StringWidthUtils.IsHalfWidth( deviceSymbol ) ? StringWidthUtils.ToFullWidth( deviceSymbol ) : deviceSymbol ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, text , opts ) ;
-        doc.Regenerate();
-        ElementTransformUtils.MoveElement(doc, textNote.Id, Transform.CreateTranslation(-XYZ.BasisX * 0.5 * textNote.Width * defaultSymbolMagnification).OfPoint(txtPosition) - txtPosition);
-
-        var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
-        if ( deviceSymbolTextNoteType == null ) {
-          var elementType = textNote.TextNoteType.Duplicate( DeviceSymbolTextNoteTypeName ) ;
-          deviceSymbolTextNoteType = elementType as TextNoteType ;
-          deviceSymbolTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
-          deviceSymbolTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
-        }
-
-        if ( deviceSymbolTextNoteType != null ) textNote.ChangeTypeId( deviceSymbolTextNoteType.Id ) ;
-
-        // create group of selected element and new text note
-        groupIds.Add( element.Id ) ;
-        groupIds.Add( textNote.Id ) ;
+        var deviceSymbolTagType = doc.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+        IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ(point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z) ) ;
+        
+        if ( element.HasParameter( switch2DSymbol ) ) 
+          element.SetProperty( switch2DSymbol, true ) ;
+        
+        if ( element.HasParameter( symbolMagnification ) ) 
+          element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
+        
+        if ( element.HasParameter( grade3 ) ) 
+          element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.GradeMode == 3 );
 
         return Result.Succeeded ;
       } ) ;
-
-      if ( ! groupIds.Any() ) return result ;
-      using Transaction t = new ( doc, "Create connector group." ) ;
-      t.Start() ;
-      if ( element != null ) {
-        var isHasParameterSwitch2DSymbol = element.HasParameter( switch2DSymbol ) ;
-        if ( isHasParameterSwitch2DSymbol ) element.SetProperty( switch2DSymbol, true ) ;
-        var isHasParameterSymbolMagnification = element.HasParameter( symbolMagnification ) ;
-        if ( isHasParameterSymbolMagnification ) element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
-        var isHasParameterGrade = element.HasParameter( grade3 ) ;
-        if ( isHasParameterGrade ) element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.GradeMode == 3 );
-      }
-      doc.Create.NewGroup( groupIds ) ;
-      t.Commit() ;
 
       return result ;
     }

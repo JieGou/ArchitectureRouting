@@ -40,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     
     protected virtual void AfterInitialize( Document document )
     {
+      
     }
 
     protected virtual bool RoutingSettingsAreInitialized( Document document )
