@@ -127,15 +127,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var deviceSymbolTagType = doc.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault(x => x.LookupParameter("Is Hide Quantity").AsInteger() == 1) ?? throw new InvalidOperationException() ;
         IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ(point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z) ) ;
 
-        var symbolContentParameter = element.get_Parameter( ElectricalRoutingElementParameter.Quantity.GetParameterGuid() ) ;
-        if ( null != symbolContentParameter ) {
-          var connectorUpdater = new ConnectorUpdater( doc.Application.ActiveAddInId ) ;
-          if ( ! UpdaterRegistry.IsUpdaterRegistered( connectorUpdater.GetUpdaterId() ) ) {
-            UpdaterRegistry.RegisterUpdater( connectorUpdater, doc ) ;
-          }
-          
-          var changeType = Element.GetChangeTypeParameter(symbolContentParameter) ;
-          UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), doc, new List<ElementId> { element.Id }, changeType ) ;
+        var connectorUpdater = new ConnectorUpdater( doc.Application.ActiveAddInId ) ;
+        if ( ! UpdaterRegistry.IsUpdaterRegistered( connectorUpdater.GetUpdaterId() ) ) {
+          UpdaterRegistry.RegisterUpdater( connectorUpdater, doc ) ;
+          var multicategoryFilter = new ElementMulticategoryFilter( BuiltInCategorySets.OtherElectricalElements ) ;
+          UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), doc, multicategoryFilter, Element.GetChangeTypeAny() ) ;
         }
 
         if ( element.HasParameter( switch2DSymbol ) ) 

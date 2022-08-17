@@ -21,20 +21,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
         {
             try {
                 var document = updaterData.GetDocument() ;
-                if(updaterData.GetModifiedElementIds().Count == 0)
-                    return;
 
                 var uiDocument = new UIDocument( document ) ;
                 if(uiDocument.Selection.GetElementIds().Count == 0)
-                    return;
-
-                var elementIdSelecteds = uiDocument.Selection.GetElementIds() ;
-                var elements = updaterData.GetModifiedElementIds()
-                    .Where(x => elementIdSelecteds.Any(y => y == x))
-                    .Select( x => document.GetElement( x ) )
-                    .Where( x => BuiltInCategorySets.OtherElectricalElements.Any( y => y == x.GetBuiltInCategory() ) )
-                    .ToList();
-                if(!elements.Any())
                     return;
                 
                 var tagTypes = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).ToList() ;
@@ -49,11 +38,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                 if(null == showQuantityType)
                     return;
 
+                var elementIdSelecteds = uiDocument.Selection.GetElementIds() ;
+                if ( updaterData.GetModifiedElementIds().Count == 0 ) 
+                    return;
+                
+                var elements = updaterData.GetModifiedElementIds()
+                    .Where(x => elementIdSelecteds.Any(y => y == x))
+                    .Select( x => document.GetElement( x ) )
+                    .Where( x => BuiltInCategorySets.OtherElectricalElements.Any( y => y == x.GetBuiltInCategory() ) )
+                    .ToList();
+                if(!elements.Any())
+                    return;
+                    
                 var familyName = ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() ;
-                foreach ( var element in elements ) {
-                    if(!element.HasParameter(ElectricalRoutingElementParameter.Quantity))
-                        continue;
-
+                foreach ( var element in elements.Where( element => element.HasParameter(ElectricalRoutingElementParameter.Quantity) ) ) {
                     var tag = element.GetTagsFromElement().FirstOrDefault( x =>
                     {
                         if ( document.GetElement( x.GetTypeId() ) is not FamilySymbol type )
@@ -70,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                     else
                         tag.ChangeTypeId( hideQuantityType.Id ) ;
                 }
-                
+
                 uiDocument.Selection.SetElementIds(new List<ElementId>());
             }
             catch ( Exception exception ) {
