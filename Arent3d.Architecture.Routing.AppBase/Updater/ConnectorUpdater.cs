@@ -51,6 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                     return;
                     
                 var familyName = ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() ;
+                var removeElements = new List<ElementId>() ;
                 foreach ( var element in elements.Where( element => element.HasParameter(ElectricalRoutingElementParameter.Quantity) ) ) {
                     var tag = element.GetTagsFromElement().FirstOrDefault( x =>
                     {
@@ -63,11 +64,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                         continue;
                     
                     var quantity = element.GetPropertyInt( ElectricalRoutingElementParameter.Quantity ) ;
-                    if ( quantity > 1 )
-                        tag.ChangeTypeId( showQuantityType.Id ) ;
-                    else
-                        tag.ChangeTypeId( hideQuantityType.Id ) ;
+                    switch ( quantity ) {
+                        case 0 :
+                            removeElements.Add(element.Id);
+                            break ;
+                        case 1 :
+                            tag.ChangeTypeId( hideQuantityType.Id ) ;
+                            break ;
+                        default :
+                            tag.ChangeTypeId( showQuantityType.Id ) ;
+                            break ;
+                    }
                 }
+
+                if ( removeElements.Any() )
+                    document.Delete( removeElements ) ;
 
                 uiDocument.Selection.SetElementIds(new List<ElementId>());
             }
