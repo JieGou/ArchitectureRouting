@@ -91,15 +91,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else {
           var isHasParameterWidth = fromConnector.HasParameter( "W" ) ;
           var fromConnectorWidth = ( isHasParameterWidth ? fromConnector.ParametersMap.get_Item( "W" ).AsDouble() : DefaultWidthJBoxConnector ) * 1.5 ;
-          XYZ secondPoint = uiDocument.Selection.PickPoint( "Pick point" ) ;
+          if ( !DrawingPreviewRectangleWhenLeakingInRectangleMode( uiApp, fromPoint, out var secondPoint ) ) return OperationResult<LeakState>.Cancelled ;
           var mpt = ( fromPoint + secondPoint ) * 0.5 ;
           var currView = document.ActiveView ;
           var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
           var mirrorMat = Transform.CreateReflection( plane ) ;
           var firstPoint = mirrorMat.OfPoint( fromPoint ) ;
           var thirdPoint = mirrorMat.OfPoint( secondPoint ) ;
-          var lastPoint = fromPoint.Y > secondPoint.Y ? new XYZ( fromPoint.X, fromPoint.Y - fromConnectorWidth, fromPoint.Z ) : new XYZ( fromPoint.X, fromPoint.Y + fromConnectorWidth, fromPoint.Z ) ;
-          pickPoints = new List<XYZ>() { firstPoint, secondPoint, thirdPoint, lastPoint } ;
+          var lastPoint = fromPoint.Y > secondPoint?.Y ? new XYZ( fromPoint.X, fromPoint.Y - fromConnectorWidth, fromPoint.Z ) : new XYZ( fromPoint.X, fromPoint.Y + fromConnectorWidth, fromPoint.Z ) ;
+          pickPoints = new List<XYZ>() { firstPoint, secondPoint!, thirdPoint, lastPoint } ;
         }
 
         var count = pickPoints.Count() ;
@@ -122,6 +122,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       catch {
         return OperationResult<LeakState>.Cancelled ;
+      }
+    }
+
+    private static bool DrawingPreviewRectangleWhenLeakingInRectangleMode(UIApplication uiApp, XYZ firstPoint,out XYZ? secondPoint)
+    {
+      var uiDocument = uiApp.ActiveUIDocument ;
+      var selection = uiDocument.Selection ;
+      const double minDistance = 0.01 ;
+
+      // This is the object to render the guide line
+      var rectangleExternal = new RectangleExternal( uiApp ) ;
+      try {
+        // Add first point to list picked points
+        rectangleExternal.PickedPoints.Add( firstPoint ) ;
+        // Assign first point
+        rectangleExternal.DrawingServer.BasePoint = firstPoint ;
+        // Render the guide line
+        rectangleExternal.DrawExternal() ;
+        // Pick next point 
+        var lastPoint = selection.PickPoint( "Pick point" ) ;
+        if ( firstPoint.DistanceTo( lastPoint ) < minDistance ) {
+          secondPoint = null ;
+          return false ;
+        }
+        else {
+          secondPoint = lastPoint ;
+          return true ;
+        }
+      }
+      catch ( OperationCanceledException ) {
+        secondPoint = null ;
+        return false;
+      }
+      finally {
+        // End to render guide line
+        rectangleExternal.Dispose() ;
       }
     }
 
