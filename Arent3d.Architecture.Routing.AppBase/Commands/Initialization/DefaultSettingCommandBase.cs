@@ -107,22 +107,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, floorName, height, scale ) ) ;
       }
 
-      var importDwgMappingModelsGroup = importDwgMappingModels.OrderBy( x => x.FloorHeight ).GroupBy( x => x.FloorHeight ).Select( x=>x.ToList() ).ToList() ;
+      var importDwgMappingModelsGroups = importDwgMappingModels.OrderBy( x => x.FloorHeight ).GroupBy( x => x.FloorHeight ).Select( x=>x.ToList() ).ToList() ;
       var result = new List<ImportDwgMappingModel>() ;
 
       // Add first item
-      foreach ( var importDwgMappingModelGroup in importDwgMappingModelsGroup[0] ) {
-        result.Add( importDwgMappingModelGroup );
+      foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[0] ) {
+        result.Add( importDwgMappingModelsGroup );
       }
 
-      for ( int i = 1 ; i < importDwgMappingModelsGroup.Count ; i++ ) {
-        var heightCurrentLevel = importDwgMappingModelsGroup[ i ].First().FloorHeight ;
-        var heightPreviousLevel = importDwgMappingModelsGroup[ i - 1 ].First().FloorHeight ;
+      for ( int i = 1 ; i < importDwgMappingModelsGroups.Count ; i++ ) {
+        var heightCurrentLevel = importDwgMappingModelsGroups[ i ].First().FloorHeight ;
+        var heightPreviousLevel = importDwgMappingModelsGroups[ i - 1 ].First().FloorHeight ;
         var height = heightCurrentLevel - heightPreviousLevel ;
         
-        foreach ( var importDwgMappingModelGroup in importDwgMappingModelsGroup[i] ) {
-          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelGroup.FileName, importDwgMappingModelGroup.FloorName, importDwgMappingModelGroup.FloorHeight,
-            importDwgMappingModelGroup.Scale, height ) ;
+        foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[i] ) {
+          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight,
+            importDwgMappingModelsGroup.Scale, height ) ;
           result.Add( importDwgModel );
         }
       }
@@ -206,7 +206,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var allCurrentLevels = new FilteredElementCollector( doc ).OfClass( typeof( Level ) ).ToList() ;
         var allCurrentViewPlans = new FilteredElementCollector( doc ).OfClass( typeof( ViewPlan ) ).ToList() ;
         ViewPlan? firstViewPlan = null ;
-        
+
         #region Import
 
         using var importTrans = new Transaction( doc ) ;
