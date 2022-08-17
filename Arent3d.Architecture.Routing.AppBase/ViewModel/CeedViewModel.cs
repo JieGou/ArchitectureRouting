@@ -38,6 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class CeedViewModel : NotifyPropertyChanged
   {
+    private const string LengendDisplay = "○" ;
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     private readonly Document _document ;
     private readonly ExternalCommandData _commandData ;
@@ -313,6 +314,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CeedModels.AddRange( newCeedModels ) ;
 
       AddModelNumber( CeedModels ) ;
+      ResetSelectedCategory( Categories ) ;
+      ResetSelectedCategory( CategoriesPreview ) ;
+    }
+
+    private List<CeedModel> GetUsingCeedModel( IEnumerable<CeedModel> ceedModels )
+    {
+      var usingCeedModel = ceedModels.Where( c => c.LegendDisplay == LengendDisplay ).ToList() ;
+      return usingCeedModel ;
     }
 
     private void AddModelNumber( IReadOnlyCollection<CeedModel> ceedModels )
@@ -447,7 +456,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return newCeedModels ;
     }
 
-    public void Load( CheckBox checkBox )
+    public void Load()
     {
       MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
       OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
@@ -472,7 +481,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _previousCeedModels = new List<CeedModel>( CeedModels ) ;
         CheckChangeColor( ceedModelData ) ;
         ceedStorable.CeedModelData = ceedModelData ;
-        ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+        ceedStorable.CeedModelUsedData = GetUsingCeedModel( ceedModelData ) ;
         ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithCeedCode ) ;
         ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithoutCeedCode ) ;
         Categories = new ObservableCollection<CategoryModel>( categoriesWithCeedCode ) ;
@@ -480,10 +489,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _ceedModelNumberOfPreviewCategories = CategoryModel.GetCeedModelNumbers( ceedStorable.CategoriesWithoutCeedCode ) ;
         _storageService.Data.IsShowOnlyUsingCode = false ;
         LoadData( ceedStorable ) ;
-        checkBox.Visibility = Visibility.Hidden ;
-        checkBox.IsChecked = false ;
         IsShowOnlyUsingCode = false ;
-        //IsShowDiff = true ;
 
         try {
           using Transaction t = new( _document, "Save data" ) ;

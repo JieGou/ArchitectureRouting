@@ -24,14 +24,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       rowStyle.Setters.Add( new EventSetter( PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
       ViewModel.DtGrid = DtGrid ;
-      if ( ViewModel.IsExistUsingCode ) {
-        CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
-      }
     }
 
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
-      ViewModel.Load( CbShowOnlyUsingCode ) ;
+      ViewModel.Load() ;
       if ( CbShowDiff.IsChecked == false ) {
         CbShowDiff.IsChecked = true ;
       }
@@ -54,11 +51,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
     {
       ViewModel.UnShowCeedModelNumberColumn( LbCeedModelNumbers, CmbCeedModelNumbers ) ;
-    }
-
-    private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
-    {
-      ViewModel.LoadUsingCeedModel( CbShowOnlyUsingCode ) ;
     }
 
     private void ShowOnlyUsingCode_Checked( object sender, RoutedEventArgs e )
