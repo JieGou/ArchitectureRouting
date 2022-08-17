@@ -527,10 +527,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
+      data = GroupCeedModelsByCeedModelNumber( data ) ;
       data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.ToUpper().Contains( _selectedDeviceSymbol.ToUpper() ) ).ToList() ;
       data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.ToUpper().Contains( _selectedCeedSetCode.ToUpper() ) ).ToList() ;
       data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.ToUpper().Contains( _selectedModelNumber.ToUpper() ) ).ToList() ;
-      data = GroupCeedModelsByCeedModelNumber( data ) ;
       CeedModels.AddRange( data ) ;
       ResetSelectedCategory( Categories ) ;
       ResetSelectedCategory( CategoriesPreview ) ;
@@ -990,7 +990,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       CreatePreviewList( ceedModels ) ;
     }
 
-    private void CreatePreviewList( List<CeedModel> ceedModelOfCeedCode )
+    private void CreatePreviewList( List<CeedModel> ceedModels )
     {
       var view = _document.ActiveView ;
       DWGImportOptions dwgImportOptions = new()
@@ -1001,8 +1001,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         Placement = ImportPlacement.Origin,
         ThisViewOnly = false
       } ;
-      
-      foreach ( var ceedModel in ceedModelOfCeedCode ) {
+
+      foreach ( var ceedModel in ceedModels ) {
         var lines = new List<Line>() ;
         var arcs = new List<Arc>() ;
         var polyLines = new List<PolyLine>() ;
@@ -1015,7 +1015,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
         else {
           var filePath = DrawCanvasManager.Get2DSymbolDwgPath( dwgNumber ) ;
-          using Transaction t = new( _document, "Save data" ) ;
+          using Transaction t = new( _document, "Import dwg file" ) ;
           t.Start() ;
           _document.Import( filePath, dwgImportOptions, view, out ElementId elementId ) ;
           t.Commit() ;
@@ -1027,10 +1027,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               DrawCanvasManager.CreateCurveFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
             }
           }
-        
+
           var canvas = DrawCanvasManager.CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty ) ;
           PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
-        
+
           t.Start() ;
           _document.Delete( elementId ) ;
           t.Commit() ;
@@ -1046,6 +1046,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       public string Condition { get ; }
       public string FloorPlanType { get ; }
       public Canvas Canvas { get ; }
+
       public PreviewListInfo( string ceedSetCode, string modelNumber, string generalDisplayDeviceSymbol, string condition, string floorPlanType, Canvas canvas )
       {
         CeedSetCode = ceedSetCode ;

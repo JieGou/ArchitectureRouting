@@ -26,14 +26,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( polyLines.Any() ) {
           foreach ( var polyline in polyLines ) {
             var pointsOfPolyLine = new PointCollection() ;
-            var ptsList = polyline.GetCoordinates() ;
+            var points = polyline.GetCoordinates() ;
             if ( polyline == polyLines.First() ) {
-              scaleOfLine = lines.Any() ? GetScale( polyLines, lines, scale ) : GetScale( ptsList, scale ) ;
+              scaleOfLine = lines.Any() ? GetScale( polyLines, lines, scale ) : GetScale( points, scale ) ;
             }
 
-            for ( var i = 0 ; i < ptsList.Count ; i++ ) {
-              var x = ptsList.ElementAt( i ).X.RevitUnitsToMillimeters() * scaleOfLine ;
-              var y = ptsList.ElementAt( i ).Y.RevitUnitsToMillimeters() * scaleOfLine ;
+            foreach ( var point in points ) {
+              var x = point.X.RevitUnitsToMillimeters() * scaleOfLine ;
+              var y = point.Y.RevitUnitsToMillimeters() * scaleOfLine ;
               pointsOfPolyLine.Add( new Point( x, y ) ) ;
             }
 
@@ -116,7 +116,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var arcRotateTransform = new RotateTransform( 90, centerX, centerY ) ;
             var newPath = new System.Windows.Shapes.Path()
             {
-              Stroke = new SolidColorBrush( Colors.Green ), StrokeThickness = 2, Data = pathGeometry, RenderTransform = arcRotateTransform,
+              Stroke = new SolidColorBrush( Colors.Green ), 
+              StrokeThickness = 2, 
+              Data = pathGeometry, 
+              RenderTransform = arcRotateTransform,
             } ;
             Canvas.SetTop( newPath, defaultOffset ) ;
             Canvas.SetLeft( newPath, defaultOffset ) ;
