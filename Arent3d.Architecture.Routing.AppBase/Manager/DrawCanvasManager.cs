@@ -15,7 +15,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
   public static class DrawCanvasManager
   {
-    public static Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol )
+    private const string MallCondition = "モール" ;
+    private const string MoSymbol = " (モ)" ;
+
+    public static Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol, string condition )
     {
       const double scale = 15 ;
       const double defaultOffset = 40 ;
@@ -132,13 +135,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       if ( ! string.IsNullOrEmpty( floorPlanSymbol ) ) {
-        TextBlock txtFloorPlanSymbol = new() { FontSize = 19, Text = floorPlanSymbol, Foreground = Brushes.Green } ;
+        TextBlock txtFloorPlanSymbol = new()
+        {
+          FontSize = 19, 
+          Text = floorPlanSymbol, 
+          Foreground = Brushes.Green
+        } ;
         Canvas.SetTop( txtFloorPlanSymbol, 20 ) ;
         Canvas.SetLeft( txtFloorPlanSymbol, defaultOffset ) ;
         canvasPanel.Children.Add( txtFloorPlanSymbol ) ;
       }
 
-      TextBlock txt = new() { FontSize = 19, Text = deviceSymbol, Foreground = Brushes.White } ;
+      var text = condition == MallCondition ? deviceSymbol + MoSymbol : deviceSymbol ;
+      TextBlock txt = new()
+      {
+        FontSize = 19, 
+        Text = text, 
+        Foreground = Brushes.White
+      } ;
       Canvas.SetTop( txt, 20 ) ;
       Canvas.SetLeft( txt, 70 ) ;
       canvasPanel.Children.Add( txt ) ;
