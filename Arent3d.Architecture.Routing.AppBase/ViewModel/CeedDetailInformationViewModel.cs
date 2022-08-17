@@ -54,6 +54,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       {
         _setCode = value.Trim() ?? string.Empty ;
         ConstructionClassificationSelected = HiroiSetCdMasterModels.Find( x => x.SetCode == _setCode )?.ConstructionClassification ?? string.Empty ;
+        ModelNumber = string.Empty ;
+        DeviceSymbol = string.Empty ;
+        if ( ! string.IsNullOrEmpty( _setCode ) ) {
+          var ceedModel = CeedModels.FirstOrDefault( model => string.Equals( model.CeedSetCode, SetCode, StringComparison.InvariantCultureIgnoreCase ) ) ;
+          if ( ceedModel != null ) {
+            ModelNumber = ceedModel.ModelNumber ;
+            DeviceSymbol = ceedModel.GeneralDisplayDeviceSymbol ;
+          }
+        }
+        
         LoadData() ;
         OnPropertyChanged() ;
       }
