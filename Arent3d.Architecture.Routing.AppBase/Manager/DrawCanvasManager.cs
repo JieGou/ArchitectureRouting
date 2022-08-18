@@ -23,15 +23,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       const double scale = 15 ;
       const double defaultOffset = 40 ;
       var rotateTransform = new RotateTransform( 90, 0, 0 ) ;
-      Canvas canvasPanel = new() { Background = new SolidColorBrush( Colors.Black ), Width = 245, Height = 80 } ;
+      Canvas canvasPanel = new() { Background = new SolidColorBrush( Colors.Black ), Width = 245, Height = 100 } ;
       try {
         var scaleOfLine = scale ;
+        var (minX, minY) = GetMinPoint( polyLines, lines, arcs ) ;
+        var offsetX= defaultOffset ;
+        var offsetY= defaultOffset ;
         if ( polyLines.Any() ) {
           foreach ( var polyline in polyLines ) {
             var pointsOfPolyLine = new PointCollection() ;
             var points = polyline.GetCoordinates() ;
             if ( polyline == polyLines.First() ) {
               scaleOfLine = lines.Any() ? GetScale( polyLines, lines, scale ) : GetScale( points, scale ) ;
+              offsetX -= minX * scaleOfLine ; 
+              offsetY = minY == 0 ? defaultOffset + scaleOfLine * 2 : defaultOffset - minY * scaleOfLine ;
             }
 
             foreach ( var point in points ) {
@@ -49,8 +54,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               RenderTransform = rotateTransform,
             } ;
 
-            Canvas.SetTop( newPolyline, defaultOffset ) ;
-            Canvas.SetLeft( newPolyline, defaultOffset ) ;
+            Canvas.SetTop( newPolyline, offsetY ) ;
+            Canvas.SetLeft( newPolyline, offsetX ) ;
             canvasPanel.Children.Add( newPolyline ) ;
           }
         }
@@ -58,6 +63,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         foreach ( var line in lines ) {
           if ( line == lines.First() && ! polyLines.Any() ) {
             scaleOfLine = GetScale( lines, scale ) ;
+            offsetX -= minX * scaleOfLine ; 
+            offsetY -= minY * scaleOfLine ;
           }
 
           var (x1, y1, _) = line.GetEndPoint( 0 ) ;
@@ -79,8 +86,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             RenderTransform = rotateTransform,
           } ;
 
-          Canvas.SetTop( newLine, defaultOffset ) ;
-          Canvas.SetLeft( newLine, defaultOffset ) ;
+          Canvas.SetTop( newLine, offsetY ) ;
+          Canvas.SetLeft( newLine, offsetX ) ;
           canvasPanel.Children.Add( newLine ) ;
         }
 
@@ -95,6 +102,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             }
             else {
               scaleOfArc = GetScale( diameter, scale ) ;
+              offsetX -= minX * scaleOfArc ; 
+              offsetY -= minY * scaleOfArc ;
             }
           }
 
@@ -102,8 +111,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( arc.IsClosed ) {
             var newEllipse = new System.Windows.Shapes.Ellipse() { Stroke = new SolidColorBrush( Colors.Green ), StrokeThickness = 2, Width = newDiameter, Height = newDiameter } ;
 
-            Canvas.SetTop( newEllipse, defaultOffset + centerY * scaleOfArc - newDiameter / 2 ) ;
-            Canvas.SetLeft( newEllipse, defaultOffset + centerX * scaleOfArc - newDiameter / 2 ) ;
+            Canvas.SetTop( newEllipse, offsetY + centerY * scaleOfArc - newDiameter / 2 ) ;
+            Canvas.SetLeft( newEllipse, offsetX + centerX * scaleOfArc - newDiameter / 2 ) ;
             canvasPanel.Children.Add( newEllipse ) ;
           }
           else {
@@ -124,8 +133,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               Data = pathGeometry, 
               RenderTransform = arcRotateTransform,
             } ;
-            Canvas.SetTop( newPath, defaultOffset ) ;
-            Canvas.SetLeft( newPath, defaultOffset ) ;
+            Canvas.SetTop( newPath, offsetY ) ;
+            Canvas.SetLeft( newPath, offsetX ) ;
             canvasPanel.Children.Add( newPath ) ;
           }
         }
@@ -141,7 +150,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           Text = floorPlanSymbol, 
           Foreground = Brushes.Green
         } ;
-        Canvas.SetTop( txtFloorPlanSymbol, 20 ) ;
+        Canvas.SetTop( txtFloorPlanSymbol, defaultOffset ) ;
         Canvas.SetLeft( txtFloorPlanSymbol, defaultOffset ) ;
         canvasPanel.Children.Add( txtFloorPlanSymbol ) ;
       }
@@ -153,11 +162,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         Text = text, 
         Foreground = Brushes.White
       } ;
-      Canvas.SetTop( txt, 20 ) ;
-      Canvas.SetLeft( txt, 70 ) ;
+      Canvas.SetTop( txt, 5 ) ;
+      Canvas.SetLeft( txt, 20 ) ;
       canvasPanel.Children.Add( txt ) ;
 
       return canvasPanel ;
+    }
+    
+    private static ( double, double ) GetMinPoint( IEnumerable<PolyLine> polyLines, IEnumerable<Line> lines, IEnumerable<Arc> arcs )
+    {
+      var points = new List<XYZ>() ;
+      foreach ( var polyLine in polyLines ) {
+        var pointsOfPolyLine = polyLine.GetCoordinates() ;
+        points.AddRange( pointsOfPolyLine ) ;
+      }
+
+      foreach ( var line in lines ) {
+        var startPoint = line.GetEndPoint( 0 ) ;
+        var endPoint = line.GetEndPoint( 1 ) ;
+        points.Add( startPoint ) ;
+        points.Add( endPoint ) ;
+      }
+
+      foreach ( var arc in arcs ) {
+        points.Add( new XYZ( arc.Center.X - arc.Radius, arc.Center.Y - arc.Radius, 0 ) ) ;
+      }
+
+      var minX = points.Min( p => p.X ).RevitUnitsToMillimeters() ;
+      var minY = points.Min( p => p.Y ).RevitUnitsToMillimeters() ;
+
+      return ( minX, minY ) ;
     }
 
     private static double GetScale( IEnumerable<PolyLine> polyLines, IEnumerable<Line> lines, double scale )
@@ -181,13 +215,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var maxY = points.Max( p => p.Y ) ;
       var lengthX = Math.Abs( maxX - minX ).RevitUnitsToMillimeters() ;
       var lengthY = Math.Abs( maxY - minY ).RevitUnitsToMillimeters() ;
+      var maxLength = Math.Max( lengthX, lengthY ) ;
 
-      if ( lengthX >= 6 || lengthY >= 6 )
-        return scale / 4 ;
-      if ( lengthX >= 4 || lengthY >= 4 )
-        return scale / 2 ;
-
-      return scale ;
+      return maxLength switch
+      {
+        >= 15 => 30 / maxLength,
+        >= 6 => scale / 4,
+        >= 4 => scale / 2,
+        _ => scale
+      } ;
     }
 
     private static double GetScale( ICollection<XYZ> points, double scale )
@@ -200,6 +236,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       return maxLength switch
       {
+        >= 15 => 30 / maxLength,
         >= 5 => scale / 4,
         >= 3 => scale / 2,
         _ => scale
@@ -218,6 +255,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       return maxLength switch
       {
+        >= 15 => 30 / maxLength,
         >= 6 => scale / 4,
         >= 4 => scale / 2,
         _ => scale
@@ -227,6 +265,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private static double GetScale( double diameter, double scale )
     {
       switch ( diameter ) {
+        case > 15 :
+          return 30 / diameter ;
         case > 5 :
           return scale / 4 ;
         case > 3 :
