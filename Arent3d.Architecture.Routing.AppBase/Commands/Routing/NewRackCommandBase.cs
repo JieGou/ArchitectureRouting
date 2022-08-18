@@ -302,11 +302,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // set To-Side Connector Id
       var (fromConnectorId, toConnectorId) = GetFromAndToConnectorUniqueId( conduit ) ;
-      if ( ! string.IsNullOrEmpty( toConnectorId ) )
-        SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
-      if ( ! string.IsNullOrEmpty( fromConnectorId ) )
-        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), fromConnectorId ) ;
-      
+      if ( ! string.IsNullOrEmpty( toConnectorId ) && instance.HasParameter(  ElectricalRoutingElementParameter.ToSideConnectorId ) )
+        instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
+      if ( ! string.IsNullOrEmpty( fromConnectorId ) && instance.HasParameter(  ElectricalRoutingElementParameter.FromSideConnectorId ) )
+        instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
+
       // set route name
       var routeName = conduit.GetRouteName() ;
       if ( ! string.IsNullOrEmpty( routeName ) ) {
@@ -368,11 +368,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // set To-Side Connector Id
       var (fromConnectorId, toConnectorId) = GetFromAndToConnectorUniqueId( conduit ) ;
-      if ( ! string.IsNullOrEmpty( toConnectorId ) )
-        SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
-      if ( ! string.IsNullOrEmpty( fromConnectorId ) )
-        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), fromConnectorId ) ;
-      
+      if ( ! string.IsNullOrEmpty( toConnectorId ) && instance.HasParameter(  ElectricalRoutingElementParameter.ToSideConnectorId ) )
+        instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
+      if ( ! string.IsNullOrEmpty( fromConnectorId ) && instance.HasParameter(  ElectricalRoutingElementParameter.FromSideConnectorId ) )
+        instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
+
       // set route name
       var routeName = conduit.GetRouteName() ;
       if ( ! string.IsNullOrEmpty( routeName ) ) {
@@ -380,7 +380,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
         instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
       }
-
 
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {
@@ -565,7 +564,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           foreach ( var item in racks ) {
             var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth, 
-              notationModel.EndLineLeaderId, notationModel.EndPoint, notationModel.OrtherLineId ) ;
+              notationModel.EndLineLeaderId, notationModel.EndPoint, notationModel.OtherLineIds ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }

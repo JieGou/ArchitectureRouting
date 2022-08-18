@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
           foreach ( var model in notation.Value ) {
             model.EndLineLeaderId = endLineLeaderId ;
-            model.OrtherLineId = ortherLineId ;
+            model.OtherLineIds = ortherLineId ;
           }
         }
         rackNotationStorable.Save();
