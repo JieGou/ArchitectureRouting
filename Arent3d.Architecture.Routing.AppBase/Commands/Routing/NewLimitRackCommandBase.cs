@@ -92,28 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             
               var representativeConduit = ( representativeMepCurve as Conduit )! ;
 
-              double cableRackWidth ;
-              if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) )
-                cableRackWidth = _routeMaxWidthDictionary[ routingElementGroup.Key ] ;
-              else {
-                cableRackWidth = routingElementGroup.Value.GroupBy( s => s.GetRouteName() ).Sum( p =>
-                {
-                  var routeName = p.First().GetRouteName() ?? string.Empty ;
-                  if ( string.IsNullOrEmpty( routeName ) ) return 0 ;
-                  
-                  var route = routes.FirstOrDefault( s => s.Key == routeName ) ;
-                  return ( route.Value.UniqueDiameter?.RevitUnitsToMillimeters() ?? 0 ) + 10 ;
-                } ) ;
-                cableRackWidth = ( 120 + cableRackWidth ) * 0.6;
-                
-                foreach ( var width in CableTrayWidthMapping ) {
-                  if ( ! ( cableRackWidth <= width ) ) continue ;
-                  cableRackWidth = width ;
-                  break ;
-                }
-                
-                _routeMaxWidthDictionary.Add( routingElementGroup.Key, cableRackWidth );
-              }
+              var cableRackWidth = CalcCableRackWidth( routingElementGroup, routes ) ;
 
               CreateCableRackForConduit( uiDocument, representativeConduit, cableRackWidth, racks, rackMaps ) ;
             }
@@ -144,6 +123,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
+    }
+
+    private double CalcCableRackWidth( KeyValuePair<string, List<MEPCurve>> routingElementGroup, RouteCache routes )
+    {
+      double cableRackWidth ;
+      if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) )
+        cableRackWidth = _routeMaxWidthDictionary[ routingElementGroup.Key ] ;
+      else {
+        cableRackWidth = routingElementGroup.Value.GroupBy( s => s.GetRouteName() ).Sum( p =>
+        {
+          var routeName = p.First().GetRouteName() ?? string.Empty ;
+          if ( string.IsNullOrEmpty( routeName ) ) return 0 ;
+
+          var route = routes.FirstOrDefault( s => s.Key == routeName ) ;
+          return ( route.Value.UniqueDiameter?.RevitUnitsToMillimeters() ?? 0 ) + 10 ;
+        } ) ;
+        cableRackWidth = ( 120 + cableRackWidth ) * 0.6 ;
+
+        foreach ( var width in CableTrayWidthMapping ) {
+          if ( ! ( cableRackWidth <= width ) ) continue ;
+          cableRackWidth = width ;
+          break ;
+        }
+
+        _routeMaxWidthDictionary.Add( routingElementGroup.Key, cableRackWidth ) ;
+      }
+
+      return cableRackWidth ;
     }
 
     #region Methods
