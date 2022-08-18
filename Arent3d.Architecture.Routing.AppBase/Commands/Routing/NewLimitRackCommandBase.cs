@@ -265,8 +265,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       for ( var i = 0; i < rackIdCount; i++ ) {
         var rack = racks.ElementAt( i ) ;
         var rackMap = rackMaps.FirstOrDefault( rm => rm.RackIds.Any( r => r == rack.UniqueId ) ) ;
-        if ( rackMap != null && rackMap.CableTrays.Contains( rack ) ) rackMap?.CableTrays.Remove( rack ) ;
-        if ( rackMap != null && rackMap.CableTrayFittings.Contains( rack ) ) rackMap?.CableTrays.Remove( rack ) ;
+        if ( rackMap != null && rackMap.CableTrays.Contains( rack ) ) rackMap.CableTrays.Remove( rack ) ;
+        if ( rackMap != null && rackMap.CableTrayFittings.Contains( rack ) ) rackMap.CableTrays.Remove( rack ) ;
         rackMap?.RackIds.Remove( rack.UniqueId ) ;
       }
     }
