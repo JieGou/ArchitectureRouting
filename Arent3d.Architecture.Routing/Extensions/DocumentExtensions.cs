@@ -153,6 +153,19 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new RackNotationStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get limit rack data from snoop DB.
+    /// </summary>
+    public static LimitRackStorable GetLimitRackStorable( this Document document )
+    {
+      try {
+        return LimitRackStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( LimitRackStorable.LimitRackStorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new LimitRackStorable( document ) ;
+      }
+    }
 
     /// <summary>
     /// Get text note data from snoop DB.
