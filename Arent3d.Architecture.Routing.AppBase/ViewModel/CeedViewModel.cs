@@ -1023,14 +1023,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var filePath = DrawCanvasManager.Get2DSymbolDwgPath( dwgNumber ) ;
           using Transaction t = new( _document, "Import dwg file" ) ;
           t.Start() ;
-          _document.Import( filePath, dwgImportOptions, view, out ElementId elementId ) ;
+          _document.Import( filePath, dwgImportOptions, view, out var elementId ) ;
           t.Commit() ;
 
+          if ( elementId == null ) continue ;
           if ( _document.GetElement( elementId ) is ImportInstance dwg ) {
             Options opt = new() ;
             foreach ( GeometryObject geoObj in dwg.get_Geometry( opt ) ) {
               if ( geoObj is not GeometryInstance inst ) continue ;
-              DrawCanvasManager.CreateCurveFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
+              DrawCanvasManager.LoadGeometryFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
             }
           }
 

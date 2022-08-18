@@ -236,7 +236,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    public static void CreateCurveFromGeometryObject( GeometryElement geometryElement, ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, ICollection<Autodesk.Revit.DB.Point> points )
+    public static void LoadGeometryFromGeometryObject( GeometryElement geometryElement, ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, ICollection<Autodesk.Revit.DB.Point> points )
     {
       try {
         foreach ( GeometryObject geoObj in geometryElement ) {
@@ -263,7 +263,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               break ;
             }
             case GeometryInstance geometryInstance :
-              CreateCurveFromGeometryObject( geometryInstance.SymbolGeometry, lines, arcs, polyLines, points ) ;
+              LoadGeometryFromGeometryObject( geometryInstance.SymbolGeometry, lines, arcs, polyLines, points ) ;
               break ;
           }
         }
