@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Architecture.Routing.Utils ;
@@ -109,8 +110,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           ? $"{existingPlumbingInfo.PlumbingType}"
           : $"{detailTableItemModel?.PlumbingType}" ;
 
-      if ( string.IsNullOrEmpty( fallMarkNoteString ) ) 
+      if ( string.IsNullOrEmpty( fallMarkNoteString ) ) {
         fallMarkNoteString = DefaultParentPlumbingType ;
+        var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName!, false ) ;
+        if ( null != toConnector ) {
+          toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
+          toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? connectorIsEcoMode ) ;
+          var ceedSetCode = ceedSetCodeModel?.Split( ':' ).ToList() ;
+          var ceedCode = ceedSetCode?[ 0 ] ;
+
+          var csvStorable = document.GetCsvStorable() ;
+          var plumbingType = AddWiringInformationCommandBase.GetPlumpingType( csvStorable, connectorIsEcoMode, ceedCode ) ;
+          if ( ! string.IsNullOrEmpty( plumbingType ) )
+            fallMarkNoteString = plumbingType ;
+        }
+      }
 
       var fallMarkTextNote = CreateFallMarkNote( document, fallMarkNoteString, fallMarkPoint ) ;
       fallMarkInstance.GetParameter( "FallMarkTextNoteId" )?.Set( fallMarkTextNote.UniqueId ) ;
