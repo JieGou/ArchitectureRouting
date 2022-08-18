@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
     xmlns:CnsSettingRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.CnsSettingRules"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
     Title="工事項目設定"
     mc:Ignorable="d"
     WindowStartupLocation="CenterScreen"
@@ -38,9 +39,9 @@
                                 <Binding Path="Sequence" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="工事項目名称" Width="280" CanUserSort="False" EditingElementStyle="{StaticResource errorStyle}">
-                            <DataGridTextColumn.Binding>
-                                <Binding Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" >
+                        <DataGridTextColumn Header="工事項目名称" Width="280" CanUserSort="False" EditingElementStyle="{StaticResource errorStyle}" >
+                            <DataGridTextColumn.Binding >
+                                <Binding Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay"  >
                                     <Binding.ValidationRules>
                                         <CnsSettingRules:CnsSettingValidationRule />
                                     </Binding.ValidationRules>

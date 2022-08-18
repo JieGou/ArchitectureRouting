@@ -7,6 +7,7 @@ using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using System.ComponentModel ;
+using System.Data ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -73,7 +74,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           return ;
         }
 
-        if ( ! IsValidConstructionItemName() ) {
+        var input= ((TextBox)e.EditingElement).Text ;
+        if ( ! IsValidConstructionItemName(input) ) {
           _editingRowIndex = e.Row.GetIndex() ;
           _isEditModel = false ;
           e.Cancel = true ;
@@ -386,21 +388,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       tx.Commit();
     }
     
-    private bool IsValidConstructionItemName()
+    private bool IsValidConstructionItemName(string? input = null)
     {
-      var selectedItem = _cnsSettingViewModel.CnsSettingModels.Last() ;
-      if ( selectedItem == null ) return true ;
-      var input = selectedItem.CategoryName ;
+      if ( input == null ) 
+      {
+        var selectedItem = ( (CnsSettingModel?) grdCategories.SelectedItem ) ;
+        if ( selectedItem == null ) return true ;
+        input = grdCategories.ItemsSource.Cast<CnsSettingModel>().ToList()[ selectedItem.Sequence - 1 ].CategoryName ;
+      }
+     
       Match m = Regex.Match(input, @"[\[/\?\]\*\\:\']");
       bool nameIsValid = ( ! m.Success && ( ! string.IsNullOrEmpty(input) ) && ( input.Length <= 31 ) );
-
+      
       if ( ! nameIsValid ) 
       {
         MessageBox.Show( @" 入力された工事項目名称が正しくありません。次のいずれかを確認してください。" + "\n" 
                                                                    + @"・名前が31文字以上になっている。" + "\n" 
                                                                    + @"・ふさわしくない文字が入っている「：」「/」など。" + "\n" 
                                                                    + @"・名前が空白になっている。" , "Error") ;
-        selectedItem.CategoryName = string.Empty ;
         return false ;
       }
       return true;
