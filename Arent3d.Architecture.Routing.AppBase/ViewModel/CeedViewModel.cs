@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class CeedViewModel : NotifyPropertyChanged
   {
-    private const string LengendDisplay = "○" ;
+    private const string LegendDisplay = "○" ;
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     private readonly Document _document ;
     private readonly ExternalCommandData _commandData ;
@@ -47,6 +47,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<CeedModel> _previousCeedModels ;
     private readonly StorageService<Level, CeedUserModel> _storageService ;
     private List<string> _ceedModelNumberOfPreviewCategories ;
+    private readonly List<CanvasChildInfo> _canvasChildInfos ;
+    public List<ElementId> DwgImportIds { get ; }
 
     public DataGrid DtGrid ;
 
@@ -256,6 +258,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _document = commandData.Application.ActiveUIDocument.Document ;
       CeedModels = new ObservableCollection<CeedModel>() ;
       DtGrid = new DataGrid() ;
+      _canvasChildInfos = new List<CanvasChildInfo>() ;
+      DwgImportIds = new List<ElementId>() ;
       
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       _storageService = new StorageService<Level, CeedUserModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
@@ -320,7 +324,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public static List<CeedModel> GetUsingCeedModel( IEnumerable<CeedModel> ceedModels )
     {
-      var usingCeedModel = ceedModels.Where( c => c.LegendDisplay == LengendDisplay ).ToList() ;
+      var usingCeedModel = ceedModels.Where( c => c.LegendDisplay == LegendDisplay ).ToList() ;
       return usingCeedModel ;
     }
 
@@ -1014,33 +1018,45 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var polyLines = new List<PolyLine>() ;
         var points = new List<Autodesk.Revit.DB.Point>() ;
         var dwgNumber = ceedModel.DwgNumber ;
-        if ( string.IsNullOrEmpty( ceedModel.DwgNumber ) ) {
-          if ( string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ) continue ;
-          var canvas = DrawCanvasManager.CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.FloorPlanSymbol, ceedModel.Condition ) ;
-          PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
-        }
-        else {
-          var filePath = DrawCanvasManager.Get2DSymbolDwgPath( dwgNumber ) ;
-          using Transaction t = new( _document, "Import dwg file" ) ;
-          t.Start() ;
-          _document.Import( filePath, dwgImportOptions, view, out var elementId ) ;
-          t.Commit() ;
-
-          if ( elementId == null ) continue ;
-          if ( _document.GetElement( elementId ) is ImportInstance dwg ) {
-            Options opt = new() ;
-            foreach ( GeometryObject geoObj in dwg.get_Geometry( opt ) ) {
-              if ( geoObj is not GeometryInstance inst ) continue ;
-              DrawCanvasManager.LoadGeometryFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
-            }
+        try {
+          if ( string.IsNullOrEmpty( ceedModel.DwgNumber ) ) {
+            if ( string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ) continue ;
+            var canvas = DrawCanvasManager.CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.FloorPlanSymbol, ceedModel.Condition ) ;
+            PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
           }
+          else {
+            var canvasChildInfo = _canvasChildInfos.SingleOrDefault( c => c.DwgNumber == ceedModel.DwgNumber ) ;
+            if ( canvasChildInfo == null ) {
+              var filePath = DrawCanvasManager.Get2DSymbolDwgPath( dwgNumber ) ;
+              using Transaction t = new( _document, "Import dwg file" ) ;
+              t.Start() ;
+              _document.Import( filePath, dwgImportOptions, view, out var elementId ) ;
+              t.Commit() ;
 
-          var canvas = DrawCanvasManager.CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty, ceedModel.Condition ) ;
-          PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
-
-          t.Start() ;
-          _document.Delete( elementId ) ;
-          t.Commit() ;
+              if ( elementId == null ) continue ;
+              DwgImportIds.Add( elementId ) ;
+              if ( _document.GetElement( elementId ) is ImportInstance dwg ) {
+                Options opt = new() ;
+                foreach ( GeometryObject geoObj in dwg.get_Geometry( opt ) ) {
+                  if ( geoObj is not GeometryInstance inst ) continue ;
+                  DrawCanvasManager.LoadGeometryFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
+                }
+              }
+              
+              _canvasChildInfos.Add( new CanvasChildInfo( ceedModel.DwgNumber, polyLines, lines, arcs ) ) ;
+            }
+            else {
+              polyLines = canvasChildInfo.PolyLines ;
+              lines = canvasChildInfo.Lines ;
+              arcs = canvasChildInfo.Arcs ;
+            }
+            
+            var canvas = DrawCanvasManager.CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty, ceedModel.Condition ) ;
+            PreviewList.Add( new PreviewListInfo( ceedModel.CeedSetCode, ceedModel.ModelNumber, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.Condition, ceedModel.FloorPlanType, canvas ) ) ;
+          }
+        }
+        catch {
+          // ignored
         }
       }
     }
@@ -1062,6 +1078,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         Condition = condition ;
         FloorPlanType = floorPlanType ;
         Canvas = canvas ;
+      }
+    }
+    
+    private class CanvasChildInfo
+    {
+      public string DwgNumber { get ; }
+      public List<PolyLine> PolyLines { get ; }
+      public List<Line> Lines { get ; }
+      public List<Arc> Arcs { get ; }
+
+      public CanvasChildInfo( string dwgNumber, List<PolyLine> polyLines, List<Line> lines, List<Arc> arcs )
+      {
+        DwgNumber = dwgNumber ;
+        PolyLines = polyLines ;
+        Lines = lines ;
+        Arcs = arcs ;
       }
     }
   }
