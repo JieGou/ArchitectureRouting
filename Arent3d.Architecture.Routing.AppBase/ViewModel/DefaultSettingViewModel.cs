@@ -253,7 +253,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       DeleteFloorHeight( selectedItem );
       ImportDwgMappingModels.Remove( selectedItem ) ;
-      _oldImportDwgMappingModels.Remove( selectedItem ) ;
+      var itemToRemove = _oldImportDwgMappingModels.SingleOrDefault(r => r.Id == selectedItem.Id);
+      if (itemToRemove != null)
+        _oldImportDwgMappingModels.Remove(itemToRemove);
       if ( ! DeletedFloorName.Contains( selectedItem.FloorName ) ) {
         DeletedFloorName.Add( selectedItem.FloorName ) ;
       }
