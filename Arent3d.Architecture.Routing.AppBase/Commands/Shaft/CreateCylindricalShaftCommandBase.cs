@@ -5,6 +5,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI.Selection ;
@@ -42,11 +43,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         using var trans = new Transaction( document, "Create Arent Shaft" ) ;
         trans.Start() ;
 
+        var shaftOpeningStore = document.GetShaftOpeningStorable() ;
+
         var shaftProfile = new CurveArray() ;
         var radius = 60d.MillimetersToRevitUnits() ;
         var cylinderCurve = Arc.Create( centerPoint, radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
         shaftProfile.Append( cylinderCurve ) ;
-        document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
+        var opening = document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
+        var detailUniqueIds = new List<string>() ;
 
         var subCategoryForBodyDirection = GetLineStyle( document, "SubCategoryForDirectionCylindricalShaft", new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         var subCategoryForOuterShape = GetLineStyle( document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
@@ -66,24 +70,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
           IEnumerable<Curve> curvesBody ;
           if ( viewPlans.IndexOf( viewPlan ) == 0 ) {
-            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForSymbol ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForSymbol )
+              .ForEach(x => detailUniqueIds.Add(x.UniqueId));
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 0 ].CreateTransformed( transformTranslation ) } ) ;
           }
           else if ( viewPlans.IndexOf( viewPlan ) == viewPlans.Count - 1 ) {
-            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForSymbol ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForSymbol )
+              .ForEach(x => detailUniqueIds.Add(x.UniqueId));
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 1 ].CreateTransformed( transformTranslation ) } ) ;
           }
           else {
-            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForSymbol ) ;
-            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForSymbol ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForSymbol )
+              .ForEach(x => detailUniqueIds.Add(x.UniqueId));
+            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForSymbol )
+              .ForEach(x => detailUniqueIds.Add(x.UniqueId));
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, bodyDirections.Select( x => x.CreateTransformed( transformTranslation ) ).ToList() ) ;
           }
 
-          curvesBody.ForEach( x => CreateDetailLine( viewPlan, subCategoryForBodyDirection, x ) ) ;
+          curvesBody.Select( x => CreateDetailLine( viewPlan, subCategoryForBodyDirection, x ) ).ForEach(x => detailUniqueIds.Add(x.UniqueId)) ;
 
           var circle = Arc.Create( new XYZ( centerPoint.X, centerPoint.Y, viewPlan.GenLevel.Elevation ), sacleRadius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
-          CreateDetailLine( viewPlan, subCategoryForOuterShape, circle ) ;
+          detailUniqueIds.Add( CreateDetailLine( viewPlan, subCategoryForOuterShape, circle ).UniqueId ) ;
         }
+        
+        shaftOpeningStore.ShaftOpeningModels.Add(new ShaftOpeningModel(opening.UniqueId, detailUniqueIds));
+        shaftOpeningStore.Save();
 
         trans.Commit() ;
 
@@ -98,7 +109,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       }
     }
 
-    private static void CreateSymbol(View viewPlan, XYZ point, double angle, double ratio, Element lineStyle)
+    private static List<DetailCurve> CreateSymbol(View viewPlan, XYZ point, double angle, double ratio, Element lineStyle)
     {
       var transform = Transform.CreateRotationAtPoint( XYZ.BasisZ, angle, point ) ;
       var lineOne = Line.CreateBound( point, Transform.CreateTranslation( XYZ.BasisY * 1500d.MillimetersToRevitUnits() * ratio ).OfPoint( point ) ) ;
@@ -106,15 +117,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       var lineThree = Line.CreateBound( lineTwo.GetEndPoint( 1 ), Transform.CreateTranslation( Transform.CreateRotation( XYZ.BasisZ, 30 * Math.PI / 180 ).OfVector( XYZ.BasisX ) * 500d.MillimetersToRevitUnits() * ratio ).OfPoint( lineTwo.GetEndPoint( 1 ) ) ) ;
 
       var curves = new List<Curve> { lineOne.CreateTransformed(transform), lineTwo.CreateTransformed(transform), lineThree.CreateTransformed(transform) } ;
+      var detailCurves = new List<DetailCurve>() ;
       foreach ( var curve in curves ) {
-        CreateDetailLine( viewPlan, lineStyle, curve ) ;
+        var detailCurve = CreateDetailLine( viewPlan, lineStyle, curve ) ;
+        detailCurves.Add( detailCurve ) ;
       }
+
+      return detailCurves ;
     }
 
-    private static void CreateDetailLine( View viewPlan, Element lineStyle, Curve curve )
+    private static DetailCurve CreateDetailLine( View viewPlan, Element lineStyle, Curve curve )
     {
       var detailLineOne = viewPlan.Document.Create.NewDetailCurve( viewPlan, curve ) ;
       detailLineOne.LineStyle = lineStyle ;
+      return detailLineOne ;
     }
 
     private static Category GetLineStyle( Document document, string subCategoryName, Color color, int lineWeight )
@@ -132,6 +148,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       }
 
       return subCategory ;
+    }
+
+    public static void DeleteAllShaftOpening(Document document )
+    {
+      var shaftOpeningStore = document.GetShaftOpeningStorable() ;
+      if ( ! shaftOpeningStore.ShaftOpeningModels.Any() )
+        return ;
+
+      foreach ( var shaftOpeningModel in shaftOpeningStore.ShaftOpeningModels ) {
+        if ( document.GetElement( shaftOpeningModel.ShaftOpeningUniqueId ) is { } opening )
+          document.Delete( opening.Id ) ;
+
+        var detailCurves = shaftOpeningModel.DetailUniqueIds.Select( document.GetElement ).OfType<DetailCurve>().EnumerateAll() ;
+        if(!detailCurves.Any())
+          continue;
+
+        document.Delete( detailCurves.Select( x => x.Id ).ToList() ) ;
+      }
+
+      if ( null != shaftOpeningStore.OwnerElement )
+        document.Delete( shaftOpeningStore.OwnerElement.Id ) ;
     }
   }
 }
