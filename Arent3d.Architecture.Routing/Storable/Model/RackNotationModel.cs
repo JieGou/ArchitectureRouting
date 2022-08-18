@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public string EndLineLeaderId { get ; set ; }
     public int EndPoint { get ; set ; }
-    public IReadOnlyList<string> OrtherLineId { get ; set ; }
+    public IReadOnlyList<string> OtherLineIds { get ; set ; }
 
     public RackNotationModel( string? rackId, string? notationId, string? rackNotationId, string? fromConnectorId,
       bool? isDirectionX, double? rackWidth, string? endLineLeaderId = default, int? endPoint = default,
@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       RackWidth = rackWidth ?? 0 ;
       EndLineLeaderId = endLineLeaderId ?? string.Empty ;
       EndPoint = endPoint ?? 0 ;
-      OrtherLineId = ortherLineId ?? new List<string>() ;
+      OtherLineIds = ortherLineId ?? new List<string>() ;
     }
   }
 }
