@@ -9,13 +9,13 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 {
     public abstract class DrawExternalBase : IDisposable
     {
-        public UIApplication UIApplication { get; set; }
+        protected UIApplication UIApplication { get; set; }
         public ExternalDrawingServer DrawingServer { get; set; }
         public UserActivityHook UserActivityHook { get; set; }
         public List<XYZ> PickedPoints { get; set; }
         public string UserInput { get; set; }
 
-        private IntPtr revitWindow = IntPtr.Zero;
+        protected IntPtr RevitWindow = IntPtr.Zero;
         protected DrawExternalBase(UIApplication uiApplication)
         {
             this.UserInput = "";
@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             var externalGraphics = new DrawingServerHost();
             externalGraphics.RegisterServer(this.DrawingServer);
 
-            this.revitWindow = GetActiveWindow();
+            this.RevitWindow = GetActiveWindow();
         }
 
         public abstract void DrawExternal();
@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         public virtual void OnKeyPressActivity(object sender, KeyPressEventArgs e)
         {
             var topWindow = GetActiveWindow();
-            if (this.revitWindow != topWindow)
+            if (this.RevitWindow != topWindow)
             {
                 e.Handled = false;
                 return;
@@ -90,7 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         public virtual void OnMouseActivity(object sender, MouseEventArgs e)
         {
             var topWindow = GetActiveWindow();
-            if (this.revitWindow != topWindow)
+            if (this.RevitWindow != topWindow)
             {
                 return;
             }
@@ -160,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 
         protected XYZ GetMousePoint()
         {
-            var uiView = GetActiveUiView(this.UIApplication.ActiveUIDocument);
+            var uiView = GetActiveUiView(UIApplication.ActiveUIDocument);
             var corners = uiView.GetZoomCorners();
             var rect = uiView.GetWindowRectangle();
             var p = Cursor.Position;
@@ -169,9 +169,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             var a = corners[0];
             var b = corners[1];
             var v = b - a;
-            var q = a
-                    + dx * v.X * XYZ.BasisX
-                    + dy * v.Y * XYZ.BasisY;
+            var q = a + dx * v.X * XYZ.BasisX + dy * v.Y * XYZ.BasisY;
 
             return q;
         }
@@ -182,6 +180,6 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         }
 
         [DllImport("user32.dll")]
-        static extern IntPtr GetActiveWindow();
+        protected static extern IntPtr GetActiveWindow();
     }
 }

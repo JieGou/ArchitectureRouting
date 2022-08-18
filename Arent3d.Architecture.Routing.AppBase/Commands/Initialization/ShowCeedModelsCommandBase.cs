@@ -117,10 +117,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( element is FamilyInstance familyInstance ) {
           familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
+          familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+          
           var deviceSymbol = viewModel.SelectedDeviceSymbol ?? string.Empty ;
           var text = StringWidthUtils.IsHalfWidth( deviceSymbol ) ? StringWidthUtils.ToFullWidth( deviceSymbol ) : deviceSymbol ;
           familyInstance.SetProperty(ElectricalRoutingElementParameter.SymbolContent, text);
-          familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
         var deviceSymbolTagType = doc.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
