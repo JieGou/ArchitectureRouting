@@ -3,6 +3,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -12,6 +13,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
+using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -27,12 +29,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string symbolMagnification = "シンボル倍率" ;
       const string grade3 = "グレード3" ;
       
-      var doc = commandData.Application.ActiveUIDocument.Document ;
-      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
-
-      var defaultConstructionItem = doc.GetDefaultConstructionItem() ;
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      if ( uiDocument.ActiveView is not ViewPlan )
+        return Result.Cancelled ;
       
-      var viewModel = new CeedViewModel( doc ) ;
+      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( uiDocument.Document ) ;
+      var defaultConstructionItem = uiDocument.Document.GetDefaultConstructionItem() ;
+      
+      var viewModel = new CeedViewModel( uiDocument.Document ) ;
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
       
       dlgCeedModel.ShowDialog() ;
@@ -42,99 +46,52 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) 
         return Result.Succeeded ;
       
-      var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
+      var result = uiDocument.Document.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
-        var uiDoc = commandData.Application.ActiveUIDocument ;
+        var level = uiDocument.Document.ActiveView.GenLevel ;
+        var heightOfConnector = uiDocument.Document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+        var connector = GenerateConnector( uiDocument, 0, 0, heightOfConnector, level, viewModel.SelectedFloorPlanType ?? string.Empty ) ;
 
-        XYZ? point ;
-        try {
-          point = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
-        }
-        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        var ( placePoint, direction ) = PickPoint( uiDocument, connector ) ;
+        if ( null == placePoint )
           return Result.Cancelled ;
-        }
+
         var condition = "屋外" ; // デフォルトの条件
+        var isValidPoint = IsValidPoint( uiDocument, placePoint, viewModel, ref condition ) ;
+        if ( ! isValidPoint )
+          return Result.Failed ;
         
-        var symbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        var filter = new FamilyInstanceFilter( doc, symbol.Id ) ;
-        var rooms = new FilteredElementCollector( doc ).WherePasses( filter ).OfType<FamilyInstance>().Where(x =>
-        {
-          var bb = x.get_BoundingBox( null ) ;
-          var ol = new Outline( bb.Min, bb.Max ) ;
-          return ol.Contains( point, GeometryHelper.Tolerance ) ;
-        }).ToList() ;
-
-        switch ( rooms.Count ) {
-          case 0 :
-            if ( viewModel.IsShowCondition ) {
-              condition = viewModel.SelectedCondition ;
-            }
-            else {
-              TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
-              return Result.Cancelled ;
-            }
-            break;
-          case > 1 when CreateRoomCommandBase.TryGetConditions( uiDoc.Document, out var conditions ) && conditions.Any() :
-            var vm = new ArentRoomViewModel { Conditions = conditions } ;
-            var view = new ArentRoomView { DataContext = vm } ;
-            view.ShowDialog() ;
-            if ( ! vm.IsCreate )
-              return Result.Cancelled ;
-
-            if ( viewModel.IsShowCondition && viewModel.SelectedCondition != vm.SelectedCondition ) {
-              TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
-              return Result.Cancelled ;
-            }
-            
-            condition = vm.SelectedCondition ;
-            break ;
-          case > 1 :
-            TaskDialog.Show( "Arent", "指定された条件が見つかりませんでした。" ) ;
-            return Result.Cancelled ;
-          default :
-          {
-            if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
-              if ( viewModel.IsShowCondition && viewModel.SelectedCondition != value ) {
-                TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
-                return Result.Cancelled ;
-              }
-              condition = value ;
-            }
-
-            break ;
-          }
-        }
-        
-        if ( !viewModel.OriginCeedModels.Any(cmd=>cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == viewModel.SelectedDeviceSymbol) ) {
+        if ( !viewModel.OriginCeedModels.Any(cmd => cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == viewModel.SelectedDeviceSymbol) ) {
           TaskDialog.Show( "Arent", $"We can not find any ceedmodel \"{viewModel.SelectedDeviceSymbol}\" match with this room \"{condition}\"。" ) ;
           return Result.Cancelled ;
         }
 
-        var level = uiDoc.ActiveView.GenLevel ;
-        var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        var element = GenerateConnector( uiDoc, point.X, point.Y, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
-        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
-        if ( element is FamilyInstance familyInstance ) {
-          familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
-          familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
-          familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
-          
-          var deviceSymbol = viewModel.SelectedDeviceSymbol ?? string.Empty ;
-          var text = StringWidthUtils.IsHalfWidth( deviceSymbol ) ? StringWidthUtils.ToFullWidth( deviceSymbol ) : deviceSymbol ;
-          familyInstance.SetProperty(ElectricalRoutingElementParameter.SymbolContent, text);
+        ElementTransformUtils.MoveElement( uiDocument.Document, connector.Id, placePoint - new XYZ( 0, 0, heightOfConnector ) ) ;
+        if ( null != direction ) {
+          var line = Line.CreateBound( placePoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( placePoint ) ) ;
+          ElementTransformUtils.RotateElement(uiDocument.Document, connector.Id, line, XYZ.BasisY.AngleTo(direction));
         }
+        
+        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
+        connector.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
+        connector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
+        connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+          
+        var deviceSymbol = viewModel.SelectedDeviceSymbol ?? string.Empty ;
+        var text = StringWidthUtils.IsHalfWidth( deviceSymbol ) ? StringWidthUtils.ToFullWidth( deviceSymbol ) : deviceSymbol ;
+        connector.SetProperty(ElectricalRoutingElementParameter.SymbolContent, text);
 
-        var deviceSymbolTagType = doc.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ(point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z) ) ;
+        var deviceSymbolTagType = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+        IndependentTag.Create( uiDocument.Document, deviceSymbolTagType.Id, uiDocument.ActiveView.Id, new Reference( connector ), false, TagOrientation.Horizontal, new XYZ(placePoint.X, placePoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * uiDocument.ActiveView.Scale, placePoint.Z) ) ;
         
-        if ( element.HasParameter( switch2DSymbol ) ) 
-          element.SetProperty( switch2DSymbol, true ) ;
+        if ( connector.HasParameter( switch2DSymbol ) ) 
+          connector.SetProperty( switch2DSymbol, true ) ;
         
-        if ( element.HasParameter( symbolMagnification ) ) 
-          element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
+        if ( connector.HasParameter( symbolMagnification ) ) 
+          connector.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
         
-        if ( element.HasParameter( grade3 ) ) 
-          element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.GradeMode == 3 );
+        if ( connector.HasParameter( grade3 ) ) 
+          connector.SetProperty( grade3, uiDocument.Document.GetDefaultSettingStorable().GradeSettingData.GradeMode == 3 );
 
         return Result.Succeeded ;
       } ) ;
@@ -142,7 +99,123 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return result ;
     }
 
-    private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType )
+    private static bool IsValidPoint(UIDocument uiDocument, XYZ point, CeedViewModel viewModel, ref string? condition)
+    {
+      var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var filter = new FamilyInstanceFilter( uiDocument.Document, symbol.Id ) ;
+      var rooms = new FilteredElementCollector( uiDocument.Document ).WherePasses( filter ).OfType<FamilyInstance>().Where(x =>
+      {
+        var bb = x.get_BoundingBox( null ) ;
+        var ol = new Outline( bb.Min, bb.Max ) ;
+        return ol.Contains( point, GeometryHelper.Tolerance ) ;
+      }).ToList() ;
+
+      switch ( rooms.Count ) {
+        case 0 :
+          if ( viewModel.IsShowCondition ) {
+            condition = viewModel.SelectedCondition ;
+          }
+          else {
+            TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
+            return false ;
+          }
+          break;
+        case > 1 when CreateRoomCommandBase.TryGetConditions( uiDocument.Document, out var conditions ) && conditions.Any() :
+          var vm = new ArentRoomViewModel { Conditions = conditions } ;
+          var view = new ArentRoomView { DataContext = vm } ;
+          view.ShowDialog() ;
+          if ( ! vm.IsCreate )
+            return false ;
+
+          if ( viewModel.IsShowCondition && viewModel.SelectedCondition != vm.SelectedCondition ) {
+            TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
+            return false ;
+          }
+          
+          condition = vm.SelectedCondition ;
+          break ;
+        case > 1 :
+          TaskDialog.Show( "Arent", "指定された条件が見つかりませんでした。" ) ;
+          return false ;
+        default :
+        {
+          if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && !string.IsNullOrEmpty(value)) {
+            if ( viewModel.IsShowCondition && viewModel.SelectedCondition != value ) {
+              TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
+              return false ;
+            }
+            condition = value ;
+          }
+          break ;
+        }
+      }
+
+      return true ;
+    }
+
+    private static (XYZ? PlacePoint, XYZ? Direction) PickPoint( UIDocument uiDocument, Element symbolInstance )
+    {
+      var dlg = new ModelessOkCancelDialog() ;
+      dlg.AlignToView(uiDocument.GetActiveUIView());
+      dlg.Show();
+      dlg.FocusRevit();
+      
+      TabPlaceExternal? tabPlaceExternal = null ;
+      XYZ? placePoint = null ;
+      XYZ? direction = null ;
+      try {
+        if ( ! symbolInstance.HasParameter( "W" ) ) {
+          dlg.Close();
+          return ( placePoint, direction ) ;
+        }
+        
+        tabPlaceExternal = new TabPlaceExternal( uiDocument.Application, symbolInstance.GetPropertyDouble("W") * 0.5 ) ;
+        while ( true ) {
+          if ( null == tabPlaceExternal.FirstPoint ) {
+            var (x, y, z) = uiDocument.Selection.PickPoint() ;
+            tabPlaceExternal.FirstPoint = new XYZ( x, y, z ) ;
+          }
+          else if ( null == tabPlaceExternal.SecondPoint ) {
+            var secondPoint = uiDocument.Selection.PickPoint() ;
+            if ( tabPlaceExternal.FirstPoint.DistanceTo( secondPoint ) <= uiDocument.Application.Application.ShortCurveTolerance )
+              continue;
+            
+            tabPlaceExternal.SecondPoint = secondPoint ;
+            uiDocument.RefreshActiveView();
+          }
+          else {
+            uiDocument.Selection.PickObject(ObjectType.Nothing) ;
+          }
+        }
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        switch ( dlg.IsCancel ) {
+          case false when null != tabPlaceExternal :
+          {
+            placePoint = tabPlaceExternal.PlacePoint ;
+            if(null != tabPlaceExternal.SecondPoint && null != tabPlaceExternal.FirstPoint)
+              direction = ( tabPlaceExternal.SecondPoint - tabPlaceExternal.FirstPoint ).Normalize() ;
+            break ;
+          }
+          case true :
+          {
+            uiDocument.Document.Delete( symbolInstance.Id ) ;
+            break ;
+          }
+        }
+      }
+      catch ( Exception exception ) {
+        TaskDialog.Show( "PECC2", exception.Message ) ;
+      }
+      finally {
+        dlg.Close();
+        tabPlaceExternal?.Dispose();
+      }
+
+      return ( placePoint, direction ) ;
+    }
+
+    private FamilyInstance GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType )
     {
       FamilyInstance instance;
       if ( ! string.IsNullOrEmpty( floorPlanType ) ) {

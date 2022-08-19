@@ -9,14 +9,31 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
     public class TabPlaceExternal : DrawExternalBase
     {
         private int _numberOfTabs ;
-        private readonly double _radius = 300d.MillimetersToRevitUnits() ;
+        private readonly double _radius ;
         private readonly UIDocument _uiDocument ;
 
-        public XYZ? Origin { get ; set ; }
+        private XYZ? _firstPoint ;
+        public XYZ? FirstPoint
+        {
+            get => _firstPoint ;
+            set
+            {
+                _firstPoint = value ;
+                if ( null == _firstPoint ) 
+                    return ;
+                
+                PlacePoint = new XYZ(_firstPoint.X, _firstPoint.Y, _firstPoint.Z) ;
+                DrawingServer.BasePoint = new XYZ( _firstPoint.X, _firstPoint.Y, _firstPoint.Z ) ;
+            }
+        }
         
-        public TabPlaceExternal( UIApplication uiApplication ) : base( uiApplication )
+        public XYZ? SecondPoint { get ; set ; }
+        public XYZ? PlacePoint { get ; set ; }
+        
+        public TabPlaceExternal( UIApplication uiApplication, double radius ) : base( uiApplication )
         {
             _uiDocument = uiApplication.ActiveUIDocument ;
+            _radius = radius ;
         }
 
         public override void DrawExternal()
@@ -39,29 +56,31 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             }
 
             if ( e.KeyChar == 32 ) {
-                _numberOfTabs++ ;
+                if(null == FirstPoint || null == SecondPoint)
+                    return;
                 
-                var nextPoint = new XYZ( DrawingServer.NextPoint!.X, DrawingServer.NextPoint.Y, DrawingServer.BasePoint!.Z ) ;
-                var direction = ( nextPoint - DrawingServer.BasePoint ).Normalize() ;
+                _numberOfTabs++ ;
+                var direction = ( SecondPoint - FirstPoint ).Normalize() ;
                     
                 switch ( _numberOfTabs % 3 ) {
                     case 0 :
-                        DrawingServer.BasePoint = Origin ;
+                        DrawingServer.BasePoint = FirstPoint ;
                         break ;
                     case 1 :
                     {
                         var transform = Transform.CreateTranslation( direction.CrossProduct( _uiDocument.ActiveView.ViewDirection ) * _radius ) ;
-                        DrawingServer.BasePoint = transform.OfPoint( Origin ) ;
+                        DrawingServer.BasePoint = transform.OfPoint( FirstPoint ) ;
                         break ;
                     }
                     default :
                     {
                         var transform = Transform.CreateTranslation( direction.CrossProduct( _uiDocument.ActiveView.ViewDirection ).Negate() * _radius ) ;
-                        DrawingServer.BasePoint = transform.OfPoint( Origin ) ;
+                        DrawingServer.BasePoint = transform.OfPoint( FirstPoint ) ;
                         break ;
                     }
                 }
 
+                PlacePoint = new XYZ( DrawingServer.BasePoint.X, DrawingServer.BasePoint.Y, DrawingServer.BasePoint.Z ) ;
                 DrawExternal() ;
                 UIApplication.ActiveUIDocument.RefreshActiveView();
             }
@@ -74,6 +93,18 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             }
 
             e.Handled = false ;
+        }
+
+        public override void OnMouseActivity( object sender, MouseEventArgs e )
+        {
+            var topWindow = GetActiveWindow() ;
+            if ( RevitWindow != topWindow )
+                return;
+
+            var currPoint = GetMousePoint();
+            DrawingServer.NextPoint = currPoint ;
+            DrawExternal();
+            _uiDocument.RefreshActiveView();
         }
     }
 }
