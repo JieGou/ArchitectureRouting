@@ -949,7 +949,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var height = heightCurrentLevel - heightPreviousLevel ;
         
         foreach ( var importDwgMappingModelGroup in importDwgMappingModelsGroups[i] ) {
-          var importDwgModel = new ImportDwgMappingModel(importDwgMappingModelGroup.Id ,importDwgMappingModelGroup.FileName, importDwgMappingModelGroup.FloorName, importDwgMappingModelGroup.FloorHeight,
+          var importDwgModel = new ImportDwgMappingModel(importDwgMappingModelGroup.Id ,importDwgMappingModelGroup.FullFilePath, importDwgMappingModelGroup.FloorName, importDwgMappingModelGroup.FloorHeight,
             importDwgMappingModelGroup.Scale, height ) { IsEnabled = importDwgMappingModelGroup.IsEnabled } ;
           result.Add( importDwgModel );
         }
