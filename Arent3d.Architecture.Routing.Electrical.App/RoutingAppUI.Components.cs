@@ -260,6 +260,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
+          [Button( typeof( EraseSelectedLimitRacksCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedLimitRacksCommandButton
+          {
+          }
+          
           [Button( typeof( RackSpaceCommand ), OnlyInitialized = true )]
           private static class RackGuidCommandButton
           {

@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.DetailCurve?.UniqueId ).ToList() ;
 
       document.Delete( detailLine.Id ) ;
-      foreach ( var lineId in rackNotationModel.OrtherLineId ) {
+      foreach ( var lineId in rackNotationModel.OtherLineIds ) {
         if ( document.GetElement( lineId ) is {} line ) {
           document.Delete( line.Id ) ;
         }
@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       foreach ( var rackNotation in rackNotationStorable.RackNotationModelData.Where( x =>
                  x.NotationId == textNote.UniqueId ) ) {
         rackNotation.EndLineLeaderId = endLineLeaderId ;
-        rackNotation.OrtherLineId = ortherLineId ;
+        rackNotation.OtherLineIds = ortherLineId ;
       }
 
       rackNotationStorable.Save() ;
