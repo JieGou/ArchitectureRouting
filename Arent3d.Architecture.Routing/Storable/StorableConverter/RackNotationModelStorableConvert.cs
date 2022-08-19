@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.Add( SerializeField.RackWidth, customTypeValue.RackWidth ) ;
       serializerObject.AddNonNull(SerializeField.EndLineLeaderId, customTypeValue.EndLineLeaderId ) ;
       serializerObject.Add(SerializeField.EndPoint, customTypeValue.EndPoint ) ;
-      serializerObject.AddNonNull(SerializeField.OrtherLineId, customTypeValue.OrtherLineId ) ;
+      serializerObject.AddNonNull(SerializeField.OrtherLineId, customTypeValue.OtherLineIds ) ;
 
       return serializerObject ;
     }

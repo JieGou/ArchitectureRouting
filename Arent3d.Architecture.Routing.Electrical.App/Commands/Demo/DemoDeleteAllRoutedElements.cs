@@ -68,12 +68,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
           notationModelData.EndLineLeaderId = string.Empty ;
         }
 
-        foreach ( var otherLineId in notationModelData.OrtherLineId ) {
+        foreach ( var otherLineId in notationModelData.OtherLineIds ) {
           if ( document.GetElement( otherLineId ) is { } otherLine )
             document.Delete( otherLine.Id ) ;
         }
 
-        notationModelData.OrtherLineId = new List<string>() ;
+        notationModelData.OtherLineIds = new List<string>() ;
       }
 
       rackNotationStorable.Save() ;
