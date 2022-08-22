@@ -18,6 +18,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.UI ;
 using System ;
 using System.Data ;
+using System.Globalization ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Autodesk.Revit.DB ;
 using MoreLinq.Extensions ;
@@ -117,7 +118,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly List<FileComboboxItemType> _oldFileItems ;
     public List<string> DeletedFloorName { get ; set ; }
     
-    private Dictionary<string, double> _oldValueFloor ;
+    private Dictionary<string, string> _oldValueFloor ;
 
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
 
@@ -153,7 +154,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _fileItems = new List<FileComboboxItemType>() ;
       _oldImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
       _oldFileItems = new List<FileComboboxItemType>() ;
-      _oldValueFloor = new Dictionary<string, double>() ;
+      _oldValueFloor = new Dictionary<string, string>() ;
       DeletedFloorName = new List<string>() ;
       Scale = scale ;
       GetImportDwgMappingModelsAndFileItems( defaultSettingStorable, activeViewName ) ;
@@ -171,6 +172,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _registrationOfBoardDataModelData = new List<RegistrationOfBoardDataModel>() ;
       GetCsvFiles( defaultSettingStorable ) ;
       InitOldValueFloor( defaultSettingStorable ) ;
+      
+      if ( ImportDwgMappingModels.Any() ) 
+      {
+        ImportDwgMappingModels[ 0 ].FloorHeightDisplay = "-" ;
+        ImportDwgMappingModels[ 0 ].IsEnabledFloorHeight = false ;
+      }
     }
 
     private void AddModelBelowCurrentSelectedRow( DataGrid dtGrid )
@@ -180,7 +187,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( index < 0 ) return ;
       var importDwgMappingModelExist = ImportDwgMappingModels[ index ] ;
       var importDwgMappingModel = new ImportDwgMappingModel( string.Empty, string.Empty, importDwgMappingModelExist.FloorHeight, Scale ) ;
-
+      
       _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay );
       ImportDwgMappingModels.Insert( index + 1, importDwgMappingModel ) ;
     }
@@ -189,7 +196,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void MoveUp( DataGrid dtGrid )
     {
       var index = dtGrid.SelectedIndex ;
-      if ( index <= 0 ) return ;
+      if ( index <= 1 ) return ;
       
       Swap( ImportDwgMappingModels, index, index - 1 ) ;
       var selectedIndex = index - 1 ;
@@ -201,7 +208,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void MoveDown( DataGrid dtGrid )
     {
       var index = dtGrid.SelectedIndex ;
-      if ( index == ImportDwgMappingModels.Count() - 1 ||  index < 0) return ;
+      if ( index == ImportDwgMappingModels.Count() - 1 ||  index <= 0) return ;
       
       Swap( ImportDwgMappingModels, index, index + 1 ) ;
       var selectedIndex =  index + 1 ;
@@ -230,9 +237,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _oldImportDwgMappingModels.Add( importDwgMappingModel ) ;
         ImportDwgMappingModels.Add( importDwgMappingModel ) ;
 
+        if ( item.FullFilePath == string.Empty ) continue ;
         var fileItem = new FileComboboxItemType( item.FullFilePath ) ;
         _oldFileItems.Add( fileItem ) ;
         FileItems.Add( fileItem ) ;
+
       }
     }
 
@@ -253,6 +262,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       DeleteFloorHeight( selectedItem );
       ImportDwgMappingModels.Remove( selectedItem ) ;
+      if ( ImportDwgMappingModels.Any() ) 
+      {
+        ImportDwgMappingModels[ 0 ].FloorHeightDisplay = "-" ;
+        ImportDwgMappingModels[ 0 ].IsEnabledFloorHeight = false ;
+      }
+     
       var itemToRemove = _oldImportDwgMappingModels.SingleOrDefault(r => r.Id == selectedItem.Id);
       if (itemToRemove != null)
         _oldImportDwgMappingModels.Remove(itemToRemove);
@@ -297,12 +312,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             ImportDwgMappingModels.Add( importDwgMappingModel ) ;
           }
         }
+        
         if( importDwgMappingModel != null ) _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay  );
       }
 
       ChangeNameIfDuplicate() ;
       UpdateDefaultFloorHeight() ;
       ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( CalculateFloorHeight(ImportDwgMappingModels) ) ;
+      if ( ImportDwgMappingModels.Any() ) 
+      {
+        ImportDwgMappingModels[ 0 ].FloorHeightDisplay = "-" ;
+        ImportDwgMappingModels[ 0 ].IsEnabledFloorHeight = false ;
+      }
     }
 
     private void ChangeNameIfDuplicate()
@@ -929,7 +950,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var importDwgMappingModels = defaultSettingStorable.ImportDwgMappingData ;
       foreach ( var importDwgMappingModel in importDwgMappingModels ) {
-        _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay );
+        _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay.ToString( CultureInfo.InvariantCulture ) );
       }
     }
     
@@ -967,7 +988,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ! _oldValueFloor.ContainsKey(selectedItem.Id )) return ;
       var importDwgMappingModelFloorHeightDisplay = _oldValueFloor[ selectedItem.Id ] ;
       
-      var deviant  = selectedItem.FloorHeightDisplay - importDwgMappingModelFloorHeightDisplay  ;
+      var deviant  = double.Parse( selectedItem.FloorHeightDisplay )  - double.Parse(importDwgMappingModelFloorHeightDisplay)  ;
       if ( Math.Abs( deviant ) == 0 ) return ;
 
       var importDwgMappingModel = ImportDwgMappingModels.SingleOrDefault( x => x.Id == selectedItem.Id ) ;
@@ -997,7 +1018,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         };
         if ( i == selectedIndex ) continue ;
         var newImportDwgMappingModel = ImportDwgMappingModels[ i ] ;
-        newImportDwgMappingModel.FloorHeight = newImportDwgMappingModel.FloorHeightDisplay + newImportDwgMappingModels.Last().FloorHeight ;
+        newImportDwgMappingModel.FloorHeight = double.Parse( newImportDwgMappingModel.FloorHeightDisplay ) + newImportDwgMappingModels.Last().FloorHeight ;
         newImportDwgMappingModels.Add( newImportDwgMappingModel );
 
       }
@@ -1016,7 +1037,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         };
         var newImportDwgMappingModel = ImportDwgMappingModels[ i ] ;
         var lastNewImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
-        newImportDwgMappingModel.FloorHeight = newImportDwgMappingModel.FloorHeightDisplay + (lastNewImportDwgMappingModel?.FloorHeight ?? 0);
+        double value = 0.0 ;
+        if ( ! double.TryParse( newImportDwgMappingModel.FloorHeightDisplay, out value ) ) return ;
+        newImportDwgMappingModel.FloorHeight = value + (lastNewImportDwgMappingModel?.FloorHeight ?? 0);
         newImportDwgMappingModels.Add( newImportDwgMappingModel );
 
       }

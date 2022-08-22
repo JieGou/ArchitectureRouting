@@ -115,6 +115,12 @@
                                 </Style>
                             </DataGridTextColumn.EditingElementStyle>
                             
+                            <DataGridTextColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsEnabledFloorHeight}" />
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                            
                             <DataGridTextColumn.Binding>
                                 <Binding Path="FloorHeightDisplay" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />

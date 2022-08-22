@@ -164,11 +164,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       foreach ( var item in importDwgMappingModels ) {
         var oldImportDwgMappingModel = defaultSettingStorable.ImportDwgMappingData.SingleOrDefault( i => i.FloorName == item.FloorName ) ;
+        double value = 0.0 ;
+        double.TryParse( item.FloorHeightDisplay, out value ) ;
         if ( oldImportDwgMappingModel == null ) {
-          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, item.FloorHeightDisplay ) ) ;
+          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, value ) ) ;
         }
         else {
-          oldImportDwgMappingModel.FloorHeightDisplay = item.FloorHeightDisplay ;
+          oldImportDwgMappingModel.FloorHeightDisplay = value ;
           oldImportDwgMappingModel.FloorHeight = item.FloorHeight ;
           oldImportDwgMappingModel.Scale = item.Scale ;
         }
