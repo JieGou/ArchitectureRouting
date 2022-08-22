@@ -115,8 +115,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( arc.IsClosed ) {
             var newEllipse = new System.Windows.Shapes.Ellipse() { Stroke = new SolidColorBrush( Colors.Green ), StrokeThickness = 2, Width = newDiameter, Height = newDiameter } ;
 
-            Canvas.SetTop( newEllipse, offsetY + centerY * scaleOfArc - newDiameter / 2 ) ;
-            Canvas.SetLeft( newEllipse, offsetX + centerX * scaleOfArc - newDiameter / 2 ) ;
+            Canvas.SetTop( newEllipse, offsetY + centerY * scaleOfArc - newDiameter * 0.5 ) ;
+            Canvas.SetLeft( newEllipse, offsetX + centerX * scaleOfArc - newDiameter * 0.5 ) ;
             canvasPanel.Children.Add( newEllipse ) ;
           }
           else {
@@ -124,7 +124,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var secondPoint = arc.GetEndPoint( 1 ) ;
             var startPoint = new Point( firstPoint.X.RevitUnitsToMillimeters() * scaleOfArc, firstPoint.Y.RevitUnitsToMillimeters() * scaleOfArc ) ;
             var endPoint = new Point( secondPoint.X.RevitUnitsToMillimeters() * scaleOfArc, secondPoint.Y.RevitUnitsToMillimeters() * scaleOfArc ) ;
-            var arcSegment = new ArcSegment( endPoint, new Size( newDiameter / 2, newDiameter / 2 ), 0, false, SweepDirection.Clockwise, true ) ;
+            var arcSegment = new ArcSegment( endPoint, new Size( newDiameter * 0.5, newDiameter * 0.5 ), 0, false, SweepDirection.Clockwise, true ) ;
             var segments = new PathSegmentCollection { arcSegment } ;
             var figure = new PathFigure( startPoint, segments, false ) ;
             var figures = new PathFigureCollection { figure } ;
@@ -228,8 +228,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return maxLength switch
       {
         >= 15 => 30 / maxLength,
-        >= 6 => scale / 4,
-        >= 4 => scale / 2,
+        >= 6 => scale * 0.25,
+        >= 4 => scale * 0.5,
         _ => scale
       } ;
     }
@@ -245,8 +245,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return maxLength switch
       {
         >= 15 => 30 / maxLength,
-        >= 5 => scale / 4,
-        >= 3 => scale / 2,
+        >= 5 => scale * 0.25,
+        >= 3 => scale * 0.5,
         _ => scale
       } ;
     }
@@ -264,8 +264,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return maxLength switch
       {
         >= 15 => 30 / maxLength,
-        >= 6 => scale / 4,
-        >= 4 => scale / 2,
+        >= 6 => scale * 0.25,
+        >= 4 => scale * 0.5,
         _ => scale
       } ;
     }
@@ -276,9 +276,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         case > 15 :
           return 30 / diameter ;
         case > 5 :
-          return scale / 4 ;
+          return scale * 0.25 ;
         case > 3 :
-          return scale / 2 ;
+          return scale * 0.5 ;
         default :
           return scale ;
       }
