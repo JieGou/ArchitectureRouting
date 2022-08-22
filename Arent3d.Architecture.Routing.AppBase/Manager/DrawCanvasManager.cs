@@ -21,14 +21,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public static Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol, string condition )
     {
       const double scale = 15 ;
-      const double defaultOffset = 40 ;
+      const double defaultOffset = 20 ;
       var rotateTransform = new RotateTransform( 90, 0, 0 ) ;
       Canvas canvasPanel = new() { Background = new SolidColorBrush( Colors.Black ), Width = 245, Height = 100 } ;
+      var offsetX= defaultOffset * 5 ;
+      var offsetY= defaultOffset * 2 ;
+      var minX = defaultOffset ;
+      var minY = defaultOffset ;
+      var scaleOfLine = scale ;
+      if ( lines.Any() || arcs.Any() || polyLines.Any() ) {
+        ( minX, minY ) = GetMinPoint( polyLines, lines, arcs ) ;
+      }
       try {
-        var scaleOfLine = scale ;
-        var (minX, minY) = GetMinPoint( polyLines, lines, arcs ) ;
-        var offsetX= defaultOffset ;
-        var offsetY= defaultOffset ;
         if ( polyLines.Any() ) {
           foreach ( var polyline in polyLines ) {
             var pointsOfPolyLine = new PointCollection() ;
@@ -36,7 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             if ( polyline == polyLines.First() ) {
               scaleOfLine = lines.Any() ? GetScale( polyLines, lines, scale ) : GetScale( points, scale ) ;
               offsetX -= minX * scaleOfLine ; 
-              offsetY = minY == 0 ? defaultOffset + scaleOfLine * 2 : defaultOffset - minY * scaleOfLine ;
+              offsetY = minY == 0 ? offsetY + scaleOfLine * 2 : offsetY - minY * scaleOfLine ;
             }
 
             foreach ( var point in points ) {
@@ -150,20 +154,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           Text = floorPlanSymbol, 
           Foreground = Brushes.Green
         } ;
-        Canvas.SetTop( txtFloorPlanSymbol, defaultOffset ) ;
-        Canvas.SetLeft( txtFloorPlanSymbol, defaultOffset ) ;
+        Canvas.SetTop( txtFloorPlanSymbol, offsetY ) ;
+        Canvas.SetLeft( txtFloorPlanSymbol, offsetX ) ;
         canvasPanel.Children.Add( txtFloorPlanSymbol ) ;
       }
 
       var text = condition == MallCondition ? deviceSymbol + MoSymbol : deviceSymbol ;
       TextBlock txt = new()
       {
-        FontSize = 19, 
+        FontSize = 20, 
         Text = text, 
-        Foreground = Brushes.White
+        Foreground = Brushes.White,
+        Width = 20 * text.Length,
+        TextAlignment = TextAlignment.Center
       } ;
+      
+      var leftOffset = polyLines.Any() && minY == 0 ? offsetX - txt.Width * 0.5 - scaleOfLine : offsetX - txt.Width * 0.5 ;
       Canvas.SetTop( txt, 5 ) ;
-      Canvas.SetLeft( txt, 20 ) ;
+      Canvas.SetLeft( txt, leftOffset ) ;
       canvasPanel.Children.Add( txt ) ;
 
       return canvasPanel ;

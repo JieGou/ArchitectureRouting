@@ -277,7 +277,7 @@
             <StackPanel DockPanel.Dock="Left" Margin="20, 0" Width="260" >
                 <Label Content="プレビュー" FontWeight="Bold" />
                 <ListView ItemsSource="{Binding PreviewList}" Height="608"
-                          ScrollViewer.HorizontalScrollBarVisibility="Auto" 
+                          ScrollViewer.HorizontalScrollBarVisibility="Hidden" 
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                           ScrollViewer.CanContentScroll="True" 
                           MouseDoubleClick="PreviewListMouseDoubleClick" >
