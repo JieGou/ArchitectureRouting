@@ -82,7 +82,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 
                 PlacePoint = new XYZ( DrawingServer.BasePoint.X, DrawingServer.BasePoint.Y, DrawingServer.BasePoint.Z ) ;
                 DrawExternal() ;
-                UIApplication.ActiveUIDocument.RefreshActiveView();
+                _uiDocument.RefreshActiveView();
             }
             else if ( e.KeyChar == 27 ) {
                 DrawingServer.BasePoint = null ;
