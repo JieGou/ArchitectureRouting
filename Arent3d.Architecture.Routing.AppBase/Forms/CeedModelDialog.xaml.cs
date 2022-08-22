@@ -24,16 +24,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       rowStyle.Setters.Add( new EventSetter( PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
       ViewModel.DtGrid = DtGrid ;
+      if ( ViewModel.IsExistUsingCode ) {
+        CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
+      }
     }
 
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
-      ViewModel.Load() ;
+      ViewModel.Load( CbShowOnlyUsingCode ) ;
       if ( CbShowDiff.IsChecked == false ) {
         CbShowDiff.IsChecked = true ;
       }
 
       BtnReplaceSymbol.IsEnabled = false ;
+    }
+    
+    private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
+    {
+      ViewModel.LoadUsingCeedModel( CbShowOnlyUsingCode ) ;
     }
 
     private void CmbKeyDown( object sender, KeyEventArgs e )
@@ -61,6 +69,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void ShowOnlyUsingCode_UnChecked( object sender, RoutedEventArgs e )
     {
       ViewModel.UnShowOnlyUsingCode() ;
+    }
+    
+    private void ShowInstrumentationFigureCode_Checked( object sender, RoutedEventArgs e )
+    {
+      ViewModel.ShowInstrumentationFigureCode() ;
     }
 
     private void Row_MouseLeftButtonUp( object sender, MouseButtonEventArgs e )

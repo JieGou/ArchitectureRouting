@@ -39,12 +39,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class CeedViewModel : NotifyPropertyChanged
   {
     private const string LegendDisplay = "○" ;
+    private const string LegendNoDisplay = "×" ;
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     private readonly Document _document ;
     private readonly ExternalCommandData _commandData ;
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
     private List<CeedModel> _previousCeedModels ;
+    private List<CeedModel> _instrumentationFigureCeedModel ;
     private readonly StorageService<Level, CeedUserModel> _storageService ;
     private List<string> _ceedModelNumberOfPreviewCategories ;
     private readonly List<CanvasChildInfo> _canvasChildInfos ;
@@ -125,11 +127,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public bool IsShowOnlyUsingCode { get ; set ; }
+    private bool _isShowOnlyUsingCode ;
+
+    public bool IsShowOnlyUsingCode
+    {
+      get => _isShowOnlyUsingCode ;
+      set
+      {
+        _isShowOnlyUsingCode = value ;
+        OnPropertyChanged();
+      }
+    }
 
     public bool IsShowDiff { get ; set ; }
 
     public bool IsExistUsingCode { get ; set ; }
+
+    private bool _isShowInstrumentationFigureCode ;
+
+    public bool IsShowInstrumentationFigureCode
+    {
+      get => _isShowInstrumentationFigureCode ;
+      set
+      {
+        _isShowInstrumentationFigureCode = value ;
+        OnPropertyChanged();
+      }
+    }
 
     public CeedModel? SelectedCeedModel { get ; set ; }
     public string? SelectedDeviceSymbol { get ; set ; }
@@ -268,6 +292,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _ceedModels = new List<CeedModel>() ;
         _usingCeedModel = new List<CeedModel>() ;
         _previousCeedModels = new List<CeedModel>() ;
+        _instrumentationFigureCeedModel = new List<CeedModel>() ;
         _previewList = new ObservableCollection<PreviewListInfo>() ;
         Categories = new ObservableCollection<CategoryModel>() ;
         CategoriesPreview = new ObservableCollection<CategoryModel>() ;
@@ -284,6 +309,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         IsShowCeedModelNumber = _storageService.Data.IsShowCeedModelNumber ;
         IsShowCondition = _storageService.Data.IsShowCondition ;
         IsShowOnlyUsingCode = _storageService.Data.IsShowOnlyUsingCode ;
+        IsShowInstrumentationFigureCode = _storageService.Data.IsShowInstrumentationFigureCode ;
+        _instrumentationFigureCeedModel = new List<CeedModel>() ;
         AddModelNumber( _ceedModels ) ;
         if ( _usingCeedModel.Any() )
           IsExistUsingCode = true ;
@@ -322,10 +349,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ResetSelectedCategory( CategoriesPreview ) ;
     }
 
-    public static List<CeedModel> GetUsingCeedModel( IEnumerable<CeedModel> ceedModels )
+    private List<CeedModel> GetInstrumentationFigureCeedModel()
     {
-      var usingCeedModel = ceedModels.Where( c => c.LegendDisplay == LegendDisplay ).ToList() ;
-      return usingCeedModel ;
+      var instrumentationFigureCeedModel = _ceedModels.Where( c => c.LegendDisplay == LegendDisplay ).ToList() ;
+      return instrumentationFigureCeedModel ;
     }
 
     private void AddModelNumber( IReadOnlyCollection<CeedModel> ceedModels )
@@ -426,7 +453,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private void ShowCeedModelAndPreviewByCategory( CategoryModel categoryModel, bool isCategoryWithCeedCode )
     {
-      var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
+      var data = IsShowOnlyUsingCode ? _usingCeedModel : ( IsShowInstrumentationFigureCode ? _instrumentationFigureCeedModel : _ceedModels ) ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
       var ceedCodeNumbers = categoryModel.CeedCodeNumbers.Select( c => c.Name ) ;
@@ -460,7 +487,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return newCeedModels ;
     }
 
-    public void Load()
+    public void Load( CheckBox checkBox )
     {
       MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
       OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
@@ -485,15 +512,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _previousCeedModels = new List<CeedModel>( CeedModels ) ;
         CheckChangeColor( ceedModelData ) ;
         ceedStorable.CeedModelData = ceedModelData ;
-        ceedStorable.CeedModelUsedData = GetUsingCeedModel( ceedModelData ) ;
+        ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
         ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithCeedCode ) ;
         ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithoutCeedCode ) ;
         Categories = new ObservableCollection<CategoryModel>( categoriesWithCeedCode ) ;
         CategoriesPreview = new ObservableCollection<CategoryModel>( categoriesWithoutCeedCode ) ;
         _ceedModelNumberOfPreviewCategories = CategoryModel.GetCeedModelNumbers( ceedStorable.CategoriesWithoutCeedCode ) ;
         _storageService.Data.IsShowOnlyUsingCode = false ;
-        LoadData( ceedStorable ) ;
+        _storageService.Data.IsShowInstrumentationFigureCode = false ;
+        checkBox.Visibility = Visibility.Hidden ;
+        checkBox.IsChecked = false ;
         IsShowOnlyUsingCode = false ;
+        IsShowInstrumentationFigureCode = false ;
+        LoadData( ceedStorable ) ;
 
         try {
           using Transaction t = new( _document, "Save data" ) ;
@@ -525,6 +556,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _storageService.Data.IsShowCondition = IsShowCondition ;
         _storageService.Data.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
         _storageService.Data.IsDiff = IsShowDiff ;
+        _storageService.Data.IsShowInstrumentationFigureCode = IsShowInstrumentationFigureCode ;
         _storageService.SaveChange() ;
         t.Commit() ;
       }
@@ -534,7 +566,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public void Search()
     {
-      var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
+      var data = IsShowOnlyUsingCode ? _usingCeedModel : ( IsShowInstrumentationFigureCode ? _instrumentationFigureCeedModel : _ceedModels ) ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
       data = GroupCeedModelsByCeedModelNumber( data ) ;
@@ -578,11 +610,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           usingCeedModel.AddRange( ceedModels ) ;
         }
 
+        var ceedModelsNoDisplay = _ceedModels.Where( c => c.LegendDisplay == LegendNoDisplay ) ;
+        usingCeedModel.AddRange( ceedModelsNoDisplay ) ;
+
         usingCeedModel = usingCeedModel.Distinct().ToList() ;
         _usingCeedModel = usingCeedModel ;
         LoadData( _usingCeedModel ) ;
         checkBox.Visibility = Visibility.Visible ;
         checkBox.IsChecked = true ;
+        IsShowInstrumentationFigureCode = false ;
 
         if ( ! _usingCeedModel.Any() ) return ;
         try {
@@ -590,6 +626,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           t.Start() ;
           ceedStorable.CeedModelUsedData = _usingCeedModel ;
           _storageService.Data.IsShowOnlyUsingCode = true ;
+          _storageService.Data.IsShowInstrumentationFigureCode = false ;
           ceedStorable.Save() ;
           _storageService.SaveChange();
           t.Commit() ;
@@ -624,6 +661,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void ShowOnlyUsingCode()
     {
       if ( ! _usingCeedModel.Any() ) return ;
+      IsShowInstrumentationFigureCode = false ;
       LoadData( _usingCeedModel ) ;
     }
 
@@ -631,6 +669,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       if ( ! _ceedModels.Any() ) return ;
       LoadData( _ceedModels ) ;
+    }
+    
+    public void ShowInstrumentationFigureCode()
+    {
+      _instrumentationFigureCeedModel = GetInstrumentationFigureCeedModel() ;
+      IsShowOnlyUsingCode = false ;
+      LoadData( _instrumentationFigureCeedModel ) ;
     }
 
     private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName )
@@ -994,7 +1039,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       PreviewList.Clear() ;
       if ( ceedModel == null ) return ;
-      var ceedModels = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
+      var ceedModels = IsShowOnlyUsingCode ? _usingCeedModel : ( IsShowInstrumentationFigureCode ? _instrumentationFigureCeedModel : _ceedModels ) ;
       ceedModels = GetCeedModels( ceedModels ) ;
       if ( ! ceedModels.Any() ) return ;
       CreatePreviewList( ceedModels ) ;
