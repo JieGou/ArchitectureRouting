@@ -31,6 +31,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string grade3 = "グレード3" ;
       
       var doc = commandData.Application.ActiveUIDocument.Document ;
+      if ( doc.ActiveView is not ViewPlan ) {
+        TaskDialog.Show( "Arent", "This view is not the view plan!" ) ;
+        return Result.Cancelled ;
+      }
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
 
       var defaultConstructionItem = doc.GetDefaultConstructionItem() ;
