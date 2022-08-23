@@ -73,7 +73,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private Result SwitchModeForProject( Document document, ref string message, bool isEcoMode )
     {
       var conduitList = GetAllConduitInProject( document ) ;
-      var connectorList = document.GetAllElements<FamilyInstance>().OfCategory(BuiltInCategorySets.OtherElectricalElements).ToList() ;
+      var connectorList = document.GetAllElements<FamilyInstance>().OfCategory(BuiltInCategorySets.OtherElectricalElements) ;
       using var transaction = new Transaction( document, TransactionName ) ;
       transaction.Start() ;
       var failureOptions = transaction.GetFailureHandlingOptions() ;
@@ -118,11 +118,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;
     }
 
-    private void SetModeForConnector( IList<FamilyInstance> elements, bool isEcoMode)
+    private void SetModeForConnector( IEnumerable<FamilyInstance> elements, bool isEcoMode)
     {
-      if ( !elements.Any()) 
-        return ;
-      
       foreach ( var connector in elements ) {
         if(connector.HasParameter(ElectricalRoutingElementParameter.IsEcoMode))
           connector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;

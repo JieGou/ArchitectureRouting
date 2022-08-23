@@ -35,11 +35,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         var result = uiDocument.Document.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
         {
-          var point = uiDocument.Selection.PickPoint( StatusPrompt ) ;
+          var selectedPoint = uiDocument.Selection.PickPoint( StatusPrompt ) ;
           var level = uiDocument.ActiveView.GenLevel ;
           var heightOfConnector = uiDocument.Document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-          var elementFromToPower = GenerateConnector( uiDocument, point.X, point.Y, heightOfConnector, level, viewModel.IsFromPowerConnector ) ;
-          var elementConnectorPower = GeneratePowerConnector( uiDocument, point.X, point.Y - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
+          var elementFromToPower = GenerateConnector( uiDocument, selectedPoint.X, selectedPoint.Y, heightOfConnector, level, viewModel.IsFromPowerConnector ) ;
+          var elementConnectorPower = GeneratePowerConnector( uiDocument, selectedPoint.X, selectedPoint.Y - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
 
           var registrationCode = viewModel.IsFromPowerConnector ? viewModel.CellSelectedAutoControlPanel! : viewModel.CellSelectedSignalDestination! ;
           var deviceSymbol = viewModel.IsFromPowerConnector ? viewModel.CellSelectedAutoControlPanel : viewModel.CellSelectedSignalDestination ;
@@ -59,7 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
             
             var deviceSymbolTagType = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-            IndependentTag.Create( uiDocument.Document, deviceSymbolTagType.Id, uiDocument.Document.ActiveView.Id, new Reference( familyInstanceConnectorPower ), false, TagOrientation.Horizontal, new XYZ(point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * uiDocument.ActiveView.Scale, heightOfConnector) ) ;
+            IndependentTag.Create( uiDocument.Document, deviceSymbolTagType.Id, uiDocument.Document.ActiveView.Id, new Reference( familyInstanceConnectorPower ), false, TagOrientation.Horizontal, new XYZ(selectedPoint.X, selectedPoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * uiDocument.ActiveView.Scale, heightOfConnector) ) ;
           }
           
           return Result.Succeeded ;

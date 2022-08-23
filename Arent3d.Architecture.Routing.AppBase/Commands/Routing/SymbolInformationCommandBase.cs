@@ -48,9 +48,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           if ( symbolInstance?.Location is LocationPoint locationPoint) {
             point = locationPoint.Point ;
-            symbolModel = symbolStorages.FirstOrDefault( x => x.SymbolUniqueId == symbolInstance.UniqueId ) ;
-            if(!string.IsNullOrEmpty(symbolModel?.TagUniqueId))
-              tag = uiDocument.Document.GetElement(symbolModel!.TagUniqueId) as IndependentTag;
+            symbolModel = symbolStorages.First( x => x.SymbolUniqueId == symbolInstance.UniqueId ) ;
+            if(!string.IsNullOrEmpty(symbolModel.TagUniqueId))
+              tag = uiDocument.Document.GetElement(symbolModel.TagUniqueId) as IndependentTag;
           }
         }
         else {
