@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
@@ -9,6 +10,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -21,8 +23,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, new PullPoxPickFilter() ) ;
-      var elementPullBox = document.GetElement( pickedPullBox?.ElementId ) ;
+      Reference? pickedPullBox ;
+      
+      try {
+        pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, new PullPoxPickFilter() ) ;
+      }
+      catch ( OperationCanceledException  ) {
+        return OperationResult<PickState>.Cancelled ;
+      }
+
+      if ( pickedPullBox == null ) {
+        MessageBox.Show( @"Please select pull box elements" ) ;
+        return OperationResult<PickState>.Failed ;
+      }
+      
+      var elementPullBox = document.GetElement( pickedPullBox.ElementId ) ;
       
       //Get information to reroute
       var routes = document.CollectRoutes( GetAddInType()) ;
@@ -35,7 +50,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
       var (routesRelatedPullBox, elementPullBox, routeNameDictionary) = pickState ;
-      foreach ( var route in routesRelatedPullBox ) {
+      var routesRelatedPullBoxWithMultiConnectors = routesRelatedPullBox.Where( r => r.GetAllConnectors().Count() > 1 ).ToList() ;
+      foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
         if ( routeNameDictionary.ContainsKey( route.Name ) ) continue ;
 
         var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == route.Name );
@@ -46,18 +62,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           routeNameDictionary.Add( route.Name, representativeRouteName! ) ;
       }
       
-      var routeRecords = GetRelatedBranchSegments( routesRelatedPullBox.FirstOrDefault(x=>x.RouteSegments.Count() > 1) ).ToList() ;
-      
-      var diameter = routesRelatedPullBox.First().UniqueDiameter ;
-      var classificationInfo = routesRelatedPullBox.First().GetSystemClassificationInfo() ;
-      var systemType = routesRelatedPullBox.First().GetMEPSystemType() ;
-      var curveType = routesRelatedPullBox.First().UniqueCurveType ;
+      var routeRecords = GetRelatedBranchSegments( routesRelatedPullBoxWithMultiConnectors.Where(x=>x.RouteSegments.Count() > 1 ).ToList() ).ToList() ;
+
+      var diameter = routesRelatedPullBoxWithMultiConnectors.First().UniqueDiameter ;
+      var classificationInfo = routesRelatedPullBoxWithMultiConnectors.First().GetSystemClassificationInfo() ;
+      var systemType = routesRelatedPullBoxWithMultiConnectors.First().GetMEPSystemType() ;
+      var curveType = routesRelatedPullBoxWithMultiConnectors.First().UniqueCurveType ;
       var radius = diameter * 0.5 ;
-      var isRoutingOnPipeSpace = routesRelatedPullBox.First().UniqueIsRoutingOnPipeSpace ?? false ;
-      var avoidType = routesRelatedPullBox.First().UniqueAvoidType ?? AvoidType.Whichever ;
-      var shaftElementUniqueId = routesRelatedPullBox.First().UniqueShaftElementUniqueId ;
-      var fromFixedHeight = routesRelatedPullBox.First().UniqueFromFixedHeight ;
-      var toFixedHeight = routesRelatedPullBox.First().UniqueToFixedHeight ;
+      var isRoutingOnPipeSpace = routesRelatedPullBoxWithMultiConnectors.First().UniqueIsRoutingOnPipeSpace ?? false ;
+      var avoidType = routesRelatedPullBoxWithMultiConnectors.First().UniqueAvoidType ?? AvoidType.Whichever ;
+      var shaftElementUniqueId = routesRelatedPullBoxWithMultiConnectors.First().UniqueShaftElementUniqueId ;
+      var fromFixedHeight = routesRelatedPullBoxWithMultiConnectors.First().UniqueFromFixedHeight ;
+      var toFixedHeight = routesRelatedPullBoxWithMultiConnectors.First().UniqueToFixedHeight ;
+
+      #region Special case: Pull box at the end of branch route
+
+      if ( ! routeRecords.Any() && routesRelatedPullBox.Any( r => r.GetAllConnectors().Count() == 1 ) ) {
+        var routeSegmentsWithName = routesRelatedPullBox.ToSegmentsWithName().ToList() ;
+        var endPointsOfBranchRouteSegments = GetEndpointsOfBranchRouteSegmentsCrossPullBox( routeSegmentsWithName, elementPullBox ) ;
+
+        foreach ( var (routeName, segment) in routeSegmentsWithName )
+          if ( endPointsOfBranchRouteSegments.ContainsKey( routeName ) &&
+               routeRecords.All( x => x.RouteName != routeName ) )
+            routeRecords.Add( ( routeName,
+              new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType,
+                endPointsOfBranchRouteSegments[ routeName ].FromEndPoint!,
+                endPointsOfBranchRouteSegments[ routeName ].ToEndPoint!, diameter, isRoutingOnPipeSpace,
+                fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+      }
+
+      #endregion
 
       // init result route
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
@@ -66,7 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       result.AddRange( GetSelectedRouteSegments( document, routesRelatedPullBox ) );
 
       var endPointsOfRouteSegmentsCrossPullBox = new Dictionary<string, (IEndPoint? FromEndPoint, IEndPoint? ToEndPoint)>() ;
-      foreach ( var route in routesRelatedPullBox ) {
+      foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
         var routeSegments = route.RouteSegments ;
 
         foreach ( var routeSegment in routeSegments ) {
@@ -79,7 +113,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      foreach ( var route in routesRelatedPullBox ) {
+      foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
         var routeSegments = route.RouteSegments ;
 
         foreach ( var routeSegment in routeSegments ) {
@@ -99,7 +133,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       var routeSegmentsGroup = new Dictionary<string, List<RouteSegment>>() ;
-      foreach ( var route in routesRelatedPullBox ) {
+      foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
         var routeSegments = route.RouteSegments ;
         var routeName = route.Name ;
 
@@ -197,6 +231,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return result ;
     }
 
+    private static Dictionary<string, (IEndPoint? FromEndPoint, IEndPoint? ToEndPoint)> GetEndpointsOfBranchRouteSegmentsCrossPullBox( List<(string RouteName, RouteSegment Segment)> routeSegmentsWithName, Element elementPullBox )
+    {
+      var endPointsOfBranchRouteSegments = new Dictionary<string, (IEndPoint? FromEndPoint, IEndPoint? ToEndPoint)>() ;
+      foreach ( var (routeName, segment) in routeSegmentsWithName )
+        if ( segment.FromEndPoint.DisplayTypeName == PassPointBranchEndPoint.Type && segment.ToEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) {
+          if ( endPointsOfBranchRouteSegments.ContainsKey( routeName ) )
+            endPointsOfBranchRouteSegments[ routeName ] = ( segment.FromEndPoint, endPointsOfBranchRouteSegments[ routeName ].ToEndPoint ) ;
+          else
+            endPointsOfBranchRouteSegments.Add( routeName, ( segment.FromEndPoint, null ) ) ;
+        }
+        else if ( segment.FromEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) {
+          var routeNameArray = routeName.Split( '_' ) ;
+          var familyRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+          var endPointsOfBranchRouteSegment = endPointsOfBranchRouteSegments.FirstOrDefault( e =>
+          {
+            var rNameArray = e.Key.Split( '_' ) ;
+            var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+            return familyRouteName == rName ;
+          } ) ;
+          if ( ! string.IsNullOrEmpty( endPointsOfBranchRouteSegment.Key ) )
+            endPointsOfBranchRouteSegments[ endPointsOfBranchRouteSegment.Key ] = ( endPointsOfBranchRouteSegments[ endPointsOfBranchRouteSegment.Key ].FromEndPoint, segment.ToEndPoint ) ;
+          else
+            endPointsOfBranchRouteSegments.Add( familyRouteName, ( null, segment.ToEndPoint ) ) ;
+        }
+
+      return endPointsOfBranchRouteSegments.Where( e => e.Value.FromEndPoint != null && e.Value.ToEndPoint != null )
+        .ToDictionary( e => e.Key, e => e.Value ) ;
+    }
+
     private RouteSegment FirstRouteSegment(List<RouteSegment> routeSegments)
     {
       return routeSegments.First( x => x.FromEndPoint is ConnectorEndPoint) ;
@@ -225,14 +288,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return fromEndPointKey ;
     }
     
-    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetRelatedBranchSegments( Route? route )
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetRelatedBranchSegments( List<Route> routes )
     {
-      if ( route == null) {
-        return new List<(string RouteName, RouteSegment Segment)>() ;
-      }
       // add all related branches
-      var relatedBranches = route.GetAllRelatedBranches() ;
-      relatedBranches.Remove( route ) ;
+      var relatedBranches = routes.SelectMany( r => r.GetAllRelatedBranches() ).ToList() ;
+      routes.ForEach( r => relatedBranches.Remove( r )) ;
       return relatedBranches.ToSegmentsWithName() ;
     }
     
@@ -265,14 +325,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return recreatedRoutes.ToSegmentsWithName().EnumerateAll() ;
     }
     
-    private IEnumerable<Route> GetRouteRelatedPullBox( IEnumerable<Route> routes, Element pickedPullBox)
+    private IEnumerable<Route> GetRouteRelatedPullBox( IEnumerable<Route> routes, Element pickedPullBox )
     {
       foreach ( var route in routes ) {
         var connectorsOfRoute = route.GetAllConnectors().ToList() ;
-
-        if ( connectorsOfRoute.Any( x => x.Owner.UniqueId == pickedPullBox.UniqueId )  && connectorsOfRoute.Count() > 1) {
+        if ( connectorsOfRoute.Any( x => x.Owner.UniqueId == pickedPullBox.UniqueId ) )
           yield return route ;
-        }
       }
     }
     
