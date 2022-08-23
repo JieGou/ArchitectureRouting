@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
+using Autodesk.Revit.DB.Electrical ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -81,9 +82,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var curveType = route.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection ) ;
+      var allowedTiltedPiping = CheckAllowedTiltedPiping( route.GetAllConnectors().ToList() ) ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, null, allowedTiltedPiping ) ;
 
       return result ;
+    }
+
+    private bool CheckAllowedTiltedPiping( ICollection<Connector> connectors )
+    {
+      if ( ! connectors.Any() ) return false ;
+      foreach ( var connector in connectors ) {
+        var (x, y, z) = ( connector.Owner as FamilyInstance )!.FacingOrientation ;
+        if ( x is not ( 1 or -1 ) && y is not ( 1 or -1 ) && z is not ( 1 or -1 ) ) {
+          return true ;
+        }
+      }
+      
+      return false ;
     }
 
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
