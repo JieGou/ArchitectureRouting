@@ -368,13 +368,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ceedModel.ModelNumber.IndexOf( '\n' ) >= 0 ) {
           var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;
           foreach ( var modelNumber in modelNumbers ) {
-            if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber ) ;
+            if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber.Trim() ) ;
           }
         }
         else if ( ceedModel.ModelNumber.IndexOf( ',' ) >= 0 )  {
           var modelNumbers = ceedModel.ModelNumber.Split( ',' ) ;
           foreach ( var modelNumber in modelNumbers ) {
-            if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber ) ;
+            if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber.Trim() ) ;
           }
         }
         else {
@@ -387,7 +387,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ceedModel.GeneralDisplayDeviceSymbol.IndexOf( ',' ) >= 0 )  {
           var generalDisplayDeviceSymbols = ceedModel.GeneralDisplayDeviceSymbol.Split( ',' ) ;
           foreach ( var generalDisplayDeviceSymbol in generalDisplayDeviceSymbols ) {
-            if ( ! DeviceSymbols.Contains( generalDisplayDeviceSymbol ) ) DeviceSymbols.Add( generalDisplayDeviceSymbol ) ;
+            if ( ! DeviceSymbols.Contains( generalDisplayDeviceSymbol ) ) DeviceSymbols.Add( generalDisplayDeviceSymbol.Trim() ) ;
           }
         }
         else {
