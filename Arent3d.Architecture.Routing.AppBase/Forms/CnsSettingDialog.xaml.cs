@@ -404,7 +404,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       {
         MessageBox.Show( @" 入力された工事項目名称が正しくありません。次のいずれかを確認してください。" + "\n" 
                                                                    + @"・名前が31文字以上になっている。" + "\n" 
-                                                                   + @"・ふさわしくない文字が入っている「：」「/」など。" + "\n" 
+                                                                   + @"・ふさわしくない文字が入っている ： \ / ? * ' ] or [ " + "\n" 
                                                                    + @"・名前が空白になっている。" , "Error") ;
         return false ;
       }
