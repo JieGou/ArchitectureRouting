@@ -78,6 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( ! IsValidConstructionItemName(input) ) {
           _editingRowIndex = e.Row.GetIndex() ;
           _isEditModel = false ;
+          grdCategories.ItemsSource.Cast<CnsSettingModel>().ToList()[ _editingRowIndex ].CategoryName = string.Empty ;
           e.Cancel = true ;
           return ;
         }
@@ -390,24 +391,43 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private bool IsValidConstructionItemName(string? input = null)
     {
+      
       if ( input == null ) 
       {
         var selectedItem = ( (CnsSettingModel?) grdCategories.SelectedItem ) ;
         if ( selectedItem == null ) return true ;
-        input = grdCategories.ItemsSource.Cast<CnsSettingModel>().ToList()[ selectedItem.Sequence - 1 ].CategoryName ;
-      }
-     
-      Match m = Regex.Match(input, @"[\[/\?\]\*\\:\']");
-      bool nameIsValid = ( ! m.Success && ( ! string.IsNullOrEmpty(input) ) && ( input.Length <= 31 ) );
+       
+        foreach ( var cnsSettingModel in grdCategories.ItemsSource.Cast<CnsSettingModel>() ) {
+          input = cnsSettingModel.CategoryName.Trim() ;
+          Match m = Regex.Match(input, @"[\[/\?\]\*\\:\']");
+          bool nameIsValid = ( ! m.Success && ( ! string.IsNullOrEmpty(input) ) && ( input.Length <= 31 ) );
       
-      if ( ! nameIsValid ) 
-      {
-        MessageBox.Show( @" 入力された工事項目名称が正しくありません。次のいずれかを確認してください。" + "\n" 
-                                                                   + @"・名前が31文字以上になっている。" + "\n" 
-                                                                   + @"・ふさわしくない文字が入っている ： \ / ? * ' ] or [ " + "\n" 
-                                                                   + @"・名前が空白になっている。" , "Error") ;
-        return false ;
+          if ( ! nameIsValid ) 
+          {
+            MessageBox.Show( @" 入力された工事項目名称が正しくありません。次のいずれかを確認してください。" + "\n" 
+                                                                       + @"・名前が31文字以上になっている。" + "\n" 
+                                                                       + @"・ふさわしくない文字が入っている ： \ / ? * ' ] or [ " + "\n" 
+                                                                       + @"・名前が空白になっている。" , "Error") ;
+            return false ;
+          }
+        }
       }
+      else 
+      {
+        input = input.Trim() ;
+        Match m = Regex.Match(input, @"[\[/\?\]\*\\:\']");
+        bool nameIsValid = ( ! m.Success && ( ! string.IsNullOrEmpty(input) ) && ( input.Length <= 31 ) );
+      
+        if ( ! nameIsValid ) 
+        {
+          MessageBox.Show( @" 入力された工事項目名称が正しくありません。次のいずれかを確認してください。" + "\n" 
+                                                                     + @"・名前が31文字以上になっている。" + "\n" 
+                                                                     + @"・ふさわしくない文字が入っている ： \ / ? * ' ] or [ " + "\n" 
+                                                                     + @"・名前が空白になっている。" , "Error") ;
+          return false ;
+        }
+      }
+
       return true;
     }
   }

@@ -329,7 +329,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       bool hadUpdating = false ;
       // Remove empty row
       foreach ( var item in cnsSettings.CnsSettingData.ToList() ) {
-        if ( string.IsNullOrEmpty( item.CategoryName ) ) {
+        if ( string.IsNullOrWhiteSpace( item.CategoryName.Trim() ) ) {
           cnsSettings.CnsSettingData.Remove( item ) ;
           hadUpdating = true ;
         }
