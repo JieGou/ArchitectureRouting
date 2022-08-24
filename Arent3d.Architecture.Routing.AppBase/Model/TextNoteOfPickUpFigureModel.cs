@@ -13,8 +13,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     public WireLengthNotationAlignment PickUpAlignment { get ; set ; }
     public XYZ? Direction { get ; set ; }
     public string? BoardId { get ; set ; }
+    public bool IsToConnector { get ; set ; }
 
-    public TextNoteOfPickUpFigureModel( TextNote? textNote, int counter, XYZ relatedPosition, XYZ? position, string content, WireLengthNotationAlignment pickUpAlignment, XYZ? direction, string? boardId )
+    public TextNoteOfPickUpFigureModel( TextNote? textNote, int counter, XYZ relatedPosition, XYZ? position, string content, WireLengthNotationAlignment pickUpAlignment, XYZ? direction, string? boardId, bool? isToConnector )
     {
       TextNote = textNote ;
       Counter = counter ;
@@ -24,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       PickUpAlignment = pickUpAlignment ;
       Direction = direction ;
       BoardId = boardId ;
+      IsToConnector = isToConnector ?? false ;
     }
   }
 }

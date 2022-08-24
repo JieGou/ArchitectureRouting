@@ -64,6 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var obliqueTextNoteOfPickUpFigureModels = new List<TextNoteOfPickUpFigureModel>() ;
       var allTextNoteOfPickUpFigureModels = new List<TextNoteOfPickUpFigureModel>() ;
       var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().ToList() ;
+      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).Where( e => e.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
       var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var allConduitsOfRoutes = new Dictionary<string, List<Conduit>>() ;
       foreach ( var route in routeCache ) {
@@ -80,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           .FirstOrDefault() ;
         if ( pickUpModelsByProductCode == null ) continue ;
 
-        ShowPickUp( document, routeCache, allConduitsOfRoutes, isDisplayPickUpNumber, pickUpModelsByProductCode.PickUpModels,
+        ShowPickUp( document, routeCache, allConduitsOfRoutes, allConnectors, isDisplayPickUpNumber, pickUpModelsByProductCode.PickUpModels,
           straightTextNoteOfPickUpFigureModels, obliqueTextNoteOfPickUpFigureModels, ref pickUpNumberOfPullBox ) ;
       }
 
@@ -91,7 +92,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       allTextNoteOfPickUpFigureModels.AddRange( obliqueTextNoteOfPickUpFigureModels ) ;
       allTextNoteOfPickUpFigureModels.AddRange( straightTextNoteOfPickUpFigureModels ) ;
       var reSizeBoards = allTextNoteOfPickUpFigureModels.Where( t => !string.IsNullOrEmpty( t.BoardId ) )
-        .Select( x => x.BoardId ).Distinct().ToDictionary( x => x, _ => false ) ;
+        .Select( x => x.BoardId + "_" + true ).Distinct().ToDictionary( x => x, _ => false ) ;
+      reSizeBoards.AddRange( allTextNoteOfPickUpFigureModels.Where( t => !string.IsNullOrEmpty( t.BoardId ) )
+        .Select( x => x.BoardId + "_" + false ).Distinct().ToDictionary( x => x, _ => false ) ) ;
       
       using var createTextNoteTransaction = new Transaction( document, "Create Text notes" ) ;
       createTextNoteTransaction.Start() ;
@@ -107,7 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       foreach ( var textNoteOfPickUpFigureModel in allTextNoteOfPickUpFigureModels ) {
         if ( textNoteOfPickUpFigureModel.Position == null || string.IsNullOrEmpty( textNoteOfPickUpFigureModel.BoardId ) || textNoteOfPickUpFigureModel.TextNote == null ) continue ;
 
-        if ( ! reSizeBoards[ textNoteOfPickUpFigureModel.BoardId ] && allTextNoteOfPickUpFigureModels.Any( x =>
+        if ( ! reSizeBoards[ textNoteOfPickUpFigureModel.BoardId + "_" + textNoteOfPickUpFigureModel.IsToConnector ] && allTextNoteOfPickUpFigureModels.Any( x =>
             {
               if ( x.Position == null || string.IsNullOrEmpty( x.BoardId ) || x.TextNote == null || x.TextNote.UniqueId == textNoteOfPickUpFigureModel.TextNote.UniqueId ) return false ;
               var xDistance = Math.Abs( x.Position.X - textNoteOfPickUpFigureModel.Position.X ) ;
@@ -117,7 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               var intersectSolid = GeometryHelper.GetSolidExecutionOfTextNotes( document, x.TextNote, textNoteOfPickUpFigureModel.TextNote, BooleanOperationsType.Intersect ) ;
               return ! ( Math.Abs( intersectSolid.Volume ) <= MaxIntersectVolumeBetweenTextNotes ) ;
             } ) && ! IsNearPowerConnector( document, textNoteOfPickUpFigureModel.Position ) )
-          reSizeBoards[ textNoteOfPickUpFigureModel.BoardId ] = true ;
+          reSizeBoards[ textNoteOfPickUpFigureModel.BoardId + "_" + textNoteOfPickUpFigureModel.IsToConnector ] = true ;
       }
       
       var baseLengthOfLine = scale / 100d ;
@@ -126,7 +129,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       foreach ( var reSizeBoard in reSizeBoards ) {
         if ( ! reSizeBoard.Value ) continue ;
         
-        allTextNoteOfPickUpFigureModels.Where( t => t.BoardId == reSizeBoard.Key ).ForEach( t =>
+        allTextNoteOfPickUpFigureModels.Where( t => t.BoardId + "_" + t.IsToConnector == reSizeBoard.Key ).ForEach( t =>
         {
           if ( t.TextNote != null && t.Position != null ) {
             var textSize = ( t.TextNote!.TextNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).AsDouble() / 2 ).RevitUnitsToMillimeters() ;
@@ -168,7 +171,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       SaveWireLengthNotationModel( document, wireLengthNotationStorable, allTextNoteOfPickUpFigureModels.Select( x => new WireLengthNotationModel( x.TextNote!.UniqueId, level.Name ) ).ToList() ) ;
     }
     
-    private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, bool isDisplayPickUpNumber, 
+    private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, List<Element> allConnectors, bool isDisplayPickUpNumber, 
       IEnumerable<PickUpItemModel> pickUpModels, List<TextNoteOfPickUpFigureModel> straightTextNoteOfPickUpFigureModels, List<TextNoteOfPickUpFigureModel> obliqueTextNoteOfPickUpFigureModels, ref int pickUpNumberOfPullBox )
     {
       var pickUpModelsGroupsByRelatedRouteName = pickUpModels.GroupBy( p => p.RelatedRouteName ) ;
@@ -251,7 +254,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var wireLengthNotationAlignment = WireLengthNotationAlignment.Horizontal ;
             if ( direction is { Y: 1 or -1 } )
               wireLengthNotationAlignment = WireLengthNotationAlignment.Vertical ;
-            var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( null, counter, positionOfStraightTextNote?.RelatedPosition ?? middlePointOfConduit, position, strStraightTextNoteOfPickUpFigureQuantity, wireLengthNotationAlignment, null, fromConnector?.UniqueId ) ;
+            var isToConnector = false ;
+            var toEndPoint = nearestConduit.GetNearestEndPoints( false ).ToList() ;
+
+            if ( toEndPoint.Any() ) {
+              var toEndPointKey = toEndPoint.First().Key ;
+              var toElementId = toEndPointKey.GetElementUniqueId() ;
+              if ( ! string.IsNullOrEmpty( toElementId ) ) {
+                var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
+                if ( toConnector != null && ! toConnector.IsTerminatePoint() && ! toConnector.IsPassPoint() )
+                  isToConnector = true ;
+              }
+            }
+              
+            var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( null, counter, positionOfStraightTextNote?.RelatedPosition ?? middlePointOfConduit, position, strStraightTextNoteOfPickUpFigureQuantity, wireLengthNotationAlignment, null, fromConnector?.UniqueId, isToConnector ) ;
             straightTextNoteOfPickUpFigureModels.Add( textNoteOfPickUpFigureModel ) ;
           }
         }
@@ -267,7 +283,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
           var strObliqueTextNoteOfPickUpFigureQuantity = "↓ " + obliqueTextNoteOfPickUpFigureQuantity.Value ;
           var positionOfTextNote = new XYZ( xPoint, yPoint, 0 ) ;
-          var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( null, 0, positionOfTextNote, positionOfTextNote, strObliqueTextNoteOfPickUpFigureQuantity, WireLengthNotationAlignment.Oblique, null, fromConnector?.UniqueId ) ;
+          var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( null, 0, positionOfTextNote, positionOfTextNote, strObliqueTextNoteOfPickUpFigureQuantity, WireLengthNotationAlignment.Oblique, null, fromConnector?.UniqueId, true ) ;
           obliqueTextNoteOfPickUpFigureModels.Add( textNoteOfPickUpFigureModel );
         }
       }
