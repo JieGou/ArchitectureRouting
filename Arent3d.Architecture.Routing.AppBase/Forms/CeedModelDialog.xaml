@@ -212,8 +212,8 @@
                                     <Condition Binding="{Binding Path=IsUsingCode}" Value="true" />
                                 </MultiDataTrigger.Conditions>
                                 <MultiDataTrigger.Setters>
-                                    <Setter Property="Background" Value="SeaGreen" />
-                                    <Setter Property="BorderBrush" Value="SeaGreen" />
+                                    <Setter Property="Background" Value="Orange" />
+                                    <Setter Property="BorderBrush" Value="Orange" />
                                 </MultiDataTrigger.Setters>
                             </MultiDataTrigger>
 
@@ -269,8 +269,8 @@
                                             <Condition Binding="{Binding Path=IsUsingCode}" Value="true" />
                                         </MultiDataTrigger.Conditions>
                                         <MultiDataTrigger.Setters>
-                                            <Setter Property="Background" Value="SeaGreen" />
-                                            <Setter Property="BorderBrush" Value="SeaGreen" />
+                                            <Setter Property="Background" Value="Orange" />
+                                            <Setter Property="BorderBrush" Value="Orange" />
                                         </MultiDataTrigger.Setters>
                                     </MultiDataTrigger>
 
