@@ -356,7 +356,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       try {
         var deletedViewIds = document.GetAllElements<View>()
-          .Where( e => deletedFloorName.Contains( e.Name ) ).Select( e => e.Id ).ToList() ;
+          .Where( e => deletedFloorName.Any( x=> x == e.Name ) && ViewType.FloorPlan == e.ViewType).Select( e => e.Id ).ToList() ;
         List<ViewPlan> views = new List<ViewPlan>(
           new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( ViewPlan ) )
             .Cast<ViewPlan>()
