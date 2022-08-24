@@ -303,8 +303,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
         _previousCeedModels = new List<CeedModel>( oldCeedStorable.CeedModelData ) ;
         _previewList = new ObservableCollection<PreviewListInfo>() ;
-        Categories = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithCeedCode ) ) ;
-        CategoriesPreview = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithoutCeedCode ) ) ;
         _ceedModelNumberOfPreviewCategories = CategoryModel.GetCeedModelNumbers( oldCeedStorable.CategoriesWithoutCeedCode ) ;
         IsShowCeedModelNumber = _storageService.Data.IsShowCeedModelNumber ;
         IsShowCondition = _storageService.Data.IsShowCondition ;
@@ -316,6 +314,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           IsExistUsingCode = true ;
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
         else IsShowDiff = _storageService.Data.IsDiff ;
+        Categories = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithCeedCode ) ) ;
+        CategoriesPreview = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithoutCeedCode ) ) ;
       }
 
       _selectedCeedSetCode = string.Empty ;
@@ -341,12 +341,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       CeedModels.Clear() ;
       PreviewList.Clear() ;
-      var newCeedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
-      CeedModels.AddRange( newCeedModels ) ;
-
-      AddModelNumber( CeedModels ) ;
-      ResetSelectedCategory( Categories ) ;
-      ResetSelectedCategory( CategoriesPreview ) ;
+      var category = FindSelectedCategory( Categories, true ) ;
+      var categoryPreview = FindSelectedCategory( CategoriesPreview, false ) ;
+      if ( category == null && categoryPreview == null ) {
+        var newCeedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
+        CeedModels.AddRange( newCeedModels ) ;
+      }
+      AddModelNumber( ceedModels ) ;
     }
 
     private List<CeedModel> GetInstrumentationFigureCeedModel()
@@ -459,7 +460,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var ceedCodeNumbers = categoryModel.CeedCodeNumbers.Select( c => c.Name ) ;
       data = categoryModel.CeedCodeNumbers.Any() ? data.Where( c => ceedCodeNumbers.Contains( c.CeedModelNumber ) ).ToList() : data ;
       if ( isCategoryWithCeedCode ) {
-        data = data.Where( c => ! _ceedModelNumberOfPreviewCategories.Contains( c.CeedModelNumber ) ).ToList() ;
+        if ( _ceedModelNumberOfPreviewCategories.Any() ) {
+          data = data.Where( c => ! _ceedModelNumberOfPreviewCategories.Contains( c.CeedModelNumber ) ).ToList() ;
+        }
+
         var ceedModels = GroupCeedModelsByCeedModelNumber( data ) ;
         CeedModels.AddRange( ceedModels ) ;
       }
@@ -515,8 +519,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
         ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithCeedCode ) ;
         ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithoutCeedCode ) ;
-        Categories = new ObservableCollection<CategoryModel>( categoriesWithCeedCode ) ;
-        CategoriesPreview = new ObservableCollection<CategoryModel>( categoriesWithoutCeedCode ) ;
         _ceedModelNumberOfPreviewCategories = CategoryModel.GetCeedModelNumbers( ceedStorable.CategoriesWithoutCeedCode ) ;
         _storageService.Data.IsShowOnlyUsingCode = false ;
         _storageService.Data.IsShowInstrumentationFigureCode = false ;
@@ -524,6 +526,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         checkBox.IsChecked = false ;
         IsShowOnlyUsingCode = false ;
         IsShowInstrumentationFigureCode = false ;
+        Categories = new ObservableCollection<CategoryModel>( categoriesWithCeedCode ) ;
+        CategoriesPreview = new ObservableCollection<CategoryModel>( categoriesWithoutCeedCode ) ;
         LoadData( ceedStorable ) ;
 
         try {
@@ -558,6 +562,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _storageService.Data.IsDiff = IsShowDiff ;
         _storageService.Data.IsShowInstrumentationFigureCode = IsShowInstrumentationFigureCode ;
         _storageService.SaveChange() ;
+        
+        var ceedStorable = _document.GetCeedStorable() ;
+        {
+          ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( Categories ) ;
+          ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( CategoriesPreview ) ;
+        }
+        ceedStorable.Save() ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
