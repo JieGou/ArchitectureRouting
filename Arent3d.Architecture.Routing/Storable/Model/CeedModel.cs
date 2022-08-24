@@ -33,6 +33,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public bool IsEditFloorPlan { get ; set ; }
     public bool IsEditInstrumentation { get ; set ; }
     public bool IsEditCondition{ get ; set ; }
+    public bool IsUsingCode { get ; set ; }
 
     public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string dwgNumber, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType )
     {
@@ -121,7 +122,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     }
     
     public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string dwgNumber, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType,
-      bool? isAdded, bool? isEditFloorPlan, bool? isEditInstrumentation, bool? isEditCondition)
+      bool? isAdded, bool? isEditFloorPlan, bool? isEditInstrumentation, bool? isEditCondition, bool? isUsingCode )
     {
       const string dummySymbol = "Dummy" ;
       LegendDisplay = legendDisplay ;
@@ -139,10 +140,11 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Base64FloorPlanImages = base64FloorPlanImages ;
       InstrumentationImages = null ;
       FloorPlanImages = null ;
-      IsAdded = isAdded??false ;
-      IsEditFloorPlan = isEditFloorPlan??false  ;
-      IsEditInstrumentation = isEditInstrumentation??false  ;
-      IsEditCondition = isEditCondition??false  ;
+      IsAdded = isAdded ?? false ;
+      IsEditFloorPlan = isEditFloorPlan ?? false ;
+      IsEditInstrumentation = isEditInstrumentation ?? false ;
+      IsEditCondition = isEditCondition ?? false ;
+      IsUsingCode = isUsingCode ?? false ;
       if ( floorPlanSymbol != dummySymbol ) {
         var temporaryFloorPlanImage = new BitmapImage() ;
         if ( FloorPlanImages == null && ! string.IsNullOrEmpty( Base64FloorPlanImages ) ) {

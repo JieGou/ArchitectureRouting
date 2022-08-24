@@ -205,6 +205,17 @@
                                     <Setter Property="BorderBrush" Value="Orange" />
                                 </MultiDataTrigger.Setters>
                             </MultiDataTrigger>
+                            
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding ElementName=CbShowOnlyUsingCode, Path=IsChecked}" Value="true" />
+                                    <Condition Binding="{Binding Path=IsUsingCode}" Value="true" />
+                                </MultiDataTrigger.Conditions>
+                                <MultiDataTrigger.Setters>
+                                    <Setter Property="Background" Value="SeaGreen" />
+                                    <Setter Property="BorderBrush" Value="SeaGreen" />
+                                </MultiDataTrigger.Setters>
+                            </MultiDataTrigger>
 
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Background" Value="RoyalBlue" />
@@ -249,6 +260,17 @@
                                         <MultiDataTrigger.Setters>
                                             <Setter Property="Background" Value="Orange" />
                                             <Setter Property="BorderBrush" Value="Orange" />
+                                        </MultiDataTrigger.Setters>
+                                    </MultiDataTrigger>
+                                    
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding ElementName=CbShowOnlyUsingCode, Path=IsChecked}" Value="true" />
+                                            <Condition Binding="{Binding Path=IsUsingCode}" Value="true" />
+                                        </MultiDataTrigger.Conditions>
+                                        <MultiDataTrigger.Setters>
+                                            <Setter Property="Background" Value="SeaGreen" />
+                                            <Setter Property="BorderBrush" Value="SeaGreen" />
                                         </MultiDataTrigger.Setters>
                                     </MultiDataTrigger>
 

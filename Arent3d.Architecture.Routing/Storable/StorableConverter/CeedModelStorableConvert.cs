@@ -27,6 +27,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       IsEditFloorPlan,
       IsEditInstrumentation,
       IsEditCondition,
+      IsUsingCode
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedModel customTypeValue )
@@ -49,6 +50,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.Add( SerializeField.IsEditFloorPlan, customTypeValue.IsEditFloorPlan ) ;
       serializerObject.Add( SerializeField.IsEditInstrumentation, customTypeValue.IsEditInstrumentation ) ;
       serializerObject.Add( SerializeField.IsEditCondition, customTypeValue.IsEditCondition ) ;
+      serializerObject.Add( SerializeField.IsUsingCode, customTypeValue.IsUsingCode ) ;
 
       return serializerObject ;
     }
@@ -73,8 +75,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var isEditFloorPlan = deserializer.GetBool( SerializeField.IsEditFloorPlan ) ;
       var isEditInstrumentation = deserializer.GetBool( SerializeField.IsEditInstrumentation ) ;
       var isEditCondition = deserializer.GetBool( SerializeField.IsEditCondition ) ;
+      var isUsingCode = deserializer.GetBool( SerializeField.IsUsingCode ) ;
 
-      return new CeedModel( legendDisplay!, ceedModelNumber!, ceedSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, dwgNumber!, base64InstrumentationImageString!, base64FloorPlanImages!, floorPlanType!, isAdded!, isEditFloorPlan!, isEditInstrumentation!, isEditCondition! ) ;
+      return new CeedModel( legendDisplay!, ceedModelNumber!, ceedSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, dwgNumber!, base64InstrumentationImageString!, base64FloorPlanImages!, floorPlanType!, isAdded!, isEditFloorPlan!, isEditInstrumentation!, isEditCondition!, isUsingCode ) ;
     }
   }
 }

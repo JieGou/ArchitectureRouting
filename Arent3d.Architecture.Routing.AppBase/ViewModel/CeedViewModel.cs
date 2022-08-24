@@ -462,7 +462,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var modelNumber = string.Join( ", ", modelNumbers ) ;
         var ceedModel = new CeedModel( firstCeedModel.LegendDisplay, firstCeedModel.CeedModelNumber, firstCeedModel.CeedSetCode, generalDisplayDeviceSymbol, modelNumber, firstCeedModel.FloorPlanSymbol,
           firstCeedModel.InstrumentationSymbol, firstCeedModel.Name, firstCeedModel.DwgNumber, firstCeedModel.Base64InstrumentationImageString, firstCeedModel.Base64FloorPlanImages, firstCeedModel.FloorPlanType,
-          firstCeedModel.IsAdded, firstCeedModel.IsEditFloorPlan, firstCeedModel.IsEditInstrumentation, firstCeedModel.IsEditCondition ) ;
+          firstCeedModel.IsAdded, firstCeedModel.IsEditFloorPlan, firstCeedModel.IsEditInstrumentation, firstCeedModel.IsEditCondition, firstCeedModel.IsUsingCode ) ;
         newCeedModels.Add( ceedModel ) ;
       }
 
@@ -593,6 +593,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         List<CeedModel> usingCeedModel = new() ;
         foreach ( var modelNumber in modelNumberToUse ) {
           var ceedModels = ceedStorable.CeedModelData.Where( c => c.ModelNumber.Contains( modelNumber ) ).Distinct().ToList() ;
+          foreach ( var ceedModel in ceedModels ) {
+            ceedModel.IsUsingCode = true ;
+          }
+
           usingCeedModel.AddRange( ceedModels ) ;
         }
 

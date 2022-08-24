@@ -64,11 +64,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void ShowOnlyUsingCode_Checked( object sender, RoutedEventArgs e )
     {
       ViewModel.ShowOnlyUsingCode() ;
+      CbShowDiff.IsChecked = false ;
+      CbShowDiff.IsEnabled = false ;
     }
 
     private void ShowOnlyUsingCode_UnChecked( object sender, RoutedEventArgs e )
     {
       ViewModel.UnShowOnlyUsingCode() ;
+      CbShowDiff.IsEnabled = true ;
     }
 
     private void Row_MouseLeftButtonUp( object sender, MouseButtonEventArgs e )
