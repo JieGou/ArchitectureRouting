@@ -47,8 +47,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         var routingExecutor = GetRoutingExecutor() ;
 
-        var sv = new LeakRouteDialog() ;
+        var sv = new LeakRouteDialog(GetAddInType() == AddInType.Electrical) ;
         sv.ShowDialog() ;
+        sv.ShowDirectionOptions( false ) ;
         if ( true != sv.DialogResult ) return OperationResult<LeakState>.Cancelled ;
 
         var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType(), true ) ;
