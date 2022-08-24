@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return Result.Cancelled ;
       
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) 
+      if ( viewModel.SelectedCeedCode == null ) 
         return Result.Succeeded ;
       
       Element? element = null ;
@@ -114,8 +114,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             break ;
           }
         }
-        
-        if ( !viewModel.OriginCeedModels.Any(cmd=>cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == viewModel.SelectedDeviceSymbol) ) {
+
+        var deviceSymbol = viewModel.SelectedDeviceSymbol ?? string.Empty ;
+        if ( !viewModel.OriginCeedModels.Any(cmd=>cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == deviceSymbol ) ) {
           TaskDialog.Show( "Arent", $"We can not find any ceedmodel \"{viewModel.SelectedDeviceSymbol}\" match with this room \"{condition}\"。" ) ;
           return Result.Cancelled ;
         }
@@ -123,18 +124,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         element = GenerateConnector( uiDoc, point.X, point.Y, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
-        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
+        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, deviceSymbol, viewModel.SelectedModelNum ) ;
         if ( element is FamilyInstance familyInstance ) {
           element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
+        if ( string.IsNullOrEmpty( deviceSymbol ) ) return Result.Succeeded ;
         var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
         TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var txtPosition = new XYZ( point.X , point.Y + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, viewModel.SelectedDeviceSymbol, opts ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, deviceSymbol, opts ) ;
         doc.Regenerate();
         ElementTransformUtils.MoveElement(doc, textNote.Id, Transform.CreateTranslation(-XYZ.BasisX * 0.5 * textNote.Width * defaultSymbolMagnification).OfPoint(txtPosition) - txtPosition);
 

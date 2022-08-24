@@ -95,14 +95,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
       ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
       ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
-      if ( string.IsNullOrEmpty( ViewModel.SelectedDeviceSymbol ) ) {
-        MessageBox.Show( Message, "Message" ) ;
-      }
-      else {
-        ViewModel.Save() ;
-        DialogResult = true ;
-        Close() ;
-      }
+      ViewModel.Save() ;
+      DialogResult = true ;
+      Close() ;
     }
 
     private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
