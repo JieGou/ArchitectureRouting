@@ -70,11 +70,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       ViewModel.UnShowOnlyUsingCode() ;
     }
-    
-    private void ShowInstrumentationFigureCode_Checked( object sender, RoutedEventArgs e )
-    {
-      ViewModel.ShowInstrumentationFigureCode() ;
-    }
 
     private void Row_MouseLeftButtonUp( object sender, MouseButtonEventArgs e )
     {

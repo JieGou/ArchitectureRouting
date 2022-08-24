@@ -20,8 +20,5 @@ namespace Arent3d.Architecture.Routing.Storages.Models
         
         [Field(Documentation = "Is Difference")]
         public bool IsDiff { get ; set ; }
-        
-        [Field(Documentation = "Is Show Instrumentation Figure Code")]
-        public bool IsShowInstrumentationFigureCode { get ; set ; }
     }
 }
