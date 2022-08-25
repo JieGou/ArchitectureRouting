@@ -1,11 +1,7 @@
-﻿using System ;
-using System.Linq ;
-using System.Windows ;
-using Arent3d.Architecture.Routing.AppBase.Extensions ;
+﻿using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
@@ -16,7 +12,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      string ceedSetCode, deviceSymbol, modelNumber ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var tagPickFilter = new TagPickFilter() ;
 
@@ -38,9 +33,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return Result.Cancelled ;
         
       var ceedCodeModel = ceedCode!.Split( ':' ).ToList() ;
-      ceedSetCode = ceedCodeModel.FirstOrDefault() ?? string.Empty ;
-      deviceSymbol = ceedCodeModel.Count > 1 ? ceedCodeModel.ElementAt( 1 ) : string.Empty ;
-      modelNumber = ceedCodeModel.Count > 2 ? ceedCodeModel.ElementAt( 2 ) : string.Empty ;
+      var ceedSetCode = ceedCodeModel.FirstOrDefault() ?? string.Empty ;
+      var deviceSymbol = ceedCodeModel.Count > 1 ? ceedCodeModel.ElementAt( 1 ) : string.Empty ;
+      var modelNumber = ceedCodeModel.Count > 2 ? ceedCodeModel.ElementAt( 2 ) : string.Empty ;
       
       var dataContext = new CeedDetailInformationViewModel( uiDoc.Document, ceedSetCode, deviceSymbol, modelNumber ) ;
       var ceedDetailInformationView = new CeedDetailInformationView { DataContext = dataContext};
