@@ -2,8 +2,8 @@ using System ;
 using System.Runtime.InteropServices ;
 using System.Windows ;
 using System.Drawing ;
+using System.Windows.Input ;
 using System.Windows.Interop ;
-using System.Windows.Threading ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -59,6 +59,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         Left = 96 / g.DpiX * rec.Left ;
         Top = 96 / g.DpiY * rec.Top ;
       }
+    }
+
+    private void OnKeyUp( object sender, KeyEventArgs e )
+    {
+      if(e.Key != Key.Enter)
+        return;
+      
+      IsCancel = false ;
+      SendEscToRevit() ;
     }
   }
 }

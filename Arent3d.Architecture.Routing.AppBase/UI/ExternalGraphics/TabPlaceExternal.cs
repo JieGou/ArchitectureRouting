@@ -1,5 +1,7 @@
 ﻿using System ;
+using System.Runtime.InteropServices ;
 using System.Windows.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -11,7 +13,8 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         private int _numberOfTabs ;
         private readonly double _radius ;
         private readonly UIDocument _uiDocument ;
-
+        private readonly ModelessOkCancelDialog _dialog ;
+        
         private XYZ? _firstPoint ;
         public XYZ? FirstPoint
         {
@@ -30,10 +33,11 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         public XYZ? SecondPoint { get ; set ; }
         public XYZ? PlacePoint { get ; set ; }
         
-        public TabPlaceExternal( UIApplication uiApplication, double radius ) : base( uiApplication )
+        public TabPlaceExternal( UIApplication uiApplication, double radius, ModelessOkCancelDialog dialog ) : base( uiApplication )
         {
             _uiDocument = uiApplication.ActiveUIDocument ;
             _radius = radius ;
+            _dialog = dialog ;
         }
 
         public override void DrawExternal()
@@ -49,6 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 
         public override void OnKeyPressActivity( object sender, KeyPressEventArgs e )
         {
+            
             var topWindow = GetActiveWindow() ;
             if ( RevitWindow != topWindow ) {
                 e.Handled = false ;
@@ -93,6 +98,11 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             }
 
             e.Handled = false ;
+
+            if ( e.KeyChar != 13 )
+                return ;
+
+            _dialog.Focus() ;
         }
 
         public override void OnMouseActivity( object sender, MouseEventArgs e )

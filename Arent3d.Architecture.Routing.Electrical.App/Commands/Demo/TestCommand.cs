@@ -18,15 +18,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
             var uiDocument = commandData.Application.ActiveUIDocument ;
             TabPlaceExternal? tabPlaceExternal = null ;
             try {
-                tabPlaceExternal = new TabPlaceExternal( commandData.Application, 100d.MillimetersToRevitUnits() ) ;
-                var (x, y, z) = commandData.Application.ActiveUIDocument.Selection.PickPoint() ;
-                var secondPoint = commandData.Application.ActiveUIDocument.Selection.PickPoint() ;
-                tabPlaceExternal.DrawingServer.BasePoint = new XYZ(x, y, z) ;
-                tabPlaceExternal.FirstPoint = new XYZ(x, y, z) ;
-                tabPlaceExternal.SecondPoint = secondPoint ;
-                tabPlaceExternal.DrawExternal() ;
-                uiDocument.RefreshActiveView();
-                var tempPoint = commandData.Application.ActiveUIDocument.Selection.PickPoint() ;
+                
             }
             catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
                 // Ignore

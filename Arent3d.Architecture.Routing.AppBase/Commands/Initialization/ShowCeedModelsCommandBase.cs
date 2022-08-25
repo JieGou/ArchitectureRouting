@@ -3,6 +3,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.UI ;
 using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -22,6 +23,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
 
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
+    protected abstract string FullClass { get ; }
+    protected abstract string TabName { get ; }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -37,15 +40,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var defaultConstructionItem = uiDocument.Document.GetDefaultConstructionItem() ;
       
       var viewModel = new CeedViewModel( uiDocument.Document ) ;
-      var dlgCeedModel = new CeedModelDialog( viewModel ) ;
+      var dialog = new CeedModelDialog( viewModel ) ;
       
-      dlgCeedModel.ShowDialog() ;
-      if ( ! ( dlgCeedModel.DialogResult ?? false ) ) 
+      dialog.ShowDialog() ;
+      if ( ! ( dialog.DialogResult ?? false ) ) 
         return Result.Cancelled ;
       
       if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) 
         return Result.Succeeded ;
-      
+
       var result = uiDocument.Document.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
         var level = uiDocument.Document.ActiveView.GenLevel ;
@@ -153,7 +156,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return true ;
     }
 
-    private static (XYZ? PlacePoint, XYZ? Direction) PickPoint( UIDocument uiDocument, Element symbolInstance )
+    private (XYZ? PlacePoint, XYZ? Direction) PickPoint( UIDocument uiDocument, Element symbolInstance )
     {
       var dlg = new ModelessOkCancelDialog() ;
       dlg.AlignToView(uiDocument.GetActiveUIView());
@@ -169,7 +172,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           return ( placePoint, direction ) ;
         }
         
-        tabPlaceExternal = new TabPlaceExternal( uiDocument.Application, symbolInstance.GetPropertyDouble("W") * 0.5 ) ;
+        tabPlaceExternal = new TabPlaceExternal( uiDocument.Application, symbolInstance.GetPropertyDouble("W") * 0.5, dlg ) ;
         while ( true ) {
           if ( null == tabPlaceExternal.FirstPoint ) {
             var (x, y, z) = uiDocument.Selection.PickPoint() ;

@@ -10,5 +10,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   public class ShowCeedModelsCommand : ShowCeedModelsCommandBase
   {
     protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.ConnectorOneSide ;
+    protected override string FullClass => typeof( ShowCeedModelsCommand ).FullName ;
+    protected override string TabName => AppInfo.ApplicationName ;
   }
 }
