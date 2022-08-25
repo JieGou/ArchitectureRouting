@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -31,8 +32,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      PointOnRoutePicker.PickInfo? pickInfo ;
 
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      try {
+        pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      }
+      catch ( OperationCanceledException ) {
+        return OperationResult<PickState>.Cancelled ;
+      }
+      
       var pullBoxViewModel = new PullBoxViewModel(document) ;
       
       var sv = new PullBoxDialog { DataContext = pullBoxViewModel } ;
@@ -76,13 +84,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
       var (pickInfo, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, _, _, _, fromDirection, toDirection, parentAndChildRoute ) = pickState ;
-      var route = pickInfo.SubRoute.Route ;
-      var systemType = route.GetMEPSystemType() ;
-      var curveType = route.UniqueCurveType ;
+      var pickRoute = pickInfo.SubRoute.Route ;
+      var routes = document.CollectRoutes( GetAddInType()) ;
+      
+      var routeInTheSamePosition = PullBoxRouteManager.GetParentRoutesInTheSamePosition( document, routes.ToList(), pickRoute, pickInfo.Element ) ;
+      var systemType = pickRoute.GetMEPSystemType() ;
+      var curveType = pickRoute.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection ) ;
-
+      var result = new List<( string RouteName, RouteSegment Segment )>() ;
+      foreach ( var route in routeInTheSamePosition ) {
+        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector,
+          heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex,
+          ref parentAndChildRoute, fromDirection, toDirection ) );
+      }
       return result ;
     }
 
