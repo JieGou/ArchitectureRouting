@@ -42,7 +42,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool allowedTiltedPiping = false )
     {
       const int index = 1 ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var ( routeRecords, parentRoute ) = GetRelatedBranchSegments( route ) ;
+      if ( ! routeRecords.Any() && parentRoute.RouteName == route.RouteName ) {
+        if ( element is not Conduit && element is FamilyInstance )
+            routeRecords.AddRange( GetBranchSegmentsByRepresentativeName( document, routes, parentRoute ) );
+      }
       var subRoute = route.SubRoutes.First() ;
 
       var detector = new RouteSegmentDetector( subRoute, element ) ;
@@ -54,8 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var shaftElementUniqueId = parentRoute.UniqueShaftElementUniqueId ;
       var fromFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, isCreatePullBoxWithoutSettingHeight ? heightConnector : heightConnector + DefaultDistanceHeight ) ;
       var fromFixedHeightSecond = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightWire ) ;
-
-      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      
       var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
       var name = nameBase + "_" + nextIndex ;
       routes.FindOrCreate( name ) ;
@@ -183,6 +187,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             name = routeName + "_" + index ;
             result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping || segment.AllowedTiltedPiping ) ) ) ;
             result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId, allowedTiltedPiping || segment.AllowedTiltedPiping ) ) ) ;
+            var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
+            var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+            if ( pullBoxes.Any( p => p.UniqueId == segment.ToEndPoint.Key.GetElementUniqueId() ) ) {
+              name += "_" + index ;
+              var allRouteSegments = routes.SelectMany( r => r.Value.RouteSegments ).ToList() ;
+              var firstRouteSegment = allRouteSegments.Single( rs =>
+                rs.FromEndPoint.Key.GetElementUniqueId() == segment.ToEndPoint.Key.GetElementUniqueId() ) ;
+              result.Add( ( name, firstRouteSegment ) );
+              while ( pullBoxes.Any( p => p.UniqueId == firstRouteSegment.ToEndPoint.Key.GetElementUniqueId() ) ) {
+                name += "_" + index ;
+                var nextRouteSegment = allRouteSegments.Single( rs =>
+                  rs.FromEndPoint.Key.GetElementUniqueId() == firstRouteSegment.ToEndPoint.Key.GetElementUniqueId() ) ;
+                result.Add( ( name, nextRouteSegment ) ) ;
+                firstRouteSegment = nextRouteSegment ;
+              }
+            }
           }
           else {
             result.Add( ( routeName, segment ) ) ;
@@ -1321,10 +1341,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return pullBoxUniqueId ;
     }
 
-    public static HashSet<Route> GetParentRoutesInTheSamePosition( Document document, List<Route> routes,
+    public static IEnumerable<Route> GetParentRoutesInTheSamePosition( Document document, List<Route> routes,
       Route selectedRoute, Element selectedConduit )
     {
-      var result = new HashSet<Route>() ;
+      var result = new List<Route> { selectedRoute } ;
       var (fromElementIdOfSelectedConduit, toElementIdOfSelectedConduit) = ConduitUtil.GetFromElementIdAndToElementIdOfConduit( selectedConduit ) ;
       if ( string.IsNullOrEmpty( fromElementIdOfSelectedConduit ) ||
            string.IsNullOrEmpty( toElementIdOfSelectedConduit ) )
@@ -1333,19 +1353,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       foreach ( var conduit in allConduits ) {
         if ( string.IsNullOrEmpty( conduit.GetRouteName() ) ) continue ;
         var route = routes.FirstOrDefault( r => r.RouteName == conduit.GetRouteName() ) ;
-        if ( route == null || result.Contains( route ) ) continue ;
+        if ( route == null || result.Any( r => r.RouteName == route.RouteName ) ) continue ;
 
         var (fromElementId, toElementId) = ConduitUtil.GetFromElementIdAndToElementIdOfConduit( conduit ) ;
         if ( fromElementId != fromElementIdOfSelectedConduit || toElementId != toElementIdOfSelectedConduit ) continue ;
 
         result.Add( route ) ;
       }
-
-      result = result.Where( r => r.IsParentBranch( r ) || ! r.HasParent() ).ToHashSet() ;
-      if ( ! result.Contains( selectedRoute ) )
-        result.Add( selectedRoute ) ;
       
+      result = result.Where( r => r.IsParentBranch( r ) || ! r.HasParent() ).ToList() ;
+      if ( ! result.Any() )
+        result.Add( selectedRoute ) ;
+
       return result ;
+    }
+
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetBranchSegmentsByRepresentativeName( Document document, RouteCache routeCache, Route parentRoute )
+    {
+      var routes = new List<Route>() ;
+      var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ) ;
+      foreach ( var conduit in allConduits ) {
+        if ( string.IsNullOrEmpty( conduit.GetRouteName() ) ) continue ;
+        var route = routeCache.FirstOrDefault( r => r.Key == conduit.GetRouteName() ).Value ;
+        if ( route == null || routes.Any( r => r.RouteName == route.RouteName ) ) continue ;
+        if ( parentRoute.RouteName == conduit.GetRepresentativeRouteName() && parentRoute.RouteName != route.RouteName )
+          routes.Add( route ) ;
+      }
+
+      return routes.Where(x=>x.RouteSegments.Count() <= 1 ).ToSegmentsWithName().ToList() ;
     }
     
     private class ConduitInfo
