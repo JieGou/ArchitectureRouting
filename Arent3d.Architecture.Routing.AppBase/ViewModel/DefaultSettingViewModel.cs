@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.IO ;
-using System.IO.Compression ;
 using System.Linq ;
 using System.Text ;
 using System.Text.RegularExpressions ;
@@ -17,11 +16,10 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI ;
 using System ;
-using System.Data ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Autodesk.Revit.DB ;
-using MoreLinq.Extensions ;
 using CategoryModel = Arent3d.Architecture.Routing.AppBase.Model.CategoryModel ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
@@ -127,9 +125,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand LoadDefaultDbCommand => new RelayCommand( LoadDefaultDb ) ;
     
     public ICommand LoadAllDbCommand => new RelayCommand( LoadAllDb ) ;
+    
+    public ICommand LoadCeedCodeDataCommand => new RelayCommand( LoadCeedCodeData ) ;
 
     public ICommand LoadWiresAndCablesDataCommand => new RelayCommand( LoadWiresAndCablesData ) ;
-    
+
     public ICommand LoadConduitsDataCommand => new RelayCommand( LoadConduitsData ) ;
     
     public ICommand LoadHiroiSetMasterNormalDataCommand => new RelayCommand( LoadHiroiSetMasterNormalData ) ;
@@ -396,11 +396,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       using ( var progressData = progress?.Reserve( 0.6 ) ) {
         var ceedStorable = document.GetCeedStorable() ;
+        var storageService = new StorageService<Level, CeedUserModel>( ( (ViewPlan) document.ActiveView ).GenLevel ) ;
         if ( _ceedModelData.Any() ) {
+          var previousCeedModels = ceedStorable.CeedModelData ;
+          CeedViewModel.CheckChangeColor( _ceedModelData, previousCeedModels ) ;
           ceedStorable.CeedModelData = _ceedModelData ;
           ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
           ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithCeedCode ) ;
           ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithoutCeedCode ) ;
+          
+          storageService.Data.IsShowOnlyUsingCode = false ;
+          storageService.Data.IsDiff = true ;
+          storageService.Data.IsExistUsingCode = false ;
         }
 
         var registrationOfBoardDataStorable = document.GetRegistrationOfBoardDataStorable() ;
@@ -414,6 +421,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             t.Start() ;
             if ( _ceedModelData.Any() ) {
               ceedStorable.Save() ;
+              storageService.SaveChange() ;
               document.MakeCertainAllConnectorFamilies() ;
             }
 
@@ -460,6 +468,45 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return filePath ;
+    }
+
+    private void LoadCeedCodeData()
+    {
+      MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
+      OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+      string filePath = string.Empty ;
+      string fileEquipmentSymbolsPath = string.Empty ;
+      if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
+        filePath = openFileDialog.FileName ;
+        MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
+        OpenFileDialog openFileEquipmentSymbolsDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+        if ( openFileEquipmentSymbolsDialog.ShowDialog() == DialogResult.OK ) {
+          fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
+        }
+      }
+
+      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
+      var ( ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode) = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
+      if ( ! ceedModelData.Any() ) return ;
+      _ceedModelData = ceedModelData ;
+      _categoriesWithCeedCode = categoriesWithCeedCode ;
+      _categoriesWithoutCeedCode = categoriesWithoutCeedCode ;
+
+      const string ceedCodeFileName = " 【CeeD】セットコード一覧表" ;
+      const string equipmentSymbolsFileName = " 機器記号一覧表" ;
+      if ( CsvFileModels.FirstOrDefault( c => c.CsvName == ceedCodeFileName ) is { } ceedCodeFileModel ) {
+        ceedCodeFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
+        CsvFileModels = new ObservableCollection<CsvFileModel>( CsvFileModels ) ;
+      }
+      else
+        CsvFileModels.Add( new CsvFileModel( ceedCodeFileName, RenamePathToRelative( filePath ), Path.GetFileName( filePath ) ) ) ;
+      
+      if ( CsvFileModels.FirstOrDefault( c => c.CsvName == equipmentSymbolsFileName ) is { } equipmentSymbolsFileNameModel ) {
+        equipmentSymbolsFileNameModel.CsvFilePath = RenamePathToRelative( fileEquipmentSymbolsPath ) ;
+        CsvFileModels = new ObservableCollection<CsvFileModel>( CsvFileModels ) ;
+      }
+      else
+        CsvFileModels.Add( new CsvFileModel( equipmentSymbolsFileName, RenamePathToRelative( fileEquipmentSymbolsPath ), Path.GetFileName( fileEquipmentSymbolsPath ) ) ) ;
     }
     
     private void LoadWiresAndCablesData()

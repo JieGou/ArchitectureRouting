@@ -38,7 +38,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class CeedViewModel : NotifyPropertyChanged
   {
-    private const string LegendDisplay = "○" ;
     private const string LegendNoDisplay = "×" ;
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     private readonly Document _document ;
@@ -117,6 +116,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           ceedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
           CeedModels.Clear() ;
           CeedModels.AddRange( ceedModels ) ;
+          AddModelNumber( ceedModels ) ;
         }
         OnPropertyChanged();
       }
@@ -313,11 +313,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         IsShowCeedModelNumber = _storageService.Data.IsShowCeedModelNumber ;
         IsShowOnlyUsingCode = _storageService.Data.IsShowOnlyUsingCode ;
         IsExistUsingCode = _storageService.Data.IsExistUsingCode ;
-        AddModelNumber( _ceedModels ) ;
-        if ( _usingCeedModel.Any() )
-          IsEnabledShowUsingCode = true ;
-        if ( ! _ceedModels.Any() ) IsShowDiff = true ;
-        else IsShowDiff = _storageService.Data.IsDiff ;
+        IsShowDiff = _storageService.Data.IsDiff ;
+        if ( _usingCeedModel.Any() ) IsEnabledShowUsingCode = true ;
         Categories = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithCeedCode ) ) ;
         CategoriesPreview = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithoutCeedCode ) ) ;
         IsShowCondition = _storageService.Data.IsShowCondition ;
@@ -388,13 +385,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ceedModel.ModelNumber.IndexOf( '\n' ) >= 0 ) {
           var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;
           foreach ( var modelNumber in modelNumbers ) {
-            if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber.Trim() ) ;
+            if ( ! ModelNumber.Contains( modelNumber.Trim() ) ) ModelNumber.Add( modelNumber.Trim() ) ;
           }
         }
         else if ( ceedModel.ModelNumber.IndexOf( ',' ) >= 0 )  {
           var modelNumbers = ceedModel.ModelNumber.Split( ',' ) ;
           foreach ( var modelNumber in modelNumbers ) {
-            if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber.Trim() ) ;
+            if ( ! ModelNumber.Contains( modelNumber.Trim() ) ) ModelNumber.Add( modelNumber.Trim() ) ;
           }
         }
         else {
@@ -407,7 +404,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ceedModel.GeneralDisplayDeviceSymbol.IndexOf( ',' ) >= 0 )  {
           var generalDisplayDeviceSymbols = ceedModel.GeneralDisplayDeviceSymbol.Split( ',' ) ;
           foreach ( var generalDisplayDeviceSymbol in generalDisplayDeviceSymbols ) {
-            if ( ! DeviceSymbols.Contains( generalDisplayDeviceSymbol ) ) DeviceSymbols.Add( generalDisplayDeviceSymbol.Trim() ) ;
+            if ( ! DeviceSymbols.Contains( generalDisplayDeviceSymbol.Trim() ) ) DeviceSymbols.Add( generalDisplayDeviceSymbol.Trim() ) ;
           }
         }
         else {
@@ -513,66 +510,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return newCeedModels ;
-    }
-
-    public void Load( CheckBox checkBox )
-    {
-      MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
-      OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
-      string filePath = string.Empty ;
-      string fileEquipmentSymbolsPath = string.Empty ;
-      if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
-        filePath = openFileDialog.FileName ;
-        MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
-        OpenFileDialog openFileEquipmentSymbolsDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
-        if ( openFileEquipmentSymbolsDialog.ShowDialog() == DialogResult.OK ) {
-          fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
-        }
-      }
-
-      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
-      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
-      progress.Message = "Loading data..." ;
-      var ceedStorable = _document.GetCeedStorable() ;
-      {
-        var (ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode) = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
-        if ( ! ceedModelData.Any() ) return ;
-        _previousCeedModels = new List<CeedModel>( CeedModels ) ;
-        CheckChangeColor( ceedModelData ) ;
-        ceedStorable.CeedModelData = ceedModelData ;
-        ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-        ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithCeedCode ) ;
-        ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( categoriesWithoutCeedCode ) ;
-        _ceedModelNumberOfPreviewCategories = CategoryModel.GetCeedModelNumbers( ceedStorable.CategoriesWithoutCeedCode ) ;
-        _storageService.Data.IsShowOnlyUsingCode = false ;
-        _storageService.Data.IsExistUsingCode = false ;
-        checkBox.Visibility = Visibility.Hidden ;
-        checkBox.IsChecked = false ;
-        IsShowOnlyUsingCode = false ;
-        IsExistUsingCode = false ;
-        Categories = new ObservableCollection<CategoryModel>( categoriesWithCeedCode ) ;
-        CategoriesPreview = new ObservableCollection<CategoryModel>( categoriesWithoutCeedCode ) ;
-        LoadData( ceedStorable ) ;
-
-        try {
-          using Transaction t = new( _document, "Save data" ) ;
-          t.Start() ;
-          using ( var progressData = progress.Reserve( 0.5 ) ) {
-            ceedStorable.Save() ;
-            _storageService.SaveChange();
-            progressData.ThrowIfCanceled() ;
-          }
-
-          using ( var progressData = progress.Reserve( 0.9 ) ) {
-            _document.MakeCertainAllConnectorFamilies() ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          t.Commit() ;
-        }
-        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        }
-      }
     }
 
     public void Save()
@@ -1051,25 +988,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void CheckChangeColor( List<CeedModel> ceedModels )
+    public static void CheckChangeColor( List<CeedModel> ceedModels, List<CeedModel> previousCeedModels )
     {
       for ( int i = 0 ; i < ceedModels.Count() ; i++ ) {
         CeedModel item = ceedModels[ i ] ;
-        var existCeedModels = _previousCeedModels ;
-        var itemExistCeedModel = existCeedModels.Find( x => x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber && x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol && x.ModelNumber == item.ModelNumber ) ;
+        var itemExistCeedModel = previousCeedModels.Find( x => x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber && x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol && x.ModelNumber == item.ModelNumber ) ;
         if ( itemExistCeedModel != null ) {
           item.IsEditFloorPlan = IsChange( string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol ) ? itemExistCeedModel.Base64FloorPlanImages : itemExistCeedModel.FloorPlanSymbol, string.IsNullOrEmpty( item.FloorPlanSymbol ) ? item.Base64FloorPlanImages : item.FloorPlanSymbol ) ;
           item.IsEditInstrumentation = IsChange( string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol ) ? itemExistCeedModel.Base64InstrumentationImageString : itemExistCeedModel.InstrumentationSymbol, string.IsNullOrEmpty( item.InstrumentationSymbol ) ? item.Base64InstrumentationImageString : item.InstrumentationSymbol ) ;
           item.IsEditCondition = IsChange( itemExistCeedModel.Condition, item.Condition ) ;
         }
         else {
-          // row.Background = Brushes.Orange ;
           item.IsAdded = true ;
         }
       }
     }
 
-    private bool IsChange( string oldItem, string newItem )
+    private static bool IsChange( string oldItem, string newItem )
     {
       return oldItem != newItem ;
     }

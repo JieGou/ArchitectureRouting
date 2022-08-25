@@ -8,12 +8,12 @@ using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Revit.UI ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -117,11 +117,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       using ( var progressData = progress.Reserve( 0.9 ) ) {
         var ceedStorable = _document.GetCeedStorable() ;
+        var storageService = new StorageService<Level, CeedUserModel>( ( (ViewPlan) _document.ActiveView ).GenLevel ) ;
         if ( _ceedModelData.Any() ) {
+          var previousCeedModels = ceedStorable.CeedModelData ;
+          CeedViewModel.CheckChangeColor( _ceedModelData, previousCeedModels ) ;
           ceedStorable.CeedModelData = _ceedModelData ;
           ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
           ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithCeedCode ) ;
           ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithoutCeedCode ) ;
+
+          storageService.Data.IsShowOnlyUsingCode = false ;
+          storageService.Data.IsDiff = true ;
+          storageService.Data.IsExistUsingCode = false ;
         }
 
         var registrationOfBoardDataStorable = _document.GetRegistrationOfBoardDataStorable() ;
@@ -135,6 +142,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             t.Start() ;
             if ( _ceedModelData.Any() ) {
               ceedStorable.Save() ;
+              storageService.SaveChange() ;
               _document.MakeCertainAllConnectorFamilies() ;
             }
 
@@ -150,6 +158,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         progressData.ThrowIfCanceled() ;
       }
+    }
+    
+    private void Button_LoadCeedCodeData( object sender, RoutedEventArgs e )
+    {
+      MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
+      OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+      string filePath = string.Empty ;
+      string fileEquipmentSymbolsPath = string.Empty ;
+      if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+        filePath = openFileDialog.FileName ;
+        MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
+        OpenFileDialog openFileEquipmentSymbolsDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+        if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+          fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
+        }
+      }
+
+      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
+      var ( ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode) = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
+      if ( ! ceedModelData.Any() ) return ;
+      _ceedModelData = ceedModelData ;
+      _categoriesWithCeedCode = categoriesWithCeedCode ;
+      _categoriesWithoutCeedCode = categoriesWithoutCeedCode ;
     }
     
     private void Button_LoadWiresAndCablesData( object sender, RoutedEventArgs e )

@@ -29,16 +29,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    private void Button_LoadData( object sender, RoutedEventArgs e )
-    {
-      ViewModel.Load( CbShowOnlyUsingCode ) ;
-      if ( CbShowDiff.IsChecked == false ) {
-        CbShowDiff.IsChecked = true ;
-      }
-
-      BtnReplaceSymbol.IsEnabled = false ;
-    }
-    
     private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
     {
       ViewModel.LoadUsingCeedModel( CbShowOnlyUsingCode ) ;
