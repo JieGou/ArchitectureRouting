@@ -27,11 +27,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public double RouteHeight { get ; private set ; }
     public int ConduitType { get ; private set ; }
 
-    private bool ShowDirectionRectangleMode { get ; }
+    private bool UseDirectionOptionForRectangleMode { get ; }
+    
+    // for dialog resize
     private double HiddenHeight { get ; set ; }
     private double ShowHeight { get ; set ; }
+    
+    private Brush ActiveColor { get ; } = Brushes.LightSkyBlue;
+    private Brush DeActiveColor { get ; set ; }
+    
+    /// Direction of rectangle mode
+    public bool IsRecModeClockWise{ get ; private set ; }
 
-    public LeakRouteDialog(bool showDirectionRectangleMode = false)
+    public LeakRouteDialog(bool useDirectionOptionForRectangleMode = false)
     {
       InitializeComponent() ;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
@@ -41,32 +49,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var conduitTypes = ( from conduitType in (ConduitTypes[]) Enum.GetValues( typeof( ConduitTypes ) ) select conduitType.GetFieldName() ).ToList() ;
       CmbConduitType.ItemsSource = conduitTypes ;
       CmbConduitType.SelectedIndex = 0 ;
-      ShowDirectionRectangleMode = showDirectionRectangleMode ;
+      
+      // set up for direction selection of rectangle mode
+      UseDirectionOptionForRectangleMode = useDirectionOptionForRectangleMode ;
       ShowHeight = Height + 25;
       HiddenHeight = ShowHeight - BtnClockWise.Height ;
+      DeActiveColor = BtnClockWise.Background ;
+      BtnClockWise.Background = ActiveColor ;
+      IsRecModeClockWise = true ;
       ShowDirectionOptions( false ) ;
+      
+      // set this dialog's parent to Revit Window
       var helper = new WindowInteropHelper( this ) { Owner = Autodesk.Windows.ComponentManager.ApplicationWindow } ;
     }
 
-    public void ShowDirectionOptions(bool bShow)
+    private void ShowDirectionOptions(bool bShow)
     {
-      if ( ! ShowDirectionRectangleMode )
+      if ( ! UseDirectionOptionForRectangleMode )
         return ;
+
+      var visibility = bShow? Visibility.Visible : Visibility.Collapsed;
+      BtnClockWise.Visibility = visibility;
+      BtnCounterClockWise.Visibility = visibility;
+      LabelDirection.Visibility = visibility;
+      
       if ( bShow ) {
-        //LayOutGrid.RowDefinitions[ 3 ].Height = HiddenRowHeigth ;
-        BtnClockWise.Visibility = Visibility.Visible ;
-        BtnCounterClockWise.Visibility = Visibility.Visible ;
-        LabelDirection.Visibility = Visibility.Visible ;
         MaxHeight = ShowHeight ;
         Height = ShowHeight ;
         MinHeight = ShowHeight ;
       }
       else {
-        BtnClockWise.Visibility = Visibility.Collapsed ;
-        BtnCounterClockWise.Visibility = Visibility.Collapsed ;
-        LabelDirection.Visibility = Visibility.Collapsed ;
-        // HiddenRowHeigth = LayOutGrid.RowDefinitions[ 3 ].Height ;
-        // LayOutGrid.RowDefinitions[ 3 ].Height = new GridLength(0) ;
         MinHeight = HiddenHeight ;
         Height = HiddenHeight ;
         MaxHeight = HiddenHeight ;
@@ -90,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void OnModeChanged( object sender, SelectionChangedEventArgs e )
     {
-      if ( ! ShowDirectionRectangleMode )
+      if ( ! UseDirectionOptionForRectangleMode )
         return ;
       // change dialog size and show/hide direction option
       ShowDirectionOptions( CmbCreationMode.SelectedIndex == 1 ) ;
@@ -99,7 +111,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void OnBtnDirectionClick( object sender, RoutedEventArgs e )
     {
       if(Equals( sender, BtnClockWise )) {
-        BtnClockWise.BorderBrush = new DrawingBrush() ;
+        IsRecModeClockWise = true ;
+        BtnClockWise.Background = ActiveColor;
+        BtnCounterClockWise.Background = DeActiveColor;
+      }
+      else if(Equals( sender, BtnCounterClockWise )) {
+        IsRecModeClockWise = false ;
+        BtnCounterClockWise.Background = ActiveColor;
+        BtnClockWise.Background = DeActiveColor;
       }
     }
   }

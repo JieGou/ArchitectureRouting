@@ -39,6 +39,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
+    protected bool IsClockWise( XYZ p1, XYZ p2, XYZ p3 )
+    {
+      var v12 = p2 - p1  ;
+      var v13 = p3 - p1  ;
+      return v12.CrossProduct( v13 ).Z < 0 ;
+    }
     protected override OperationResult<LeakState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       UIApplication uiApp = commandData.Application;
@@ -49,7 +55,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var sv = new LeakRouteDialog(GetAddInType() == AddInType.Electrical) ;
         sv.ShowDialog() ;
-        sv.ShowDirectionOptions( false ) ;
         if ( true != sv.DialogResult ) return OperationResult<LeakState>.Cancelled ;
 
         var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType(), true ) ;
@@ -109,7 +114,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var mirrorMat = Transform.CreateReflection( plane ) ;
           var firstPoint = mirrorMat.OfPoint( fromPoint ) ;
           var thirdPoint = mirrorMat.OfPoint( secondPoint ) ;
-          var lastPoint = fromPoint.Y > secondPoint.Y ? new XYZ( fromPoint.X, fromPoint.Y - fromConnectorWidth, fromPoint.Z ) : new XYZ( fromPoint.X, fromPoint.Y + fromConnectorWidth, fromPoint.Z ) ;
+
+          
+          // correspond to direction setting of rectangle mode
+          bool isClockWiseRouting = sv.IsRecModeClockWise ;
+          bool isClockWise = IsClockWise( firstPoint, secondPoint, thirdPoint ) ;
+          if ( isClockWiseRouting != isClockWise )
+            ( firstPoint, thirdPoint ) = ( thirdPoint, firstPoint ) ;
+          
+          var vThirdToLastOnPlan = new XYZ( fromPoint.X - thirdPoint.X, fromPoint.Y - thirdPoint.Y, 0 ).Normalize() ;
+          var lastPoint = fromPoint - vThirdToLastOnPlan * fromConnectorWidth ;
           pickPoints = new List<XYZ>() { firstPoint, secondPoint, thirdPoint, lastPoint } ;
         }
 
