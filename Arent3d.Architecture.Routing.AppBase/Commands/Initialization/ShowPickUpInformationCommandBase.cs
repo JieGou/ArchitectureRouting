@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic ;
-using System.Globalization ;
-using System.Linq ;
+﻿using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -44,31 +42,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     /// Delete all symbol info that has been deleted.
     /// </summary>
     /// <param name="document"></param>
-    private void ResetSymbolInformationData( Document document )
+    private static void ResetSymbolInformationData( Document document )
     {
       var symbolInformationStorable = document.GetSymbolInformationStorable() ;
       var ceedDetailStorable = document.GetCeedDetailStorable() ;
       var symbolInformations = symbolInformationStorable.AllSymbolInformationModelData ;
       var ceedDetails = ceedDetailStorable.AllCeedDetailModelData ;
-      var listGroup = new FilteredElementCollector( document ).OfClass( typeof( Group ) ).Cast<Group>().ToList() ;
-       
-      List<string> listSymbolInforDel = new() ;
-      foreach ( var symbolInformation in symbolInformations ) {
-        if ( listGroup.All( x => null == Enumerable.FirstOrDefault<ElementId>( x.GetMemberIds(), y => y.ToString() == symbolInformation.Id ) ) ) {
-          listSymbolInforDel.Add( symbolInformation.Id ) ; 
-        } 
-      }
 
-      if ( ! listSymbolInforDel.Any() ) return ;
+      var deleteSymbolInformations = symbolInformations.Where( x => document.GetElement( x.SymbolUniqueId ) is not FamilyInstance ).Select( x => x.SymbolUniqueId ).EnumerateAll() ;
+      if ( ! deleteSymbolInformations.Any() ) 
+        return ;
 
-      using Transaction t = new(document, "Delete symbol infos that have been deleted") ;
+      using Transaction t = new(document, "Update Storage") ;
       t.Start() ;
-      symbolInformations.RemoveAll( x => listSymbolInforDel.Contains( x.Id ) ) ;
-      ceedDetails.RemoveAll( x => listSymbolInforDel.Contains( x.ParentId ) ) ;
+      
+      symbolInformations.RemoveAll( x => deleteSymbolInformations.Contains( x.SymbolUniqueId ) ) ;
+      ceedDetails.RemoveAll( x => deleteSymbolInformations.Contains( x.ParentId ) ) ;
       symbolInformationStorable.AllSymbolInformationModelData = symbolInformations ;
       ceedDetailStorable.AllCeedDetailModelData = ceedDetails ;
       symbolInformationStorable.Save() ;
       ceedDetailStorable.Save() ;
+      
       t.Commit() ;
     }
     

@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     丸,
   }
 
-  public enum SymbolCoordinateEnum
+  public enum SymbolCoordinate
   {
     上,
     左,
@@ -20,34 +20,35 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
   public class SymbolInformationModel
   {
-    public string Id { get ; set ; } = "-1" ;
-    public string SymbolKind { get ; set ; } = SymbolKindEnum.星.ToString() ;
-    public string SymbolCoordinate { get ; set ; } = SymbolCoordinateEnum.中心.ToString() ;
+    public string SymbolUniqueId { get ; set ; } = string.Empty ;
+    public string TagUniqueId { get ; set ; } = string.Empty ;
+    public string SymbolKind { get ; set ; } = $"{SymbolKindEnum.星}" ;
+    public string SymbolCoordinate { get ; set ; } = $"{Model.SymbolCoordinate.中心}" ;
     public double Height { get ; set ; } = 3 ;
     public double Percent { get ; set ; } = 100 ;
     public string Color { get ; set ; } = "Cyan";
-    public string Floor { get ; init ; } = string.Empty ;
+    public string Floor { get ; set ; } = string.Empty ;
     public string Description { get ; set ; } = string.Empty ;
     public double CharacterHeight { get ; set ; } = 1 ;
     public bool IsShowText { get ; set ; } = true ;
-    public bool IsEco { get ; }
 
     public SymbolInformationModel()
     {
+      
     }
 
-    public SymbolInformationModel( string? id, string? symbolKind, string? symbolCoordinate, double? height, double? percent, string? color, bool? isShowText, string? description, double? characterHeight, bool? isEco, string? floor )
+    public SymbolInformationModel( string? symbolUniqueId, string? tagUniqueId, string? symbolKind, string? symbolCoordinate, double? height, double? percent, string? color, bool? isShowText, string? description, double? characterHeight, string? floor )
     {
-      Id = id ?? "-1" ;
-      SymbolKind = symbolKind ?? SymbolKindEnum.星.ToString() ;
-      SymbolCoordinate = symbolCoordinate ?? SymbolCoordinateEnum.右.ToString() ;
+      SymbolUniqueId = symbolUniqueId ?? string.Empty ;
+      TagUniqueId = tagUniqueId ?? string.Empty ;
+      SymbolKind = symbolKind ?? $"{SymbolKindEnum.星}" ;
+      SymbolCoordinate = symbolCoordinate ?? $"{Model.SymbolCoordinate.右}" ;
       Height = height ?? 3 ;
       Percent = percent ?? 90 ;
       Color = color ?? "Green" ;
       IsShowText = isShowText ?? false ;
       Description = description ?? string.Empty ;
       CharacterHeight = characterHeight ?? 1 ;
-      IsEco = isEco ?? false ;
       Floor = floor ?? string.Empty ;
     }
   }

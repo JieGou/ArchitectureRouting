@@ -92,13 +92,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var curveType = pickRoute.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
+      var allowedTiltedPiping = CheckAllowedTiltedPiping( pickRoute.GetAllConnectors().ToList() ) ;
       var result = new List<( string RouteName, RouteSegment Segment )>() ;
       foreach ( var route in routeInTheSamePosition ) {
         result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector,
           heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex,
-          ref parentAndChildRoute, fromDirection, toDirection ) );
+          ref parentAndChildRoute, fromDirection, toDirection, null, allowedTiltedPiping ) );
       }
       return result ;
+    }
+
+    private bool CheckAllowedTiltedPiping( ICollection<Connector> connectors )
+    {
+      if ( ! connectors.Any() ) return false ;
+      foreach ( var connector in connectors ) {
+        var (x, y, z) = ( connector.Owner as FamilyInstance )!.FacingOrientation ;
+        if ( x is not ( 1 or -1 ) && y is not ( 1 or -1 ) && z is not ( 1 or -1 ) ) {
+          return true ;
+        }
+      }
+      
+      return false ;
     }
 
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
