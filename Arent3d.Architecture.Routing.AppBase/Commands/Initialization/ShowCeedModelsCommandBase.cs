@@ -135,7 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
         
         if ( element.HasParameter( grade3 ) ) 
-          element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.GradeMode == 3 );
+          element.SetProperty( grade3, DefaultSettingCommandBase.GetThreeDModeGradeCollection.Any(threeDGradeMode => threeDGradeMode == doc.GetDefaultSettingStorable().GradeSettingData.GradeMode)   );
 
         return Result.Succeeded ;
       } ) ;

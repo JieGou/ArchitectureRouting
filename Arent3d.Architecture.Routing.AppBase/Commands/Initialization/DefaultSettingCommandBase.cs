@@ -90,6 +90,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
+    public static  int[] GetThreeDModeGradeCollection => new[] { 3, 4, 5, 6, 7 } ;
+    
     private List<ImportDwgMappingModel> GetFloorsDefault(Document doc)
     {
       List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( doc )
@@ -116,7 +118,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         transaction.Start() ;
         var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3 ) ).ToList() ;
         foreach ( var instance in instances ) {
-          instance.SetProperty( Grade3, gradeMode == 3 ) ;
+          instance.SetProperty( Grade3, GetThreeDModeGradeCollection.Any( threeDGradeMode =>  threeDGradeMode == gradeMode ) ) ;
         }
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
