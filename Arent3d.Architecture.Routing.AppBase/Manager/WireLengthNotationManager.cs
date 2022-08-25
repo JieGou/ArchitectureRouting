@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   {
     private const double MaxToleranceOfTextNotePosition = 0.001 ;
     private static readonly double MaxDistanceBetweenTextNotes = 950.0.MillimetersToRevitUnits() ;
-    private const double MaxIntersectVolumeBetweenTextNotes = 1.3 ;
+    private const double MaxIntersectVolumeBetweenTextNotes = 0.4 ;
 
     private static List<string> GetPickUpNumbersList( IEnumerable<PickUpItemModel> pickUpModels )
     {
