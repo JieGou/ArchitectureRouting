@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           return Result.Cancelled ;
         }
 
-        ElementTransformUtils.MoveElement( uiDocument.Document, connector.Id, placePoint - new XYZ( 0, 0, heightOfConnector ) ) ;
+        ElementTransformUtils.MoveElement( uiDocument.Document, connector.Id, new XYZ(placePoint.X, placePoint.Y, heightOfConnector) - new XYZ( 0, 0, heightOfConnector ) ) ;
         if ( null != direction ) {
           var line = Line.CreateBound( placePoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( placePoint ) ) ;
           ElementTransformUtils.RotateElement(uiDocument.Document, connector.Id, line, XYZ.BasisY.AngleTo(direction));
@@ -158,7 +158,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return true ;
     }
 
-    private (XYZ? PlacePoint, XYZ? Direction) PickPoint( UIDocument uiDocument, Element symbolInstance )
+    private static (XYZ? PlacePoint, XYZ? Direction) PickPoint( UIDocument uiDocument, Element symbolInstance )
     {
       var dlg = new ModelessOkCancelDialog() ;
       dlg.AlignToView(uiDocument.GetActiveUIView());
