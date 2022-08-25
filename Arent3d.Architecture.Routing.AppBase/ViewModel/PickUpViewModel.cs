@@ -770,11 +770,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( registrationOfBoardDataModel == null )
           return false ;
 
-        if ( registrationOfBoardDataModel.MaterialCode1.Length > 2 && ! dictMaterialCode.Exists( m => m.MaterialCode == registrationOfBoardDataModel.MaterialCode1.Substring( 2 ) ) )
-          dictMaterialCode.Add( new MaterialCodeInfo( registrationOfBoardDataModel.MaterialCode1.Substring( 2 ), registrationOfBoardDataModel.Kind1, registrationOfBoardDataModel.Number1 ) ) ;
+        if ( registrationOfBoardDataModel.MaterialCode1.Length > 2 && ! dictMaterialCode.Exists( m => m.MaterialCode == Convert.ToInt32( registrationOfBoardDataModel.MaterialCode1 ).ToString() ) )
+          dictMaterialCode.Add( new MaterialCodeInfo( Convert.ToInt32( registrationOfBoardDataModel.MaterialCode1 ).ToString(), registrationOfBoardDataModel.Kind1, registrationOfBoardDataModel.Number1 ) ) ;
 
-        if ( registrationOfBoardDataModel.MaterialCode2.Length > 2 && ! dictMaterialCode.Exists( m => m.MaterialCode == registrationOfBoardDataModel.MaterialCode2.Substring( 2 ) ) )
-          dictMaterialCode.Add( new MaterialCodeInfo( registrationOfBoardDataModel.MaterialCode2.Substring( 2 ), registrationOfBoardDataModel.Kind2, registrationOfBoardDataModel.Number2 ) ) ;
+        if ( registrationOfBoardDataModel.MaterialCode2.Length > 2 && ! dictMaterialCode.Exists( m => m.MaterialCode == Convert.ToInt32( registrationOfBoardDataModel.MaterialCode2 ).ToString() ) )
+          dictMaterialCode.Add( new MaterialCodeInfo( Convert.ToInt32( registrationOfBoardDataModel.MaterialCode2 ).ToString(), registrationOfBoardDataModel.Kind2, registrationOfBoardDataModel.Number2 ) ) ;
       }
 
       pickUpConnectors.Add( (toConnector, conduit) ) ;

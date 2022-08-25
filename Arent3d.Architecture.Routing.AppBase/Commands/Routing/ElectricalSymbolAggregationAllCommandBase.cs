@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var uiDocument = commandData.Application.ActiveUIDocument ;
         var document = uiDocument.Document ;
         
-        var selectedConnectors = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GetConnectorFamilyType() != null ).ToList() ;
+        var selectedConnectors = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GetConnectorFamilyType() != null ) ;
 
         var ceedStoreable = document.GetCeedStorable() ;
         var listCeedModel = ceedStoreable.CeedModelData ;

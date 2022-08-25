@@ -13,6 +13,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
@@ -75,7 +76,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 if ( ! isConnectorsHaveConstructionItem ) break ;
                 // pick connectors
                 var connectorList = UiDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-                  .OfType<FamilyInstance>().ToList() ;
+                  .OfType<FamilyInstance>().EnumerateAll() ;
                 var categoryName = viewModel.ApplyToSymbolsText ;
                 if ( ! connectorList.Any() ) {
                   message = "No Connectors are selected." ;
@@ -96,7 +97,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               {
                 var rackList = UiDocument.Selection
                   .PickElementsByRectangle( CableTraySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-                  .Where( x => x is FamilyInstance  or CableTray).ToList() ;
+                  .Where( x => x is FamilyInstance  or CableTray).EnumerateAll() ;
                 
                 if ( ! rackList.Any() ) {
                   message = "No Racks are selected." ;
