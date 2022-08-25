@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       rowStyle.Setters.Add( new EventSetter( PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
       ViewModel.DtGrid = DtGrid ;
-      if ( ViewModel.IsExistUsingCode ) {
+      if ( ViewModel.IsEnabledShowUsingCode ) {
         CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
       }
     }
@@ -65,13 +65,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       ViewModel.ShowOnlyUsingCode() ;
       CbShowDiff.IsChecked = false ;
-      CbShowDiff.IsEnabled = false ;
     }
 
     private void ShowOnlyUsingCode_UnChecked( object sender, RoutedEventArgs e )
     {
       ViewModel.UnShowOnlyUsingCode() ;
-      CbShowDiff.IsEnabled = true ;
+      CbShowDiff.IsChecked = false ;
     }
 
     private void Row_MouseLeftButtonUp( object sender, MouseButtonEventArgs e )
