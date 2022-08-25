@@ -243,7 +243,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
   public abstract class DesignSymbolInformationViewModel : SymbolInformationViewModel
   {
-    protected DesignSymbolInformationViewModel( Document? document, SymbolInformationModel? symbolInformationModel, ExternalCommandData commandData ) : base( document, symbolInformationModel, commandData )
+    protected DesignSymbolInformationViewModel( Document document, SymbolInformationModel? symbolInformationModel ) : base( document, symbolInformationModel )
     {
     }
   }

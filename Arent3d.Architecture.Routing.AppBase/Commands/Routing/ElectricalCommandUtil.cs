@@ -13,7 +13,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static void SetPropertyForCable( Document document, IReadOnlyCollection<Route> routes )
     {
-      var connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       using Transaction t = new Transaction( document, "Set Construction item." ) ;
       t.Start() ;
       var defaultIsEcoModeValue = document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
@@ -40,9 +39,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             fromConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
             if ( ! string.IsNullOrEmpty( constructionItem ) ) fromConstructionItem = constructionItem! ;
             if ( ! string.IsNullOrEmpty( isEcoMode ) ) fromIsEcoMode = isEcoMode! ;
-            if ( string.IsNullOrEmpty( constructionItem ) || string.IsNullOrEmpty( isEcoMode ) ) {
-              UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
-            }
 
             if ( fromConnector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) && string.IsNullOrEmpty( constructionItem ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             if ( fromConnector.HasParameter( ElectricalRoutingElementParameter.IsEcoMode ) && string.IsNullOrEmpty( isEcoMode ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
@@ -65,10 +61,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
           toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
 
-          if ( string.IsNullOrEmpty( constructionItem ) || string.IsNullOrEmpty( isEcoMode ) ) {
-            UnGroupConnector( document, toConnector, ref connectorGroups ) ;
-          }
-
           if ( toConnector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) && string.IsNullOrEmpty( constructionItem ) ) {
             toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             constructionItem = DefaultConstructionItem ;
@@ -88,25 +80,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       t.Commit() ;
-      GroupConnector( document, connectorGroups ) ;
-    }
-
-    public static void UnGroupConnector( Document document, Element connector, ref Dictionary<ElementId, List<ElementId>> connectorGroups )
-    {
-      var parentGroup = document.GetElement( connector.GroupId ) as Group ;
-      if ( parentGroup == null ) return ;
-      // ungroup before set property
-      var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-      List<ElementId> listTextNoteIds = new List<ElementId>() ;
-      // ungroup textNote before ungroup connector
-      foreach ( var group in attachedGroup ) {
-        var ids = @group.GetMemberIds() ;
-        listTextNoteIds.AddRange( ids ) ;
-        @group.UngroupMembers() ;
-      }
-
-      if ( ! connectorGroups.ContainsKey( connector.Id ) ) connectorGroups.Add( connector.Id, listTextNoteIds ) ;
-      parentGroup.UngroupMembers() ;
     }
 
     public static void GroupConnector( Document document, Dictionary<ElementId, List<ElementId>> connectorGroups )
