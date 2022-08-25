@@ -3,7 +3,6 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
-using Arent3d.Architecture.Routing.AppBase.UI ;
 using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -71,7 +70,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           return Result.Cancelled ;
         }
 
-        ElementTransformUtils.MoveElement( uiDocument.Document, connector.Id, new XYZ(placePoint.X, placePoint.Y, heightOfConnector) - new XYZ( 0, 0, heightOfConnector ) ) ;
+        ElementTransformUtils.MoveElement( uiDocument.Document, connector.Id, new XYZ( placePoint.X, placePoint.Y, heightOfConnector) - new XYZ( 0, 0, heightOfConnector ) ) ;
         if ( null != direction ) {
           var line = Line.CreateBound( placePoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( placePoint ) ) ;
           ElementTransformUtils.RotateElement(uiDocument.Document, connector.Id, line, XYZ.BasisY.AngleTo(direction));
