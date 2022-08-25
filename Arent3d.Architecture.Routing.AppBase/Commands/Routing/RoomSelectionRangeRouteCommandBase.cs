@@ -102,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;
-      ConfirmUnsetCommandBase.ResetElementColor( document, allConnectors ) ;
+      ConfirmUnsetCommandBase.ResetElementColor( allConnectors ) ;
 
       return result ;
     }

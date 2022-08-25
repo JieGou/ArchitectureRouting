@@ -322,7 +322,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             foreach ( var sheetName in constructionItemList ) {
               var sheetCopy = workbook.GetSheetAt( 0 ).CopySheet( sheetName, true ) ;
               CreateSheet( SheetType.Summary, workbook, sheetCopy, sheetName ) ;
-              workbook.RemoveSheetAt( 0 );
             }
           }
             
@@ -337,10 +336,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             foreach ( var sheetName in constructionItemList ) {
               var sheetCopy = workbook.GetSheetAt( 0 ).CopySheet( sheetName, true ) ;
               CreateSheet( SheetType.Confirmation, workbook, sheetCopy, sheetName ) ;
-              workbook.RemoveSheetAt( 0 );
             }
           }
           
+          workbook.RemoveSheetAt( 0 );
           var fileNameToOutPut = GetFileName(fileName) ;
           FileStream fs = new FileStream( PathName + @"\" + fileNameToOutPut, FileMode.OpenOrCreate ) ;
           workbook.Write( fs ) ;
