@@ -41,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override OperationResult<LeakState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      UIApplication uiApp = commandData.Application;
+      UIApplication uiApp = commandData.Application ;
       UIDocument uiDocument = commandData.Application.ActiveUIDocument ;
       Document document = uiDocument.Document ;
       try {
@@ -53,17 +53,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType(), true ) ;
         var fromConnector = fromPickResult.PickedElement ;
-        if ( fromConnector is not FamilyInstance || false == fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) 
-                                                 || string.IsNullOrEmpty( ceedCode ) || ! ceedCode!.Contains( JBoxConnectorType ) ) {
+        if ( fromConnector is not FamilyInstance || false == fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) || string.IsNullOrEmpty( ceedCode ) || ! ceedCode!.Contains( JBoxConnectorType ) ) {
           MessageBox.Show( ErrorMessageIsNotJBoxConnector, "Message" ) ;
           return OperationResult<LeakState>.Cancelled ;
         }
 
         XYZ fromPoint = fromPickResult.GetOrigin() ;
         var pickPoints = new List<XYZ>() ;
-        
+
         if ( sv.CreateMode == 0 ) {
-          LineExternal lineExternal = new( uiApp ) ;
+          LineExternal lineExternal = new(uiApp) ;
           XYZ prevPoint = fromPickResult.GetOrigin() ;
           try {
             lineExternal.PickedPoints.Add( prevPoint ) ;
@@ -91,7 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else {
           var isHasParameterWidth = fromConnector.HasParameter( "W" ) ;
           var fromConnectorWidth = ( isHasParameterWidth ? fromConnector.ParametersMap.get_Item( "W" ).AsDouble() : DefaultWidthJBoxConnector ) * 1.5 ;
-          if ( !DrawingPreviewRectangleWhenLeakingInRectangleMode( uiApp, fromPoint, out var secondPoint ) ) return OperationResult<LeakState>.Cancelled ;
+          if ( ! DrawingPreviewRectangleWhenLeakingInRectangleMode( uiApp, fromPoint, out var secondPoint ) ) return OperationResult<LeakState>.Cancelled ;
           var mpt = ( fromPoint + secondPoint ) * 0.5 ;
           var currView = document.ActiveView ;
           var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
@@ -125,7 +124,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static bool DrawingPreviewRectangleWhenLeakingInRectangleMode(UIApplication uiApp, XYZ firstPoint,out XYZ? secondPoint)
+    private static bool DrawingPreviewRectangleWhenLeakingInRectangleMode( UIApplication uiApp, XYZ firstPoint, out XYZ? secondPoint )
     {
       var uiDocument = uiApp.ActiveUIDocument ;
       var selection = uiDocument.Selection ;
@@ -153,7 +152,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       catch ( OperationCanceledException ) {
         secondPoint = null ;
-        return false;
+        return false ;
       }
       finally {
         // End to render guide line
@@ -322,13 +321,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private FamilyInstance CreateLeakEndPoint( Document document, Level level, XYZ position )
     {
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.ToJboxConnector ).FirstOrDefault() ?? throw new Exception() ;
-      using Transaction t = new( document, "Create to JBOX connector" ) ;
+      using Transaction t = new(document, "Create to JBOX connector") ;
       t.Start() ;
       var familyInstance = symbol.Instantiate( position, level, StructuralType.NonStructural ) ;
       t.Commit() ;
       return familyInstance ;
     }
-    
+
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, LeakState leakState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
