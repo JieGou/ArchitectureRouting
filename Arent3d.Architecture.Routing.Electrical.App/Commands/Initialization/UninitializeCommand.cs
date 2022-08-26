@@ -1,4 +1,6 @@
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -15,7 +17,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       document.EraseAllConnectorFamilies() ;
       document.EraseAllElectricalRoutingFamilies();
+      CreateCylindricalShaftCommandBase.DeleteAllShaftOpening(document);
       base.UnSetup( document ) ;
+      document.DeleteEntireSchema();
     }
   }
 }

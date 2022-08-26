@@ -9,6 +9,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -22,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const double MaxToleranceOfTextNotePosition = 0.001 ;
     private const double MaxDistanceBetweenTextNotes = 1.5 ;
     
-    private static List<string> GetPickUpNumbersList( IEnumerable<PickUpModel> pickUpModels )
+    private static List<string> GetPickUpNumbersList( IEnumerable<PickUpItemModel> pickUpModels )
     {
       var pickUpNumberList = new List<string>() ;
       
@@ -45,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       wireLengthNotationStorable.Save() ;
     }
     
-    public static void ShowWireLengthNotation( WireLengthNotationStorable wireLengthNotationStorable, Document document, Level level, List<PickUpModel> pickUpModels )
+    public static void ShowWireLengthNotation( WireLengthNotationStorable wireLengthNotationStorable, Document document, Level level, List<PickUpItemModel> pickUpModels )
     {
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var pickUpNumberOfPullBox = 0 ;
@@ -116,9 +117,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       #endregion
       
       foreach ( var textNoteOfPickUpFigureModel in allTextNoteOfPickUpFigureModels ) {
-        if ( textNoteOfPickUpFigureModel.RoomId == null ) continue ;
-
-        var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel, reSizeRooms[ (int)textNoteOfPickUpFigureModel.RoomId ] ) ;
+        // TODO: とりあえず動くために以下をコメントアウトします。
+        // if ( textNoteOfPickUpFigureModel.RoomId == null ) continue ;
+        // var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel, reSizeRooms[ (int)textNoteOfPickUpFigureModel.RoomId ] ) ;
+        
+        var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel ) ;
         if ( textNote != null )
           textNoteOfPickUpFigureModel.Id = textNote.UniqueId ;
       }
@@ -127,7 +130,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
     
     private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, bool isDisplayPickUpNumber, 
-      IEnumerable<PickUpModel> pickUpModels, List<TextNoteOfPickUpFigureModel> straightTextNoteOfPickUpFigureModels, List<TextNoteOfPickUpFigureModel> obliqueTextNoteOfPickUpFigureModels, ref int pickUpNumberOfPullBox )
+      IEnumerable<PickUpItemModel> pickUpModels, List<TextNoteOfPickUpFigureModel> straightTextNoteOfPickUpFigureModels, List<TextNoteOfPickUpFigureModel> obliqueTextNoteOfPickUpFigureModels, ref int pickUpNumberOfPullBox )
     {
       var pickUpModelsGroupsByRelatedRouteName = pickUpModels.GroupBy( p => p.RelatedRouteName ) ;
       var obliqueTextNoteOfPickUpFigureQuantities = new Dictionary<string, double>() ;
@@ -144,12 +147,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           foreach ( var item in pickUpModelsInGroup.Where( item => ! string.IsNullOrEmpty( item.Quantity ) ) ) {
             double.TryParse( item.Quantity, out var quantity ) ;
             if ( string.IsNullOrEmpty( item.Direction ) )
-              straightTextNoteOfPickUpFigureQuantity += quantity ;
+              straightTextNoteOfPickUpFigureQuantity += Math.Round( quantity, 1 ) ;
             else {
               if ( ! obliqueTextNoteOfPickUpFigureQuantities.Keys.Contains( item.Direction ) )
                 obliqueTextNoteOfPickUpFigureQuantities.Add( item.Direction, 0 ) ;
 
-              obliqueTextNoteOfPickUpFigureQuantities[ item.Direction ] += quantity ;
+              obliqueTextNoteOfPickUpFigureQuantities[ item.Direction ] += Math.Round( quantity, 1 ) ;
             }
           }
 
@@ -201,7 +204,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               textOfPickUpNumber = string.IsNullOrEmpty( textOfPickUpNumber ) ? string.Empty : "[" + textOfPickUpNumber + "]" ;
             }
             
-            var strStraightTextNoteOfPickUpFigureQuantity = textOfPickUpNumber + Math.Round( straightTextNoteOfPickUpFigureQuantity, 1 ) ;
+            var strStraightTextNoteOfPickUpFigureQuantity = textOfPickUpNumber + straightTextNoteOfPickUpFigureQuantity;
             var wireLengthNotationAlignment = WireLengthNotationAlignment.Horizontal ;
             if ( direction is { Y: 1 or -1 } )
               wireLengthNotationAlignment = WireLengthNotationAlignment.Vertical ;
@@ -219,7 +222,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( obliqueTextNoteOfPickUpFigureModels.Any( x => Math.Abs( x.RelatedPosition.X - xPoint ) < MaxToleranceOfTextNotePosition && Math.Abs( x.RelatedPosition.Y - yPoint ) < MaxToleranceOfTextNotePosition ) ) 
             continue ;
 
-          var strObliqueTextNoteOfPickUpFigureQuantity = "↓ " + Math.Round( obliqueTextNoteOfPickUpFigureQuantity.Value, 1 ) ;
+          var strObliqueTextNoteOfPickUpFigureQuantity = "↓ " + obliqueTextNoteOfPickUpFigureQuantity.Value ;
           var positionOfTextNote = new XYZ( xPoint, yPoint, 0 ) ;
           var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( string.Empty, 0, positionOfTextNote, positionOfTextNote, strObliqueTextNoteOfPickUpFigureQuantity, WireLengthNotationAlignment.Oblique, null, null ) ;
           obliqueTextNoteOfPickUpFigureModels.Add( textNoteOfPickUpFigureModel );
@@ -380,7 +383,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var textNoteOfPickUpFigure = TextNote.Create( doc, doc.ActiveView.Id, textNoteOfPickUpFigureModel.Position, textNoteOfPickUpFigureModel.Content, textNoteOptions ) ;
       
       var colorOfTextNote = new Color( 255, 225, 51 ) ; // Dark yellow
-      ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNoteOfPickUpFigure }, colorOfTextNote ) ;
+      ConfirmUnsetCommandBase.ChangeElementColor( new []{ textNoteOfPickUpFigure }, colorOfTextNote ) ;
 
       return textNoteOfPickUpFigure ;
     }
@@ -395,7 +398,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
     
-    public static Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpModel> pickUpModelsByLevel )
+    public static Dictionary<string, int> GetPickUpNumberForConduitsToPullBox( Document document, List<PickUpItemModel> pickUpModelsByLevel )
     {
       var result = new Dictionary<string, int>() ;
       var pickUpModelsWithPickUpNumber = pickUpModelsByLevel.Where( x => ! string.IsNullOrEmpty( x.PickUpNumber ) ).ToList() ;

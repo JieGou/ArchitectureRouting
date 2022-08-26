@@ -9,6 +9,8 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -35,14 +37,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduitsModelData = csvStorable.ConduitsModelData ;
         var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
         var cnsStorable = document.GetCnsSettingStorable() ;
-        var detailSymbolStorable = document.GetDetailSymbolStorable() ;
+        var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) document.ActiveView ).GenLevel ) ;
         
-        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical ) ;
+        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical, x => x is Conduit ) ;
         
-        CreateDetailSymbolModel( document, pickInfo.Element, csvStorable, detailSymbolStorable) ;
+        CreateDetailSymbolModel( document, pickInfo.Element, csvStorable, storageService) ;
         var conduits = new List<Element> { pickInfo.Element } ;
         var elementIds = new List<string> { pickInfo.Element.UniqueId } ;
-        var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, conduits, elementIds, false ) ;
+        var ( detailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableItemAddWiringInfo( document, csvStorable, storageService, conduits, elementIds, false ) ;
         
         if ( IsExistSymBol( detailTableModels ) ) {
           MessageBox.Show(@"You must select route don't have symbol", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -50,33 +52,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
         
         var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
-        var conduitTypes = ( from conduitTypeName in conduitTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
-        conduitTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
+        var conduitTypes = ( from conduitTypeName in conduitTypeNames select new DetailTableItemModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
+        conduitTypes.Add( new DetailTableItemModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
         
         var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
         var constructionItems = constructionItemNames.Any()
-          ? ( from constructionItemName in constructionItemNames select new DetailTableModel.ComboboxItemType( constructionItemName, constructionItemName ) ).ToList()
-          : new List<DetailTableModel.ComboboxItemType>() { new(DefaultConstructionItems, DefaultConstructionItems) } ;
+          ? ( from constructionItemName in constructionItemNames select new DetailTableItemModel.ComboboxItemType( constructionItemName, constructionItemName ) ).ToList()
+          : new List<DetailTableItemModel.ComboboxItemType>() { new(DefaultConstructionItems, DefaultConstructionItems) } ;
         
         var levelNames = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).Select( l => l.Name ).ToList() ;
-        var levels = ( from levelName in levelNames select new DetailTableModel.ComboboxItemType( levelName, levelName ) ).ToList() ;
+        var levels = ( from levelName in levelNames select new DetailTableItemModel.ComboboxItemType( levelName, levelName ) ).ToList() ;
         
         var wireTypeNames = wiresAndCablesModelData.Select( w => w.WireType ).Distinct().ToList() ;
-        var wireTypes = ( from wireType in wireTypeNames select new DetailTableModel.ComboboxItemType( wireType, wireType ) ).ToList() ;
+        var wireTypes = ( from wireType in wireTypeNames select new DetailTableItemModel.ComboboxItemType( wireType, wireType ) ).ToList() ;
         
-        var earthTypes = new List<DetailTableModel.ComboboxItemType>() { new("IV", "IV"), new("EM-IE", "EM-IE") } ;
+        var earthTypes = new List<DetailTableItemModel.ComboboxItemType>() { new("IV", "IV"), new("EM-IE", "EM-IE") } ;
         
-        var numbers = new List<DetailTableModel.ComboboxItemType>() ;
+        var numbers = new List<DetailTableItemModel.ComboboxItemType>() ;
         for ( var i = 1 ; i <= 10 ; i++ ) {
-          numbers.Add( new DetailTableModel.ComboboxItemType( i.ToString(), i.ToString() ) ) ;
+          numbers.Add( new DetailTableItemModel.ComboboxItemType( i.ToString(), i.ToString() ) ) ;
         }
         
         var constructionClassificationTypeNames = hiroiSetCdMasterNormalModelData.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
-        var constructionClassificationTypes = ( from constructionClassification in constructionClassificationTypeNames select new DetailTableModel.ComboboxItemType( constructionClassification, constructionClassification ) ).ToList() ;
+        var constructionClassificationTypes = ( from constructionClassification in constructionClassificationTypeNames select new DetailTableItemModel.ComboboxItemType( constructionClassification, constructionClassification ) ).ToList() ;
         
-        var signalTypes = ( from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
+        var signalTypes = ( from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) select new DetailTableItemModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
         
-        var viewModel = new DetailTableViewModel( document, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, conduitsModelData, wiresAndCablesModelData, false, true )
+        var viewModel = new DetailTableViewModel( document, detailTableModels, new ObservableCollection<DetailTableItemModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, conduitsModelData, wiresAndCablesModelData, false, true )
         {
           PickInfo = pickInfo
         } ;
@@ -84,20 +86,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var result = dialog.ShowDialog() ;
         
         while ( result is false && viewModel.IsAddReference ) {
-          WiringDetailSymbolFilter detailSymbolFilter = new() ;
+          TextNotePickFilter detailSymbolFilter = new() ;
           List<string> detailSymbolIds = new() ;
           try {
             var pickedDetailSymbols = uiDocument.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
             foreach ( var pickedDetailSymbol in pickedDetailSymbols ) {
-              var detailSymbol = document.GetAllElements<TextNote>().ToList().FirstOrDefault( x => x.Id == pickedDetailSymbol.ElementId ) ;
-              if ( detailSymbol != null && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
+              if ( uiDocument.Document.GetElement(pickedDetailSymbol) is TextNote detailSymbol && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
                 detailSymbolIds.Add( detailSymbol.UniqueId ) ;
               }
             }
         
-            var ( referenceDetailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableAddWiringInfo( document, csvStorable, detailSymbolStorable, new List<Element>(), detailSymbolIds, true ) ;
+            var ( referenceDetailTableModels, _, _) = CreateDetailTableCommandBase.CreateDetailTableItemAddWiringInfo( document, csvStorable, storageService, new List<Element>(), detailSymbolIds, true ) ;
             foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
-              viewModel.ReferenceDetailTableModelsOrigin.Add( referenceDetailTableModelRow ) ;
+              viewModel.ReferenceDetailTableItemModelsOrigin.Add( referenceDetailTableModelRow ) ;
             }
           }
           catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -121,14 +122,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private bool IsExistSymBol(IEnumerable<DetailTableModel> detailTableModels)
+    private bool IsExistSymBol(IEnumerable<DetailTableItemModel> detailTableItemModels)
     {
-      return detailTableModels.Any( x => x.DetailSymbol != SpecialSymbol ) ;
+      return detailTableItemModels.Any( x => x.DetailSymbol != SpecialSymbol ) ;
     }
 
-    public static void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, DetailSymbolStorable detailSymbolStorable, string? uniqueId = null )
+    public static void CreateDetailSymbolModel( Document document, Element pickConduit, CsvStorable csvStorable, StorageService<Level, DetailSymbolModel> storageService, string? uniqueId = null )
     {
-      if ( detailSymbolStorable.DetailSymbolModelData.Any( x => x.ConduitId.Equals( pickConduit.UniqueId ) ) )
+      if ( storageService.Data.DetailSymbolData.Any( x => x.ConduitUniqueId.Equals( pickConduit.UniqueId ) ) )
         return ;
 
       var allConduit = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
@@ -160,9 +161,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var plumbingType = GetPlumpingType( csvStorable, connectorIsEcoMode, ceedCode ) ;
 
         foreach ( var conduitOfRoute in conduitOfRoutes ) {
-          var detailSymbolModel = new DetailSymbolModel( SpecialSymbol, ! string.IsNullOrEmpty( uniqueId ) ? uniqueId : string.Empty, fromConnector.UniqueId, toConnector.UniqueId , conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count > 2 ? ceedSetCode[ 1 ] : string.Empty, plumbingType ) ;
-          if ( null == detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => x.DetailSymbolUniqueId == detailSymbolModel.DetailSymbolUniqueId && x.ConduitId == detailSymbolModel.ConduitId ) )
-            detailSymbolStorable.DetailSymbolModelData.Add( detailSymbolModel ) ;
+          var detailSymbolModel = new DetailSymbolItemModel( SpecialSymbol, ! string.IsNullOrEmpty( uniqueId ) ? uniqueId : string.Empty, fromConnector.UniqueId, toConnector.UniqueId , conduitOfRoute.UniqueId, routeName, ceedCode, conduitOfRoute.Id.ToString(), false, 1, ceedSetCode?.Count > 2 ? ceedSetCode[ 1 ] : string.Empty, plumbingType ) ;
+          if ( null == storageService.Data.DetailSymbolData.FirstOrDefault( x => x.DetailSymbolUniqueId == detailSymbolModel.DetailSymbolUniqueId && x.ConduitUniqueId == detailSymbolModel.ConduitUniqueId ) )
+            storageService.Data.DetailSymbolData.Add( detailSymbolModel ) ;
         }
       }
     }
@@ -231,18 +232,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return routeNames ;
     }
   }
-  public class WiringDetailSymbolFilter : ISelectionFilter
+  public class TextNotePickFilter : ISelectionFilter
   {
     private const string DetailSymbolType = "DetailSymbol-TNT" ;
     public bool AllowElement( Element element )
     {
-      if ( element.GetBuiltInCategory() != BuiltInCategory.OST_TextNotes )
-        return false ;
-
-      if ( element.GroupId != ElementId.InvalidElementId )
-        return false ;
-
-      return element.Name.StartsWith( DetailSymbolType ) ;
+      return element.GetBuiltInCategory() == BuiltInCategory.OST_TextNotes && element.Name.StartsWith( DetailSymbolType ) ;
     }
 
     public bool AllowReference( Reference r, XYZ p )

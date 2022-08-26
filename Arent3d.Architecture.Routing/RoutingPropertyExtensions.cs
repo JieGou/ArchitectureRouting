@@ -1,6 +1,7 @@
 using System ;
 using System.Linq ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 #if DEBUG
@@ -130,6 +131,14 @@ namespace Arent3d.Architecture.Routing
     [Parameter( "674f8e8e-b923-4bfc-9a3b-399adaa783ee", "Room Condition", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Select Room Condition" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_TEXT, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
     RoomCondition,
+    
+    [Parameter( "bd2c2a04-5b41-40f4-b59b-bbb50f5d1c74", "Symbol Content", DataType.Text, ParameterVisibility.ReadOnlyOnHasValue, DescriptionKey = "Symbol Content")]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
+    SymbolContent,
+    
+    [Parameter( "05a6c3f6-ce5b-4bcb-a683-4087b928fe6d", "Text", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Text")]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
+    Text,
 
     #region Schedules
 

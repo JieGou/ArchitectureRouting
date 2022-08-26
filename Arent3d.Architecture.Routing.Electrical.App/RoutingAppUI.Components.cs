@@ -54,6 +54,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [SplitButton( "arent3d.architecture.routing.settings.all", TitleKey = "Electrical.App.Panels.Routing.Settings.All" )]
         private static class AllSettings
         {
+          [Button( typeof( DefaultSettingCommand ), OnlyInitialized = true )]
+          private static class DefaultSettingCommandButton
+          {
+          }
+          
           [Button( typeof( LoadCsvFilesCommand ), OnlyInitialized = true )]
           private static class LoadCsvFilesCommandButton
           {
@@ -66,11 +71,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( CnsSettingCommand ), OnlyInitialized = true )]
           private static class CnsSettingCommandButton
-          {
-          }
-
-          [Button( typeof( DefaultSettingCommand ), OnlyInitialized = true )]
-          private static class DefaultSettingCommandButton
           {
           }
 
@@ -132,7 +132,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
 
-          [Button( typeof( ShowFallMarkCommand ), OnlyInitialized = true )]
+          [Button( typeof( ShowFallMarkCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
           private static class ShowFallMarkCommandButton
           {
           }
@@ -260,6 +260,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
+          [Button( typeof( EraseSelectedLimitRacksCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedLimitRacksCommandButton
+          {
+          }
+          
           [Button( typeof( RackSpaceCommand ), OnlyInitialized = true )]
           private static class RackGuidCommandButton
           {
@@ -328,6 +333,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         {
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton
+          {
+          }
+
+          [Button( typeof( ShowPickUpInformationByLevelCommand ), OnlyInitialized = true )]
+          private static class ShowPickUpInformationByLevelCommandButton
           {
           }
 

@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -178,13 +179,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       
       //Delete label of pull box
-      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
-      var pullBoxInfoModel = pullBoxInfoStorable.PullBoxInfoModelData.FirstOrDefault( p => p.PullBoxUniqueId == elementPullBox.UniqueId ) ;
-      if ( pullBoxInfoModel != null ) {
-        var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel.TextNoteUniqueId == t.UniqueId ) ;
-        if( textNote != null )
-          document.Delete( textNote.Id ) ;
-        pullBoxInfoStorable.PullBoxInfoModelData.Remove( pullBoxInfoModel ) ;
+      var level = document.ActiveView.GenLevel ;
+      if ( level != null ) {
+        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
+        var pullBoxInfoModel = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.FirstOrDefault( p => p.PullBoxUniqueId == elementPullBox.UniqueId ) ;
+        if ( pullBoxInfoModel != null ) {
+          var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel.TextNoteUniqueId == t.UniqueId ) ;
+          if( textNote != null )
+            document.Delete( textNote.Id ) ;
+          storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( pullBoxInfoModel ) ;
+        }
       }
 
       //Delete pull box

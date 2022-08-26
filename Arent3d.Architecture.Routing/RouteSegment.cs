@@ -25,6 +25,8 @@ namespace Arent3d.Architecture.Routing
 
     public string? ShaftElementUniqueId { get ; internal set ; }
 
+    public bool AllowedTiltedPiping { get ; set ; }
+
     public IReadOnlyCollection<SubRouteInfo> SubRouteGroup { get ; private set ; } = Array.Empty<SubRouteInfo>() ;
 
     internal void SetSubRouteGroup( IReadOnlyCollection<SubRouteInfo> subRouteGroup )
@@ -70,7 +72,7 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeight, FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId )
+    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeight, FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId, bool allowedTiltedPiping = false )
     {
       SystemClassificationInfo = classificationInfo ;
       SystemType = systemType ;
@@ -84,6 +86,7 @@ namespace Arent3d.Architecture.Routing
       FromEndPoint = fromEndPoint ;
       ToEndPoint = toEndPoint ;
       ShaftElementUniqueId = shaftElementUniqueId ;
+      AllowedTiltedPiping = allowedTiltedPiping ;
     }
 
     public void ReplaceEndPoint( IEndPoint oldEndPoint, IEndPoint newEndPoint )

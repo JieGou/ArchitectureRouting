@@ -33,10 +33,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
             if ( !isDisplay ) return Result.Succeeded ;
             
-            var pickUpViewModel = new PickUpViewModel( document ) ;
+            var pickUpViewModel = new PickUpViewModel( document, level ) ;
             if ( ! pickUpViewModel.DataPickUpModels.Any() ) return Result.Succeeded ;
             
-            var pickUpModels = pickUpViewModel.DataPickUpModels.Where( p => p.Floor == level.Name ).ToList() ;
+            var pickUpModels = pickUpViewModel.DataPickUpModels ;
             if ( !pickUpModels.Any() ) {
               MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
               return Result.Succeeded ;

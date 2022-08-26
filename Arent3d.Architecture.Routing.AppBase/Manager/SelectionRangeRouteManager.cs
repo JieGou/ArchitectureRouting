@@ -97,7 +97,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       sensorConnectors.RemoveAll( fi => fi.LevelId != powerLevel ) ;
 
       if ( 0 == sensorConnectors.Count ) return ( Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageNoSensorConnector ) ;
-      if ( 1 == sensorConnectors.Count ) return ( Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
 
       var sensorDirection = SortSensorConnectors( powerConnector.GetTopConnectorOfConnectorFamily().Origin, ref sensorConnectors ) ;
       if ( SensorArrayDirection.Invalid == sensorDirection ) return ( Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;

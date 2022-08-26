@@ -10,6 +10,8 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
@@ -86,9 +88,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var curveType = route.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection ) ;
+      var allowedTiltedPiping = CheckAllowedTiltedPiping( route.GetAllConnectors().ToList() ) ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, null, false, allowedTiltedPiping ) ;
 
       return result ;
+    }
+
+    private bool CheckAllowedTiltedPiping( ICollection<Connector> connectors )
+    {
+      if ( ! connectors.Any() ) return false ;
+      foreach ( var connector in connectors ) {
+        var (x, y, z) = ( connector.Owner as FamilyInstance )!.FacingOrientation ;
+        if ( x is not ( 1 or -1 ) && y is not ( 1 or -1 ) && z is not ( 1 or -1 ) ) {
+          return true ;
+        }
+      }
+      
+      return false ;
     }
 
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
@@ -97,9 +113,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       #region Change dimension of pullbox and set new label
       
-      var detailSymbolStorable = document.GetDetailSymbolStorable() ;
-      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
-      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       CsvStorable? csvStorable = null ;
       List<ConduitsModel>? conduitsModelData = null ;
       List<HiroiMasterModel>? hiroiMasterModels = null;
@@ -109,9 +122,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       }
       
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, detailSymbolStorable, pullBoxInfoStorable,
-        conduitsModelData, hiroiMasterModels, scale, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, isAutoCalculatePullBoxSize, selectedPullBox ) ;
+      var level = document.ActiveView.GenLevel ;
+      if ( level != null ) {
+        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
+        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       
+        PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
+          conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, isAutoCalculatePullBoxSize, selectedPullBox ) ;
+      }
+
       #endregion
       
       #region Change Representative Route Name

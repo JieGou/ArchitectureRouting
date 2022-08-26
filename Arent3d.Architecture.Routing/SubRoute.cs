@@ -28,10 +28,11 @@ namespace Arent3d.Architecture.Routing
     public IEnumerable<IEndPoint> AllEndPoints => FromEndPoints.Concat( ToEndPoints ) ;
     public bool AllowedTiltedPiping { get ; set ; }
 
-    internal SubRoute( Route route, int index )
+    internal SubRoute( Route route, int index, bool allowedTiltedPiping )
     {
       Route = route ;
       SubRouteIndex = index ;
+      AllowedTiltedPiping = allowedTiltedPiping ;
     }
 
     internal void AddSegment( RouteSegment segment )

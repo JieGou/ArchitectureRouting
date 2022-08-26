@@ -79,9 +79,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         // If last point is null. Return failed to end command
         if ( lastPoint == null || checkEx ) return Result.Failed ;
 
-        using Transaction trans = new Transaction( document, "Create Arent Room" ) ;
+        using var trans = new Transaction( document, "Create Arent Room" ) ;
+        
         trans.Start() ;
-
         var mpt = ( firstPoint + lastPoint ) * 0.5 ;
         var currView = document.ActiveView ;
         var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
@@ -118,7 +118,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         instance.LookupParameter( "Thickness" ).Set( thickness ) ;
         instance.SetProperty( ElectricalRoutingElementParameter.RoomCondition, viewModel.SelectedCondition! ) ;
 
-        ChangeWallTransparency( document, new List<Element>() { instance } ) ;
+        var overrideGraphicSettings = new OverrideGraphicSettings() ;
+        overrideGraphicSettings.SetSurfaceTransparency( 100 ) ;
+        document.ActiveView.SetElementOverrides(instance.Id, overrideGraphicSettings);
         trans.Commit() ;
 
         return Result.Succeeded ;
@@ -148,23 +150,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       conditions = store.CeedModelData.Select( x => x.Condition ).Distinct().Where(x => !string.IsNullOrEmpty(x)).OrderBy( x => x ).ToList() ;
       return true ;
-    }
-
-    private void ChangeWallTransparency( Document document, IReadOnlyCollection<Element> walls )
-    {
-      var ogs = new OverrideGraphicSettings() ;
-      ogs.SetSurfaceTransparency( 100 ) ;
-      var allView = document.GetAllElements<View>() ;
-      foreach ( var view in allView ) {
-        try {
-          foreach ( var wall in walls ) {
-            view.SetElementOverrides( wall.Id, ogs ) ;
-          }
-        }
-        catch {
-          // Todo catch handle
-        }
-      }
     }
 
     private XYZ GetOriginPoint( XYZ firstPoint, XYZ secondPoint, XYZ thirdPoint, XYZ lastPoint )

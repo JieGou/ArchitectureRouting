@@ -8,6 +8,8 @@ using Arent3d.Architecture.Routing.Electrical.App.ViewModels ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -15,7 +17,6 @@ using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using Autodesk.Revit.UI.Selection ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
@@ -40,11 +41,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
         {
           var allElementSelected = selection.GetElementIds() ;
-          if ( ! allElementSelected.Any() ) return Result.Cancelled ;
-          var connectorsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
-            .Where( e => ( allElementSelected.Contains( e.Id ) || allElementSelected.Contains( e.GroupId ) ) 
-                         && e is FamilyInstance f && f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() 
-                         && f.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
+          if ( ! allElementSelected.Any() ) 
+            return Result.Cancelled ;
+          
+          var connectorsSelected = doc.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
+            .Where( e => allElementSelected.Contains( e.Id ) && 
+                         e.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() && 
+                         e.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
           var conduitsSelected = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => allElementSelected.Contains( e.Id ) ).ToList() ;
           var conduitAndConnectorDic = GetConduitAndConnector( doc, connectorsSelected, conduitsSelected ) ;
           if ( ! conduitAndConnectorDic.Any() ) return Result.Cancelled ;
@@ -84,7 +87,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
     }
 
-    private Dictionary<Element, Element> GetConduitAndConnector( Document document, List<Element> connectors, List<Element> conduits )
+    private Dictionary<Element, Element> GetConduitAndConnector( Document document, List<FamilyInstance> connectors, List<Element> conduits )
     {
       var conduitAndConnectorDic = new Dictionary<Element, Element>() ;
       if ( connectors.Any() ) {
@@ -102,9 +105,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
 
       if ( conduits.Any() ) {
-        var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
-          .Where( e => e is FamilyInstance f && f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() 
-                            && f.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
+        var allConnectors = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements )
+          .Where( f => f.Symbol.FamilyName != ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() && 
+                       f.Symbol.FamilyName != ElectricalRoutingFamilyType.ToPowerEquipment.GetFamilyName() ).ToList() ;
         var allConduitWithDirectionByZ = conduits.Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => ( ( c.Location as LocationCurve )?.Curve as Line )?.Origin ?? new XYZ() ) ;
         foreach ( var (conduit, (x, y, _)) in allConduitWithDirectionByZ ) {
           var connectorOfConduit = allConnectors.Where( c => c.Location is LocationPoint connectorLocation && Math.Abs( connectorLocation.Point.X - x ) < 0.01 && Math.Abs( connectorLocation.Point.Y - y ) < 0.01 ) ;
@@ -136,27 +139,27 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       const double percentage = 0.32 ;
       const string outDoorCondition = "屋外" ; 
       var ceedModels = doc.GetCeedStorable().CeedModelData ;
-      var detailSymbolStorable = doc.GetDetailSymbolStorable() ;
+      var storageService = new StorageService<Level, DetailSymbolModel>( ( (ViewPlan) doc.ActiveView ).GenLevel ) ;
       var csvStorable = doc.GetCsvStorable() ;
       var conduitsModelData = csvStorable.ConduitsModelData ;
       var registrationOfBoardDataModels = doc.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
 
       var plumbingTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
-      var plumbingTypes = ( from conduitTypeName in plumbingTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
-      plumbingTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
+      var plumbingTypes = ( from conduitTypeName in plumbingTypeNames select new DetailTableItemModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
+      plumbingTypes.Add( new DetailTableItemModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
 
       var hiroiCdModel = csvStorable.HiroiSetCdMasterNormalModelData ;
       var classificationOfPlumbingNames = hiroiCdModel.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
-      var classificationsOfPlumbing = ( from classificationOfPlumbingName in classificationOfPlumbingNames select new DetailTableModel.ComboboxItemType( classificationOfPlumbingName, classificationOfPlumbingName ) ).ToList() ;
+      var classificationsOfPlumbing = ( from classificationOfPlumbingName in classificationOfPlumbingNames select new DetailTableItemModel.ComboboxItemType( classificationOfPlumbingName, classificationOfPlumbingName ) ).ToList() ;
 
-      var concealmentOrExposure = new List<DetailTableModel.ComboboxItemType>() { new( ConcealmentOrExposure.隠蔽.GetFieldName(), "False" ), new( ConcealmentOrExposure.露出.GetFieldName(), "True" ) } ;
-      var inOrOutDoor = new List<DetailTableModel.ComboboxItemType>() { new( InOrOutDoor.屋内.GetFieldName(), "True" ), new( InOrOutDoor.屋外.GetFieldName(), "False" ) } ;
+      var concealmentOrExposure = new List<DetailTableItemModel.ComboboxItemType>() { new( ConcealmentOrExposure.隠蔽.GetFieldName(), "False" ), new( ConcealmentOrExposure.露出.GetFieldName(), "True" ) } ;
+      var inOrOutDoor = new List<DetailTableItemModel.ComboboxItemType>() { new( InOrOutDoor.屋内.GetFieldName(), "True" ), new( InOrOutDoor.屋外.GetFieldName(), "False" ) } ;
 
       var changePlumbingInformationModels = new List<ChangePlumbingInformationModel>() ;
       var connectorInfos = new List<ChangePlumbingInformationViewModel.ConnectorInfo>() ;
       foreach ( var (conduit, connector) in conduitAndConnectorDic ) {
         var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
-        var detailSymbolModel = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.ConduitId == conduit.UniqueId ) ;
+        var detailSymbolModel = storageService.Data.DetailSymbolData.FirstOrDefault( s => s.ConduitUniqueId == conduit.UniqueId ) ;
         var plumbingType = oldChangePlumbingInformationModel != null 
           ? oldChangePlumbingInformationModel.PlumbingType 
           : ( detailSymbolModel?.PlumbingType ?? DefaultParentPlumbingType ) ;

@@ -15,6 +15,8 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -35,19 +37,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     private readonly Document _document ;
-    private readonly ExternalCommandData _commandData ;
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
-    private List<CeedModel> _usedCeedModels ;
     private List<CeedModel> _previousCeedModels ;
+    private readonly StorageService<Level, CeedUserModel> _storageService ;
 
     public DataGrid DtGrid ;
 
     public IReadOnlyCollection<CeedModel> OriginCeedModels => new ReadOnlyCollection<CeedModel>( _ceedModels );
 
     public ObservableCollection<CeedModel> CeedModels { get ; set ; }
-
-    private CeedStorable? CeedStorable { get ; set ; }
 
     public ObservableCollection<string> CeedSetCodes { get ; } = new() ;
 
@@ -240,35 +239,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public CeedViewModel( ExternalCommandData commandData )
+    public CeedViewModel( Document document )
     {
-      _commandData = commandData ;
-      _document = commandData.Application.ActiveUIDocument.Document ;
-      CeedModels = new() ;
+      _document = document ;
+      CeedModels = new ObservableCollection<CeedModel>() ;
       DtGrid = new DataGrid() ;
+      
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      _storageService = new StorageService<Level, CeedUserModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
+      
       if ( oldCeedStorable is null ) {
-        _ceedModels = new() ;
+        _ceedModels = new List<CeedModel>() ;
         _usingCeedModel = new List<CeedModel>() ;
-        _usedCeedModels = new List<CeedModel>() ;
         _previousCeedModels = new List<CeedModel>() ;
         _previewList = new ObservableCollection<CeedModel>() ;
       }
       else {
-        CeedStorable = oldCeedStorable ;
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
-        _usedCeedModels = oldCeedStorable.CeedModelData ;
-        _previousCeedModels = new List<CeedModel>( _usedCeedModels ) ;
-        IsShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
-        IsShowCondition = oldCeedStorable.IsShowCondition ;
-        IsShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
+        _previousCeedModels = new List<CeedModel>( oldCeedStorable.CeedModelData ) ;
+        IsShowCeedModelNumber = _storageService.Data.IsShowCeedModelNumber ;
+        IsShowCondition = _storageService.Data.IsShowCondition ;
+        IsShowOnlyUsingCode = _storageService.Data.IsShowOnlyUsingCode ;
         AddModelNumber( CeedModels ) ;
         if ( _usingCeedModel.Any() )
           IsExistUsingCode = true ;
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
-        else IsShowDiff = oldCeedStorable.IsDiff ;
-        _previewList = CeedModels ;
+        else IsShowDiff = _storageService.Data.IsDiff ;
+        _previewList = new ObservableCollection<CeedModel>( oldCeedStorable.CeedModelData ) ;
       }
 
       _selectedCeedSetCode = string.Empty ;
@@ -278,7 +276,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void LoadData( CeedStorable ceedStorable )
     {
-      CeedStorable = ceedStorable ;
       _ceedModels = ceedStorable.CeedModelData ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
@@ -292,10 +289,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _usingCeedModel = ceedStorable.CeedModelUsedData ;
     }
 
-    private void LoadData( List<CeedModel> ceedModels, CeedStorable? ceedStorable = null )
+    private void LoadData( List<CeedModel> ceedModels )
     {
-      if ( ceedStorable != null )
-        CeedStorable = ceedStorable ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
       foreach ( var dataModel in ceedModels ) {
@@ -344,12 +339,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return categoryModels ;
     }
 
-    private enum CategoryType
-    {
-      ModelNumberOrSetCodePreview,
-      DeviceSymbolPreview
-    }
-
     private CategoryModel? FindSelectedCategory( IEnumerable<CategoryModel> categories )
     {
       foreach ( var category in categories ) {
@@ -385,7 +374,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
-      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
+      using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
       progress.Message = "Loading data..." ;
       var ceedStorable = _document.GetCeedStorable() ;
       {
@@ -395,7 +384,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CheckChangeColor( ceedModelData ) ;
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-        ceedStorable.IsShowOnlyUsingCode = false ;
+        _storageService.Data.IsShowOnlyUsingCode = false ;
         LoadData( ceedStorable ) ;
         checkBox.Visibility = Visibility.Hidden ;
         checkBox.IsChecked = false ;
@@ -405,14 +394,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         try {
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
-          using ( var progressData = progress?.Reserve( 0.5 ) ) {
+          using ( var progressData = progress.Reserve( 0.5 ) ) {
             ceedStorable.Save() ;
-            progressData?.ThrowIfCanceled() ;
+            _storageService.SaveChange();
+            progressData.ThrowIfCanceled() ;
           }
 
-          using ( var progressData = progress?.Reserve( 0.9 ) ) {
+          using ( var progressData = progress.Reserve( 0.9 ) ) {
             _document.MakeCertainAllConnectorFamilies() ;
-            progressData?.ThrowIfCanceled() ;
+            progressData.ThrowIfCanceled() ;
           }
 
           t.Commit() ;
@@ -424,15 +414,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public void Save()
     {
-      var ceedStorable = _document.GetCeedStorable() ;
       try {
         using Transaction t = new( _document, "Save data" ) ;
         t.Start() ;
-        ceedStorable.IsShowCeedModelNumber = IsShowCeedModelNumber ;
-        ceedStorable.IsShowCondition = IsShowCondition ;
-        ceedStorable.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
-        ceedStorable.IsDiff = IsShowDiff ;
-        ceedStorable.Save() ;
+        _storageService.Data.IsShowCeedModelNumber = IsShowCeedModelNumber ;
+        _storageService.Data.IsShowCondition = IsShowCondition ;
+        _storageService.Data.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
+        _storageService.Data.IsDiff = IsShowDiff ;
+        _storageService.SaveChange() ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -444,9 +433,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
       CeedModels.Clear() ;
       PreviewList.Clear() ;
-      data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.Contains( _selectedDeviceSymbol ) ).ToList() ;
-      data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.Contains( _selectedCeedSetCode ) ).ToList() ;
-      data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.Contains( _selectedModelNumber ) ).ToList() ;
+      data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.ToUpper().Contains( _selectedDeviceSymbol.ToUpper() ) ).ToList() ;
+      data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.ToUpper().Contains( _selectedCeedSetCode.ToUpper() ) ).ToList() ;
+      data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.ToUpper().Contains( _selectedModelNumber.ToUpper() ) ).ToList() ;
       foreach ( var dataModel in data ) {
         CeedModels.Add( dataModel ) ;
         PreviewList.Add( dataModel ) ;
@@ -487,7 +476,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         usingCeedModel = usingCeedModel.Distinct().ToList() ;
         _usingCeedModel = usingCeedModel ;
-        LoadData( _usingCeedModel, ceedStorable ) ;
+        LoadData( _usingCeedModel ) ;
         checkBox.Visibility = Visibility.Visible ;
         checkBox.IsChecked = true ;
 
@@ -496,8 +485,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
           ceedStorable.CeedModelUsedData = _usingCeedModel ;
-          ceedStorable.IsShowOnlyUsingCode = true ;
+          _storageService.Data.IsShowOnlyUsingCode = true ;
           ceedStorable.Save() ;
+          _storageService.SaveChange();
           t.Commit() ;
         }
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -541,7 +531,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName )
     {
-      var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
+      var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable == null ) return ;
       if ( _ceedModels.Any() ) {
         var ceedModel = _ceedModels.First( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == SelectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == SelectedCeedModel.ModelNumber ) ;
@@ -572,7 +562,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void UpdateDataGridAfterReplaceFloorPlanSymbol( DataGrid dataGrid, string floorPlanType )
     {
-      if ( dataGrid.ItemsSource is not ObservableCollection<CeedModel> newCeedModels ) {
+      if ( dataGrid.ItemsSource is not ObservableCollection<CeedModel> ) {
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
         return ;
       }
@@ -597,7 +587,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
       if ( SelectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
 
-      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
+      using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
       progress.Message = "Processing......." ;
 
       using ( var progressData = progress.Reserve( 0.5 ) ) {
@@ -644,7 +634,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         try {
           List<string> connectorFamilyFiles ;
           List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
-          using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
+          using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
           progress.Message = "Processing......." ;
           using ( var progressData = progress.Reserve( 0.3 ) ) {
             connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
@@ -726,7 +716,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private Family? LoadFamily( Document document, string filePath, ref bool isLoadFamilySuccessfully )
     {
       try {
-        document.LoadFamily( filePath, new CeedViewModel.FamilyOption( true ), out var family ) ;
+        document.LoadFamily( filePath, new FamilyOption( true ), out var family ) ;
         if ( family == null ) return family ;
         foreach ( ElementId familySymbolId in family.GetFamilySymbolIds() ) {
           document.GetElementById<FamilySymbol>( familySymbolId ) ;
@@ -743,7 +733,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private bool IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( Document document, List<CeedModel>? allCeedModels, List<CeedModel>? usingCeedModel, IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
     {
       List<string> deviceSymbolsNotHaveConnectorFamily = new() ;
-      var ceedStorable = document.GetAllStorables<CeedStorable>().First() ;
+      var ceedStorable = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable == null ) return false ;
       if ( allCeedModels != null ) {
         foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
@@ -784,13 +774,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ceedStorable.CeedModelUsedData = usingCeedModel ;
       }
 
-      var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
-      ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
+      var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! _storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
+      _storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
 
       try {
         using Transaction t = new( document, "Save CeeD data" ) ;
         t.Start() ;
         ceedStorable.Save() ;
+        _storageService.SaveChange() ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {

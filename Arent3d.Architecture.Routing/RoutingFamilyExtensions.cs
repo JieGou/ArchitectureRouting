@@ -1,7 +1,9 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
@@ -113,7 +115,13 @@ namespace Arent3d.Architecture.Routing
     PressureConnector,
     
     [Family( "Pull Box", BuiltInCategory.OST_ElectricalFixtures )]
-    PullBox
+    PullBox,
+    
+    [Family( "Symbol Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
+    SymbolContentTag,
+    
+    [Family( "Symbol Information Tag", BuiltInCategory.OST_GenericModelTags )]
+    SymbolInformationTag
   }
 
   public enum MechanicalRoutingFamilyType
@@ -270,10 +278,15 @@ namespace Arent3d.Architecture.Routing
     public static void EraseAllConnectorFamilies( this Document document )
     {
       document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
+      
       var connectorFamilyIds = new List<ElementId>() ;
-      var ceedStorable = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      if ( ceedStorable == null || ! ceedStorable.ConnectorFamilyUploadData.Any() ) return ;
-      foreach ( var connectorFamilyFile in ceedStorable.ConnectorFamilyUploadData ) {
+      
+      var connectorFamilyUploadDatas = document.GetAllDatas<Level, CeedUserModel>().Select(x => x.Data.ConnectorFamilyUploadData)
+        .SelectMany(x => x).Distinct().ToList();
+      if ( ! connectorFamilyUploadDatas.Any() ) 
+        return ;
+      
+      foreach ( var connectorFamilyFile in connectorFamilyUploadDatas ) {
         var connectorFamilyName = connectorFamilyFile.Replace( ".rfa", "" ) ;
         if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).SingleOrDefault( f => f.Name == connectorFamilyName ) is Family connectorFamily )
           connectorFamilyIds.Add( connectorFamily.Id ) ;
