@@ -952,22 +952,27 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void ExportFile( Window window )
     {
       try {
+        if ( ! _pickUpModels.Any() ) return ;
+
+        var pickUpModels = new List<PickUpItemModel>() ;
+        if ( _equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
+          pickUpModels.AddRange( _pickUpModels.Where( p=> p.EquipmentType ==  ProductType.Conduit.GetFieldName() || p.EquipmentType == ProductType.Cable.GetFieldName()) ) ;
+        }
+
+        if ( _equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
+          var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+          pickUpModels.AddRange( pickUpConnectors ); 
+        }
+        
         if ( IsExportCsv ) {
-          if ( ! _pickUpModels.Any() ) return ;
-
-          var pickUpModels = new List<PickUpItemModel>() ;
-          if ( _equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
-            pickUpModels.AddRange( _pickUpModels.Where( p=> p.EquipmentType ==  ProductType.Conduit.GetFieldName() || p.EquipmentType == ProductType.Cable.GetFieldName()) ) ;
-          }
-
-          if ( _equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
-            var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
-            pickUpModels.AddRange( pickUpConnectors ); 
-          }
-          
           var pickUpReportViewModel = new PickUpReportViewModel( _document, pickUpModels ) ;
           
           var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
+          dialog.ShowDialog() ;
+        }
+        else {
+          var pickUpReportDatFileViewModel = new PickupReportDatFileViewModel(_document,pickUpModels) ;
+          var dialog = new PickupReportDatFileDialog( pickUpReportDatFileViewModel ) ;
           dialog.ShowDialog() ;
         }
       }
