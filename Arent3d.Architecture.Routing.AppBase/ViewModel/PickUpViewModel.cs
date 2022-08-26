@@ -294,7 +294,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string> routeName = new() ;
       List<(Element Connector, Element? Conduit)> pickUpElements = new() ;
         
-      var allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId || ( e is FamilyInstance f && f.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ).ToList() ;
+      var allConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GetConnectorFamilyType() != null ).ToList() ;
       foreach ( var connector in allConnector ) {
         connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
@@ -761,7 +761,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
       if ( toConnector == null || (_detailTableModels.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null
-           &&  toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
+           &&  toConnector.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
@@ -795,7 +795,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<int> pickUpNumbers, string connectorId, Element conduit )
     {
       var toConnector = allConnectors.SingleOrDefault( c => c.UniqueId == connectorId) ;
-      if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
+      if ( toConnector == null )
+        return false ;
       
       pickUpConnectors.Add( (toConnector, conduit) ) ;
 
@@ -825,7 +826,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      if ( connector != null && connector.GroupId != ElementId.InvalidElementId ) {
+      if ( connector != null ) {
         pickUpConnectors.Add( (connector, null) ) ;
         if ( ! _pickUpNumbers.ContainsValue( fromElementId + ", " + elementId ) ) {
           _pickUpNumbers.Add( _pickUpNumber, fromElementId + ", " + elementId ) ;
@@ -928,7 +929,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       foreach ( var symbolInformation in symbolInformations ) {
         var floor = symbolInformation.Floor ;
-        foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.Id ) ) {
+        foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.SymbolUniqueId ) ) {
           PickUpItemModel newPickUpModel = new( null, floor, DefaultConstructionItem, ProductType.Conduit.GetFieldName(), ceedDetail.Specification, null, null, ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, 
             ceedDetail.ProductName, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Total.ToString( CultureInfo.InvariantCulture ), ceedDetail.Unit, ceedDetail.Supplement, null, null, null,
             ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode, null, null, null,ceedDetail.Total.ToString( CultureInfo.InvariantCulture ) ) ;

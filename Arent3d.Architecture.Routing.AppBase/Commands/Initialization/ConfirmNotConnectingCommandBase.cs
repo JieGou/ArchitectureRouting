@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         {
           var elementNotConnect = GetElementsNotConnect( document ) ;
           var color = new Color( 255, 0, 0 ) ;
-          ConfirmUnsetCommandBase.ChangeElementColor( document, elementNotConnect, color ) ;
+          ConfirmUnsetCommandBase.ChangeElementColor( elementNotConnect, color ) ;
 
           return Result.Succeeded ;
         } ) ;
