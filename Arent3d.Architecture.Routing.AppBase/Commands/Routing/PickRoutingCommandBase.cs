@@ -13,6 +13,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -38,26 +39,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var routingExecutor = GetRoutingExecutor() ;
-      var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
-      ConnectorPicker.IPickResult toPickResult ;
 
-      using ( uiDocument.SetTempColor( fromPickResult ) ) {
-        toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
+      try {
+        var routingExecutor = GetRoutingExecutor() ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
+        ConnectorPicker.IPickResult toPickResult ;
+
+        using ( uiDocument.SetTempColor( fromPickResult ) ) {
+          toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
+        }
+
+        XYZ? passPointPosition = null ;
+        XYZ? passPointDirection = null ;
+        if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
+          ( passPointPosition, passPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult ) ;
+        }
+
+        var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
+        if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
+
+        if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
+
+        return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection ) ) ;
       }
-
-      XYZ? passPointPosition = null ;
-      XYZ? passPointDirection = null ;
-      if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
-        ( passPointPosition, passPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult ) ;
+      catch ( OperationCanceledException ) {
+        return OperationResult<PickState>.Cancelled ;
       }
-
-      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
-      if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
-
-      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
-
-      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection ) ) ;
     }
 
     private ( XYZ?, XYZ? ) ShowPreviewLines( UIDocument uiDocument, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )

@@ -21,11 +21,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
   public static class PullBoxRouteManager
   {
-    private static readonly double DefaultDistanceHeight = ( 200.0 ).MillimetersToRevitUnits() ;
+    private static readonly double DefaultDistanceHeight = 300d.MillimetersToRevitUnits() ;
     private const string DefaultConstructionItem = "未設定" ;
     private const double NearShaftTolerance = 0.01 ;
-    private static readonly double PullBoxWidth = ( 300.0 ).MillimetersToRevitUnits() ;
-    private static readonly double PullBoxLenght = ( 250.0 ).MillimetersToRevitUnits() ;
+    private static readonly double PullBoxWidth = 300d.MillimetersToRevitUnits() ;
+    private static readonly double PullBoxLenght = 250d.MillimetersToRevitUnits() ;
     private const string HinmeiOfPullBox = "プルボックス" ;
     public const string DefaultPullBoxLabel = "PB" ;
     public const string MaterialCodeParameter = "Material Code" ;
@@ -47,6 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var avoidType = parentRoute.UniqueAvoidType ?? AvoidType.Whichever ;
       var shaftElementUniqueId = parentRoute.UniqueShaftElementUniqueId ;
       var fromFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, isCreatePullBoxWithoutSettingHeight ? heightConnector : heightConnector + DefaultDistanceHeight ) ;
+      var toFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightConnector ) ;
       var fromFixedHeightSecond = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightWire ) ;
 
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
@@ -68,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( detector.IsPassingThrough( segment ) ) {
             isBeforeSegment = false ;
             firstHeight ??= fromFixedHeightFirst ;
-            var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, firstHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+            var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, firstHeight, toFixedHeightFirst, avoidType, shaftElementUniqueId ) ;
             result.Add( ( parentRoute.RouteName, newSegment ) ) ;
             beforeSegments.Add( newSegment ) ;
             result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, isWireEnteredShaft ? null : shaftElementUniqueId ) ) ) ;
@@ -87,7 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             }
 
             var newSegment = isBeforeSegment ? 
-              new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId )
+              new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeightFirst, avoidType, shaftElementUniqueId )
               : new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ;
             result.Add( isBeforeSegment ? ( parentRoute.RouteName, newSegment ) : ( name, newSegment ) ) ;
             if ( isBeforeSegment ) beforeSegments.Add( newSegment ) ;
@@ -154,6 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var avoidType = parentRoute.UniqueAvoidType ?? AvoidType.Whichever ;
       var shaftElementUniqueId = parentRoute.UniqueShaftElementUniqueId ;
       var fromFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, isCreatePullBoxWithoutSettingHeight ? heightConnector : heightConnector + DefaultDistanceHeight ) ;
+      var toFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightConnector ) ;
       var fromFixedHeightSecond = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightWire ) ;
 
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
@@ -171,7 +173,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       foreach ( var segment in parentRoute.RouteSegments.EnumerateAll() ) {
         firstHeight ??= fromFixedHeightFirst ;
         var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType,
-          segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, firstHeight, fromFixedHeightFirst,
+          segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, firstHeight, toFixedHeightFirst,
           avoidType, shaftElementUniqueId ) ;
         result.Add( ( parentRoute.RouteName, newSegment ) ) ;
         beforeSegments.Add( newSegment ) ;
@@ -787,10 +789,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var (originX, originY, originZ) = pullBoxInfo.Position ;
             var fromDirection = pullBoxInfo.FromDirection ;
             var toDirection = pullBoxInfo.ToDirection ;
-            var height = originZ - pullBoxInfo.Level.Elevation ;
+            var levelOfPullBox = pullBoxInfo.Level ;
+            var height = originZ - levelOfPullBox.Elevation ;
+            var existedPullBox = FindPullBoxByLocation( document, originX, originY, originZ ) ;
+            if ( existedPullBox != null ) {
+              var pullBoxPosition = ( existedPullBox.Location as LocationPoint )!.Point ;
+              if ( pullBoxPosition == null ) continue ;
+            
+              levelOfPullBox = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).First( l => l.Id == existedPullBox.LevelId ) ;
+              height = pullBoxPosition.Z - levelOfPullBox.Elevation ;
+            }
 
             result = CreatePullBoxAndGetSegments( document, route, conduitFittingShaft, originX, originY, height,
-              pullBoxInfo.Level, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex,
+              levelOfPullBox, fromDirection, nameBase!, out var pullBoxElement, ref parentIndex,
               ref parentAndChildRoute, fromDirection, toDirection, fromHeight, true ).ToList() ;
             if ( pullBoxElement != null ) pullBoxElements.Add( ( pullBoxElement, null ) ) ;
             pullBoxPositions.Add( pullBoxInfo.Position ) ;

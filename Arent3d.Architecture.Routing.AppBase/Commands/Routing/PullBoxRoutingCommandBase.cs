@@ -12,6 +12,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -30,9 +31,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
 
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      PointOnRoutePicker.PickInfo? pickInfo ;
+      try {
+        pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      }
+      catch ( OperationCanceledException ) {
+        return OperationResult<PickState>.Cancelled ;
+      }
+
       var pullBoxViewModel = new PullBoxViewModel(document) ;
-      
       var sv = new PullBoxDialog { DataContext = pullBoxViewModel } ;
       sv.ShowDialog() ;
       if ( true != sv.DialogResult ) return OperationResult<PickState>.Cancelled ;
