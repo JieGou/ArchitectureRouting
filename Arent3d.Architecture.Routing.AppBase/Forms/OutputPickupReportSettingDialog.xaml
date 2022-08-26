@@ -12,6 +12,17 @@
     <DockPanel Margin="10">
         <GroupBox Header="出力項目" DockPanel.Dock="Top" Height="300">
             <ListBox ItemsSource="{Binding OutputReportSettingCollection}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type viewModel:OutputPickUpReportItemSetting}">
                         <CheckBox IsChecked="{Binding IsSelected}"
