@@ -14,8 +14,6 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using Arent3d.Revit.UI.Forms;
-using Group = Autodesk.Revit.DB.Group ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -26,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly CnsSettingViewModel _cnsSettingViewModel ;
     private readonly Document _document ;
     private readonly ObservableCollection<CnsSettingModel> _currentCnsSettingData ;
-    private bool _isEditModel = false ;
+    private bool _isEditModel ;
     public CnsSettingDialog( CnsSettingViewModel viewModel, Document document)
     {
       InitializeComponent() ;
@@ -182,9 +180,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var newCnsSettingData = _cnsSettingViewModel.CnsSettingStorable.CnsSettingData ;
       var conduits = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
-      var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
-      Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
-      Dictionary<Element, string> updateConnectors = new Dictionary<Element, string>() ;
+      var connectors = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
 
       if ( IsConduitsHaveConstructionItemProperty() ) {
         //update Constructions Item for Conduits
@@ -231,38 +227,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           newConstructionItemValue = newConnectorCnsSetting.CategoryName ;
         }
 
-        // Groupされていないコネクタに対する処理
-        if ( _document.GetElement( connector.GroupId ) is not Group parentGroup ) {
-          updateConnectors.Add( connector, newConstructionItemValue ) ;
-        }
-        // Groupされているコネクタに対する処理
-        else {
-          var attachedGroup = _document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ; // ungroup before set property
-          List<ElementId> listTextNoteIds = new() ;
-          foreach ( var group in attachedGroup ) {
-            // ungroup textNote before ungroup connector
-            var ids = group.GetMemberIds() ;
-            listTextNoteIds.AddRange( ids ) ;
-            group.UngroupMembers() ;
-          }
-
-          parentGroup.UngroupMembers() ;
-          connectorGroups.Add( connector.Id, listTextNoteIds ) ;
-          updateConnectors.Add( connector, newConstructionItemValue ) ;
-        }
-      }
-
-      // update ConstructionItem for connector 
-      foreach ( var (e, value) in updateConnectors ) {
-        e.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, value ) ;
-      }
-
-      _document.Regenerate() ;
-      // create group for updated connector (with new property) and related text note if any
-      foreach ( var (key, value) in connectorGroups ) {
-        List<ElementId> groupIds = new() { key } ;
-        groupIds.AddRange( value ) ;
-        _document.Create.NewGroup( groupIds ) ;
+        connector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, newConstructionItemValue ) ;
       }
     }
 
@@ -304,7 +269,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       using var processData = ProgressBar.ShowWithNewThread( this, false ) ;
       processData.Message = "Highlighting construction items ..." ;
-      using ( processData?.Reserve( 0.5 ) ) {
+      using ( processData.Reserve( 0.5 ) ) {
         ClearHighLightAllConstructionItemElement() ;
 
         var selectedCnsSettingDataList = grdCategories.SelectedItems.Cast<CnsSettingModel>().ToList() ;
@@ -377,7 +342,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         0, 0, 255 );
       using var tx = new Transaction( _document) ;
       tx.Start( "Reset Element Color" );
-      ConfirmUnsetCommandBase.ChangeElementColor( _document, constructionItemElements.ToList(),color ) ;    
+      ConfirmUnsetCommandBase.ChangeElementColor( constructionItemElements, color ) ;    
       tx.Commit();
     }
 
@@ -385,7 +350,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       using var tx = new Transaction( _document) ;
       tx.Start( "Reset Element Color" );
-      ConfirmUnsetCommandBase.ResetElementColor(_document,constructionITemElements.ToList());
+      ConfirmUnsetCommandBase.ResetElementColor(constructionITemElements);
       tx.Commit();
     }
     

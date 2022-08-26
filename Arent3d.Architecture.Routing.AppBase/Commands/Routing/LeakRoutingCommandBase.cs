@@ -65,6 +65,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( sv.CreateMode == 0 ) {
           LineExternal lineExternal = new( uiApp ) ;
           XYZ prevPoint = fromPickResult.GetOrigin() ;
+          
+          // modeless dialog to determine OK・Cancel action
+          ModelessOkCancelDialog dlg = new ModelessOkCancelDialog() ;
+          dlg.AlignToView(uiApp.ActiveUIDocument.GetActiveUIView());
+          dlg.Show();
+          dlg.FocusRevit();
+
           try {
             lineExternal.PickedPoints.Add( prevPoint ) ;
             while ( true ) {
@@ -83,8 +90,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
           catch ( OperationCanceledException ) {
             // when the user hits ESC, to exits from the while loop
+            if (dlg.IsCancel)
+              return OperationResult<LeakState>.Cancelled ;
           }
           finally {
+            dlg.Hide() ;
             lineExternal.Dispose() ;
           }
         }
