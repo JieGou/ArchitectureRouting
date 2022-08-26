@@ -30,13 +30,20 @@
 
         <Button Grid.Column="0" Grid.Row="0"
                 Content="使用シンボル登録"
-                Click="Button_SymbolRegistration"
+                Command="{Binding SymbolRegistrationCommand}"
                 Margin="10,10,10,10"
                 HorizontalAlignment="Left"
                 Width="100"
                 Height="27" />
         
-        <CheckBox Grid.Column="0" Grid.Row="0" Name="CbShowOnlyUsingCode" IsChecked="{Binding IsShowOnlyUsingCode, Mode=TwoWay}" Content="使用するものだけ表示" Width="130" Margin="120, 20, 10, 10" Visibility="Hidden" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" />
+        <CheckBox Grid.Column="0" Grid.Row="0" 
+                  IsChecked="{Binding IsShowOnlyUsingCode, Mode=TwoWay}" 
+                  Visibility="{Binding IsVisibleShowUsingCode, Mode=TwoWay }" 
+                  Content="使用するものだけ表示" 
+                  Width="130" 
+                  Margin="120, 20, 10, 10" 
+                  Checked="ShowOnlyUsingCode_Checked" 
+                  Unchecked="ShowOnlyUsingCode_UnChecked" />
 
         <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Left">
             <Label Content="セットコード" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5" Visibility="Hidden" />
@@ -123,7 +130,22 @@
                         <StackPanel Orientation="Horizontal">
                             <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
                                    Source="../resources/icon_folder_16x16.png" />
-                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" >
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding Path=IsExistModelNumber}" Value="false" />
+                                                </MultiDataTrigger.Conditions>
+                                                <MultiDataTrigger.Setters>
+                                                    <Setter Property="Foreground" Value="Gray" />
+                                                </MultiDataTrigger.Setters>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
                     </HierarchicalDataTemplate>
                 </TreeView.Resources>
@@ -163,7 +185,22 @@
                         <StackPanel Orientation="Horizontal">
                             <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
                                    Source="../resources/icon_folder_16x16.png" />
-                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" >
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding Path=IsExistModelNumber}" Value="false" />
+                                                </MultiDataTrigger.Conditions>
+                                                <MultiDataTrigger.Setters>
+                                                    <Setter Property="Foreground" Value="Gray" />
+                                                </MultiDataTrigger.Setters>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
                     </HierarchicalDataTemplate>
                 </TreeView.Resources>
@@ -201,7 +238,6 @@
                             
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding ElementName=CbShowOnlyUsingCode, Path=IsChecked}" Value="false" />
                                     <Condition Binding="{Binding ElementName=CbShowDiff, Path=IsEnabled}" Value="false" />
                                     <Condition Binding="{Binding Path=IsUsingCode}" Value="true" />
                                 </MultiDataTrigger.Conditions>
@@ -259,7 +295,6 @@
                                     
                                     <MultiDataTrigger>
                                         <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding ElementName=CbShowOnlyUsingCode, Path=IsChecked}" Value="false" />
                                             <Condition Binding="{Binding ElementName=CbShowDiff, Path=IsEnabled}" Value="false" />
                                             <Condition Binding="{Binding Path=IsUsingCode}" Value="true" />
                                         </MultiDataTrigger.Conditions>

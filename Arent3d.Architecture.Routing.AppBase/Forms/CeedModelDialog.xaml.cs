@@ -24,14 +24,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       rowStyle.Setters.Add( new EventSetter( PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
       ViewModel.DtGrid = DtGrid ;
-      if ( ViewModel.IsEnabledShowUsingCode ) {
-        CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
-      }
-    }
-
-    private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
-    {
-      ViewModel.LoadUsingCeedModel( CbShowOnlyUsingCode ) ;
     }
 
     private void CmbKeyDown( object sender, KeyEventArgs e )

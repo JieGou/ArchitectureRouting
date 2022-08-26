@@ -108,14 +108,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _isShowCondition = value ;
         if ( _isShowCondition.HasValue ) {
           var ceedModels = GetData() ;
-          if ( ! _isShowCondition.Value ) {
-            ceedModels = GroupCeedModel( ceedModels ) ;
-          }
-
-          ceedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
           CeedModels.Clear() ;
-          CeedModels.AddRange( ceedModels ) ;
-          AddModelNumber( ceedModels ) ;
+          if ( ceedModels.Any() ) {
+            if ( ! _isShowCondition.Value ) {
+              ceedModels = GroupCeedModel( ceedModels ) ;
+            }
+
+            ceedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
+            CeedModels.AddRange( ceedModels ) ;
+            AddModelNumber() ;
+          }
         }
         OnPropertyChanged();
       }
@@ -132,8 +134,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged();
       }
     }
-    
-    public bool IsEnabledShowUsingCode { get ; set ; }
+
+    private Visibility _isVisibleShowUsingCode ;
+    public Visibility IsVisibleShowUsingCode
+    {
+      get => _isVisibleShowUsingCode ;
+      set
+      {
+        _isVisibleShowUsingCode = value ;
+        OnPropertyChanged();
+      }
+    }
 
     public bool IsShowDiff { get ; set ; }
     
@@ -266,6 +277,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
+    public ICommand SymbolRegistrationCommand => new RelayCommand( LoadUsingCeedModel ) ;
     public ICommand SearchCommand => new RelayCommand( Search ) ;
     public ICommand ResetCommand => new RelayCommand( Reset ) ;
     
@@ -312,7 +324,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         IsShowOnlyUsingCode = _storageService.Data.IsShowOnlyUsingCode ;
         IsExistUsingCode = _storageService.Data.IsExistUsingCode ;
         IsShowDiff = _storageService.Data.IsDiff ;
-        if ( _usingCeedModel.Any() ) IsEnabledShowUsingCode = true ;
+        IsVisibleShowUsingCode = _usingCeedModel.Any() ? Visibility.Visible : Visibility.Hidden ;
         Categories = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithCeedCode ) ) ;
         CategoriesPreview = new ObservableCollection<CategoryModel>( CategoryModel.ConvertCategoryModel( oldCeedStorable.CategoriesWithoutCeedCode ) ) ;
         IsShowCondition = _storageService.Data.IsShowCondition ;
@@ -323,55 +335,29 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _selectedDeviceSymbol = string.Empty ;
     }
 
-    private void LoadData( CeedStorable ceedStorable )
-    {
-      _ceedModels = ceedStorable.CeedModelData ;
-      CeedModels.Clear() ;
-      PreviewList.Clear() ;
-
-      var ceedModels = GroupCeedModelsByCeedModelNumber( _ceedModels ) ;
-      CeedModels.AddRange( ceedModels ) ;
-
-      AddModelNumber( _ceedModels ) ;
-      if ( ceedStorable.CeedModelUsedData.Any() )
-        _usingCeedModel = ceedStorable.CeedModelUsedData ;
-    }
-
-    private void LoadData( List<CeedModel> ceedModels )
+    private void LoadData()
     {
       CeedModels.Clear() ;
       PreviewList.Clear() ;
-      var category = FindSelectedCategory( Categories, true ) ;
-      var categoryPreview = FindSelectedCategory( CategoriesPreview, false ) ;
-      if ( category == null && categoryPreview == null ) {
-        if ( ! IsShowCondition ) {
-          ceedModels = GroupCeedModel( ceedModels ) ;
-        }
-        
-        var newCeedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
-        CeedModels.AddRange( newCeedModels ) ;
-      }
-
-      AddModelNumber( ceedModels ) ;
+      FindSelectedCategory( Categories, true ) ;
+      FindSelectedCategory( CategoriesPreview, false ) ;
+      AddModelNumber() ;
     }
     
     private List<CeedModel> GetData()
     {
       CeedModels.Clear() ;
       PreviewList.Clear() ;
-      var category = FindSelectedCategory( Categories, true ) ;
-      var categoryPreview = FindSelectedCategory( CategoriesPreview, false ) ;
-      if ( category == null && categoryPreview == null ) {
-        var ceedModels = IsExistUsingCode ? _usingCeedModel : _ceedModels ;
-        if ( IsExistUsingCode && IsShowOnlyUsingCode ) ceedModels = _usingCeedModel.Where( c => c.IsUsingCode ).ToList() ;
-        return ceedModels ;
-      }
+      FindSelectedCategory( Categories, true ) ;
+      FindSelectedCategory( CategoriesPreview, false ) ;
 
       return CeedModels.ToList() ;
     }
 
-    private void AddModelNumber( IReadOnlyCollection<CeedModel> ceedModels )
+    private void AddModelNumber()
     {
+      var ceedModels = IsExistUsingCode ? _usingCeedModel : _ceedModels ;
+      if ( IsExistUsingCode && IsShowOnlyUsingCode ) ceedModels = _usingCeedModel.Where( c => c.IsUsingCode ).ToList() ;
       CeedSetCodes.Clear() ;
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeedSetCode ) ) ) {
         if ( ! CeedSetCodes.Contains( ceedModel.CeedSetCode ) )
@@ -412,6 +398,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
       ResetComboboxValue() ;
+
+      var ceedModelNumbers = ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ).Select( c => c.CeedModelNumber ).Distinct().ToList() ;
+      SetIsExistModelNumberForCategory( Categories, ceedModelNumbers ) ;
+      SetIsExistModelNumberForCategory( CategoriesPreview, ceedModelNumbers ) ;
     }
 
     private List<CategoryModel> GetCategoryModels()
@@ -452,6 +442,30 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return null ;
+    }
+    
+    private void SetIsExistModelNumberForCategory( IEnumerable<CategoryModel> categories, List<string> ceedModelNumbers )
+    {
+      foreach ( var category in categories ) {
+        if ( category.CeedCodeNumbers.Any() ) {
+          var isExistModelNumberOfCategory = false ;
+          foreach ( var ceedCodeNumber in category.CeedCodeNumbers ) {
+            var isExistModelNumber = ceedModelNumbers.FirstOrDefault( c => ceedModelNumbers.Contains( ceedCodeNumber.Name ) ) != null ;
+            ceedCodeNumber.IsExistModelNumber = isExistModelNumber ;
+            if ( isExistModelNumber ) {
+              isExistModelNumberOfCategory = isExistModelNumber ;
+            }
+          }
+
+          category.IsExistModelNumber = isExistModelNumberOfCategory ;
+        }
+        
+        if ( ! category.Categories.Any() )
+          continue ;
+
+        SetIsExistModelNumberForCategory( category.Categories, ceedModelNumbers ) ;
+        category.IsExistModelNumber = category.Categories.FirstOrDefault( c => c.IsExistModelNumber ) != null ;
+      }
     }
     
     private void ResetSelectedCategory( IEnumerable<CategoryModel> categories )
@@ -553,10 +567,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void Reset()
     {
       ResetComboboxValue() ;
+      _usingCeedModel = new List<CeedModel>() ;
       IsShowOnlyUsingCode = false ;
       IsExistUsingCode = false ;
-      Search() ;
-      AddModelNumber( CeedModels ) ;
+      IsShowDiff = true ;
+      IsVisibleShowUsingCode = Visibility.Hidden ;
+      CeedModels.Clear() ;
+      ResetSelectedCategory( Categories ) ;
+      ResetSelectedCategory( CategoriesPreview ) ;
+      AddModelNumber() ;
     }
 
     private void ResetComboboxValue()
@@ -566,7 +585,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SelectedDeviceSymbolValue = string.Empty ;
     }
 
-    public void LoadUsingCeedModel( CheckBox checkBox )
+    public void LoadUsingCeedModel()
     {
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null && ceedStorable.CeedModelData.Any() ) {
@@ -594,10 +613,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         usingCeedModel = usingCeedModel.Distinct().ToList() ;
         _usingCeedModel = usingCeedModel ;
-        LoadData( _usingCeedModel ) ;
-        checkBox.Visibility = Visibility.Visible ;
-        checkBox.IsChecked = true ;
+        IsVisibleShowUsingCode = Visibility.Visible ;
+        IsShowOnlyUsingCode = true ;
         IsExistUsingCode = true ;
+        LoadData() ;
 
         if ( ! _usingCeedModel.Any() ) return ;
         try {
@@ -641,15 +660,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       if ( ! _usingCeedModel.Any() ) return ;
       IsExistUsingCode = true ;
-      var usingCeedModelFromFile = _usingCeedModel.Where( c => c.IsUsingCode ).ToList() ;
-      LoadData( usingCeedModelFromFile ) ;
+      LoadData() ;
     }
 
     public void UnShowOnlyUsingCode()
     {
       if ( ! _usingCeedModel.Any() ) return ;
       IsExistUsingCode = true ;
-      LoadData( _usingCeedModel ) ;
+      LoadData() ;
     }
 
     private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName )
