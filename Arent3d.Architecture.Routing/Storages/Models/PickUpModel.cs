@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
@@ -16,6 +17,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
   }
 
   [Schema( "CF4DB4C1-71AF-4C23-B382-5CD8008D150D", nameof( PickUpItemModel ) )]
+  [Serializable]
   public class PickUpItemModel : IDataModel
   {
     public PickUpItemModel()
