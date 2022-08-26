@@ -383,7 +383,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var textNoteOfPickUpFigure = TextNote.Create( doc, doc.ActiveView.Id, textNoteOfPickUpFigureModel.Position, textNoteOfPickUpFigureModel.Content, textNoteOptions ) ;
       
       var colorOfTextNote = new Color( 255, 225, 51 ) ; // Dark yellow
-      ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNoteOfPickUpFigure }, colorOfTextNote ) ;
+      ConfirmUnsetCommandBase.ChangeElementColor( new []{ textNoteOfPickUpFigure }, colorOfTextNote ) ;
 
       return textNoteOfPickUpFigure ;
     }
