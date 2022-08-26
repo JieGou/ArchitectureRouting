@@ -177,10 +177,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
       var ( ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode) = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
-      if ( ! ceedModelData.Any() ) return ;
+      if ( ! ceedModelData.Any() ) {
+        MessageBox.Show( "Load file failed.", "Error Message" ) ;
+        return ;
+      }
       _ceedModelData = ceedModelData ;
       _categoriesWithCeedCode = categoriesWithCeedCode ;
       _categoriesWithoutCeedCode = categoriesWithoutCeedCode ;
+      MessageBox.Show( "Load file successful.", "Result Message" ) ;
     }
     
     private void Button_LoadWiresAndCablesData( object sender, RoutedEventArgs e )
