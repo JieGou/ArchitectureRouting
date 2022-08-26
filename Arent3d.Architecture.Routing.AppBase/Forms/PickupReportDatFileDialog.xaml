@@ -1,0 +1,118 @@
+<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.PickupReportDatFileDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:viewModel="clr-namespace:Arent3d.Architecture.Routing.AppBase.ViewModel"
+        xmlns:converter="clr-namespace:Arent3d.Architecture.Routing.AppBase.Converters"
+        mc:Ignorable="d"
+        Title="拾い表作成" Height="310" Width="690"
+        d:DataContext="{d:DesignInstance {x:Type viewModel:PickupReportDatFileViewModel}, IsDesignTimeCreatable=True}"
+        x:Name="PickUpReportWinDow"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <converter:InvertBooleanConverter x:Key="InvertBooleanConverter"/>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="115" />
+            <RowDefinition Height="100" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <GroupBox Header="拾い番号"
+                      Width="120"
+                      Height="95"
+                      FontSize="16"
+                      Margin="30 0 0 0">
+                <StackPanel>
+                    <RadioButton GroupName="PickupNumber"
+                                 IsChecked="{Binding IsPickupNumberOn}"
+                                 Content="ON"
+                                 Margin="5, 5, 0, 0"
+                                 FontSize="14" />
+                    <RadioButton GroupName="PickupNumber"
+                                 IsChecked="{Binding IsPickupNumberOn,Converter={StaticResource InvertBooleanConverter}}"
+                                 Content="OFF"
+                                 Margin="5, 5, 0, 0"
+                                 FontSize="14"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="出力項目"
+                      Width="200"
+                      Height="95" 
+                      FontSize="16"
+                      Margin="30 0 0 0">
+                <Grid>
+                    <StackPanel>
+                        <RadioButton GroupName="SelectOutPutItems" 
+                                     IsChecked="{Binding IsCanSelectOutputItems,Converter={StaticResource InvertBooleanConverter}}"
+                                     Content="全項目出力"
+                                     Margin="5, 5, 0, 0"
+                                     FontSize="14"/>
+                        <RadioButton GroupName="SelectOutPutItems"
+                                     IsChecked="{Binding IsCanSelectOutputItems}"
+                                     Content="出力項目選択"
+                                     Margin="5, 5, 0, 0"
+                                     FontSize="14"/>
+                    </StackPanel>
+
+                    <Button HorizontalAlignment="Right"
+                            Command="{Binding SettingCommand}"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,12"
+                            Width="40"
+                            Height="25"
+                            IsEnabled="{Binding IsCanSelectOutputItems}"
+                            FontSize="12"
+                            Content = "設定"/>
+                </Grid>
+            </GroupBox>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Left"
+                    Margin="0, 10, 10, 10">
+            <DockPanel Margin="10,5,0,0">
+                <Label Content="出力フォルダ" Width="120" FontSize="16" />
+                <TextBox Width="410"
+                         VerticalContentAlignment="Center"
+                         FontSize="14"
+                         IsEnabled="False"
+                         Text="{Binding PathName, Mode=TwoWay}" />
+                <Button Command="{Binding GetSaveLocationCommand}"
+                        Content="参照"
+                        Margin="20,0,0, 0"
+                        HorizontalAlignment="Left"
+                        Width="90" />
+            </DockPanel>
+            <DockPanel Margin="10,5,120,0">
+                <Label Content="出力ファイル名"
+                       Width="120"
+                       FontSize="16" />
+                <TextBox Width="410"
+                         VerticalContentAlignment="Center"
+                         FontSize="14" 
+                         Text="{Binding FileName}" />
+            </DockPanel>
+        </StackPanel>
+
+        <Button Grid.Row="3"
+                Command="{Binding ExportFileCommand}"
+                CommandParameter="{Binding ElementName=PickUpReportWinDow}"
+                Content="処理実行"
+                Margin="10,0,140,20"
+                HorizontalAlignment="Right"
+                Width="100" />
+        <Button Grid.Row="3"
+                Command="{Binding CancelCommand}"
+                CommandParameter="{Binding ElementName=PickUpReportWinDow}"
+                Content="キャンセル"
+                Margin="10,0,20,20"
+                HorizontalAlignment="Right"
+                Width="100" />
+    </Grid>
+</Window> 
