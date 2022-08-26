@@ -894,46 +894,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var shaftElementUniqueId = route.UniqueShaftElementUniqueId ;
             var shaft = document.GetElementById<Opening>( shaftElementUniqueId ?? string.Empty ) ;
             if ( shaft != null && GetShaftLocation( route, document ) is { } shaftLocation ) {
-              var routesWithDirection = new List<( Route ReRoute, XYZ Direction )>() ;
-
-              var routeNameArray = route.RouteName.Split( '_' ) ;
-              var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-              
-              var pullBoxesInShaft = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-                .Where( c =>
-                {
-                  if ( c.GetConnectorFamilyType() != ConnectorFamilyType.PullBox ) return false ;
-
-                  var locationPoint = ( c.Location as LocationPoint )?.Point ;
-                  return locationPoint != null && IsNearShaft( locationPoint, shaftLocation )  && ! IsAlmostOrEqual( locationPoint.Z, heightPositionOfPullBox ) ;
-                } ).ToList() ;
-
-              var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
-              foreach ( var r in routeCache ) {
-                if ( routesWithDirection.Any( re => re.ReRoute.RouteName == r.Key ) ) continue ;
-                
-                var rNameArray = r.Key.Split( '_' ) ;
-                var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
-                if ( rName == routeName ) continue ;
-                
-                var routeSegments = r.Value.RouteSegments ;
-                foreach ( var routeSegment in routeSegments ) {
-                  var fromEndPointElementUniqueId = routeSegment.FromEndPoint.Key.GetElementUniqueId() ;
-                  var toEndPointElementUniqueId = routeSegment.ToEndPoint.Key.GetElementUniqueId() ;
-                  var fromPullBox = pullBoxesInShaft.FirstOrDefault( p => p.UniqueId == fromEndPointElementUniqueId ) ;
-                  var toPullBox = pullBoxesInShaft.FirstOrDefault( p => p.UniqueId == toEndPointElementUniqueId ) ;
-                  if ( fromPullBox == null || toPullBox == null ) continue ;
-
-                  var fromPullBoxPosition = ( fromPullBox.Location as LocationPoint )?.Point ;
-                  var toPullBoxPosition = ( toPullBox.Location as LocationPoint )?.Point ;
-                  if ( fromPullBoxPosition == null || toPullBoxPosition == null ) continue ;
-                  
-                  if ( fromPullBoxPosition.Z < heightPositionOfPullBox && heightPositionOfPullBox < toPullBoxPosition.Z )
-                    routesWithDirection.Add( ( r.Value, new XYZ(0, 0, 1) ) );
-                  else if ( fromPullBoxPosition.Z > heightPositionOfPullBox && heightPositionOfPullBox > toPullBoxPosition.Z )
-                    routesWithDirection.Add( ( r.Value, new XYZ(0, 0, -1) ) );
-                }
-              }
+              var routesWithDirection = GetOldRoutesWithDirectionWherePullBoxesAreCreated( document, route, shaftLocation, heightPositionOfPullBox ) ;
 
               // Reroute old routes when new pull boxes are created
               if ( routesWithDirection.Any() ) {
@@ -959,6 +920,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       return result ;
+    }
+
+    private static List<(Route ReRoute, XYZ Direction)> GetOldRoutesWithDirectionWherePullBoxesAreCreated( Document document, Route route,
+      XYZ shaftLocation, double heightPositionOfPullBox )
+    {
+      var routesWithDirection = new List<( Route ReRoute, XYZ Direction )>() ;
+
+      var routeNameArray = route.RouteName.Split( '_' ) ;
+      var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+
+      var pullBoxesInShaft = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+        .Where( c =>
+        {
+          if ( c.GetConnectorFamilyType() != ConnectorFamilyType.PullBox ) return false ;
+
+          var locationPoint = ( c.Location as LocationPoint )?.Point ;
+          return locationPoint != null && IsNearShaft( locationPoint, shaftLocation ) &&
+                 ! IsAlmostOrEqual( locationPoint.Z, heightPositionOfPullBox ) ;
+        } ).ToList() ;
+
+      var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      foreach ( var r in routeCache ) {
+        if ( routesWithDirection.Any( re => re.ReRoute.RouteName == r.Key ) ) continue ;
+
+        var rNameArray = r.Key.Split( '_' ) ;
+        var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+        if ( rName == routeName ) continue ;
+
+        var routeSegments = r.Value.RouteSegments ;
+        foreach ( var routeSegment in routeSegments ) {
+          var fromEndPointElementUniqueId = routeSegment.FromEndPoint.Key.GetElementUniqueId() ;
+          var toEndPointElementUniqueId = routeSegment.ToEndPoint.Key.GetElementUniqueId() ;
+          var fromPullBox = pullBoxesInShaft.FirstOrDefault( p => p.UniqueId == fromEndPointElementUniqueId ) ;
+          var toPullBox = pullBoxesInShaft.FirstOrDefault( p => p.UniqueId == toEndPointElementUniqueId ) ;
+          if ( fromPullBox == null || toPullBox == null ) continue ;
+
+          var fromPullBoxPosition = ( fromPullBox.Location as LocationPoint )?.Point ;
+          var toPullBoxPosition = ( toPullBox.Location as LocationPoint )?.Point ;
+          if ( fromPullBoxPosition == null || toPullBoxPosition == null ) continue ;
+
+          if ( fromPullBoxPosition.Z < heightPositionOfPullBox && heightPositionOfPullBox < toPullBoxPosition.Z )
+            routesWithDirection.Add( ( r.Value, new XYZ( 0, 0, 1 ) ) ) ;
+          else if ( fromPullBoxPosition.Z > heightPositionOfPullBox && heightPositionOfPullBox > toPullBoxPosition.Z )
+            routesWithDirection.Add( ( r.Value, new XYZ( 0, 0, -1 ) ) ) ;
+        }
+      }
+
+      return routesWithDirection ;
     }
 
     public static void ChangeDimensionOfPullBoxAndSetLabel( Document document, FamilyInstance pullBox,
