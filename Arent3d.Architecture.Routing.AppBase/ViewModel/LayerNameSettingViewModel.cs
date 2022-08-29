@@ -43,18 +43,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       AutoCadColors = AutoCadColorsManager.GetAutoCadColorDict() ;
       Layers = new ObservableCollection<Layer>() ;
       LayerNames = string.Empty ;
-      var layers = GetLayerNames( _settingFilePath ) ;
+      var layers = GetLayers( _settingFilePath ) ;
       if ( ! layers.Any() ) return ;
       SetDataSource( layers, AutoCadColors ) ;
     }
 
-    private void SetDataSource( List<Layer> layers, List<AutoCadColorsManager.AutoCadColor> autoCadColors )
+    private void SetDataSource( IEnumerable<Layer> layers, IReadOnlyCollection<AutoCadColorsManager.AutoCadColor> autoCadColors )
     {
       Layers.Clear() ;
       foreach ( var layer in layers ) {
         if ( string.IsNullOrEmpty( layer.Index ) ) {
           layer.Index = AutoCadColorsManager.NoColor ;
-          layer.SolidColor = new SolidColorBrush() ;
         }
         else {
           var solidColor = autoCadColors.FirstOrDefault( c => c.Index == layer.Index )?.SolidColor ?? new SolidColorBrush() ;
@@ -87,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<ElementId> viewIds = new() { activeView.Id } ;
       // replace text
       var encoding = GetEncoding( _settingFilePath ) ;
-      ReplaceLayerNames( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
+      ReplaceLayerNamesAndColors( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
       
       // Delete layers
       DeleteLayers(LayerNames) ;
@@ -127,13 +126,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
     }
-  
 
-
-    private static List<Layer> GetLayerNames( string filePath )
+    private static List<Layer> GetLayers( string filePath )
     {
       const string exceptString = "Ifc" ;
-      var names = new List<Layer>() ;
+      var layers = new List<Layer>() ;
       using ( var reader = File.OpenText( filePath ) ) {
         while ( reader.ReadLine() is { } line ) {
           if ( line[ 0 ] == '#' ) continue ;
@@ -147,13 +144,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             familyType = $" ({typeOfLayer})" ;
           }
 
-          names.Add( new Layer( layerName, familyName + familyType, colorIndex ) ) ;
+          layers.Add( new Layer( layerName, familyName + familyType, colorIndex ) ) ;
         }
 
         reader.Close() ;
       }
 
-      var filterNames = names.Distinct()
+      var filterLayers = layers.Distinct()
         .Where( x => ! x.LayerName.Contains( exceptString ) && ! string.IsNullOrEmpty( x.LayerName ) )
         .GroupBy( x => x.LayerName )
         .Select( ng => new Layer 
@@ -164,7 +161,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         } )
         .ToList() ;
 
-      return filterNames ;
+      return filterLayers ;
     }
 
     private static Encoding GetEncoding( string filename )
@@ -184,7 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return Encoding.ASCII ;
     }
 
-    private static void ReplaceLayerNames( IReadOnlyList<Layer> oldLayerNames, IReadOnlyList<Layer> newLayerNames, string filePath, Encoding encoding )
+    private static void ReplaceLayerNamesAndColors( IReadOnlyList<Layer> oldLayerNames, IReadOnlyList<Layer> newLayerNames, string filePath, Encoding encoding )
     {
       try {
         var hasChange = false ;
