@@ -43,7 +43,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly Document _document ;
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
-    private List<CeedModel> _previousCeedModels ;
     private readonly StorageService<Level, CeedUserModel> _storageService ;
     private List<string> _ceedModelNumberOfPreviewCategories ;
     private readonly List<CanvasChildInfo> _canvasChildInfos ;
@@ -116,8 +115,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
             ceedModels = GroupCeedModelsByCeedModelNumber( ceedModels ) ;
             CeedModels.AddRange( ceedModels ) ;
-            AddModelNumber() ;
           }
+
+          AddModelNumber() ;
         }
         OnPropertyChanged();
       }
@@ -308,7 +308,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( oldCeedStorable is null ) {
         _ceedModels = new List<CeedModel>() ;
         _usingCeedModel = new List<CeedModel>() ;
-        _previousCeedModels = new List<CeedModel>() ;
         _previewList = new ObservableCollection<PreviewListInfo>() ;
         Categories = new ObservableCollection<CategoryModel>() ;
         CategoriesPreview = new ObservableCollection<CategoryModel>() ;
@@ -317,7 +316,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       else {
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
-        _previousCeedModels = new List<CeedModel>( oldCeedStorable.CeedModelData ) ;
         _previewList = new ObservableCollection<PreviewListInfo>() ;
         _ceedModelNumberOfPreviewCategories = CategoryModel.GetCeedModelNumbers( oldCeedStorable.CategoriesWithoutCeedCode ) ;
         IsShowCeedModelNumber = _storageService.Data.IsShowCeedModelNumber ;
@@ -538,6 +536,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         
         var ceedStorable = _document.GetCeedStorable() ;
         {
+          ceedStorable.CeedModelUsedData = _usingCeedModel ;
           ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( Categories ) ;
           ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( CategoriesPreview ) ;
         }
