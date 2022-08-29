@@ -308,12 +308,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
 
       // set route name
-      var routeName = conduit.GetRouteName() ;
-      if ( ! string.IsNullOrEmpty( routeName ) ) {
-        var routeNameArray = routeName!.Split( '_' ) ;
-        routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-        instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
-      }
+      SetRouteNameForRack( conduit, instance ) ;
 
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
@@ -374,12 +369,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
 
       // set route name
-      var routeName = conduit.GetRouteName() ;
-      if ( ! string.IsNullOrEmpty( routeName ) ) {
-        var routeNameArray = routeName!.Split( '_' ) ;
-        routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-        instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
-      }
+      SetRouteNameForRack( conduit, instance ) ;
 
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {
@@ -396,6 +386,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       instance.Location.Move( new XYZ( 0, 0, -30d.MillimetersToRevitUnits() ) ) ; // TODO may be must change when FamilyType change
 
       return instance ;
+    }
+
+    private static void SetRouteNameForRack( Element conduit, FamilyInstance instance )
+    {
+      var routeName = conduit.GetRouteName() ;
+      if ( string.IsNullOrEmpty( routeName ) ) return ;
+      
+      var routeNameArray = routeName!.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
     }
 
     public static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )

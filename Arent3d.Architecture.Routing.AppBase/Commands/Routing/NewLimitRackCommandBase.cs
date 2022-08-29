@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Utility ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -63,7 +64,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var fittings = new List<FamilyInstance>() ;
           Dictionary<string, List<MEPCurve>> routingElementGroups ;
           if ( IsSelectionRange ) {
-            var pickedObjects = uiDocument.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
+            List<Element> pickedObjects ;
+            try {
+              pickedObjects = uiDocument.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
+            }
+            catch ( OperationCanceledException ) {
+              return Result.Cancelled ;
+            }
             if ( ! pickedObjects.Any() ) return Result.Cancelled ;
 
             var pickedMepCurves = new List<MEPCurve>() ;
@@ -80,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           {
             if ( p.GetSubRouteInfo() is not { } subRouteInfo ) return false;
             return p.GetRepresentativeSubRoute() == subRouteInfo ;
-          } ).ToList() ;
+          } ).EnumerateAll() ;
           
           foreach ( var routingElementGroup in routingElementGroups ) {
             foreach ( var representativeMepCurve in routingElementGroup.Value ) {
