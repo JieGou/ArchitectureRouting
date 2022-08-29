@@ -1,4 +1,4 @@
-<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.OutputPickupReportSettingDialog"
+<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.OutputPickUpReportSettingDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterScreen"
         Title="拾い表出力項目選択" Width="300" Height="400"
         x:Name="OutputPickUpSettingReportDialog"
-        d:DataContext="{d:DesignInstance {x:Type viewModel:PickupReportDatFileViewModel}, IsDesignTimeCreatable=True}">
+        d:DataContext="{d:DesignInstance {x:Type viewModel:PickUpReportDatFileViewModel}, IsDesignTimeCreatable=True}">
     <DockPanel Margin="10">
         <GroupBox Header="出力項目" DockPanel.Dock="Top" Height="300">
             <ListBox ItemsSource="{Binding OutputReportSettingCollection}">
@@ -45,12 +45,12 @@
                 </Grid.ColumnDefinitions>
                 <Button Height="24"
                         Content="OK"
-                        Command="{Binding ApplyOutputPickupReportSettingCommand}"
+                        Command="{Binding ApplyOutputItemsCommand}"
                         CommandParameter="{Binding ElementName=OutputPickUpSettingReportDialog}"
                         Grid.Column="0" Grid.Row="0"
                         Margin="0,10,3,0" />
                 <Button Height="24"
-                        Command="{Binding CancelOutputPickupReportSettingCommand}"
+                        Command="{Binding CancelOutputItemsCommand}"
                         CommandParameter="{Binding ElementName=OutputPickUpSettingReportDialog}"
                         Content="キャンセル"
                         Grid.Column="1"

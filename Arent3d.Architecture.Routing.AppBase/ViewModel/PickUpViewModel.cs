@@ -971,7 +971,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           dialog.ShowDialog() ;
         }
         else {
-          var pickUpReportDatFileViewModel = new PickupReportDatFileViewModel(_document,pickUpModels) ;
+          var pickUpReportDatFileViewModel = new PickUpReportDatFileViewModel(_document,pickUpModels) ;
           var dialog = new PickupReportDatFileDialog( pickUpReportDatFileViewModel ) ;
           dialog.ShowDialog() ;
         }

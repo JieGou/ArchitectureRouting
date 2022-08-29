@@ -3,9 +3,9 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class OutputPickupReportSettingDialog
+  public partial class OutputPickUpReportSettingDialog
   {
-    public OutputPickupReportSettingDialog(PickupReportDatFileViewModel viewModel)
+    public OutputPickUpReportSettingDialog(PickUpReportDatFileViewModel viewModel)
     {
       InitializeComponent() ;
       DataContext = viewModel ;

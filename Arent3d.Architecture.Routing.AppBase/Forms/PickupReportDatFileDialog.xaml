@@ -7,7 +7,7 @@
         xmlns:converter="clr-namespace:Arent3d.Architecture.Routing.AppBase.Converters"
         mc:Ignorable="d"
         Title="拾い表作成" Height="310" Width="690"
-        d:DataContext="{d:DesignInstance {x:Type viewModel:PickupReportDatFileViewModel}, IsDesignTimeCreatable=True}"
+        d:DataContext="{d:DesignInstance {x:Type viewModel:PickUpReportDatFileViewModel}, IsDesignTimeCreatable=True}"
         x:Name="PickUpReportWinDow"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
@@ -29,12 +29,12 @@
                       Margin="30 0 0 0">
                 <StackPanel>
                     <RadioButton GroupName="PickupNumber"
-                                 IsChecked="{Binding IsPickupNumberOn}"
+                                 IsChecked="{Binding IsPickUpNumberOn}"
                                  Content="ON"
                                  Margin="5, 5, 0, 0"
                                  FontSize="14" />
                     <RadioButton GroupName="PickupNumber"
-                                 IsChecked="{Binding IsPickupNumberOn,Converter={StaticResource InvertBooleanConverter}}"
+                                 IsChecked="{Binding IsPickUpNumberOn,Converter={StaticResource InvertBooleanConverter}}"
                                  Content="OFF"
                                  Margin="5, 5, 0, 0"
                                  FontSize="14"/>

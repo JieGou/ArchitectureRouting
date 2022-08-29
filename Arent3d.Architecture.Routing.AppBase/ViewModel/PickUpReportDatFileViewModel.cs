@@ -22,11 +22,11 @@ using Arent3d.Architecture.Routing.Utils;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
-  public class PickupReportDatFileViewModel : NotifyPropertyChanged
+  public class PickUpReportDatFileViewModel : NotifyPropertyChanged
   {
     #region Constance
 
-    private const string TempFileName = "フォルダを選択してください.dat" ;
+    private const string TempFileName = "フォルダを選択してください。" ;
     private const string LengthItem = "長さ物" ;
     private const string ConstructionMaterialItem = "工事部材" ;
     private const string EquipmentMountingItem = "機器取付" ;
@@ -59,17 +59,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public string FileName { get ; set ; } = string.Empty ;
 
-    private string PickupNumberOnOfString => IsPickupNumberOn ? "ON" : "OFF" ;
+    private string PickUpNumberOnOffString => IsPickUpNumberOn ? "ON" : "OFF" ;
 
-    private bool _isPickupNumberOn ;
+    private bool _isPickUpNumberOn ;
 
-    public bool IsPickupNumberOn
+    public bool IsPickUpNumberOn
     {
-      get => _isPickupNumberOn ;
+      get => _isPickUpNumberOn ;
       set
       {
-        if ( value == _isPickupNumberOn ) return ;
-        _isPickupNumberOn = value ;
+        if ( value == _isPickUpNumberOn ) return ;
+        _isPickUpNumberOn = value ;
         OnPropertyChanged() ;
       }
     }
@@ -101,18 +101,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public ICommand? CancelCommand { get ; private set ; }
 
-    public ICommand? ApplyOutputPickupReportSettingCommand { get ; private set ; }
+    public ICommand? ApplyOutputItemsCommand { get ; private set ; }
 
-    public ICommand? CancelOutputPickupReportSettingCommand { get ; private set ; }
+    public ICommand? CancelOutputItemsCommand { get ; private set ; }
 
     #endregion Command
 
     #region Constructor
 
-    public PickupReportDatFileViewModel( Document document, List<PickUpItemModel>? pickUpItemModels = null )
+    public PickUpReportDatFileViewModel( Document document, List<PickUpItemModel>? pickUpItemModels = null )
     {
       _document = document ;
-      IsPickupNumberOn = true ;
+      IsPickUpNumberOn = true ;
       IsCanSelectOutputItems = false ;
       InitCommand() ;
       InitPickUpModels( pickUpItemModels ) ;
@@ -130,8 +130,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SettingCommand = new RelayCommand( OnShowOutputItemsSelectionSettingExecute ) ;
       ExportFileCommand = new RelayCommand<Window>( OnExportFileExecute ) ;
       CancelCommand = new RelayCommand<Window>( OnCancelExecute ) ;
-      ApplyOutputPickupReportSettingCommand = new RelayCommand<Window>( OnApplyOutputPickupReportSettingExecute ) ;
-      CancelOutputPickupReportSettingCommand = new RelayCommand<Window>( OnCancelOutputPickupReportSettingExecute ) ;
+      ApplyOutputItemsCommand = new RelayCommand<Window>( OnApplyOutputPickUpReportSettingExecute ) ;
+      CancelOutputItemsCommand = new RelayCommand<Window>( OnCancelOutputPickUpReportSettingExecute ) ;
     }
 
     private static IEnumerable<OutputPickUpReportItemSetting> GetOutPutReportSettingCollection()
@@ -182,7 +182,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void OnShowOutputItemsSelectionSettingExecute()
     {
-      var outputSettingDialog = new OutputPickupReportSettingDialog( this ) ;
+      var outputSettingDialog = new OutputPickUpReportSettingDialog( this ) ;
 
       var previousOutputSettingCollection = ( from outPutSettingItem in OutputReportSettingCollection select outPutSettingItem.DeepCopy() ).ToList() ;
 
@@ -202,7 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       try {
         var outputStrings = GetOutputDataToWriting( pickUpModels ) ;
-        var fileName = $"{FileName}{PickupNumberOnOfString}.dat" ;
+        var fileName = $"{FileName}{PickUpNumberOnOffString}.dat" ;
         var filePath = Path.Combine( PathName, fileName ) ;
         using ( var fsStream = new FileStream( filePath, FileMode.OpenOrCreate, FileAccess.Write ) ) {
           var streamWriter = new StreamWriter( fsStream, new UnicodeEncoding() ) ;
@@ -229,9 +229,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<string> GetOutputDataToWriting( List<PickUpItemModel> pickUpItemModels )
     {
       var outPutStrings = new List<string>() ;
-      var pickupOutPutConstructionLists = GetPickupOutputConstructionLists( pickUpItemModels ) ;
+      var pickUpOutPutConstructionLists = GetPickUpOutputConstructionLists( pickUpItemModels ) ;
 
-      outPutStrings.Add( $"\"1\",\"{FileName}{PickupNumberOnOfString}\"" ) ;
+      outPutStrings.Add( $"\"1\",\"{FileName}{PickUpNumberOnOffString}\"" ) ;
 
       var ( highestLevelIndex, lowestLevelIndex) = GetHighestAndLowestLevelHasData( pickUpItemModels ) ;
       
@@ -240,7 +240,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       if ( highestLevelIndex != lowestLevelIndex ) lowestLevelName = lowestLevelIndex.ToString() ;
 
-      foreach ( var outputConstructionItem in pickupOutPutConstructionLists.Where( outputConstructionItem => outputConstructionItem.OutputCollection.Any() ) ) {
+      foreach ( var outputConstructionItem in pickUpOutPutConstructionLists.Where( outputConstructionItem => outputConstructionItem.OutputCollection.Any() ) ) {
         outPutStrings.Add( $"\"2\",\"{outputConstructionItem.ConstructionItemName}\",\"{highestLevelName}\",\"{lowestLevelName}\"" ) ;
 
         foreach ( var outPutLevel in from outputItem in outputConstructionItem.OutputCollection select outputItem.OutPutLevelItems.OrderBy( x=>x.LevelIndex ).ToList() ) {
@@ -274,14 +274,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return ( highestLevelIndex, lowestLevelIndex ) ;
     }
 
-    private static IEnumerable<PickupOutputConstructionList> GetPickupOutputConstructionLists( List<PickUpItemModel> pickUpItemModels)
+    private static IEnumerable<PickUpOutputConstructionList> GetPickUpOutputConstructionLists( List<PickUpItemModel> pickUpItemModels)
     {
-      var pickupOutPutConstructionLists = new List<PickupOutputConstructionList>() ;
+      var pickUpOutPutConstructionLists = new List<PickUpOutputConstructionList>() ;
 
       var levelAndIndexCollection = GetLevelIndexOfLevelCollection().EnumerateAll() ;
 
       if ( ! levelAndIndexCollection.Any() ) {
-        throw new Exception( "don't have any level in drawing, please check against!" ) ;
+        throw new Exception( "Don't have any level in drawing, please check again!" ) ;
       } 
 
       foreach ( var pickUpItemModel in pickUpItemModels ) {
@@ -291,10 +291,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           constructionName = DefaultConstructionItem ;
         }
 
-        var constructionOutputList = pickupOutPutConstructionLists.FirstOrDefault( c => c.ConstructionItemName == constructionName ) ;
+        var constructionOutputList = pickUpOutPutConstructionLists.FirstOrDefault( c => c.ConstructionItemName == constructionName ) ;
         if ( constructionOutputList == null ) {
-          constructionOutputList = new PickupOutputConstructionList( constructionName ) ;
-          pickupOutPutConstructionLists.Add( constructionOutputList ) ;
+          constructionOutputList = new PickUpOutputConstructionList( constructionName ) ;
+          pickUpOutPutConstructionLists.Add( constructionOutputList ) ;
         }
 
         if ( string.IsNullOrEmpty( pickUpItemModel.Floor ) ) continue ;
@@ -303,7 +303,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var outPutString = $"\"3\",\"{pickUpItemModel.ProductName}\",\"{pickUpItemModel.Specification}\",\"{pickUpItemModel.ProductCode}\",{pickUpItemModel.Quantity},\"\",\"\"" ;
         var outputItem = constructionOutputList.OutputCollection.FirstOrDefault( it => CompareProductCode( it.ProductCode, pickUpItemModel.ProductCode ) ) ;
         if ( outputItem == null ) {
-          outputItem = new PickupOutputList( pickUpItemModel.ProductCode ) ;
+          outputItem = new PickUpOutputList( pickUpItemModel.ProductCode ) ;
           constructionOutputList.OutputCollection.Add( outputItem ) ;
         }
 
@@ -311,7 +311,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       }
 
-      return pickupOutPutConstructionLists ;
+      return pickUpOutPutConstructionLists ;
     }
 
     private static IEnumerable<(string levelName, int levelIndex)> GetLevelIndexOfLevelCollection()
@@ -337,7 +337,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var errorMessList = new List<string>() ;
       errorMess = "Please" ;
       var isCanExport = ! string.IsNullOrEmpty( PathName ) && ! string.IsNullOrEmpty( FileName ) ;
-      if ( string.IsNullOrEmpty( PathName ) ) errorMessList.Add( "select the folder name" ) ;
+      if ( string.IsNullOrEmpty( PathName ) ) errorMessList.Add( "select the output folder" ) ;
       if ( string.IsNullOrEmpty( FileName ) ) errorMessList.Add( "input the file name" ) ;
       var errMessCount = errorMessList.Count ;
 
@@ -391,10 +391,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         pickUpModels.AddRange( _pickUpItemModels ) ;
       }
 
-      return GroupPickupItemModels( pickUpModels ) ;
+      return MergeQuantityForPickUpItemModels( pickUpModels ) ;
     }
 
-    private static List<PickUpItemModel> GroupPickupItemModels(List<PickUpItemModel> pickUpItemModels)
+    private static List<PickUpItemModel> MergeQuantityForPickUpItemModels(List<PickUpItemModel> pickUpItemModels)
     {
       var outputPickUpItems = new List<PickUpItemModel>() ;
 
@@ -402,12 +402,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( newPickUpItemModel == null ) continue ;
         newPickUpItemModel.ProductCode = newPickUpItemModel.ProductCode.Split( '-' ).First() ;
 
-        var existingPickupItemModel = outputPickUpItems.FirstOrDefault( x => IsTheSameGroupPickUpItem( x, newPickUpItemModel ) ) ;
+        var existingPickUpItemModel = outputPickUpItems.FirstOrDefault( x => IsTheSameGroupPickUpItem( x, newPickUpItemModel ) ) ;
 
-        if ( existingPickupItemModel != null ) {
-          if ( double.TryParse( existingPickupItemModel.Quantity, out var existingQuantity ) &&
+        if ( existingPickUpItemModel != null ) {
+          if ( double.TryParse( existingPickUpItemModel.Quantity, out var existingQuantity ) &&
                double.TryParse( newPickUpItemModel.Quantity, out var newQuantity ) ) {
-            existingPickupItemModel.Quantity = ( Math.Round( existingQuantity, 1 ) + Math.Round( newQuantity, 1 ) ).ToString( CultureInfo.CurrentCulture ) ;
+            existingPickUpItemModel.Quantity = ( Math.Round( existingQuantity, 1 ) + Math.Round( newQuantity, 1 ) ).ToString( CultureInfo.CurrentCulture ) ;
           }
         }
         else {
@@ -440,13 +440,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ownerWindow.Close() ;
     }
 
-    private static void OnApplyOutputPickupReportSettingExecute( Window ownerWindow )
+    private static void OnApplyOutputPickUpReportSettingExecute( Window ownerWindow )
     {
       ownerWindow.DialogResult = true ;
       ownerWindow.Close() ;
     }
 
-    private static void OnCancelOutputPickupReportSettingExecute( Window ownerWindow )
+    private static void OnCancelOutputPickUpReportSettingExecute( Window ownerWindow )
     {
       ownerWindow.DialogResult = false ;
       ownerWindow.Close() ;
@@ -470,24 +470,24 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
   }
 
-  public class PickupOutputConstructionList
+  public class PickUpOutputConstructionList
   {
     public string ConstructionItemName { get ; }
-    public List<PickupOutputList> OutputCollection { get ; } = new() ;
+    public List<PickUpOutputList> OutputCollection { get ; } = new() ;
 
-    public PickupOutputConstructionList( string constructionItemName )
+    public PickUpOutputConstructionList( string constructionItemName )
     {
       ConstructionItemName = constructionItemName ;
     }
   }
 
-  public class PickupOutputList
+  public class PickUpOutputList
   {
     public string ProductCode { get ; }
     
     public List<PickUpOutPutLevelItem> OutPutLevelItems { get ; } = new() ;
 
-    public PickupOutputList( string productCode )
+    public PickUpOutputList( string productCode )
     {
       ProductCode = productCode ;
     }

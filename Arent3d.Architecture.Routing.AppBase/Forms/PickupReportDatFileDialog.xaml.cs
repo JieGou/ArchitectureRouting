@@ -8,7 +8,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       InitializeComponent() ;
     }
-    public PickupReportDatFileDialog(PickupReportDatFileViewModel datFileViewModel)
+    public PickupReportDatFileDialog(PickUpReportDatFileViewModel datFileViewModel)
     {
       InitializeComponent() ;
       DataContext = datFileViewModel ;
