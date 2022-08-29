@@ -755,7 +755,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         textNote.Text = textLabel ;
         if ( ! isAutoCalculatePullBoxSize ) return ;
         var color = new Color( 255, 0, 0 ) ;
-        ConfirmUnsetCommandBase.ChangeElementColor( document, new []{ textNote }, color ) ;
+        ConfirmUnsetCommandBase.ChangeElementColor( new []{ textNote }, color ) ;
       }
     }
 
@@ -771,7 +771,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       
       if ( isAutoCalculatePullBoxSize ) {
         var color = new Color( 255, 0, 0 ) ;
-        ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNote }, color ) ;
+        ConfirmUnsetCommandBase.ChangeElementColor( new []{ textNote }, color ) ;
       }
 
       storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Add( new PullBoxInfoItemModel( pullBox.UniqueId, textNote.UniqueId ) );

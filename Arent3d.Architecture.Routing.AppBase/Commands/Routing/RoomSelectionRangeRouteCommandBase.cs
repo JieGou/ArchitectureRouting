@@ -88,7 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var routeName = nameBase + "_" + nextIndex ;
 
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
-      var isOutFromConnector = RoomRouteManager.CheckPickElementIsInOrOutRoom( document, room, powerConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
+      var isOutFromConnector = RoomRouteManager.IsPickedElementOutsideOfRoom( document, room, powerConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
       var (insideSensorConnectors, outsideSensorConnectors) = ClassifySensorConnectorsInsideOrOutsideRoom( document, sensorConnectors, room ) ;
       if ( isOutFromConnector ) {
         CreateRouteSegment( result, document, isOutFromConnector, room, powerConnector, outsideSensorConnectors, insideSensorConnectors, classificationInfo, systemType, curveType, routeProperty, sensorDirection, pipeSpec, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex ) ;
@@ -102,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;
-      ConfirmUnsetCommandBase.ResetElementColor( document, allConnectors ) ;
+      ConfirmUnsetCommandBase.ResetElementColor( allConnectors ) ;
 
       return result ;
     }
@@ -458,7 +458,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var insideRoomConnectors = new List<FamilyInstance>() ;
       var outsideRoomConnectors = new List<FamilyInstance>() ;
       foreach ( var sensorConnector in sensorConnectors ) {
-        var isOut = RoomRouteManager.CheckPickElementIsInOrOutRoom( document, room, sensorConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
+        var isOut = RoomRouteManager.IsPickedElementOutsideOfRoom( document, room, sensorConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
         if ( isOut ) outsideRoomConnectors.Add( sensorConnector ) ;
         else insideRoomConnectors.Add( sensorConnector ) ;
       }

@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
@@ -21,8 +22,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   public static class WireLengthNotationManager
   {
     private const double MaxToleranceOfTextNotePosition = 0.001 ;
-    private const double MaxDistanceBetweenTextNotes = 1.5 ;
-    
+    private static readonly double MaxDistanceBetweenTextNotes = 950.0.MillimetersToRevitUnits() ;
+    private const double MaxIntersectVolumeBetweenTextNotes = 0.4 ;
+
     private static List<string> GetPickUpNumbersList( IEnumerable<PickUpItemModel> pickUpModels )
     {
       var pickUpNumberList = new List<string>() ;
@@ -36,6 +38,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     
     public static void RemoveWireLengthNotation( Document document, string level )
     {
+      using var transaction = new Transaction( document, "Remove wire length notation" ) ;
+      transaction.Start() ;
       var wireLengthNotationStorable = document.GetWireLengthNotationStorable() ;
       var wireLengthNotationData = wireLengthNotationStorable.WireLengthNotationData.Where( tp => tp.Level == level );
       var textNoteIds = document.GetAllElements<TextNote>().Where( t => wireLengthNotationData.Any( tp => tp.TextNoteId == t.UniqueId ) ).Select( t => t.Id ).ToList() ;
@@ -44,6 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       wireLengthNotationStorable.WireLengthNotationData.RemoveAll( tp => tp.Level == level );
       wireLengthNotationStorable.Save() ;
+      transaction.Commit() ;
     }
     
     public static void ShowWireLengthNotation( WireLengthNotationStorable wireLengthNotationStorable, Document document, Level level, List<PickUpItemModel> pickUpModels )
@@ -59,6 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var obliqueTextNoteOfPickUpFigureModels = new List<TextNoteOfPickUpFigureModel>() ;
       var allTextNoteOfPickUpFigureModels = new List<TextNoteOfPickUpFigureModel>() ;
       var allConduits = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().ToList() ;
+      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).Where( e => e.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
       var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var allConduitsOfRoutes = new Dictionary<string, List<Conduit>>() ;
       foreach ( var route in routeCache ) {
@@ -75,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           .FirstOrDefault() ;
         if ( pickUpModelsByProductCode == null ) continue ;
 
-        ShowPickUp( document, routeCache, allConduitsOfRoutes, isDisplayPickUpNumber, pickUpModelsByProductCode.PickUpModels,
+        ShowPickUp( document, routeCache, allConduitsOfRoutes, allConnectors, isDisplayPickUpNumber, pickUpModelsByProductCode.PickUpModels,
           straightTextNoteOfPickUpFigureModels, obliqueTextNoteOfPickUpFigureModels, ref pickUpNumberOfPullBox ) ;
       }
 
@@ -83,61 +89,99 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         SetPositionForObliqueTextNoteOfPickUpFigure( routeCache, allConduitsOfRoutes, obliqueTextNoteOfPickUpFigureModel, scale ) ;
       }
 
-      #region Set size of textnotes in entangled case
-
       allTextNoteOfPickUpFigureModels.AddRange( obliqueTextNoteOfPickUpFigureModels ) ;
       allTextNoteOfPickUpFigureModels.AddRange( straightTextNoteOfPickUpFigureModels ) ;
-      var rooms = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.Room ).ToList() ;
-      var reSizeRooms = rooms.ToDictionary( x => x.Id.IntegerValue, _ => false ) ;
+      var reSizeBoards = allTextNoteOfPickUpFigureModels.Where( t => !string.IsNullOrEmpty( t.BoardId ) )
+        .Select( x => x.BoardId + "_" + true ).Distinct().ToDictionary( x => x, _ => false ) ;
+      reSizeBoards.AddRange( allTextNoteOfPickUpFigureModels.Where( t => !string.IsNullOrEmpty( t.BoardId ) )
+        .Select( x => x.BoardId + "_" + false ).Distinct().ToDictionary( x => x, _ => false ) ) ;
+      
+      using var createTextNoteTransaction = new Transaction( document, "Create Text notes" ) ;
+      createTextNoteTransaction.Start() ;
       foreach ( var textNoteOfPickUpFigureModel in allTextNoteOfPickUpFigureModels ) {
-        if ( textNoteOfPickUpFigureModel.Position == null ) continue ;
-
-        foreach ( var room in rooms ) {
-          var isOutOfRoom = RoomRouteManager.CheckPickElementIsInOrOutRoom( room, textNoteOfPickUpFigureModel.Position ) ;
-          if ( isOutOfRoom ) continue ;
-          
-          var reSizeRoomId = room.Id.IntegerValue ;
-
-          if ( ! reSizeRooms[ reSizeRoomId ] && allTextNoteOfPickUpFigureModels.Any( x =>
-              {
-                if ( x.Position == null ) return false ;
-                var xDistance = Math.Abs( x.Position.X - textNoteOfPickUpFigureModel.Position.X ) ;
-                var yDistance = Math.Abs( x.Position.Y - textNoteOfPickUpFigureModel.Position.Y ) ;
-                return xDistance < MaxDistanceBetweenTextNotes && yDistance < MaxDistanceBetweenTextNotes &&
-                       xDistance >= MaxToleranceOfTextNotePosition && yDistance >= MaxToleranceOfTextNotePosition ;
-              } ) && ! IsNearPowerConnector( document, textNoteOfPickUpFigureModel.Position ) )
-            reSizeRooms[ reSizeRoomId ] = true ;
-
-          textNoteOfPickUpFigureModel.RoomId = reSizeRoomId ;
-
-          break ;
-        }
+        var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel ) ;
+        if ( textNote != null )
+          textNoteOfPickUpFigureModel.TextNote = textNote ;
       }
+      createTextNoteTransaction.Commit() ;
+
+      #region Set size of textnotes in entangled case
+      
+      foreach ( var textNoteOfPickUpFigureModel in allTextNoteOfPickUpFigureModels ) {
+        if ( textNoteOfPickUpFigureModel.Position == null || string.IsNullOrEmpty( textNoteOfPickUpFigureModel.BoardId ) || textNoteOfPickUpFigureModel.TextNote == null ) continue ;
+
+        if ( ! reSizeBoards[ textNoteOfPickUpFigureModel.BoardId + "_" + textNoteOfPickUpFigureModel.IsToConnector ] && allTextNoteOfPickUpFigureModels.Any( x =>
+            {
+              if ( x.Position == null || string.IsNullOrEmpty( x.BoardId ) || x.TextNote == null || x.TextNote.UniqueId == textNoteOfPickUpFigureModel.TextNote.UniqueId ) return false ;
+              var xDistance = Math.Abs( x.Position.X - textNoteOfPickUpFigureModel.Position.X ) ;
+              var yDistance = Math.Abs( x.Position.Y - textNoteOfPickUpFigureModel.Position.Y ) ;
+              if ( xDistance < MaxToleranceOfTextNotePosition && yDistance < MaxToleranceOfTextNotePosition ) return false ;
+              
+              var intersectSolid = GeometryHelper.GetSolidExecutionOfTextNotes( document, x.TextNote, textNoteOfPickUpFigureModel.TextNote, BooleanOperationsType.Intersect ) ;
+              return ! ( Math.Abs( intersectSolid.Volume ) <= MaxIntersectVolumeBetweenTextNotes ) ;
+            } ) && ! IsNearPowerConnector( document, textNoteOfPickUpFigureModel.Position ) )
+          reSizeBoards[ textNoteOfPickUpFigureModel.BoardId + "_" + textNoteOfPickUpFigureModel.IsToConnector ] = true ;
+      }
+      
+      var baseLengthOfLine = scale / 100d ;
+      using var changeTextNoteSizeTransaction = new Transaction( document, "Change text note size" ) ;
+      changeTextNoteSizeTransaction.Start() ;
+      foreach ( var reSizeBoard in reSizeBoards ) {
+        if ( ! reSizeBoard.Value ) continue ;
+        
+        allTextNoteOfPickUpFigureModels.Where( t => t.BoardId + "_" + t.IsToConnector == reSizeBoard.Key ).ForEach( t =>
+        {
+          if ( t.TextNote != null && t.Position != null ) {
+            var textSize = ( t.TextNote!.TextNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).AsDouble() / 2 ).RevitUnitsToMillimeters() ;
+            if ( t.PickUpAlignment is WireLengthNotationAlignment.Vertical )
+              t.Position = new XYZ( t.Position.X + 0.7 * baseLengthOfLine, t.Position.Y, t.Position.Z ) ;
+          
+            else if ( t.PickUpAlignment is WireLengthNotationAlignment.Oblique ) {
+              var textNoteDirection = t.Direction ;
+            
+              if ( textNoteDirection == null )
+                t.Position = new XYZ( t.Position.X, t.Position.Y, t.Position.Z ) ;
+            
+              else if ( textNoteDirection.Y is 1 )
+                t.Position = new XYZ( t.Position.X, t.Position.Y - 0.8 * baseLengthOfLine, t.Position.Z ) ;
+            
+              else if ( textNoteDirection.Y is -1 )
+                t.Position = new XYZ( t.Position.X, t.Position.Y + 0.5 * baseLengthOfLine, t.Position.Z ) ;
+            
+              else if ( textNoteDirection.X is 1 )
+                t.Position = new XYZ( t.Position.X - 0.1 * baseLengthOfLine, t.Position.Y, t.Position.Z ) ;
+            
+              else if ( textNoteDirection.X is -1 )
+                t.Position = new XYZ( t.Position.X + 1.3 * baseLengthOfLine, t.Position.Y, t.Position.Z ) ;
+            }
+          
+            else
+              t.Position = new XYZ( t.Position.X, t.Position.Y - 0.8 * baseLengthOfLine, t.Position.Z ) ;
+      
+            t.TextNote!.Coord = t.Position ;
+            t.TextNote!.TextNoteType = TextNoteHelper.FindOrCreateTextNoteType( document, textSize, false ) ;
+          }
+        } );
+      }
+      
+      changeTextNoteSizeTransaction.Commit() ;
 
       #endregion
       
-      foreach ( var textNoteOfPickUpFigureModel in allTextNoteOfPickUpFigureModels ) {
-        // TODO: とりあえず動くために以下をコメントアウトします。
-        // if ( textNoteOfPickUpFigureModel.RoomId == null ) continue ;
-        // var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel, reSizeRooms[ (int)textNoteOfPickUpFigureModel.RoomId ] ) ;
-        
-        var textNote = CreateTextNote( document, textNoteOfPickUpFigureModel ) ;
-        if ( textNote != null )
-          textNoteOfPickUpFigureModel.Id = textNote.UniqueId ;
-      }
-
-      SaveWireLengthNotationModel( wireLengthNotationStorable, allTextNoteOfPickUpFigureModels.Select( x => new WireLengthNotationModel( x.Id, level.Name ) ).ToList() ) ;
+      SaveWireLengthNotationModel( document, wireLengthNotationStorable, allTextNoteOfPickUpFigureModels.Select( x => new WireLengthNotationModel( x.TextNote!.UniqueId, level.Name ) ).ToList() ) ;
     }
     
-    private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, bool isDisplayPickUpNumber, 
+    private static void ShowPickUp(Document document, RouteCache routes, IReadOnlyDictionary<string, List<Conduit>> allConduitsOfRoutes, List<Element> allConnectors, bool isDisplayPickUpNumber, 
       IEnumerable<PickUpItemModel> pickUpModels, List<TextNoteOfPickUpFigureModel> straightTextNoteOfPickUpFigureModels, List<TextNoteOfPickUpFigureModel> obliqueTextNoteOfPickUpFigureModels, ref int pickUpNumberOfPullBox )
     {
       var pickUpModelsGroupsByRelatedRouteName = pickUpModels.GroupBy( p => p.RelatedRouteName ) ;
       var obliqueTextNoteOfPickUpFigureQuantities = new Dictionary<string, double>() ;
       foreach ( var pickUpModelsGroup in pickUpModelsGroupsByRelatedRouteName ) {
         var routeName = pickUpModelsGroup.Key ;
-        var pickUpNumbers = WireLengthNotationManager.GetPickUpNumbersList( pickUpModelsGroup.AsEnumerable().ToList() ) ;
+        var pickUpNumbers = GetPickUpNumbersList( pickUpModelsGroup.AsEnumerable().ToList() ) ;
         var lastRoute = routes.LastOrDefault( r => r.Key == routeName ) ;
+        var fromConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, true ) ;
+        
         var lastSegment = lastRoute.Value.RouteSegments.Last() ;
         
         double straightTextNoteOfPickUpFigureQuantity = 0 ;
@@ -172,12 +216,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var fromPoint = line.GetEndPoint( 0 ) ;
             var toPoint = line.GetEndPoint( 1 ) ;
             var direction = line.Direction ;
-            var middlePoint = XyzUtil.GetMiddlePoint( fromPoint, toPoint, direction ) ;
+            var middlePointOfConduit = XyzUtil.GetMiddlePoint( fromPoint, toPoint ) ;
+            middlePointOfConduit = new XYZ( middlePointOfConduit.X, middlePointOfConduit.Y, 0 ) ;
+            var middlePoint = GetPositionOfStraightTextNote( middlePointOfConduit, direction ) ;
             
             int counter;
             XYZ? position;
-            var positionOfStraightTextNote = straightTextNoteOfPickUpFigureModels.Where( x => x.Position != null &&
-              Math.Abs( x.RelatedPosition.X - middlePoint.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.RelatedPosition.Y - middlePoint.Y ) < MaxToleranceOfTextNotePosition )
+            var positionOfStraightTextNote = straightTextNoteOfPickUpFigureModels
+              .Where( x => Math.Abs( x.RelatedPosition.X - middlePointOfConduit.X ) < MaxToleranceOfTextNotePosition && Math.Abs( x.RelatedPosition.Y - middlePointOfConduit.Y ) < MaxToleranceOfTextNotePosition )
               .OrderBy( x => x.Counter ).LastOrDefault();
             if ( positionOfStraightTextNote == default ) {
               counter = 1 ;
@@ -186,13 +232,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             else if ( ! isToPullBox ) {
               var isLeftOrTop = positionOfStraightTextNote.Counter % 2 != 0 ;
               
+              position = GetPositionOfStraightTextNote( positionOfStraightTextNote.RelatedPosition, direction ) ;
               if ( direction.Y is 1 or -1 )
-                middlePoint = new XYZ( isLeftOrTop ? middlePoint.X + 1.7 + 1.5 * ( positionOfStraightTextNote.Counter - 1 ) / 2 : middlePoint.X - 1.5 * positionOfStraightTextNote.Counter / 2, middlePoint.Y, middlePoint.Z ) ;
+                position = new XYZ( isLeftOrTop ? middlePoint.X + 1.7 + 1.5 * ( positionOfStraightTextNote.Counter - 1 ) / 2 : middlePoint.X - 1.5 * positionOfStraightTextNote.Counter / 2, middlePoint.Y, middlePoint.Z ) ;
               else if ( direction.X is 1 or -1 )
-                middlePoint = new XYZ( middlePoint.X, isLeftOrTop ? middlePoint.Y - 1.7 - 1.5 * ( positionOfStraightTextNote.Counter - 1 ) / 2 : middlePoint.Y + 1.5 * positionOfStraightTextNote.Counter / 2, middlePoint.Z ) ;
+                position = new XYZ( middlePoint.X, isLeftOrTop ? middlePoint.Y - 1.7 - 1.5 * ( positionOfStraightTextNote.Counter - 1 ) / 2 : middlePoint.Y + 1.5 * positionOfStraightTextNote.Counter / 2, middlePoint.Z ) ;
 
               counter = positionOfStraightTextNote.Counter + 1 ;
-              position = positionOfStraightTextNote.RelatedPosition ;
             }
             else continue ;
 
@@ -208,7 +254,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             var wireLengthNotationAlignment = WireLengthNotationAlignment.Horizontal ;
             if ( direction is { Y: 1 or -1 } )
               wireLengthNotationAlignment = WireLengthNotationAlignment.Vertical ;
-            var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( string.Empty, counter, position, middlePoint, strStraightTextNoteOfPickUpFigureQuantity, wireLengthNotationAlignment, null, null ) ;
+            var isToConnector = false ;
+            var toEndPoint = nearestConduit.GetNearestEndPoints( false ).ToList() ;
+
+            if ( toEndPoint.Any() ) {
+              var toEndPointKey = toEndPoint.First().Key ;
+              var toElementId = toEndPointKey.GetElementUniqueId() ;
+              if ( ! string.IsNullOrEmpty( toElementId ) ) {
+                var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
+                if ( toConnector != null && ! toConnector.IsTerminatePoint() && ! toConnector.IsPassPoint() )
+                  isToConnector = true ;
+              }
+            }
+              
+            var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( null, counter, positionOfStraightTextNote?.RelatedPosition ?? middlePointOfConduit, position, strStraightTextNoteOfPickUpFigureQuantity, wireLengthNotationAlignment, null, fromConnector?.UniqueId, isToConnector ) ;
             straightTextNoteOfPickUpFigureModels.Add( textNoteOfPickUpFigureModel ) ;
           }
         }
@@ -224,10 +283,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
           var strObliqueTextNoteOfPickUpFigureQuantity = "↓ " + obliqueTextNoteOfPickUpFigureQuantity.Value ;
           var positionOfTextNote = new XYZ( xPoint, yPoint, 0 ) ;
-          var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( string.Empty, 0, positionOfTextNote, positionOfTextNote, strObliqueTextNoteOfPickUpFigureQuantity, WireLengthNotationAlignment.Oblique, null, null ) ;
+          var textNoteOfPickUpFigureModel = new TextNoteOfPickUpFigureModel( null, 0, positionOfTextNote, positionOfTextNote, strObliqueTextNoteOfPickUpFigureQuantity, WireLengthNotationAlignment.Oblique, null, fromConnector?.UniqueId, true ) ;
           obliqueTextNoteOfPickUpFigureModels.Add( textNoteOfPickUpFigureModel );
         }
       }
+    }
+    
+    private static XYZ GetPositionOfStraightTextNote( XYZ middlePoint, XYZ direction )
+    {
+      if (direction.Y is 1 or -1) return new XYZ( middlePoint.X - 1.5 , middlePoint.Y, middlePoint.Z ) ;
+      
+      if (direction.X is 1 or -1) return new XYZ( middlePoint.X, middlePoint.Y + 1.5, middlePoint.Z ) ;
+
+      return middlePoint ;
     }
     
     private static void SetPositionForObliqueTextNoteOfPickUpFigure( RouteCache routeCache, Dictionary<string, List<Conduit>> conduitsOfRoutesForObliqueTextNote,
@@ -314,16 +382,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    private static TextNote? CreateTextNote(Document doc, TextNoteOfPickUpFigureModel textNoteOfPickUpFigureModel, bool isSmallSize = false )
+    private static TextNote? CreateTextNote(Document doc, TextNoteOfPickUpFigureModel textNoteOfPickUpFigureModel )
     {
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       var baseLengthOfLine = scale / 100d ;
       var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
-      var fontSize = isSmallSize ? .005 : .01 ;
-      if ( deviceSymbolTextNoteType != null ) {
-        var deviceSymbolTextNoteFontSize = deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).AsDouble() ;
-        fontSize = isSmallSize ? deviceSymbolTextNoteFontSize / 2 : deviceSymbolTextNoteFontSize ;
-      }
+      var fontSize = .01 ;
+      if ( deviceSymbolTextNoteType != null )
+        fontSize = deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).AsDouble() ;
       fontSize = fontSize.RevitUnitsToMillimeters() ;
       
       var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, fontSize, false ) ;
@@ -351,48 +417,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         
         else if ( textNoteOfPickUpFigureModel.PickUpAlignment is WireLengthNotationAlignment.Horizontal )
           textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X, textNoteOfPickUpFigureModel.Position.Y + 2 * ( baseLengthOfLine - 1 ), textNoteOfPickUpFigureModel.Position.Z ) ;
-
-        if ( isSmallSize ) {
-          if ( textNoteOfPickUpFigureModel.PickUpAlignment is WireLengthNotationAlignment.Vertical )
-            textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X + 0.7 * baseLengthOfLine, textNoteOfPickUpFigureModel.Position.Y, textNoteOfPickUpFigureModel.Position.Z ) ;
-          
-          else if ( textNoteOfPickUpFigureModel.PickUpAlignment is WireLengthNotationAlignment.Oblique ) {
-            var textNoteDirection = textNoteOfPickUpFigureModel.Direction ;
-            
-            if ( textNoteDirection == null )
-              textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X, textNoteOfPickUpFigureModel.Position.Y, textNoteOfPickUpFigureModel.Position.Z ) ;
-            
-            else if ( textNoteDirection.Y is 1 )
-              textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X, textNoteOfPickUpFigureModel.Position.Y - 0.8 * baseLengthOfLine, textNoteOfPickUpFigureModel.Position.Z ) ;
-            
-            else if ( textNoteDirection.Y is -1 )
-              textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X, textNoteOfPickUpFigureModel.Position.Y + 0.5 * baseLengthOfLine, textNoteOfPickUpFigureModel.Position.Z ) ;
-            
-            else if ( textNoteDirection.X is 1 )
-              textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X - 0.1 * baseLengthOfLine, textNoteOfPickUpFigureModel.Position.Y, textNoteOfPickUpFigureModel.Position.Z ) ;
-            
-            else if ( textNoteDirection.X is -1 )
-              textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X + 1.3 * baseLengthOfLine, textNoteOfPickUpFigureModel.Position.Y, textNoteOfPickUpFigureModel.Position.Z ) ;
-          }
-          
-          else
-            textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X, textNoteOfPickUpFigureModel.Position.Y - 0.8 * baseLengthOfLine, textNoteOfPickUpFigureModel.Position.Z ) ;
-        }
       }
       
       var textNoteOfPickUpFigure = TextNote.Create( doc, doc.ActiveView.Id, textNoteOfPickUpFigureModel.Position, textNoteOfPickUpFigureModel.Content, textNoteOptions ) ;
       
       var colorOfTextNote = new Color( 255, 225, 51 ) ; // Dark yellow
-      ConfirmUnsetCommandBase.ChangeElementColor( doc, new []{ textNoteOfPickUpFigure }, colorOfTextNote ) ;
+      ConfirmUnsetCommandBase.ChangeElementColor( new []{ textNoteOfPickUpFigure }, colorOfTextNote ) ;
 
       return textNoteOfPickUpFigure ;
     }
 
-    private static void SaveWireLengthNotationModel(WireLengthNotationStorable wireLengthNotationStorable, IEnumerable<WireLengthNotationModel> wireLengthNotationModels)
+    private static void SaveWireLengthNotationModel(Document document, WireLengthNotationStorable wireLengthNotationStorable, IEnumerable<WireLengthNotationModel> wireLengthNotationModels)
     {
       try {
+        using var transaction = new Transaction( document, "Save WireLengthNotation Data" ) ;
+        transaction.Start() ;
         wireLengthNotationStorable.WireLengthNotationData.AddRange(wireLengthNotationModels) ;
         wireLengthNotationStorable.Save() ;
+        transaction.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
       }
@@ -436,15 +478,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result; 
     }
     
-    private static bool IsNearPowerConnector( Document document, XYZ point )
+    private static bool IsNearPowerConnector( Document document, XYZ elementPoint )
     {
       var allPowerConnectors = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
         .Where( c => c.GetConnectorFamilyType() == ConnectorFamilyType.Power ) ;
       return allPowerConnectors.Any( c =>
       {
-        var locationPoint =  ( c.Location as LocationPoint )?.Point ;
-        return locationPoint != null && ( Math.Abs( locationPoint.X - point.X ) < MaxDistanceBetweenTextNotes || Math.Abs( locationPoint.Y - point.Y ) < MaxDistanceBetweenTextNotes ) ;
+        var powerLocationPoint = ( c.Location as LocationPoint )?.Point ;
+        return powerLocationPoint != null && XyzUtil.GetDistanceIn2D( powerLocationPoint, elementPoint ) < MaxDistanceBetweenTextNotes ;
       } ) ;
-    } 
+    }
   }
 }

@@ -37,7 +37,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     private readonly Document _document ;
-    private readonly ExternalCommandData _commandData ;
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
     private List<CeedModel> _previousCeedModels ;
@@ -240,10 +239,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public CeedViewModel( ExternalCommandData commandData )
+    public CeedViewModel( Document document )
     {
-      _commandData = commandData ;
-      _document = commandData.Application.ActiveUIDocument.Document ;
+      _document = document ;
       CeedModels = new ObservableCollection<CeedModel>() ;
       DtGrid = new DataGrid() ;
       
@@ -268,7 +266,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           IsExistUsingCode = true ;
         if ( ! _ceedModels.Any() ) IsShowDiff = true ;
         else IsShowDiff = _storageService.Data.IsDiff ;
-        _previewList = new ObservableCollection<CeedModel>( oldCeedStorable.CeedModelData ) ; ;
+        _previewList = new ObservableCollection<CeedModel>( oldCeedStorable.CeedModelData ) ;
       }
 
       _selectedCeedSetCode = string.Empty ;
@@ -376,7 +374,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
-      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
+      using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
       progress.Message = "Loading data..." ;
       var ceedStorable = _document.GetCeedStorable() ;
       {
@@ -589,7 +587,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
       if ( SelectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
 
-      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
+      using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
       progress.Message = "Processing......." ;
 
       using ( var progressData = progress.Reserve( 0.5 ) ) {
@@ -636,7 +634,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         try {
           List<string> connectorFamilyFiles ;
           List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
-          using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
+          using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
           progress.Message = "Processing......." ;
           using ( var progressData = progress.Reserve( 0.3 ) ) {
             connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;

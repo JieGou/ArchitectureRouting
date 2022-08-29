@@ -111,7 +111,11 @@ namespace Arent3d.Architecture.Routing
         pullBoxIds.AddRange( pullBoxes.Select( p => p.UniqueId ) ) ;
       }
       else if ( isEraseSelectedRoutes ) {
-        pullBoxes = GetPullBoxes( pullBoxes, conduits ) ;
+        foreach ( var name in routeNames ) {
+          var conduitsOfRoute = conduits.Where( cd => cd.GetRouteName() == name ).ToList() ;
+          pullBoxes.AddRange( GetPullBoxes( pullBoxes, conduitsOfRoute ) ) ;
+        }
+
         if ( pullBoxes.Any() ) {
           var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => e.GetRouteName() is { } routeName && ! routeNames.Contains( routeName ) ).ToList() ;
           pullBoxes = GetPullBoxIsNotConnected( pullBoxes, allConduits ).Distinct().ToList() ;
@@ -121,20 +125,24 @@ namespace Arent3d.Architecture.Routing
       }
 
       if ( ! pullBoxIds.Any() ) return ;
-      {
-        var level = document.ActiveView.GenLevel ;
-        if ( level != null ) {
-          var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
-          var pullBoxInfoModels = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Where( p => pullBoxIds.Contains( p.PullBoxUniqueId ) ).ToList() ;
-          var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
-          if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
-          foreach ( var pullBoxInfoModel in pullBoxInfoModels ) {
-            storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( pullBoxInfoModel ) ;
-          }
+      
+      var groupBoxByLevel = pullBoxes.GroupBy( box => box.LevelId ) ;
+      foreach ( var group in groupBoxByLevel ) {
+        var level = document.GetElement(group.Key) as Level ;
+        if ( level == null )
+          continue ;
+        var pullBoxIdsInLevel = group.Select( box => box.UniqueId ) ;
+        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
+        var pullBoxInfoModels = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Where( p => pullBoxIdsInLevel.Contains( p.PullBoxUniqueId ) ).ToList() ;
+        var textNoteIds = pullBoxInfoModels.Select( p => p.TextNoteUniqueId ).Distinct().ToList() ;
+        if ( textNoteIds.Any() ) pullBoxIds.AddRange( textNoteIds ) ;
+        foreach ( var pullBoxInfoModel in pullBoxInfoModels ) {
+          storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( pullBoxInfoModel ) ;
         }
-        
-        document.Delete( pullBoxIds ) ;
       }
+        
+        
+      document.Delete( pullBoxIds ) ;
     }
     
     private static List<Element> GetPullBoxIsNotConnected( List<Element> pullBoxes, List<Element> allConduits )

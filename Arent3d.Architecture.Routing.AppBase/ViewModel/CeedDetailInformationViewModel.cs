@@ -54,7 +54,39 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       {
         _setCode = value.Trim() ?? string.Empty ;
         ConstructionClassificationSelected = HiroiSetCdMasterModels.Find( x => x.SetCode == _setCode )?.ConstructionClassification ?? string.Empty ;
+        ModelNumber = string.Empty ;
+        DeviceSymbol = string.Empty ;
+        if ( ! string.IsNullOrEmpty( _setCode ) ) {
+          var ceedModel = CeedModels.FirstOrDefault( model => string.Equals( model.CeedSetCode, SetCode, StringComparison.InvariantCultureIgnoreCase ) ) ;
+          if ( ceedModel != null ) {
+            ModelNumber = ceedModel.ModelNumber ;
+            DeviceSymbol = ceedModel.GeneralDisplayDeviceSymbol ;
+          }
+        }
+        
         LoadData() ;
+        OnPropertyChanged() ;
+      }
+    }
+    
+    private string? _modelNumber ;
+    public string ModelNumber
+    {
+      get => _modelNumber ??= string.Empty ;
+      set
+      {
+        _modelNumber = value.Trim() ;
+        OnPropertyChanged() ;
+      }
+    }
+    
+    private string? _deviceSymbol ;
+    public string DeviceSymbol
+    {
+      get => _deviceSymbol ??= string.Empty ;
+      set
+      {
+        _deviceSymbol = value.Trim() ;
         OnPropertyChanged() ;
       }
     }
@@ -112,10 +144,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public bool DialogResult { get ; set ; }
 
-    public CeedDetailInformationViewModel( Document document, string pickedText )
+    public CeedDetailInformationViewModel( Document document, string ceedSetCode, string deviceSymbol, string modelNumber )
     {
       _document = document ;
-      SetCode = pickedText ;
+      SetCode = ceedSetCode ;
+      DeviceSymbol = deviceSymbol ;
+      ModelNumber = modelNumber ;
     }
 
     #region Commands
