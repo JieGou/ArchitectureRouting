@@ -104,6 +104,16 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       return curveIntersects ;
     }
+
+    public static Solid GetSolidExecutionOfTextNotes( Document document, TextNote textNote1, TextNote textNote2, BooleanOperationsType booleanOperationsType )
+    {
+      var outline1 = GetOutlineTextNote( textNote1 ) ;
+      var outline2 = GetOutlineTextNote( textNote2 ) ;
+      var solidOrigin1 = CreateSolid( document.ActiveView, outline1 ) ;
+      var solidOrigin2 = CreateSolid( document.ActiveView, outline2 ) ;
+      return BooleanOperationsUtils.ExecuteBooleanOperation( solidOrigin1, solidOrigin2,
+        booleanOperationsType ) ;
+    }
     
     private static Outline GetOutlineFromCurve( View viewPlan, IList<XYZ> points )
     {
