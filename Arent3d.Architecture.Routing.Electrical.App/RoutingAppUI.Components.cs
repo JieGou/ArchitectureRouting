@@ -269,6 +269,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class RackGuidCommandButton
           {
           }
+          
+          [Button( typeof( CreateRackBySelectedConduitsCommand ), OnlyInitialized = true )]
+          private static class CreateRackBySelectedConduitsCommandButton
+          {
+          }
 
           [Button( typeof( AdjustLeaderCommand ), OnlyInitialized = true )]
           private static class AdjustLeaderCommandButton
