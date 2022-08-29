@@ -572,6 +572,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       IsShowDiff = true ;
       IsVisibleShowUsingCode = Visibility.Hidden ;
       CeedModels.Clear() ;
+      PreviewList.Clear() ;
       ResetSelectedCategory( Categories ) ;
       ResetSelectedCategory( CategoriesPreview ) ;
       AddModelNumber() ;
