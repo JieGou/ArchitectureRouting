@@ -7,12 +7,15 @@ using System.Reflection ;
 using System.Text ;
 using System.Windows ;
 using System.Windows.Forms ;
+using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
+using Color = Autodesk.Revit.DB.Color ;
 using MessageBox = System.Windows.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -25,7 +28,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly string _settingFilePath ;
 
     public ObservableCollection<Layer> Layers { get ; }
-    
+    public List<AutoCadColorsManager.AutoCadColor> AutoCadColors { get ; }
+
     public string LayerNames { get; set ; }
 
     public RelayCommand<Window> ExportFileDwgCommand => new(ExportDwg) ;
@@ -36,21 +40,30 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _settingFilePath = GetSettingPath() ;
       _newLayerNames = new List<Layer>() ;
       _oldLayerNames = new List<Layer>() ;
+      AutoCadColors = AutoCadColorsManager.GetAutoCadColorDict() ;
       Layers = new ObservableCollection<Layer>() ;
-      LayerNames = String.Empty ;
+      LayerNames = string.Empty ;
       var layers = GetLayerNames( _settingFilePath ) ;
       if ( ! layers.Any() ) return ;
-      _newLayerNames = layers ;
-      _oldLayerNames = layers.Select( x => x.Copy() ).ToList() ;
-      ;
-      SetDataSource( layers ) ;
+      SetDataSource( layers, AutoCadColors ) ;
     }
 
-    private void SetDataSource( List<Layer> layers )
+    private void SetDataSource( List<Layer> layers, List<AutoCadColorsManager.AutoCadColor> autoCadColors )
     {
       Layers.Clear() ;
       foreach ( var layer in layers ) {
+        if ( string.IsNullOrEmpty( layer.Index ) ) {
+          layer.Index = AutoCadColorsManager.NoColor ;
+          layer.SolidColor = new SolidColorBrush() ;
+        }
+        else {
+          var solidColor = autoCadColors.FirstOrDefault( c => c.Index == layer.Index )?.SolidColor ?? new SolidColorBrush() ;
+          layer.SolidColor = solidColor ;
+        }
+
         Layers.Add( layer ) ;
+        _newLayerNames.Add( layer ) ;
+        _oldLayerNames.Add( new Layer( layer.LayerName, layer.FamilyName, layer.Index ) ) ;
       }
     }
 
@@ -128,19 +141,28 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var familyName = words[ 0 ] ;
           var typeOfLayer = words[ 1 ] ;
           var layerName = words[ 2 ] ;
+          var colorIndex = words.Length > 3 ? words[ 3 ] : string.Empty ;
           var familyType = "" ;
           if ( typeOfLayer != "" ) {
             familyType = $" ({typeOfLayer})" ;
           }
 
-          names.Add( new Layer( layerName, familyName + familyType ) ) ;
+          names.Add( new Layer( layerName, familyName + familyType, colorIndex ) ) ;
         }
 
         reader.Close() ;
       }
 
-      var filterNames = names.Distinct().Where( x => ! x.LayerName.Contains( exceptString ) 
-                                                     && ! string.IsNullOrEmpty( x.LayerName ) ).GroupBy( x => x.LayerName ).Select( ng => new Layer { LayerName = ng.First().LayerName, FamilyName = string.Join( "\n", ng.Select( x => x.FamilyName ).ToArray() ) } ).ToList() ;
+      var filterNames = names.Distinct()
+        .Where( x => ! x.LayerName.Contains( exceptString ) && ! string.IsNullOrEmpty( x.LayerName ) )
+        .GroupBy( x => x.LayerName )
+        .Select( ng => new Layer 
+        { 
+          LayerName = ng.First().LayerName, 
+          FamilyName = string.Join( "\n", ng.Select( x => x.FamilyName ).ToArray() ), 
+          Index = ng.First().Index 
+        } )
+        .ToList() ;
 
       return filterNames ;
     }
@@ -168,9 +190,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var hasChange = false ;
         var content = File.ReadAllText( filePath ) ;
         for ( var i = 0 ; i < newLayerNames.Count() ; i++ ) {
-          if ( oldLayerNames[ i ].LayerName == newLayerNames[ i ].LayerName ) continue ;
+          if ( oldLayerNames[ i ].LayerName == newLayerNames[ i ].LayerName && oldLayerNames[ i ].Index == newLayerNames[ i ].Index ) continue ;
           hasChange = true ;
-          content = content.Replace( oldLayerNames[ i ].LayerName, newLayerNames[ i ].LayerName ) ;
+          var oldValue = oldLayerNames[ i ].LayerName + ( oldLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : "\t" + oldLayerNames[ i ].Index ) ;
+          var newValue = newLayerNames[ i ].LayerName + ( newLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : "\t" + newLayerNames[ i ].Index ) ;
+          content = content.Replace( oldValue, newValue ) ;
         }
 
         if ( hasChange ) File.WriteAllText( filePath, content, encoding ) ;
@@ -186,18 +210,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public string LayerName { get ; set ; }
 
     public string FamilyName { get ; set ; }
-
+    public string Index { get ; set ; }
+    public SolidColorBrush SolidColor { get ; set ; }
 
     public Layer()
     {
       LayerName = string.Empty ;
       FamilyName = string.Empty ;
+      Index = string.Empty ;
+      SolidColor = new SolidColorBrush() ;
     }
 
-    public Layer( string layerName, string familyName )
+    public Layer( string layerName, string familyName, string colorIndex )
     {
       LayerName = layerName ;
       FamilyName = familyName ;
+      Index = colorIndex ;
+      SolidColor = new SolidColorBrush() ;
     }
   }
 }

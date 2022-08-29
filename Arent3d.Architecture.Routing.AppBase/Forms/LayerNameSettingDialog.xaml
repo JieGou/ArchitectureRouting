@@ -8,7 +8,7 @@
         x:Name="LayerNameDialog"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="LayerNameSettingDialog" Height="550" Width="600"
+        Title="LayerNameSettingDialog" Height="550" Width="700"
         d:DataContext="{d:DesignInstance {x:Type local:DesignExportDwgViewModel}, IsDesignTimeCreatable=True}">
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -50,6 +50,35 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
                 <DataGridTextColumn Header="画僧名" Binding="{Binding LayerName}" CanUserSort="True" IsReadOnly="False" Width="*" />
+                <DataGridTemplateColumn Header="色" Width="110" CanUserSort="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Height="25" Margin="10, 0" VerticalAlignment="Top" >
+                                <Border BorderThickness="1" BorderBrush="Black" Height="20" Width="20" Background="{ Binding SolidColor}"/>
+                                <TextBlock Text="{Binding Index}" Margin="10, 5" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox SelectedValue="{Binding SolidColor, Mode=TwoWay}"
+                                      Text="{Binding Index, Mode=TwoWay}"
+                                      DisplayMemberPath="Index"
+                                      SelectedValuePath="SolidColor"
+                                      ItemsSource="{Binding Path=DataContext.AutoCadColors, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                      IsEditable="False" >
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border BorderThickness="1" BorderBrush="Black" Height="20" Width="20" Background="{Binding SolidColor}"/>
+                                            <TextBlock Text="{Binding Index}" Margin="10, 0 "/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>    
+                            </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 
