@@ -502,7 +502,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public override int GetHashCode( (string levelName,string constructionItems,string productCode) obj )
     {
-      throw new NotImplementedException() ;
+      return obj.GetHashCode() ;
     }
   }
   
