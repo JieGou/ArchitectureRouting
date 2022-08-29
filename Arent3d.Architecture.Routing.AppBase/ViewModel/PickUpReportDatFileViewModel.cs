@@ -1,6 +1,5 @@
 using System ;
 using System.Collections.Generic ;
-using System.Globalization ;
 using System.IO ;
 using System.Linq ;
 using System.Text ;
@@ -18,7 +17,6 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using Microsoft.Win32 ;
-using Arent3d.Architecture.Routing.Utils;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -184,7 +182,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var outputSettingDialog = new OutputPickUpReportSettingDialog( this ) ;
 
-      var previousOutputSettingCollection = ( from outPutSettingItem in OutputReportSettingCollection select outPutSettingItem.DeepCopy() ).ToList() ;
+      var previousOutputSettingCollection = ( from outPutSettingItem in OutputReportSettingCollection select new OutputPickUpReportItemSetting(outPutSettingItem.ItemName,outPutSettingItem.IsSelected) ).ToList() ;
 
       if ( outputSettingDialog.ShowDialog() == true ) return ;
 
@@ -396,36 +394,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private static List<PickUpItemModel> MergeQuantityForPickUpItemModels(List<PickUpItemModel> pickUpItemModels)
     {
-      var outputPickUpItems = new List<PickUpItemModel>() ;
-
-      foreach ( var newPickUpItemModel in pickUpItemModels.Select( pickUpItemModel => pickUpItemModel.DeepCopy() ).Where( newPickUpItemModel => newPickUpItemModel != null ) ) {
-        if ( newPickUpItemModel == null ) continue ;
-        newPickUpItemModel.ProductCode = newPickUpItemModel.ProductCode.Split( '-' ).First() ;
-
-        var existingPickUpItemModel = outputPickUpItems.FirstOrDefault( x => IsTheSameGroupPickUpItem( x, newPickUpItemModel ) ) ;
-
-        if ( existingPickUpItemModel != null ) {
-          if ( double.TryParse( existingPickUpItemModel.Quantity, out var existingQuantity ) &&
-               double.TryParse( newPickUpItemModel.Quantity, out var newQuantity ) ) {
-            existingPickUpItemModel.Quantity = ( Math.Round( existingQuantity, 1 ) + Math.Round( newQuantity, 1 ) ).ToString( CultureInfo.CurrentCulture ) ;
-          }
-        }
-        else {
-          outputPickUpItems.Add(newPickUpItemModel);
-        }
-      }
-      return outputPickUpItems ;
+      return pickUpItemModels
+        .GroupBy( x =>
+        ( x.Floor, x.ConstructionItems, x.ProductCode ), new GroupPickUpItemComparer() )
+        .Select( p =>
+      {
+        var first = p.First() ;
+        var newModel = new PickUpItemModel(first)  ;
+        newModel.ProductCode = newModel.ProductCode.Split( '-' ).FirstOrDefault() ?? newModel.ProductCode ;
+        newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
+        return newModel ;
+      } )
+        .OrderBy( x=>GetLevelIndexOfLevelCollection().FirstOrDefault(y=>y.levelName == x.Floor) )
+        .ToList() ;
     }
-
-    private static bool IsTheSameGroupPickUpItem( PickUpItemModel pickUpItemModel, PickUpItemModel otherPickUpItemModel )
+    
+    public static bool CompareProductCode( string productCodeA, string productCodeB )
     {
-      return pickUpItemModel.Floor == otherPickUpItemModel.Floor &&
-             CompareProductCode( pickUpItemModel.ProductCode, otherPickUpItemModel.ProductCode ) &&
-             pickUpItemModel.ConstructionItems == otherPickUpItemModel.ConstructionItems ;
-    }
-
-    private static bool CompareProductCode( string productCodeA, string productCodeB )
-    {
+      productCodeA = productCodeA.Split( '-' ).FirstOrDefault() ?? productCodeA ;
+      productCodeB = productCodeB.Split( '-' ).FirstOrDefault() ?? productCodeB ;
       if ( int.TryParse( productCodeA, out var productCodeANumber ) &&
            int.TryParse( productCodeB, out var productCodeBNumber ) ) {
         return productCodeANumber == productCodeBNumber ;
@@ -504,4 +491,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       OutputString = outputString ;
     }
   }
+
+  public class GroupPickUpItemComparer : EqualityComparer<(string levelName,string constructionItems,string productCode)>
+  {
+    public override bool Equals( (string levelName, string constructionItems, string productCode) first, (string levelName, string constructionItems, string productCode) second )
+    {
+      return first.levelName == second.levelName && first.constructionItems == second.constructionItems &&
+             PickUpReportDatFileViewModel.CompareProductCode( first.productCode, second.productCode ) ;
+    }
+
+    public override int GetHashCode( (string levelName,string constructionItems,string productCode) obj )
+    {
+      throw new NotImplementedException() ;
+    }
+  }
+  
 }

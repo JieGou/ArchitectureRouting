@@ -17,7 +17,6 @@ namespace Arent3d.Architecture.Routing.Storages.Models
   }
 
   [Schema( "CF4DB4C1-71AF-4C23-B382-5CD8008D150D", nameof( PickUpItemModel ) )]
-  [Serializable]
   public class PickUpItemModel : IDataModel
   {
     public PickUpItemModel()
@@ -93,6 +92,41 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       RelatedRouteName = relatedRouteName ?? string.Empty ;
       Version = version ?? string.Empty ;
       WireBook = wireBook ?? string.Empty ;
+    }
+    
+    public PickUpItemModel( PickUpItemModel other )
+    {
+      Item = other.Item  ;
+      Floor = other.Floor  ;
+      ConstructionItems = other.ConstructionItems  ;
+      EquipmentType = other.EquipmentType  ;
+      ProductName = other.ProductName  ;
+      Use = other.Use  ;
+      UsageName = other.UsageName  ;
+      Construction = other.Construction  ;
+      ModelNumber = other.ModelNumber  ;
+      Specification = other.Specification  ;
+      Specification2 = other.Specification2  ;
+      Size = other.Size  ;
+      Quantity = other.Quantity  ;
+      Tani = other.Tani  ;
+      Supplement = other.Supplement  ;
+      Supplement2 = other.Supplement2  ;
+      Group = other.Group  ;
+      Layer = other.Layer  ;
+      Classification = other.Classification  ;
+      Standard = other.Standard  ;
+      PickUpNumber = other.PickUpNumber  ;
+      Direction = other.Direction  ;
+      ProductCode = other.ProductCode ;
+      CeedSetCode = other.CeedSetCode  ;
+      DeviceSymbol = other.DeviceSymbol  ;
+      Condition = other.Condition  ;
+      SumQuantity = other.SumQuantity  ;
+      RouteName = other.RouteName  ;
+      RelatedRouteName = other.RelatedRouteName  ;
+      Version = other.Version  ;
+      WireBook = other.WireBook  ;
     }
 
     [Field( Documentation = "Item" )]
