@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -120,7 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
           familyInstance.SetProperty(ElectricalRoutingElementParameter.SymbolContent, viewModel.SelectedDeviceSymbol ?? string.Empty);
-          familyInstance.SetProperty(ElectricalRoutingElementParameter.Quantity, 1);
+          familyInstance.SetProperty(ElectricalRoutingElementParameter.Quantity, string.Empty);
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
