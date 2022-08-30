@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var document = commandData.Application.ActiveUIDocument.Document ;
       
       try {
-        var result = document.Transaction( "TransactionName.Commands.Initialization.PickUpFigureCreation".GetAppStringByKeyOrDefault( "Pick Up Figure Creation" ), _ =>
+        var result = document.TransactionGroup( "TransactionName.Commands.Initialization.PickUpFigureCreation".GetAppStringByKeyOrDefault( "Pick Up Figure Creation" ), _ =>
         {
           var level = document.ActiveView.GenLevel ;
           var wireLengthNotationStorable = document.GetWireLengthNotationStorable() ;
