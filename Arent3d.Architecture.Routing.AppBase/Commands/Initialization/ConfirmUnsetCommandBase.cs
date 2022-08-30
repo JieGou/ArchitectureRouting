@@ -20,7 +20,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         {
           var elementNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && ( string.IsNullOrEmpty( constructionItem ) || constructionItem == DefaultConstructionItems )).ToList() ;
           var color = new Color( 255, 0, 0 ) ;
-          ChangeElementColor( elementNotConstruction, color ) ;
+          if ( elementNotConstruction.Any( t =>
+              {
+                var colorOfElement = t.Document.ActiveView.GetElementOverrides( t.Id ).ProjectionLineColor ;
+                if ( ! colorOfElement.IsValid ) return false ;
+                
+                return colorOfElement.Red == 255 && colorOfElement.Blue == 0 && colorOfElement.Green == 0 ;
+              } ) )
+            ResetElementColor( elementNotConstruction ) ;
+          else
+            ChangeElementColor( elementNotConstruction, color ) ;
 
           return Result.Succeeded ;
         } ) ;
