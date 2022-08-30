@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       dialog.ShowDialog() ;
       return dialog.DialogResult == false
         ? Result.Cancelled
-        : document.Transaction(
+        : document.TransactionGroup(
           "TransactionName.Commands.Initialization.PickUpNumberSetting".GetAppStringByKeyOrDefault(
             "Pick Up Number Setting" ), _ =>
           {
