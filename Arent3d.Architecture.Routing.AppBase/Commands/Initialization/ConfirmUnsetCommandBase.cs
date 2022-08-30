@@ -18,18 +18,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         return document.Transaction( "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Unset" ), _ =>
         {
-          var elementsNotHavingConstructionItems = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && ( string.IsNullOrEmpty( constructionItem ) || constructionItem == DefaultConstructionItems )).ToList() ;
+          var elementsNotHavingConstructionItem = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && ( string.IsNullOrEmpty( constructionItem ) || constructionItem == DefaultConstructionItems )).ToList() ;
           var color = new Color( 255, 0, 0 ) ;
-          if ( elementsNotHavingConstructionItems.Any( t =>
+          if ( elementsNotHavingConstructionItem.Any( t =>
               {
                 var colorOfElement = t.Document.ActiveView.GetElementOverrides( t.Id ).ProjectionLineColor ;
                 if ( ! colorOfElement.IsValid ) return false ;
                 
                 return colorOfElement.Red == color.Red && colorOfElement.Blue == color.Blue && colorOfElement.Green == color.Green ;
               } ) )
-            ResetElementColor( elementsNotHavingConstructionItems ) ;
+            ResetElementColor( elementsNotHavingConstructionItem ) ;
           else
-            ChangeElementColor( elementsNotHavingConstructionItems, color ) ;
+            ChangeElementColor( elementsNotHavingConstructionItem, color ) ;
 
           return Result.Succeeded ;
         } ) ;
