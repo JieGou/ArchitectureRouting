@@ -537,8 +537,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var ceedStorable = _document.GetCeedStorable() ;
         {
           ceedStorable.CeedModelUsedData = _usingCeedModel ;
-          ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( Categories ) ;
-          ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( CategoriesPreview ) ;
         }
         ceedStorable.Save() ;
         t.Commit() ;
