@@ -412,9 +412,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 }
                 else {
                   materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, null ) ;
-                  var qtt = pickUpElement.Connector.GetPropertyInt(ElectricalRoutingElementParameter.Quantity);
+                  var value = pickUpElement.Connector.GetPropertyString(ElectricalRoutingElementParameter.Quantity);
+                  var qtt = string.IsNullOrEmpty( value ) ? 1 : int.Parse( value ) ;
                   foreach ( var materialCode in materialCodes ) {
-                    materialCode.Quantity = $"{( qtt < 2 ? 1 : qtt )}" ;
+                    materialCode.Quantity = $"{qtt}" ;
                   }
                 }
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
