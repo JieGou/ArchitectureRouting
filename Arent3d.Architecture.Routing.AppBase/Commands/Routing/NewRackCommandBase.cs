@@ -198,7 +198,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return location == otherLocation ;
     }
 
-    public static void CreateRackForConduit( UIDocument uiDocument, Application app, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
+    public static void CreateRackForConduit( UIDocument uiDocument, Application app, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks , List<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
     {
       var document = uiDocument.Document ;
       var connectors = new List<Connector>() ;
@@ -208,7 +208,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           transaction.Start() ;
           if ( element is Conduit ) // element is straight conduit
           {
-            var instance = CreateRackForStraightConduit( uiDocument, element ) ;
+            FamilyInstance? instance = null ;
+            if(specialLengthList is {} && specialLengthList.FirstOrDefault(x => x.Conduit.Id.Equals(element.Id)) is {} specialLengthItem && specialLengthItem.Conduit is Conduit )
+              instance = CreateRackForStraightConduit( uiDocument, element, 0, specialLengthItem.StartParam, specialLengthItem.EndParam ) ;
+            else
+              instance = CreateRackForStraightConduit( uiDocument, element ) ;
 
             // check cable tray exists
             if ( ExistsCableTray( document, instance ) ) {
@@ -269,7 +273,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
     
-    public static FamilyInstance CreateRackForStraightConduit( UIDocument uiDocument, Element element, double cableRackWidth = 0 )
+    public static FamilyInstance CreateRackForStraightConduit( UIDocument uiDocument, Element element, double cableRackWidth = 0 , double startParam = 0.0, double endParam = 1.0)
     {
       var document = uiDocument.Document ;
       var conduit = ( element as Conduit )! ;
@@ -281,18 +285,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       Connector firstConnector = GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
 
       var length = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
+      var lengthRack = ( endParam - startParam ) * length ;
       var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document, "Outside Diameter" ) ).AsDouble() ;
 
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTray ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
 
       // Create cable tray
-      if (false == symbol.IsActive) symbol.Activate();
-      var instance = document.Create.NewFamilyInstance(new XYZ(firstConnector.Origin.X, firstConnector.Origin.Y, line.Origin.Z), symbol, null, StructuralType.NonStructural);
+      if ( false == symbol.IsActive ) symbol.Activate() ;
+      var insertPoint = new XYZ(firstConnector.Origin.X, firstConnector.Origin.Y, line.Origin.Z) + XYZ.BasisX * length * startParam;
+      var instance = document.Create.NewFamilyInstance( insertPoint, symbol, null, StructuralType.NonStructural );
 
       // set cable rack length
-      SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
+      SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), lengthRack ) ; // TODO may be must change when FamilyType change
 
-      // set cable rack length
+      // set cable rack width
       if ( cableRackWidth > 0 )
         SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
           ( cableRackWidth * scaleRatio ).MillimetersToRevitUnits() ) ;
