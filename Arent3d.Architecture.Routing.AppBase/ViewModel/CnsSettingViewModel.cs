@@ -1,7 +1,6 @@
 using System ;
 using System.IO ;
 using System.Linq ;
-using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -101,15 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var line in inputData ) {
         if ( string.IsNullOrWhiteSpace( line ) || line.Equals( DefaultCategoryName ) ) continue ;
         
-        var partsOfLine = line.Split( '_' ) ;
-
-        if ( partsOfLine.Length < 1 ) {
-          MessageBox.Show( @"Wrong format in file CNS" ) ;
-          return ;
-        }
-        var categoryName = partsOfLine[ 0 ].Trim() ;
-        var isDefaultItemChecked = partsOfLine.Length == 2 && Convert.ToBoolean( partsOfLine[1] ) ;
-        CnsSettingModels.Add( new CnsSettingModel( index, categoryName, isDefaultItemChecked ) ) ;
+        CnsSettingModels.Add( new CnsSettingModel( index, line.Trim() ) ) ;
         index++ ;
       }
       CnsSettingModels.Insert( 0,new CnsSettingModel( 0, DefaultCategoryName ) );
@@ -150,7 +141,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var contents = "" ;
       foreach ( var cnsSettingModel in CnsSettingModels )
         if ( ! string.IsNullOrEmpty( cnsSettingModel.CategoryName ) && ! cnsSettingModel.CategoryName.Equals( DefaultCategoryName ) )
-          contents += cnsSettingModel.CategoryName.Trim() + "_" + cnsSettingModel.IsDefaultItemChecked + Environment.NewLine + Environment.NewLine ;
+          contents += cnsSettingModel.CategoryName.Trim() + Environment.NewLine + Environment.NewLine ;
 
       File.WriteAllText( fileName, contents ) ;
     }
@@ -179,13 +170,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       if ( CnsSettingModels.Count == 0 )
         CnsSettingModels.Add( new CnsSettingModel( sequence: 0, categoryName: DefaultCategoryName, true ) ) ;
-      else if ( CnsSettingModels.All( t => ! t.IsDefaultItemChecked ) ) {
-        var defaultCnsModel = CnsSettingModels.FirstOrDefault( t => t.CategoryName.Equals( DefaultCategoryName ) ) ;
-        if ( defaultCnsModel == null )
-          CnsSettingModels.Add( new CnsSettingModel( sequence: 0, categoryName: DefaultCategoryName, true ) ) ;
-        else
-          defaultCnsModel.IsDefaultItemChecked = true ;
-      }
+      else if ( CnsSettingModels.All( t => ! t.IsDefaultItemChecked ) )
+        CnsSettingModels.First().IsDefaultItemChecked = true ;
     }
     
     private void SetConstructionItemForSymbol( CnsSettingStorable cnsStorable, int selectedIndex, CnsSettingStorable.UpdateItemType updateType )
