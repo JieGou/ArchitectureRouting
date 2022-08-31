@@ -3,6 +3,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -38,7 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       
       var viewModel = new CeedViewModel( doc ) ;
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
-
+      
       dlgCeedModel.ShowDialog() ;
       if ( viewModel.DwgImportIds.Any() ) {
         using Transaction transaction = new( doc, "Remove dwg file" ) ;
@@ -130,15 +131,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
           if ( ! string.IsNullOrEmpty( deviceSymbol ) ) familyInstance.SetProperty( ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ) ;
+          familyInstance.SetProperty(ElectricalRoutingElementParameter.Quantity, string.Empty);
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
         if ( ! string.IsNullOrEmpty( deviceSymbol ) ) {
           var symbolContentTag = element.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.SymbolContentTag : ElectricalRoutingFamilyType.SymbolContentEquipmentTag ;
-          var deviceSymbolTagType = doc.GetFamilySymbols( symbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+          var deviceSymbolTagType = doc.GetFamilySymbols( symbolContentTag ).FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ?? throw new InvalidOperationException() ;
           IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ( point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z ) ) ;
         }
-        
+
+        var connectorUpdater = new ConnectorUpdater( doc.Application.ActiveAddInId ) ;
+        if ( ! UpdaterRegistry.IsUpdaterRegistered( connectorUpdater.GetUpdaterId() ) ) {
+          UpdaterRegistry.RegisterUpdater( connectorUpdater, doc ) ;
+          var multicategoryFilter = new ElementMulticategoryFilter( BuiltInCategorySets.OtherElectricalElements ) ;
+          UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), doc, multicategoryFilter, Element.GetChangeTypeAny() ) ;
+        }
+
         if ( element.HasParameter( switch2DSymbol ) ) 
           element.SetProperty( switch2DSymbol, true ) ;
         
