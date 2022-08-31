@@ -676,15 +676,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         List<CeedModel> ceedModels = GetCeedModels( _ceedModels ) ;
         foreach ( var ceedModel in ceedModels ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
-          ceedStorable.CeedModelData = _ceedModels ;
         }
+        ceedStorable.CeedModelData = _ceedModels ;
       }
 
       if ( _usingCeedModel.Any() ) {
         List<CeedModel> ceedModels = GetCeedModels( _usingCeedModel ) ;
         foreach ( var ceedModel in ceedModels ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
-          ceedStorable.CeedModelUsedData = _usingCeedModel ;
+        }
+        ceedStorable.CeedModelUsedData = _usingCeedModel ;
+      }
+
+      if ( _previewList.Any() ) {
+        foreach ( var previewInfo in _previewList ) {
+          previewInfo.FloorPlanType = connectorFamilyName ;
         }
       }
 
@@ -932,6 +938,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ceedStorable.CeedModelUsedData = usingCeedModel ;
       }
 
+      if ( _previewList.Any() ) {
+        foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
+          if ( ! connectorFamilyFileName.Contains( connectorFamilyReplacement.ConnectorFamilyFile ) ) continue ;
+          var deviceSymbols = connectorFamilyReplacement.DeviceSymbols.Split( '\n' ) ;
+          foreach ( var deviceSymbol in deviceSymbols ) {
+            var previewInfos = _previewList.Where( c => c.GeneralDisplayDeviceSymbol == deviceSymbol ).ToList() ;
+            if ( ! previewInfos.Any() ) continue ;
+            var connectorFamilyName = connectorFamilyReplacement.ConnectorFamilyFile.Replace( ".rfa", "" ) ;
+            foreach ( var previewInfo in previewInfos ) {
+              previewInfo.FloorPlanType = connectorFamilyName ;
+            }
+          }
+        }
+      }
+
       var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! _storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
       _storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
 
@@ -1100,7 +1121,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       public string ModelNumber { get ; }
       public string GeneralDisplayDeviceSymbol { get ; }
       public string Condition { get ; }
-      public string FloorPlanType { get ; }
+      public string FloorPlanType { get ; set ; }
       public Canvas Canvas { get ; }
 
       public PreviewListInfo( string ceedSetCode, string modelNumber, string generalDisplayDeviceSymbol, string condition, string floorPlanType, Canvas canvas )
