@@ -7,8 +7,8 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Utility ;
-using OpenFileDialog = Microsoft.Win32.OpenFileDialog ;
-using SaveFileDialog = Microsoft.Win32.SaveFileDialog ;
+using Autodesk.Revit.DB ;
+using Microsoft.Win32 ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -20,26 +20,27 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public CnsSettingStorable CnsSettingStorable { get ; }
 
     public string ApplyToSymbolsText { get ; set ; }
-    public string ReadCnsFilePath { get ; set ; }
 
-    public CnsSettingViewModel( CnsSettingStorable cnsStorable )
+    private readonly Document _document ;
+
+    public CnsSettingViewModel( Document document, CnsSettingStorable cnsStorable )
     {
       CnsSettingStorable = cnsStorable ;
       ApplyToSymbolsText = string.Empty ;
-      ReadCnsFilePath = string.Empty ;
+      _document = document ;
       CnsSettingModels = new ObservableCollectionEx<CnsSettingModel>( cnsStorable.CnsSettingData ) ;
       CnsSettingModels.ItemPropertyChanged += CnsSettingModelsOnItemPropertyChanged;
       AddDefaultValue() ;
       ReadFileCommand = new RelayCommand<object>( _ => true, // CanExecute()
-        p => { ReadFile() ; } // Execute()
+        _ => { ReadFile() ; } // Execute()
       ) ;
 
       WriteFileCommand = new RelayCommand<object>( _ => true, // CanExecute()
-        p => { WriteFile() ; } // Execute()
+        _ => { WriteFile() ; } // Execute()
       ) ;
 
       AddRowCommand = new RelayCommand<object>( _ => true, // CanExecute()
-        p => { AddRow() ; } // Execute()
+        _ => { AddRow() ; } // Execute()
       ) ;
 
       DeleteRowCommand = new RelayCommand<int>( _ => true, // CanExecute()
@@ -105,8 +106,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       CnsSettingModels.Insert( 0,new CnsSettingModel( 0, DefaultCategoryName ) );
       AddDefaultValue() ;
-      ReadCnsFilePath = fileName ;
-      CnsSettingStorable.CnsSettingData = CnsSettingModels ;
+      CnsSettingStorable.ReadCnsFilePath = fileName ;
+      SaveCnsStorable() ;
     }
 
     private void WriteFile()
@@ -125,23 +126,35 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( result != true ) return ;
       
       WriteContentsToFile( dlg.FileName ) ;
-      if ( ! string.IsNullOrEmpty( ReadCnsFilePath ) )
-        WriteContentsToFile( ReadCnsFilePath );
+      
+      if ( string.IsNullOrEmpty( CnsSettingStorable.ReadCnsFilePath ) ) return ;
+      
+      WriteContentsToFile( CnsSettingStorable.ReadCnsFilePath ) ;
+      SaveCnsStorable() ;
+    }
+
+    private void SaveCnsStorable()
+    {
+      using var transaction = new Transaction( _document, "Save Cns Storable" ) ;
+      transaction.Start() ;
+      CnsSettingStorable.CnsSettingData = CnsSettingModels ;
+      transaction.Commit() ;
     }
 
     private void Save()
     {
       CnsSettingStorable.CnsSettingData = CnsSettingModels ;
-      if ( ! string.IsNullOrEmpty( ReadCnsFilePath ) )
-        WriteContentsToFile( ReadCnsFilePath );
+      if ( ! string.IsNullOrEmpty( CnsSettingStorable.ReadCnsFilePath ) )
+        WriteContentsToFile( CnsSettingStorable.ReadCnsFilePath );
     }
 
-    public void WriteContentsToFile( string fileName )
+    private void WriteContentsToFile( string fileName )
     {
       var contents = "" ;
-      foreach ( var cnsSettingModel in CnsSettingModels )
+      foreach ( var cnsSettingModel in CnsSettingModels ) {
         if ( ! string.IsNullOrEmpty( cnsSettingModel.CategoryName ) && ! cnsSettingModel.CategoryName.Equals( DefaultCategoryName ) )
           contents += cnsSettingModel.CategoryName.Trim() + Environment.NewLine + Environment.NewLine ;
+      }
 
       File.WriteAllText( fileName, contents ) ;
     }
