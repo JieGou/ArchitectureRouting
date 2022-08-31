@@ -1,18 +1,21 @@
 using System ;
 using System.IO ;
 using System.Linq ;
+using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Utility ;
-using Microsoft.Win32 ;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog ;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class CnsSettingViewModel : ViewModelBase
   {
+    private const string DefaultCategoryName = "未設定" ;
     public ObservableCollectionEx<CnsSettingModel> CnsSettingModels { get ; set ; }
 
     public CnsSettingStorable CnsSettingStorable { get ; }
@@ -96,13 +99,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var index = 1 ;
       var inputData = File.ReadLines( fileName ) ;
       foreach ( var line in inputData ) {
-        if ( string.IsNullOrWhiteSpace( line ) || line.Equals( "未設定" ) ) continue ;
+        if ( string.IsNullOrWhiteSpace( line ) || line.Equals( DefaultCategoryName ) ) continue ;
         
         var partsOfLine = line.Split( '_' ) ;
-        CnsSettingModels.Add( new CnsSettingModel( index, partsOfLine[0].Trim(), Convert.ToBoolean( partsOfLine[1] ) ) ) ;
+
+        if ( partsOfLine.Length < 1 ) {
+          MessageBox.Show( @"Wrong format in file CNS" ) ;
+          return ;
+        }
+        var categoryName = partsOfLine[ 0 ].Trim() ;
+        var isDefaultItemChecked = partsOfLine.Length == 2 && Convert.ToBoolean( partsOfLine[1] ) ;
+        CnsSettingModels.Add( new CnsSettingModel( index, categoryName, isDefaultItemChecked ) ) ;
         index++ ;
       }
-      CnsSettingModels.Insert( 0,new CnsSettingModel( 0,"未設定" ) );
+      CnsSettingModels.Insert( 0,new CnsSettingModel( 0, DefaultCategoryName ) );
       AddDefaultValue() ;
       ReadCnsFilePath = fileName ;
       CnsSettingStorable.CnsSettingData = CnsSettingModels ;
@@ -139,7 +149,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var contents = "" ;
       foreach ( var cnsSettingModel in CnsSettingModels )
-        if ( ! string.IsNullOrEmpty( cnsSettingModel.CategoryName ) && ! cnsSettingModel.CategoryName.Equals( "未設定" ) )
+        if ( ! string.IsNullOrEmpty( cnsSettingModel.CategoryName ) && ! cnsSettingModel.CategoryName.Equals( DefaultCategoryName ) )
           contents += cnsSettingModel.CategoryName.Trim() + "_" + cnsSettingModel.IsDefaultItemChecked + Environment.NewLine + Environment.NewLine ;
 
       File.WriteAllText( fileName, contents ) ;
@@ -168,13 +178,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void AddDefaultValue()
     {
       if ( CnsSettingModels.Count == 0 )
-        CnsSettingModels.Add( new CnsSettingModel( sequence: 1, categoryName: "未設定", true ) ) ;
+        CnsSettingModels.Add( new CnsSettingModel( sequence: 0, categoryName: DefaultCategoryName, true ) ) ;
+      else if ( CnsSettingModels.All( t => ! t.IsDefaultItemChecked ) ) {
+        var defaultCnsModel = CnsSettingModels.FirstOrDefault( t => t.CategoryName.Equals( DefaultCategoryName ) ) ;
+        if ( defaultCnsModel == null )
+          CnsSettingModels.Add( new CnsSettingModel( sequence: 0, categoryName: DefaultCategoryName, true ) ) ;
+        else
+          defaultCnsModel.IsDefaultItemChecked = true ;
+      }
     }
     
     private void SetConstructionItemForSymbol( CnsSettingStorable cnsStorable, int selectedIndex, CnsSettingStorable.UpdateItemType updateType )
     {
       if ( selectedIndex == -1 )
-        ApplyToSymbolsText = "未設定" ;
+        ApplyToSymbolsText = DefaultCategoryName ;
       else {
         var cnsSettingModel = CnsSettingModels.ElementAt( selectedIndex ) ;
         ApplyToSymbolsText = cnsSettingModel.CategoryName ;
