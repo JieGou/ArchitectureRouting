@@ -14,7 +14,7 @@ using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
-using Autodesk.Revit.DB.Electrical ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -33,9 +33,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
 
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      PointOnRoutePicker.PickInfo? pickInfo ;
+      try {
+        pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      }
+      catch ( OperationCanceledException ) {
+        return OperationResult<PickState>.Cancelled ;
+      }
+
       var pullBoxViewModel = new PullBoxViewModel(document) ;
-      
       var sv = new PullBoxDialog { DataContext = pullBoxViewModel } ;
       sv.ShowDialog() ;
       if ( true != sv.DialogResult ) return OperationResult<PickState>.Cancelled ;
@@ -83,7 +89,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
       var allowedTiltedPiping = CheckAllowedTiltedPiping( route.GetAllConnectors().ToList() ) ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, null, allowedTiltedPiping ) ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, null, false, allowedTiltedPiping ) ;
 
       return result ;
     }
