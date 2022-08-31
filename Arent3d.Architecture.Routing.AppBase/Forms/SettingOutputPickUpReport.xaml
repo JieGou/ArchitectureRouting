@@ -3,12 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:viewModel="clr-namespace:Arent3d.Architecture.Routing.AppBase.ViewModel"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         Name="ReportOutPutSettingDialog"
         Title="拾い表出力項目選択"  Width="300" Height="400"
-        d:DataContext="{d:DesignInstance {x:Type local:DesignPickUpReportViewModel}, IsDesignTimeCreatable=True}">
+        d:DataContext="{d:DesignInstance {x:Type viewModel:PickUpReportViewModel}, IsDesignTimeCreatable=True}">
     <DockPanel Margin="10">
         <GroupBox Header="出力項目" DockPanel.Dock="Top" Height="300">
             <ListBox ItemsSource="{Binding OutputReportSettingCollection}" >

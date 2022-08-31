@@ -971,17 +971,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           pickUpModels.AddRange( pickUpConnectors ); 
         }
         
-        if ( IsExportCsv ) {
-          var pickUpReportViewModel = new PickUpReportViewModel( _document, pickUpModels ) ;
-          
-          var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
-          dialog.ShowDialog() ;
-        }
-        else {
-          var pickUpReportDatFileViewModel = new PickUpReportDatFileViewModel(_document,pickUpModels) ;
-          var dialog = new PickupReportDatFileDialog( pickUpReportDatFileViewModel ) ;
-          dialog.ShowDialog() ;
-        }
+        var pickUpReportViewModel = new PickUpReportViewModel( _document, pickUpModels, IsExportCsv ) ;
+        var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
+        dialog.ShowDialog() ;
       }
       catch ( Exception ex ) {
         MessageBox.Show( "Export data failed because " + ex, "Error Message" ) ;
