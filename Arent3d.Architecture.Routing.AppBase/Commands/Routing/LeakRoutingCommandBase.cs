@@ -41,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override OperationResult<LeakState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      UIApplication uiApp = commandData.Application;
+      UIApplication uiApp = commandData.Application ;
       UIDocument uiDocument = commandData.Application.ActiveUIDocument ;
       Document document = uiDocument.Document ;
       try {
@@ -53,17 +53,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType(), true ) ;
         var fromConnector = fromPickResult.PickedElement ;
-        if ( fromConnector is not FamilyInstance || false == fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) 
-                                                 || string.IsNullOrEmpty( ceedCode ) || ! ceedCode!.Contains( JBoxConnectorType ) ) {
+        if ( fromConnector is not FamilyInstance || false == fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) || string.IsNullOrEmpty( ceedCode ) || ! ceedCode!.Contains( JBoxConnectorType ) ) {
           MessageBox.Show( ErrorMessageIsNotJBoxConnector, "Message" ) ;
           return OperationResult<LeakState>.Cancelled ;
         }
 
         XYZ fromPoint = fromPickResult.GetOrigin() ;
         var pickPoints = new List<XYZ>() ;
-        
+
         if ( sv.CreateMode == 0 ) {
-          LineExternal lineExternal = new( uiApp ) ;
+          LineExternal lineExternal = new(uiApp) ;
           XYZ prevPoint = fromPickResult.GetOrigin() ;
           
           // modeless dialog to determine OK・Cancel action
@@ -101,15 +100,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else {
           var isHasParameterWidth = fromConnector.HasParameter( "W" ) ;
           var fromConnectorWidth = ( isHasParameterWidth ? fromConnector.ParametersMap.get_Item( "W" ).AsDouble() : DefaultWidthJBoxConnector ) * 1.5 ;
-          XYZ secondPoint = uiDocument.Selection.PickPoint( "Pick point" ) ;
+          if ( ! DrawingPreviewRectangleWhenLeakingInRectangleMode( uiApp, fromPoint, out var secondPoint ) ) return OperationResult<LeakState>.Cancelled ;
           var mpt = ( fromPoint + secondPoint ) * 0.5 ;
           var currView = document.ActiveView ;
           var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
           var mirrorMat = Transform.CreateReflection( plane ) ;
           var firstPoint = mirrorMat.OfPoint( fromPoint ) ;
           var thirdPoint = mirrorMat.OfPoint( secondPoint ) ;
-          var lastPoint = fromPoint.Y > secondPoint.Y ? new XYZ( fromPoint.X, fromPoint.Y - fromConnectorWidth, fromPoint.Z ) : new XYZ( fromPoint.X, fromPoint.Y + fromConnectorWidth, fromPoint.Z ) ;
-          pickPoints = new List<XYZ>() { firstPoint, secondPoint, thirdPoint, lastPoint } ;
+          var lastPoint = fromPoint.Y > secondPoint?.Y ? new XYZ( fromPoint.X, fromPoint.Y - fromConnectorWidth, fromPoint.Z ) : new XYZ( fromPoint.X, fromPoint.Y + fromConnectorWidth, fromPoint.Z ) ;
+          pickPoints = new List<XYZ>() { firstPoint, secondPoint!, thirdPoint, lastPoint } ;
         }
 
         var count = pickPoints.Count() ;
@@ -132,6 +131,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       catch {
         return OperationResult<LeakState>.Cancelled ;
+      }
+    }
+
+    private static bool DrawingPreviewRectangleWhenLeakingInRectangleMode( UIApplication uiApp, XYZ firstPoint, out XYZ? secondPoint )
+    {
+      var uiDocument = uiApp.ActiveUIDocument ;
+      var selection = uiDocument.Selection ;
+      const double minDistance = 0.01 ;
+
+      // This is the object to render the guide line
+      var rectangleExternal = new RectangleExternal( uiApp ) ;
+      try {
+        // Add first point to list picked points
+        rectangleExternal.PickedPoints.Add( firstPoint ) ;
+        // Assign first point
+        rectangleExternal.DrawingServer.BasePoint = firstPoint ;
+        // Render the guide line
+        rectangleExternal.DrawExternal() ;
+        // Pick next point 
+        var lastPoint = selection.PickPoint( "Pick point" ) ;
+        if ( firstPoint.DistanceTo( lastPoint ) < minDistance ) {
+          secondPoint = null ;
+          return false ;
+        }
+        else {
+          secondPoint = lastPoint ;
+          return true ;
+        }
+      }
+      catch ( OperationCanceledException ) {
+        secondPoint = null ;
+        return false ;
+      }
+      finally {
+        // End to render guide line
+        rectangleExternal.Dispose() ;
       }
     }
 
@@ -296,13 +331,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private FamilyInstance CreateLeakEndPoint( Document document, Level level, XYZ position )
     {
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.ToJboxConnector ).FirstOrDefault() ?? throw new Exception() ;
-      using Transaction t = new( document, "Create to JBOX connector" ) ;
+      using Transaction t = new(document, "Create to JBOX connector") ;
       t.Start() ;
       var familyInstance = symbol.Instantiate( position, level, StructuralType.NonStructural ) ;
       t.Commit() ;
       return familyInstance ;
     }
-    
+
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, LeakState leakState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
