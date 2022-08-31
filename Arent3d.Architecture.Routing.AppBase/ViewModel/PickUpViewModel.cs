@@ -414,6 +414,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 }
                 else {
                   materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, null ) ;
+                  var value = pickUpElement.Connector.GetPropertyString(ElectricalRoutingElementParameter.Quantity);
+                  var qtt = string.IsNullOrEmpty( value ) ? 1 : int.Parse( value ) ;
+                  foreach ( var materialCode in materialCodes ) {
+                    materialCode.Quantity = $"{qtt}" ;
+                  }
                 }
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                   PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
@@ -1231,7 +1236,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       public string MaterialCode { get ; }
       public string Name { get ; }
-      public string Quantity { get ; }
+      public string Quantity { get ; set ; }
 
       public MaterialCodeInfo( string materialCode, string name, string quantity )
       {
