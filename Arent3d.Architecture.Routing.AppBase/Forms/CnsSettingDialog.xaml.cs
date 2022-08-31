@@ -80,6 +80,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           e.Cancel = true ;
           return ;
         }
+        if ( ! string.IsNullOrEmpty( _cnsSettingViewModel.ReadCnsFilePath ) && _isEditModel )
+          _cnsSettingViewModel.WriteContentsToFile( _cnsSettingViewModel.ReadCnsFilePath );
       }
 
       _isEditModel = false ;
