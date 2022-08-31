@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( elementType is not FamilySymbol familySymbol )
           return false ;
 
-        return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() ;
+        return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() || familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentEquipmentTag.GetFamilyName() ;
       }
 
       public bool AllowReference( Reference r, XYZ p )

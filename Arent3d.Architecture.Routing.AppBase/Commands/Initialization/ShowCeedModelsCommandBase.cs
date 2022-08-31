@@ -134,7 +134,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         if ( ! string.IsNullOrEmpty( deviceSymbol ) ) {
-          var deviceSymbolTagType = doc.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+          var symbolContentTag = element.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.SymbolContentTag : ElectricalRoutingFamilyType.SymbolContentEquipmentTag ;
+          var deviceSymbolTagType = doc.GetFamilySymbols( symbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
           IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ( point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z ) ) ;
         }
         
