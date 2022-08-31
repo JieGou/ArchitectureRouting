@@ -818,7 +818,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               case ModelName.WiresAndCables :
                 if ( values.Length < wacColCount ) checkFile = false ;
                 else {
-                  WiresAndCablesModel wiresAndCablesModel = new WiresAndCablesModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ] ) ;
+                  WiresAndCablesModel wiresAndCablesModel = new WiresAndCablesModel( 
+                    values[ 0 ], 
+                    values[ 1 ],
+                    values[ 2 ], 
+                    values[ 3 ], 
+                    values[ 4 ], 
+                    values[ 5 ], 
+                    values[ 6 ], 
+                    values[ 7 ], 
+                    values[ 8 ], 
+                    values[ 9 ] ) ;
                   _allWiresAndCablesModels.Add( wiresAndCablesModel ) ;
                 }
 
@@ -826,7 +836,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               case ModelName.Conduits :
                 if ( values.Length < conduitColCount ) checkFile = false ;
                 else {
-                  ConduitsModel conduitsModel = new ConduitsModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ] ) ;
+                  ConduitsModel conduitsModel = new ConduitsModel( 
+                    values[ 0 ], 
+                    values[ 1 ], 
+                    values[ 2 ],
+                    values[ 3 ], 
+                    values[ 4 ] ) ;
                   _allConduitModels.Add( conduitsModel ) ;
                 }
 
@@ -834,7 +849,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               case ModelName.HiroiSetMasterNormal :
                 if ( values.Length < hsmColCount ) checkFile = false ;
                 else {
-                  HiroiSetMasterModel hiroiSetMasterNormalModel = new HiroiSetMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ], values[ 13 ], values[ 14 ], values[ 15 ], values[ 16 ], values[ 17 ], values[ 18 ], values[ 19 ], values[ 20 ], values[ 21 ], values[ 22 ], values[ 23 ], values[ 24 ], values[ 25 ], values[ 26 ] ) ;
+                  HiroiSetMasterModel hiroiSetMasterNormalModel = new HiroiSetMasterModel( 
+                    values[ 0 ], 
+                    values[ 1 ], 
+                    values[ 2 ], 
+                    values[ 3 ], 
+                    values[ 4 ], 
+                    values[ 5 ], 
+                    values[ 6 ], 
+                    values[ 7 ], 
+                    values[ 8 ], 
+                    values[ 9 ], 
+                    values[ 10 ], 
+                    values[ 11 ], 
+                    values[ 12 ], 
+                    values[ 13 ], 
+                    values[ 14 ], 
+                    values[ 15 ], 
+                    values[ 16 ], 
+                    values[ 17 ], 
+                    values[ 18 ], 
+                    values[ 19 ], 
+                    values[ 20 ], 
+                    values[ 21 ], 
+                    values[ 22 ], 
+                    values[ 23 ], 
+                    values[ 24 ], 
+                    values[ 25 ], 
+                    values[ 26 ] ) ;
                   _allHiroiSetMasterNormalModels.Add( hiroiSetMasterNormalModel ) ;
                 }
 
@@ -842,7 +884,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               case ModelName.HiroiSetMasterEco :
                 if ( values.Length < hsmColCount ) checkFile = false ;
                 else {
-                  HiroiSetMasterModel hiroiSetMasterEcoModel = new HiroiSetMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ], values[ 13 ], values[ 14 ], values[ 15 ], values[ 16 ], values[ 17 ], values[ 18 ], values[ 19 ], values[ 20 ], values[ 21 ], values[ 22 ], values[ 23 ], values[ 24 ], values[ 25 ], values[ 26 ] ) ;
+                  HiroiSetMasterModel hiroiSetMasterEcoModel = new HiroiSetMasterModel( 
+                    values[ 0 ], 
+                    values[ 1 ], 
+                    values[ 2 ], 
+                    values[ 3 ], 
+                    values[ 4 ], 
+                    values[ 5 ], 
+                    values[ 6 ], 
+                    values[ 7 ], 
+                    values[ 8 ], 
+                    values[ 9 ], 
+                    values[ 10 ], 
+                    values[ 11 ], 
+                    values[ 12 ],
+                    values[ 13 ], 
+                    values[ 14 ], 
+                    values[ 15 ], 
+                    values[ 16 ], 
+                    values[ 17 ], 
+                    values[ 18 ], 
+                    values[ 19 ], 
+                    values[ 20 ], 
+                    values[ 21 ], 
+                    values[ 22 ], 
+                    values[ 23 ], 
+                    values[ 24 ], 
+                    values[ 25 ], 
+                    values[ 26 ] ) ;
                   _allHiroiSetMasterEcoModels.Add( hiroiSetMasterEcoModel ) ;
                 }
 
@@ -851,7 +920,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 if ( values.Length < hsCdmColCount ) checkFile = false ;
                 else {
                   var constructionClassification = GetConstructionClassification( values[ 3 ] ) ;
-                  HiroiSetCdMasterModel hiroiSetCdMasterNormalModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], constructionClassification ) ;
+                  HiroiSetCdMasterModel hiroiSetCdMasterNormalModel = new HiroiSetCdMasterModel(
+                    values[ 0 ], 
+                    values[ 1 ], 
+                    values[ 2 ], 
+                    constructionClassification ) ;
                   _allHiroiSetCdMasterNormalModels.Add( hiroiSetCdMasterNormalModel ) ;
                 }
 
@@ -860,7 +933,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 if ( values.Length < hsCdmColCount ) checkFile = false ;
                 else {
                   var constructionClassification = GetConstructionClassification( values[ 3 ] ) ;
-                  HiroiSetCdMasterModel hiroiSetCdMasterEcoModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], constructionClassification ) ;
+                  HiroiSetCdMasterModel hiroiSetCdMasterEcoModel = new HiroiSetCdMasterModel(
+                    values[ 0 ], 
+                    values[ 1 ], 
+                    values[ 2 ], 
+                    constructionClassification ) ;
                   _allHiroiSetCdMasterEcoModels.Add( hiroiSetCdMasterEcoModel ) ;
                 }
 
@@ -956,7 +1033,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private List<ImportDwgMappingModel> CalculateFloorHeight(IEnumerable<ImportDwgMappingModel> importDwgMappingModels)
     {
-      var importDwgMappingModelsGroups = importDwgMappingModels.OrderBy( x => x.FloorHeight ).GroupBy( x => x.FloorHeight ).Select( x=>x.ToList() ).ToList() ;
+      var importDwgMappingModelsGroups = importDwgMappingModels
+        .OrderBy( x => x.FloorHeight )
+        .GroupBy( x => x.FloorHeight )
+        .Select( x=>x.ToList() )
+        .ToList() ;
       var result = new List<ImportDwgMappingModel>() ;
 
       // Add first item
@@ -970,8 +1051,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var height = heightCurrentLevel - heightPreviousLevel ;
         
         foreach ( var importDwgMappingModelGroup in importDwgMappingModelsGroups[i] ) {
-          var importDwgModel = new ImportDwgMappingModel(importDwgMappingModelGroup.Id ,importDwgMappingModelGroup.FullFilePath, importDwgMappingModelGroup.FloorName, importDwgMappingModelGroup.FloorHeight,
-            importDwgMappingModelGroup.Scale, height ) { IsEnabled = importDwgMappingModelGroup.IsEnabled } ;
+          var importDwgModel = new ImportDwgMappingModel(
+            importDwgMappingModelGroup.Id ,
+            importDwgMappingModelGroup.FullFilePath, 
+            importDwgMappingModelGroup.FloorName, 
+            importDwgMappingModelGroup.FloorHeight,
+            importDwgMappingModelGroup.Scale, 
+            height ) 
+            { IsEnabled = importDwgMappingModelGroup.IsEnabled } ;
           result.Add( importDwgModel );
         }
       }

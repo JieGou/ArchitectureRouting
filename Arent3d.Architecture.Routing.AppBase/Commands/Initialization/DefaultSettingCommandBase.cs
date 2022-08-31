@@ -107,7 +107,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, floorName, height, scale ) ) ;
       }
 
-      var importDwgMappingModelsGroups = importDwgMappingModels.OrderBy( x => x.FloorHeight ).GroupBy( x => x.FloorHeight ).Select( x=>x.ToList() ).ToList() ;
+      var importDwgMappingModelsGroups = importDwgMappingModels.OrderBy( x => x.FloorHeight )
+        .GroupBy( x => x.FloorHeight )
+        .Select( x=>x.ToList() )
+        .ToList() ;
       var result = new List<ImportDwgMappingModel>() ;
 
       // Add first item
@@ -354,12 +357,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void RemoveViews( Document document, List<string> deletedFloorName, UIDocument uiDocument )
     {
       try {
-        var deletedViewIds = document.GetAllElements<View>()
-          .Where( e => deletedFloorName.Any( x=> x == e.Name ) && ViewType.FloorPlan == e.ViewType).Select( e => e.Id ).ToList() ;
-        List<ViewPlan> views = new List<ViewPlan>(
-          new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( ViewPlan ) )
-            .Cast<ViewPlan>()
-            .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+        var deletedViews = document.GetAllElements<View>().Where( e => deletedFloorName.Any( x=> x == e.Name ) && ViewType.FloorPlan == e.ViewType).ToList() ;
+        var deletedViewIds = deletedViews.Select( x => x.Id ).ToList() ;
+        var deletedLevels = deletedViews.Select( x => x.GenLevel.Id ).ToList() ;
+        List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( ViewPlan ) )
+          .Cast<ViewPlan>()
+          .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+        IList<ElementId> categoryIds = new List<ElementId>();
+        var importInstances = new FilteredElementCollector( document )
+          .OfClass( typeof( ImportInstance ) ).Cast<ImportInstance>()
+          .Where( x => deletedLevels.Any( l => l == x.LevelId ) ) ;
+        foreach ( var importInstance in importInstances )
+        {
+          ElementId catId = importInstance.Category.Id;
+          if (!categoryIds.Contains(catId)) categoryIds.Add(catId);
+        }
+        
         if (views.Count() == deletedViewIds.Count()) {
           ArentViewDummy( uiDocument ) ;
         }
@@ -386,9 +399,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             uiDocument.ActiveView = viewsTemp[ 0 ] ;
           }
         }
-        var removeViewsTrans = new Transaction( document, "Remove Views " ) ;
+        var removeViewsTrans = new Transaction( document, "Remove Views, Level, Dwg linked " ) ;
         removeViewsTrans.Start() ;
         document.Delete( deletedViewIds ) ;
+        document.Delete( deletedLevels ) ;
+        document.Delete(categoryIds);
         removeViewsTrans.Commit() ;
       }
       catch ( Exception exception ) {
