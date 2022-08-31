@@ -110,6 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 transaction.Start( "Set rack property" ) ;
 
                 SetConstructionItemForElements( rackList, categoryName ) ;
+                ConfirmUnsetCommandBase.ResetElementColor( rackList ) ;
 
                 transaction.Commit() ;
 
@@ -135,6 +136,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
                 listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(UiDocument.Document, elementList) );
                 SetConstructionItemForElements( listApplyElement, categoryName ) ;
+                ConfirmUnsetCommandBase.ResetElementColor( listApplyElement ) ;
                 
                 transaction.Commit() ;
  
