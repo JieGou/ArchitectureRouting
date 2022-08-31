@@ -108,7 +108,7 @@
         </StackPanel>
 
         <Button Grid.Row="3"
-                Command="{Binding ExecuteCommand}"
+                Command="{Binding ExportFileCommand}"
                 CommandParameter="{Binding ElementName=PickUpReportWinDow}"
                 Content="処理実行"
                 Margin="10,0,140,20"

@@ -356,9 +356,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var pickUpModels = new List<PickUpItemModel>() ;
 
-      var outputSettingItems = OutputReportSettingCollection.Where( s => s.IsSelected ).Select( s => s.Name ) ;
-
       if ( IsOutputSettingOn ) {
+        var outputSettingItems = OutputReportSettingCollection.Where( s => s.IsSelected ).Select( s => s.Name ) ;
         var newPickUpModels = _pickUpItemModels.Where( p => _hiroiMasterModels.Any( h =>
           int.Parse( h.Buzaicd ) == int.Parse( p.ProductCode.Split( '-' ).First() ) &&
           outputSettingItems.Contains( h.Syurui ) ) ) ;
