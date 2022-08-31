@@ -213,7 +213,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       
       //Delete label of pull box
-      var level = document.ActiveView.GenLevel ;
+      var level = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).SingleOrDefault( l => l.Id == elementPullBox.LevelId ) ; ;
       if ( level != null ) {
         var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
         var pullBoxInfoModel = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.FirstOrDefault( p => p.PullBoxUniqueId == elementPullBox.UniqueId ) ;
