@@ -76,12 +76,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var pickRoute = pickState.PickInfo.SubRoute.Route ;
       var level = ( document.GetElement( pickState.PickInfo.Element.GetLevelId() ) as Level ) ! ;
-
-      using var subTransaction = new SubTransaction( document ) ;
-      subTransaction.Start() ;
-      pickState.PullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, pickState.PullBoxPosition.X, pickState.PullBoxPosition.Y, pickState.HeightConnector, level, pickState.PickInfo.Route.Name ) ;
-      subTransaction.Commit() ;
       
+      pickState.PullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, pickState.PullBoxPosition.X, pickState.PullBoxPosition.Y, pickState.HeightConnector, level, pickState.PickInfo.Route.Name ) ;
+
       var routes = document.CollectRoutes( GetAddInType()) ;
       
       var routeInTheSamePosition = PullBoxRouteManager.GetParentRoutesInTheSamePosition( document, routes.ToList(), pickRoute, pickState.PickInfo.Element ) ;
