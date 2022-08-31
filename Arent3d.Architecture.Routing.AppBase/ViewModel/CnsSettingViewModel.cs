@@ -22,12 +22,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public string ApplyToSymbolsText { get ; set ; }
     public string ReadCnsFilePath { get ; set ; }
 
-    public CnsSettingViewModel( CnsSettingStorable cnsStorables )
+    public CnsSettingViewModel( CnsSettingStorable cnsStorable )
     {
-      CnsSettingStorable = cnsStorables ;
+      CnsSettingStorable = cnsStorable ;
       ApplyToSymbolsText = string.Empty ;
       ReadCnsFilePath = string.Empty ;
-      CnsSettingModels = new ObservableCollectionEx<CnsSettingModel>( cnsStorables.CnsSettingData ) ;
+      CnsSettingModels = new ObservableCollectionEx<CnsSettingModel>( cnsStorable.CnsSettingData ) ;
       CnsSettingModels.ItemPropertyChanged += CnsSettingModelsOnItemPropertyChanged;
       AddDefaultValue() ;
       ReadFileCommand = new RelayCommand<object>( _ => true, // CanExecute()
@@ -51,10 +51,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ) ;
       
       SetConstructionItemForAllCommand = new RelayCommand<int>( _ => true, // CanExecute()
-        selectedIndex => { SetConstructionItemForSymbol( cnsStorables, selectedIndex, CnsSettingStorable.UpdateItemType.All ) ; } // Execute()
+        selectedIndex => { SetConstructionItemForSymbol( cnsStorable, selectedIndex, CnsSettingStorable.UpdateItemType.All ) ; } // Execute()
       ) ;
       ApplyRangSelectionCommand = new RelayCommand<int>( p => true, // CanExecute()
-        _ => { SetConstructionItemForRange( cnsStorables ) ; } // Execute()
+        _ => { SetConstructionItemForRange( cnsStorable ) ; } // Execute()
       ) ;
     }
 
@@ -122,11 +122,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var result = dlg.ShowDialog() ;
 
       // Process open file dialog box results
-      if ( result == true ) {
-        WriteContentsToFile( dlg.FileName ) ;
-        if ( ! string.IsNullOrEmpty( ReadCnsFilePath ) )
-          WriteContentsToFile( ReadCnsFilePath );
-      }
+      if ( result != true ) return ;
+      
+      WriteContentsToFile( dlg.FileName ) ;
+      if ( ! string.IsNullOrEmpty( ReadCnsFilePath ) )
+        WriteContentsToFile( ReadCnsFilePath );
     }
 
     private void Save()
