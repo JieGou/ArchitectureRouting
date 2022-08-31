@@ -65,14 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                     
                     var quantity = element.GetPropertyString( ElectricalRoutingElementParameter.Quantity ) ;
                     if ( int.TryParse( quantity, out var value ) && value >= 0) {
-                        switch ( value ) {
-                            case 0 :
-                                tag.ChangeTypeId( hideQuantityType.Id ) ;
-                                break ;
-                            default :
-                                tag.ChangeTypeId( showQuantityType.Id ) ;
-                                break ;
-                        }
+                        tag.ChangeTypeId( showQuantityType.Id ) ;
                     }
                     else {
                         element.SetProperty( ElectricalRoutingElementParameter.Quantity, string.Empty );
