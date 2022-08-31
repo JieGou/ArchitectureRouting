@@ -40,7 +40,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       
       var pullBoxViewModel = new PullBoxViewModel(document) ;
-      
       var sv = new PullBoxDialog { DataContext = pullBoxViewModel } ;
       sv.ShowDialog() ;
       if ( true != sv.DialogResult ) return OperationResult<PickState>.Cancelled ;
@@ -89,7 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var route in routeInTheSamePosition ) {
         result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox!, pickState.HeightConnector,
           pickState.HeightWire, pickState.RouteDirection, pickState.IsCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex,
-          ref parentAndChildRoute, pickState.FromDirection, pickState.ToDirection, null, allowedTiltedPiping ) );
+          ref parentAndChildRoute, pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) );
       }
 
       pickState.ParentAndChildRoute = parentAndChildRoute ;

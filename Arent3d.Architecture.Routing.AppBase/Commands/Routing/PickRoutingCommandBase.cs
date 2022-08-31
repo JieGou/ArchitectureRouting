@@ -13,6 +13,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -39,42 +40,48 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var routingExecutor = GetRoutingExecutor() ;
-      var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
-      ConnectorPicker.IPickResult toPickResult ;
 
-      using ( uiDocument.SetTempColor( fromPickResult ) ) {
-        toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
+      try {
+        var routingExecutor = GetRoutingExecutor() ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
+        ConnectorPicker.IPickResult toPickResult ;
+
+        using ( uiDocument.SetTempColor( fromPickResult ) ) {
+          toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
+        }
+
+        var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
+        if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
+
+        if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
+
+        double passPointPositionDistance ;
+        using ( var trans = new Transaction( document, "Create MEP System Pipe Spec" ) ) {
+          trans.Start() ;
+          var pipeSpec = new MEPSystemPipeSpec( new RouteMEPSystem( document, property.GetSystemType(), property.GetCurveType() ), routingExecutor.FittingSizeCalculator ) ;
+          var bendRadius = pipeSpec.GetLongElbowSize( property.GetDiameter().DiameterValueToPipeDiameter() ) ;
+          passPointPositionDistance = bendRadius + property.GetDiameter() * 6 ;
+          trans.Commit() ;
+        }
+
+        XYZ? passPointPosition = null ;
+        XYZ? passPointDirection = null ;
+        XYZ? secondPassPointPosition = null ;
+        XYZ? secondPassPointDirection = null ;
+        
+        // Todo: 斜めルーティングの場合はPullBoxを無視する
+        var isNeedCreatePullBox = ! PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ;
+        
+        if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
+          ( passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult, passPointPositionDistance ) ;
+        }
+
+        // Todo: 斜めルーティングの場合はPullBoxを無視する
+        return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection, isNeedCreatePullBox ) ) ;
       }
-
-      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
-      if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
-
-      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
-
-      double passPointPositionDistance ;
-      using ( var trans = new Transaction( document, "Create MEP System Pipe Spec" ) ) {
-        trans.Start() ;
-        var pipeSpec = new MEPSystemPipeSpec( new RouteMEPSystem( document, property.GetSystemType(), property.GetCurveType() ), routingExecutor.FittingSizeCalculator ) ;
-        var bendRadius = pipeSpec.GetLongElbowSize( property.GetDiameter().DiameterValueToPipeDiameter() ) ;
-        passPointPositionDistance = bendRadius + property.GetDiameter() * 6 ;
-        trans.Commit() ;
+      catch ( OperationCanceledException ) {
+        return OperationResult<PickState>.Cancelled ;
       }
-
-      XYZ? passPointPosition = null ;
-      XYZ? passPointDirection = null ;
-      XYZ? secondPassPointPosition = null ;
-      XYZ? secondPassPointDirection = null ;
-      
-      // Todo: 斜めルーティングの場合はPullBoxを無視する
-      var isNeedCreatePullBox = ! PickCommandUtil.IsAnyConnectorNotDirectionAsXOrY( fromPickResult, toPickResult ) ;
-      
-      if ( GetAddInType() == AddInType.Electrical && document.ActiveView is ViewPlan && fromPickResult.GetLevelId() == toPickResult.GetLevelId() ) {
-        ( passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection ) = ShowPreviewLines( uiDocument, fromPickResult, toPickResult, passPointPositionDistance ) ;
-      }
-
-      // Todo: 斜めルーティングの場合はPullBoxを無視する
-      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo, passPointPosition, passPointDirection, secondPassPointPosition, secondPassPointDirection, isNeedCreatePullBox ) ) ;
     }
     
     private ( XYZ?, XYZ?, XYZ?, XYZ? ) ShowPreviewLines( UIDocument uiDocument, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, double passPointPositionDistance )
