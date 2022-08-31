@@ -38,6 +38,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected sealed override ExecutionResult Execute( Document document, TransactionWrapper transaction, TUIResult result )
     {
+      BeforeRouteGenerated( document, result ) ;
+      
       var executor = GetRoutingExecutor() ;
 
       var executionResult = GenerateRoutes( document, executor, result ) ;
@@ -192,6 +194,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
     
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
+    {
+    }
+    
+    protected virtual void BeforeRouteGenerated( Document document, TUIResult result )
     {
     }
     

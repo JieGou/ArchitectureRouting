@@ -74,13 +74,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
+      var result = new List<( string RouteName, RouteSegment Segment )>() ;
+      if ( pickState.PullBox == null ) return result ;
+      
       var pickRoute = pickState.PickInfo.SubRoute.Route ;
-      var level = ( document.GetElement( pickState.PickInfo.Element.GetLevelId() ) as Level ) ! ;
-      
-      pickState.PullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, pickState.PullBoxPosition.X, pickState.PullBoxPosition.Y, pickState.HeightConnector, level, pickState.PickInfo.Route.Name ) ;
-
       var routes = document.CollectRoutes( GetAddInType()) ;
-      
       var routeInTheSamePosition = PullBoxRouteManager.GetParentRoutesInTheSamePosition( document, routes.ToList(), pickRoute, pickState.PickInfo.Element ) ;
       var systemType = pickRoute.GetMEPSystemType() ;
       var curveType = pickRoute.UniqueCurveType ;
@@ -88,9 +86,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var parentIndex = 1 ;
       var allowedTiltedPiping = CheckAllowedTiltedPiping( pickRoute.GetAllConnectors().ToList() ) ;
       var parentAndChildRoute = new Dictionary<string, List<string>>() ;
-      var result = new List<( string RouteName, RouteSegment Segment )>() ;
       foreach ( var route in routeInTheSamePosition ) {
-        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox, pickState.HeightConnector,
+        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox!, pickState.HeightConnector,
           pickState.HeightWire, pickState.RouteDirection, pickState.IsCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex,
           ref parentAndChildRoute, pickState.FromDirection, pickState.ToDirection, null, allowedTiltedPiping ) );
       }
@@ -110,6 +107,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       
       return false ;
+    }
+
+    protected override void BeforeRouteGenerated( Document document, PickState result )
+    {
+      base.BeforeRouteGenerated( document, result ) ;
+      var level = ( document.GetElement( result.PickInfo.Element.GetLevelId() ) as Level ) ! ;
+
+      using var transaction = new Transaction( document, "Create pull box" ) ;
+      transaction.Start() ;
+      result.PullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, result.PullBoxPosition.X, result.PullBoxPosition.Y, result.HeightConnector, level, result.PickInfo.Route.Name ) ;
+      transaction.Commit() ;
     }
 
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
