@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ) ;
 
       SaveCommand = new RelayCommand<object>( _ => true, // CanExecute()
-        _ => { cnsStorables.CnsSettingData = CnsSettingModels ; } // Execute()
+        _ => { Save() ; } // Execute()
       ) ;
       
       SetConstructionItemForAllCommand = new RelayCommand<int>( _ => true, // CanExecute()
@@ -66,8 +66,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var item in restCnsSettingModels ) {
         item.IsDefaultItemChecked = false ;
       }
-      if ( ! string.IsNullOrEmpty( ReadCnsFilePath ) && restCnsSettingModels.Any() )
-        WriteContentsToFile( ReadCnsFilePath );
     }
 
     public ICommand ReadFileCommand { get ; set ; }
@@ -125,6 +123,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       // Process open file dialog box results
       if ( result == true )
         WriteContentsToFile( dlg.FileName ) ;
+    }
+
+    private void Save()
+    {
+      CnsSettingStorable.CnsSettingData = CnsSettingModels ;
+      if ( ! string.IsNullOrEmpty( ReadCnsFilePath ) )
+        WriteContentsToFile( ReadCnsFilePath );
     }
 
     public void WriteContentsToFile( string fileName )
