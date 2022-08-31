@@ -154,6 +154,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _cnsSettingViewModel.SaveCommand.CanExecute( null ) )
         _cnsSettingViewModel.SaveCommand.Execute( null ) ;
     }
+    
+    private void SaveFile_Click( object sender, RoutedEventArgs e )
+    {
+      if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
+      if ( _cnsSettingViewModel.SaveFileCommand.CanExecute( null ) )
+        _cnsSettingViewModel.SaveFileCommand.Execute( null ) ;
+    }
 
     private bool CheckDuplicateName( RoutedEventArgs e )
     {
