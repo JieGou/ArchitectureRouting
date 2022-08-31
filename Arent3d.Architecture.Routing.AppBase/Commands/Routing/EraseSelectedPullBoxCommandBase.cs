@@ -2,6 +2,7 @@
 using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
@@ -321,6 +322,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       recreatedRoutes.ExceptWith( selectedRoutes ) ;
       RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), false ) ;
 
+      var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      routeCache.Drop( selectedRoutes.ConvertAll( route => route.RouteName ) ) ;
+      
       // Returns affected but not deleted routes to recreate them.
       return recreatedRoutes.ToSegmentsWithName().EnumerateAll() ;
     }
