@@ -960,7 +960,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         if ( _equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
-          var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+          var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ) ;
           pickUpModels.AddRange( pickUpConnectors ); 
         }
         

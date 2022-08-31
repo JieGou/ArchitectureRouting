@@ -14,6 +14,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
       DataContext = viewModel ;
     }
+    public SettingOutputPickUpReport(PickUpReportDatFileViewModel viewModel )
+    {
+      InitializeComponent() ;
+      DataContext = viewModel ;
+    }
   }
   
   public class DesignSettingPickUpReportViewModel : PickUpReportViewModel

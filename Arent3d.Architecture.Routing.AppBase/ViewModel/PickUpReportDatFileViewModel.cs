@@ -13,6 +13,7 @@ using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
@@ -23,15 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class PickUpReportDatFileViewModel : NotifyPropertyChanged
   {
     #region Constance
-
-    private const string TempFileName = "フォルダを選択してください。" ;
-    private const string LengthItem = "長さ物" ;
-    private const string ConstructionMaterialItem = "工事部材" ;
-    private const string EquipmentMountingItem = "機器取付" ;
-    private const string WiringItem = "結線" ;
-    private const string BoardItem = "盤搬入据付" ;
-    private const string InteriorRepairEquipmentItem = "内装・補修・設備" ;
-    private const string OtherItem = "その他" ;
+    
     private const string DefaultConstructionItem = "未設定" ;
 
     #endregion constance
@@ -72,20 +65,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private bool _isCanSelectOutputItems ;
+    private bool _isOutputSettingOn ;
 
-    public bool IsCanSelectOutputItems
+    public bool IsOutputSettingOn
     {
-      get => _isCanSelectOutputItems ;
+      get => _isOutputSettingOn ;
       set
       {
-        if ( value == _isCanSelectOutputItems ) return ;
-        _isCanSelectOutputItems = value ;
+        if ( value == _isOutputSettingOn ) return ;
+        _isOutputSettingOn = value ;
         OnPropertyChanged() ;
       }
     }
 
-    public IEnumerable<OutputPickUpReportItemSetting> OutputReportSettingCollection { get ; }
+    public IEnumerable<PickUpReportViewModel.PickUpSettingItem> OutputReportSettingCollection { get ; private set ; }
 
     #endregion Fields and Properties
 
@@ -99,9 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public ICommand? CancelCommand { get ; private set ; }
 
-    public ICommand? ApplyOutputItemsCommand { get ; private set ; }
-
-    public ICommand? CancelOutputItemsCommand { get ; private set ; }
+    public ICommand? ApplyOutputSettingCommand { get ; private set ; }
 
     #endregion Command
 
@@ -111,11 +102,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       _document = document ;
       IsPickUpNumberOn = true ;
-      IsCanSelectOutputItems = false ;
+      IsOutputSettingOn = false ;
       InitCommand() ;
       InitPickUpModels( pickUpItemModels ) ;
       _hiroiMasterModels = GetHiroiMasterModelsData() ;
-      OutputReportSettingCollection = GetOutPutReportSettingCollection().ToList() ;
+      OutputReportSettingCollection = PickUpReportViewModel.GetOutputReportSettings() ;
     }
 
     #endregion Constructor
@@ -128,19 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SettingCommand = new RelayCommand( OnShowOutputItemsSelectionSettingExecute ) ;
       ExportFileCommand = new RelayCommand<Window>( OnExportFileExecute ) ;
       CancelCommand = new RelayCommand<Window>( OnCancelExecute ) ;
-      ApplyOutputItemsCommand = new RelayCommand<Window>( OnApplyOutputPickUpReportSettingExecute ) ;
-      CancelOutputItemsCommand = new RelayCommand<Window>( OnCancelOutputPickUpReportSettingExecute ) ;
-    }
-
-    private static IEnumerable<OutputPickUpReportItemSetting> GetOutPutReportSettingCollection()
-    {
-      yield return new OutputPickUpReportItemSetting( LengthItem, true ) ;
-      yield return new OutputPickUpReportItemSetting( ConstructionMaterialItem, true ) ;
-      yield return new OutputPickUpReportItemSetting( EquipmentMountingItem ) ;
-      yield return new OutputPickUpReportItemSetting( WiringItem ) ;
-      yield return new OutputPickUpReportItemSetting( BoardItem ) ;
-      yield return new OutputPickUpReportItemSetting( InteriorRepairEquipmentItem, true ) ;
-      yield return new OutputPickUpReportItemSetting( OtherItem ) ;
+      ApplyOutputSettingCommand = new RelayCommand<Window>( OnApplyOutputSettingExecute ) ;
     }
 
     private void InitPickUpModels( List<PickUpItemModel>? pickUpItemModels = null )
@@ -167,28 +146,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void OnGetSaveLocationExecute()
     {
+      const string tempFileName = "フォルダを選択してください。" ;
       var saveFileDialog = new SaveFileDialog
       {
-        FileName = TempFileName, InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments )
+        FileName = "App.SelectFolder".GetAppStringByKeyOrDefault( tempFileName ), InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments )
       } ;
-
-      var saveFileResult = saveFileDialog.ShowDialog() ;
-      if ( saveFileResult == true ) {
+      
+      if ( saveFileDialog.ShowDialog() is true ) {
         PathName = Path.GetDirectoryName( saveFileDialog.FileName )! ;
       }
     }
 
     private void OnShowOutputItemsSelectionSettingExecute()
     {
-      var outputSettingDialog = new OutputPickUpReportSettingDialog( this ) ;
+      var outputSettingDialog = new SettingOutputPickUpReport( this ) ;
 
-      var previousOutputSettingCollection = ( from outPutSettingItem in OutputReportSettingCollection select new OutputPickUpReportItemSetting(outPutSettingItem.ItemName,outPutSettingItem.IsSelected) ).ToList() ;
+      var previousOutputSettingCollection = ( from outPutSettingItem in OutputReportSettingCollection select new PickUpReportViewModel.PickUpSettingItem(outPutSettingItem.Name,outPutSettingItem.IsSelected) ).ToList() ;
 
       if ( outputSettingDialog.ShowDialog() == true ) return ;
 
-      for ( var i = 0; i <  OutputReportSettingCollection.Count(); i++) {
-        OutputReportSettingCollection.ElementAt( i ).IsSelected = previousOutputSettingCollection[ i ].IsSelected ;
-      }
+      OutputReportSettingCollection = previousOutputSettingCollection ;
     }
 
     private void OnExportFileExecute( Window ownerWindow )
@@ -219,19 +196,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         MessageBox.Show( "Export file failed because " + ex, "Error message" ) ;
       }
       finally {
-        ownerWindow.DataContext = null ;
         ownerWindow.Close() ;
       }
     }
 
-    private List<string> GetOutputDataToWriting( List<PickUpItemModel> pickUpItemModels )
+    private List<string> GetOutputDataToWriting( IEnumerable<PickUpItemModel> pickUpItemModels )
     {
       var outPutStrings = new List<string>() ;
-      var pickUpOutPutConstructionLists = GetPickUpOutputConstructionLists( pickUpItemModels ) ;
+      var pickUpOutPutConstructionLists = GetPickUpOutputConstructionLists( pickUpItemModels, _document ) ;
 
       outPutStrings.Add( $"\"1\",\"{FileName}{PickUpNumberOnOffString}\"" ) ;
 
-      var ( highestLevelIndex, lowestLevelIndex) = GetHighestAndLowestLevelHasData( pickUpItemModels ) ;
+      var ( highestLevelIndex, lowestLevelIndex) = GetHighestAndLowestLevelHasData( pickUpItemModels,_document ) ;
       
       var lowestLevelName = string.Empty ;
       var highestLevelName = highestLevelIndex.ToString() ;
@@ -249,10 +225,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return outPutStrings ;
     }
 
-    private static (int highestLevelIndex, int lowestLevelIndex) GetHighestAndLowestLevelHasData(IEnumerable<PickUpItemModel> pickUpItemModelCollection ) 
+    private static (int highestLevelIndex, int lowestLevelIndex) GetHighestAndLowestLevelHasData(IEnumerable<PickUpItemModel> pickUpItemModelCollection, Document document ) 
     {
       var allLevelNameCollection = pickUpItemModelCollection.Select( x => x.Floor ).Distinct().ToList() ;
-      var allLevelsAndIndexCollection = GetLevelIndexOfLevelCollection().ToList() ;
+      var allLevelsAndIndexCollection = GetLevelIndexOfLevelCollection( document ).ToList() ;
 
       var lowestLevelIndex = 10 ;
       var highestLevelIndex = -1 ;
@@ -272,11 +248,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return ( highestLevelIndex, lowestLevelIndex ) ;
     }
 
-    private static IEnumerable<PickUpOutputConstructionList> GetPickUpOutputConstructionLists( List<PickUpItemModel> pickUpItemModels)
+    private static IEnumerable<PickUpOutputConstructionList> GetPickUpOutputConstructionLists( IEnumerable<PickUpItemModel> pickUpItemModels, Document document )
     {
       var pickUpOutPutConstructionLists = new List<PickUpOutputConstructionList>() ;
 
-      var levelAndIndexCollection = GetLevelIndexOfLevelCollection().EnumerateAll() ;
+      var levelAndIndexCollection = GetLevelIndexOfLevelCollection( document ).EnumerateAll() ;
 
       if ( ! levelAndIndexCollection.Any() ) {
         throw new Exception( "Don't have any level in drawing, please check again!" ) ;
@@ -312,25 +288,28 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return pickUpOutPutConstructionLists ;
     }
 
-    private static IEnumerable<(string levelName, int levelIndex)> GetLevelIndexOfLevelCollection()
+    private static IEnumerable<(string levelName, int levelIndex)> GetLevelIndexOfLevelCollection(Document document)
     {
-      return new List<(string levelName, int levelIndex)>
-      {
-        ( "B1F", -1 ),
-        ( "1F", 1 ),
-        ( "2F", 2 ),
-        ( "3F", 3 ),
-        ( "4F", 4 ),
-        ( "5F", 5 ),
-        ( "6F", 6 ),
-        ( "7F", 7 ),
-        ( "8F", 8 ),
-        ( "9F", 9 ),
-        ( "10F", 10 )
-      } ;
+      var allLevels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ) ;
+      var positiveLevels = allLevels.Where( lv => (int)lv.Elevation.RevitUnitsToMillimeters() > 0 ).OrderBy( lv => lv.Elevation ) ;
+      var negativeLevels = allLevels.Where( lv => (int)lv.Elevation.RevitUnitsToMillimeters() <= 0 ).OrderByDescending( lv => lv.Elevation ) ;
+
+      var positiveIndex = 1 ;
+      var negativeIndex = -1 ;
+      
+      foreach ( var level in positiveLevels ) {
+        yield return ( level.Name, positiveIndex ) ;
+        positiveIndex++ ;
+      }
+
+      foreach ( var level in negativeLevels ) {
+        yield return ( level.Name, negativeIndex ) ;
+        negativeIndex-- ;
+      }
+      
     }
 
-    private bool CanExecuteExportFile( out string errorMess, out List<PickUpItemModel> pickUpModels )
+    private bool CanExecuteExportFile( out string errorMess, out IEnumerable<PickUpItemModel> pickUpModels )
     {
       var errorMessList = new List<string>() ;
       errorMess = "Please" ;
@@ -356,7 +335,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         return false ;
       }
 
-      pickUpModels = GetExportPickUpItemModels() ;
+      pickUpModels = GetExportPickUpItemModels(_document) ;
 
       if ( pickUpModels.Any() ) return true ;
       errorMess = "Don't have pick up data." ;
@@ -373,13 +352,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return new List<HiroiMasterModel>() ;
     }
 
-    private List<PickUpItemModel> GetExportPickUpItemModels()
+    private IEnumerable<PickUpItemModel> GetExportPickUpItemModels( Document document )
     {
       var pickUpModels = new List<PickUpItemModel>() ;
 
-      var outputSettingItems = OutputReportSettingCollection.Where( s => s.IsSelected ).Select( s => s.ItemName ) ;
+      var outputSettingItems = OutputReportSettingCollection.Where( s => s.IsSelected ).Select( s => s.Name ) ;
 
-      if ( IsCanSelectOutputItems ) {
+      if ( IsOutputSettingOn ) {
         var newPickUpModels = _pickUpItemModels.Where( p => _hiroiMasterModels.Any( h =>
           int.Parse( h.Buzaicd ) == int.Parse( p.ProductCode.Split( '-' ).First() ) &&
           outputSettingItems.Contains( h.Syurui ) ) ) ;
@@ -389,24 +368,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         pickUpModels.AddRange( _pickUpItemModels ) ;
       }
 
-      return MergeQuantityForPickUpItemModels( pickUpModels ) ;
+      return CalculateTotalQuantity( pickUpModels, document ) ;
     }
 
-    private static List<PickUpItemModel> MergeQuantityForPickUpItemModels(List<PickUpItemModel> pickUpItemModels)
+    private static IEnumerable<PickUpItemModel> CalculateTotalQuantity(List<PickUpItemModel> pickUpItemModels, Document document)
     {
       return pickUpItemModels
-        .GroupBy( x =>
-        ( x.Floor, x.ConstructionItems, x.ProductCode ), new GroupPickUpItemComparer() )
-        .Select( p =>
-      {
-        var first = p.First() ;
-        var newModel = new PickUpItemModel(first)  ;
-        newModel.ProductCode = newModel.ProductCode.Split( '-' ).FirstOrDefault() ?? newModel.ProductCode ;
-        newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
-        return newModel ;
-      } )
-        .OrderBy( x=>GetLevelIndexOfLevelCollection().FirstOrDefault(y=>y.levelName == x.Floor) )
-        .ToList() ;
+        .GroupBy( x => ( x.Floor, x.ConstructionItems, x.ProductCode ), new GroupPickUpItemComparer() ).Select( p =>
+        {
+          var first = p.First() ;
+          var newModel = new PickUpItemModel( first ) ;
+          newModel.ProductCode = newModel.ProductCode.Split( '-' ).FirstOrDefault() ?? newModel.ProductCode ;
+          newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
+          return newModel ;
+        } ).OrderBy( x => GetLevelIndexOfLevelCollection( document ).FirstOrDefault( y => y.levelName == x.Floor ) ) ;
     }
     
     public static bool CompareProductCode( string productCodeA, string productCodeB )
@@ -427,34 +402,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ownerWindow.Close() ;
     }
 
-    private static void OnApplyOutputPickUpReportSettingExecute( Window ownerWindow )
+    private static void OnApplyOutputSettingExecute( Window ownerWindow )
     {
       ownerWindow.DialogResult = true ;
       ownerWindow.Close() ;
     }
 
-    private static void OnCancelOutputPickUpReportSettingExecute( Window ownerWindow )
-    {
-      ownerWindow.DialogResult = false ;
-      ownerWindow.Close() ;
-    }
-
     #endregion Command Execute and Can Execute
-  }
-
-  [Serializable]
-  public class OutputPickUpReportItemSetting
-  {
-    public string ItemName { get ; }
-
-    public bool IsSelected { get ; set ; }
-
-    public OutputPickUpReportItemSetting( string itemName, bool isSelected = false )
-    {
-      ItemName = itemName ;
-      IsSelected = isSelected ;
-    }
-    
   }
 
   public class PickUpOutputConstructionList

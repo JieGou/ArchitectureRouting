@@ -28,13 +28,11 @@
                       FontSize="16"
                       Margin="30 0 0 0">
                 <StackPanel>
-                    <RadioButton GroupName="PickupNumber"
-                                 IsChecked="{Binding IsPickUpNumberOn}"
+                    <RadioButton IsChecked="{Binding IsPickUpNumberOn}"
                                  Content="ON"
                                  Margin="5, 5, 0, 0"
                                  FontSize="14" />
-                    <RadioButton GroupName="PickupNumber"
-                                 IsChecked="{Binding IsPickUpNumberOn,Converter={StaticResource InvertBooleanConverter}}"
+                    <RadioButton IsChecked="{Binding IsPickUpNumberOn,Converter={StaticResource InvertBooleanConverter}}"
                                  Content="OFF"
                                  Margin="5, 5, 0, 0"
                                  FontSize="14"/>
@@ -48,13 +46,11 @@
                       Margin="30 0 0 0">
                 <Grid>
                     <StackPanel>
-                        <RadioButton GroupName="SelectOutPutItems" 
-                                     IsChecked="{Binding IsCanSelectOutputItems,Converter={StaticResource InvertBooleanConverter}}"
+                        <RadioButton IsChecked="{Binding IsOutputSettingOn,Converter={StaticResource InvertBooleanConverter}}"
                                      Content="全項目出力"
                                      Margin="5, 5, 0, 0"
                                      FontSize="14"/>
-                        <RadioButton GroupName="SelectOutPutItems"
-                                     IsChecked="{Binding IsCanSelectOutputItems}"
+                        <RadioButton IsChecked="{Binding IsOutputSettingOn}"
                                      Content="出力項目選択"
                                      Margin="5, 5, 0, 0"
                                      FontSize="14"/>
@@ -66,7 +62,7 @@
                             Margin="0,0,0,12"
                             Width="40"
                             Height="25"
-                            IsEnabled="{Binding IsCanSelectOutputItems}"
+                            IsEnabled="{Binding IsOutputSettingOn}"
                             FontSize="12"
                             Content = "設定"/>
                 </Grid>

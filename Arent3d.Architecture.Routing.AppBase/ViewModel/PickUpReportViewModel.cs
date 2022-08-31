@@ -28,7 +28,6 @@ using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using CellType = NPOI.SS.UserModel.CellType ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
-using MoreLinq ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -63,12 +62,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
 
     public ObservableCollection<PickUpItemModel> PickUpModels { get ; set ; }
-    public ObservableCollection<ListBoxItem> FileTypes { get ; set ; }
-    public ObservableCollection<ListBoxItem> PickUpNumberTypes { get ; set ; }
-    public ObservableCollection<ListBoxItem> OutputItems { get ; set ; }
+    public ObservableCollection<PickUpSettingItem> FileTypes { get ; set ; }
+    public ObservableCollection<PickUpSettingItem> PickUpNumberTypes { get ; set ; }
+    public ObservableCollection<PickUpSettingItem> OutputItems { get ; set ; }
     
-    public ObservableCollection<ListBoxItem> CurrentSettingList { get ; set ; }
-    public ObservableCollection<ListBoxItem> PreviousSettingList { get ; set ; }
+    public IEnumerable<PickUpSettingItem> OutputReportSettingCollection { get ; private set ; }
 
     private string _pathName ;
 
@@ -112,18 +110,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public RelayCommand<Window> CancelCommand => new( Cancel ) ;
     public RelayCommand<Window> ExecuteCommand => new( Execute ) ;
     public RelayCommand SettingCommand => new( OutputItemsSelectionSetting ) ;
-    public RelayCommand<Window> SetOptionCommand => new( SetOption ) ;
-    
+    public RelayCommand<Window> ApplyOutputSettingCommand => new( OnApplyOutputSettingExecute ) ;
     
     public PickUpReportViewModel( Document document, List<PickUpItemModel>? pickUpItemModels = null)
     {
       _document = document ;
       PickUpModels = new ObservableCollection<PickUpItemModel>() ;
-      FileTypes = new ObservableCollection<ListBoxItem>() ;
-      PickUpNumberTypes = new ObservableCollection<ListBoxItem>() ;
-      OutputItems = new ObservableCollection<ListBoxItem>() ;
-      CurrentSettingList = new ObservableCollection<ListBoxItem>() ;
-      PreviousSettingList = new ObservableCollection<ListBoxItem>() ;
+      FileTypes = new ObservableCollection<PickUpSettingItem>() ;
+      PickUpNumberTypes = new ObservableCollection<PickUpSettingItem>() ;
+      OutputItems = new ObservableCollection<PickUpSettingItem>() ;
+      OutputReportSettingCollection = new ObservableCollection<PickUpSettingItem>() ;
       _hiroiMasterModels = new List<HiroiMasterModel>() ;
 
       var csvStorable = _document.GetAllStorables<CsvStorable>().FirstOrDefault() ;
@@ -194,32 +190,30 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void CreateCheckBoxList()
     {
       // FileTypes
-      FileTypes.Add( new ListBoxItem { TheText = SummaryFileType, TheValue = false } ) ;
-      FileTypes.Add( new ListBoxItem { TheText = ConfirmationFileType, TheValue = false } ) ;
+      FileTypes.Add( new PickUpSettingItem( SummaryFileType, false ) ) ;
+      FileTypes.Add( new PickUpSettingItem( ConfirmationFileType, false ) ) ;
 
       // PickUpNumberTypes
-      PickUpNumberTypes.Add( new ListBoxItem { TheText = OnText, TheValue = true } ) ;
-      PickUpNumberTypes.Add( new ListBoxItem { TheText = OffText, TheValue = false } ) ;
-      
+      PickUpNumberTypes.Add( new PickUpSettingItem( OnText, true ) ) ;
+      PickUpNumberTypes.Add( new PickUpSettingItem( OffText, false ) ) ;
+
       // OutputItems
-      OutputItems.Add( new ListBoxItem { TheText = OutputItemAll, TheValue = true } );
-      OutputItems.Add( new ListBoxItem { TheText = OutputItemSelection, TheValue = false } );
+      OutputItems.Add( new PickUpSettingItem( OutputItemAll, true ) ) ;
+      OutputItems.Add( new PickUpSettingItem( OutputItemSelection, false ) ) ;
 
       //SettingList
-      CreateSettingList() ;
+      OutputReportSettingCollection = GetOutputReportSettings() ;
     }
 
-    private void CreateSettingList()
+    public static IEnumerable<PickUpSettingItem> GetOutputReportSettings()
     {
-      CurrentSettingList.Add( new ListBoxItem { TheText = LengthItem, TheValue = true } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = ConstructionMaterialItem, TheValue = true } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = EquipmentMountingItem, TheValue = false } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = WiringItem, TheValue = false } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = BoardItem, TheValue = false } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = InteriorRepairEquipmentItem, TheValue = true } );
-      CurrentSettingList.Add( new ListBoxItem { TheText = OtherItem, TheValue = false } );
-
-      PreviousSettingList = new ObservableCollection<ListBoxItem>( CurrentSettingList.Select( x => x.Copy() ).ToList() ) ;
+      yield return new PickUpSettingItem( LengthItem, true )  ;
+      yield return new PickUpSettingItem( ConstructionMaterialItem, true )  ;
+      yield return new PickUpSettingItem( EquipmentMountingItem, false ) ;
+      yield return new PickUpSettingItem( WiringItem, false ) ;
+      yield return new PickUpSettingItem( BoardItem, false ) ;
+      yield return new PickUpSettingItem( InteriorRepairEquipmentItem, true ) ;
+      yield return new PickUpSettingItem( OtherItem, false ) ;
     }
     
     public void OutputItemsChecked( object sender )
@@ -232,7 +226,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       _fileNames = new List<string>() ;
       var radioButton = sender as RadioButton ;
-      var fileTypes = FileTypes.Where( f => f.TheValue == true ).Select( f => f.TheText ).ToList() ;
+      var fileTypes = FileTypes.Where( f => f.IsSelected == true ).Select( f => f.Name ).ToList() ;
       var pickUpNumberStatus = radioButton!.Content.ToString() == OnText ? PickUpNumberOn : PickUpNumberOff ;
       foreach ( var fileType in fileTypes ) {
         string fileName = string.Empty ;
@@ -254,7 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void FileTypeChecked( object sender )
     {
       var checkbox = sender as CheckBox ;
-      var pickUpNumberStatus = PickUpNumberTypes.First().TheValue ? PickUpNumberOn : PickUpNumberOff ;
+      var pickUpNumberStatus = PickUpNumberTypes.First().IsSelected ? PickUpNumberOn : PickUpNumberOff ;
       switch ( checkbox!.Content.ToString() ) {
         case SummaryFileType :
           if ( ! _fileNames.Contains( pickUpNumberStatus + SummaryFileName ) )
@@ -271,7 +265,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void FileTypeUnchecked( object sender )
     {
       var checkbox = sender as CheckBox ;
-      var pickUpNumberStatus = PickUpNumberTypes.First().TheValue ? PickUpNumberOn : PickUpNumberOff ;
+      var pickUpNumberStatus = PickUpNumberTypes.First().IsSelected ? PickUpNumberOn : PickUpNumberOff ;
       switch ( checkbox!.Content.ToString() ) {
         case SummaryFileType :
           if ( _fileNames.Contains( pickUpNumberStatus + SummaryFileName ) )
@@ -670,7 +664,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( isSegmentConnectedToPullBox ) {
               var countStr = string.Empty ;
               var inforDisplay = inforDisplays.SingleOrDefault( x => x.RouteNameRef == itemGroupByRoute.Key ) ;
-              var numberPullBox = PickUpNumberTypes.First().TheValue ? $"[{( pickUpNumberPullBox )}]" : string.Empty ;
+              var numberPullBox = PickUpNumberTypes.First().IsSelected ? $"[{( pickUpNumberPullBox )}]" : string.Empty ;
               if ( inforDisplay != null && inforDisplay.IsDisplay ) {
                 countStr = ( inforDisplay.NumberDisplay == 1 ? string.Empty : $"×{inforDisplay.NumberDisplay}" ) +
                            ( isMoreTwoWireBook ? $"×N" : string.IsNullOrEmpty( valueDetailTableStr ) ? string.Empty : $"×{valueDetailTableStr}" ) ;
@@ -695,7 +689,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           ? Math.Round( totalBasedOnCreateTable, isLengthObject ? 1 : 2 ) * int.Parse( wireBook )
           : Math.Round( totalBasedOnCreateTable, isLengthObject ? 1 : 2 ) ;
 
-        var number = PickUpNumberTypes.First().TheValue && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
+        var number = PickUpNumberTypes.First().IsSelected && ! string.IsNullOrEmpty( pickUpNumber ) ? "[" + pickUpNumber + "]" : string.Empty ;
         var seenQuantityStr = isLengthObject ? string.Join( "＋", listSeenQuantity ) : string.Join( "＋", stringNotTani.Split( '+' ) ) ;
 
         var seenQuantityPullBoxStr = string.Empty ;
@@ -782,17 +776,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void OutputItemsSelectionSetting()
     {
       var settingOutputPickUpReport = new SettingOutputPickUpReport( this ) ;
+      
+      var previousOutputSettingCollection = ( from outPutSettingItem in OutputReportSettingCollection select new PickUpSettingItem(outPutSettingItem.Name,outPutSettingItem.IsSelected) ).ToList() ;
+      
       settingOutputPickUpReport.ShowDialog();
 
-      if ( settingOutputPickUpReport.DialogResult == false ) {
-        CurrentSettingList = new ObservableCollection<ListBoxItem>( PreviousSettingList.Select(x => x.Copy()).ToList() ) ;
-      }
-      else {
-        PreviousSettingList = new ObservableCollection<ListBoxItem>( CurrentSettingList.Select(x => x.Copy()).ToList() ) ;
-      }
+      if ( settingOutputPickUpReport.DialogResult == true ) return ;
+
+      OutputReportSettingCollection = previousOutputSettingCollection ;
+
     }
     
-    private void SetOption( Window window )
+    private void OnApplyOutputSettingExecute( Window window )
     {
       window.DialogResult = true ;
       window.Close() ;
@@ -805,7 +800,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void UpdatePickModels()
     {
-      var settings = CurrentSettingList.Where( s => s.TheValue ).Select( s => s.TheText ) ;
+      var settings = OutputReportSettingCollection.Where( s => s.IsSelected ).Select( s => s.Name ) ;
 
       var newPickUpModels = PickUpModels
         .Where(p=> 
@@ -1071,10 +1066,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return rowStart ;
     }
 
-    public class ListBoxItem
+    public class PickUpSettingItem
     {
-      public string? TheText { get ; set ; }
-      public bool TheValue { get ; set ; }
+      public string Name { get ; }
+      public bool IsSelected { get ; set ; }
+
+      public PickUpSettingItem( string name, bool isSelected )
+      {
+        Name = name ;
+        IsSelected = isSelected ;
+      } 
+
     }
 
     private class InforDisplay
