@@ -231,8 +231,8 @@
                                     <Condition Binding="{Binding Path=IsAdded}" Value="true" />
                                 </MultiDataTrigger.Conditions>
                                 <MultiDataTrigger.Setters>
-                                    <Setter Property="Background" Value="Orange" />
-                                    <Setter Property="BorderBrush" Value="Orange" />
+                                    <Setter Property="Background" Value="Goldenrod" />
+                                    <Setter Property="BorderBrush" Value="Goldenrod" />
                                 </MultiDataTrigger.Setters>
                             </MultiDataTrigger>
                             
@@ -288,8 +288,8 @@
                                             <Condition Binding="{Binding Path=IsAdded}" Value="true" />
                                         </MultiDataTrigger.Conditions>
                                         <MultiDataTrigger.Setters>
-                                            <Setter Property="Background" Value="Orange" />
-                                            <Setter Property="BorderBrush" Value="Orange" />
+                                            <Setter Property="Background" Value="Goldenrod" />
+                                            <Setter Property="BorderBrush" Value="Goldenrod" />
                                         </MultiDataTrigger.Setters>
                                     </MultiDataTrigger>
                                     

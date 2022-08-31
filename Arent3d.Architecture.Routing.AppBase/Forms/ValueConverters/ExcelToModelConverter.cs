@@ -373,29 +373,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
       if ( ! symbolsNotHaveModelNumber.Any() ) return ;
       {
-        foreach ( var symbol in symbolsNotHaveModelNumber ) {
-          var generalDisplayDeviceSymbol = symbol.Normalize( NormalizationForm.FormKC ) ;
-          if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) continue ;
-          var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
-          if ( symbolModelNumber.Any() ) {
-            foreach ( var modelNumber in symbolModelNumber ) {
-              AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
-            }
+        var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
+        if ( symbolModelNumber.Count == symbolsNotHaveModelNumber.Count ) {
+          for ( var i = 0 ; i < symbolsNotHaveModelNumber.Count ; i++ ) {
+            AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, symbolsNotHaveModelNumber[ i ], symbolModelNumber[ i ], floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
           }
-          else {
-            if ( equipmentSymbols.Any() ) {
-              var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
-              if ( modelNumberList.Any() ) {
-                foreach ( var modelNumber in modelNumberList ) {
-                  AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+        }
+        else {
+          foreach ( var symbol in symbolsNotHaveModelNumber ) {
+            var generalDisplayDeviceSymbol = symbol.Normalize( NormalizationForm.FormKC ) ;
+            if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) continue ;
+            if ( symbolModelNumber.Any() ) {
+              foreach ( var modelNumber in symbolModelNumber ) {
+                AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+              }
+            }
+            else {
+              if ( equipmentSymbols.Any() ) {
+                var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
+                if ( modelNumberList.Any() ) {
+                  foreach ( var modelNumber in modelNumberList ) {
+                    AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+                  }
+                }
+                else {
+                  AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
                 }
               }
               else {
                 AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
               }
-            }
-            else {
-              AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
           }
         }
