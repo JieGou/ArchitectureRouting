@@ -5,6 +5,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
     xmlns:CnsSettingRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.CnsSettingRules"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    Title="工事項目設定"
     mc:Ignorable="d"
     WindowStartupLocation="CenterScreen"
     Closing="CnsSettingDialog_Closing"
@@ -37,9 +39,9 @@
                                 <Binding Path="Sequence" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="工事項目名称" Width="280" CanUserSort="False" EditingElementStyle="{StaticResource errorStyle}">
-                            <DataGridTextColumn.Binding>
-                                <Binding Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" >
+                        <DataGridTextColumn Header="工事項目名称" Width="280" CanUserSort="False" EditingElementStyle="{StaticResource errorStyle}" >
+                            <DataGridTextColumn.Binding >
+                                <Binding Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay"  >
                                     <Binding.ValidationRules>
                                         <CnsSettingRules:CnsSettingValidationRule />
                                     </Binding.ValidationRules>
@@ -95,40 +97,6 @@
             </Button>
             <Button Content="読込み" Height="32" Margin="0,10,0,0" Click="Import_Click" />
             <Button Content="書出し" Height="32" Margin="0,10,0,0" Click="Export_Click" />
-            <Button Content="シンボルに適用" CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Click="SymbolApply_Click"
-                    Height="32" Margin="0,10,0,0">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
-                                <Setter Property="IsEnabled" Value="False" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Content="配線に適用"  Click="ConduitsApply_Click" Height="32" Margin="0,10,0,0">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
-                                <Setter Property="IsEnabled" Value="False" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Content="ラックに適用" Click="RacksApply_Click" Height="32" Margin="0,10,0,0">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
-                                <Setter Property="IsEnabled" Value="False" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
             <Button Content="範囲適用" Click="AllElementsApply_Click" Height="32" Margin="0,10,0,0">
                 <Button.Style>
                     <Style TargetType="Button">

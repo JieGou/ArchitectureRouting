@@ -60,9 +60,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var registrationOfBoardDataModels = document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
       
       // Todo: 斜めルーティングの場合はPullBoxを無視する
-      var (fromPickResult, toPickResult, _, _, _, _, _, _, isNeedCreatePullBox) = state ;
-      if ( ! isNeedCreatePullBox ) return executeResultValue ;
-      
+      var (fromPickResult, toPickResult, _, _, _, _, _, _, _) = state ;
+
       var listConnectors = new List<Element>() { fromPickResult.PickedElement, toPickResult.PickedElement } ;
       var isRouteBetweenPowerConnectors = IsRouteBetweenPowerConnectors( listConnectors, registrationOfBoardDataModels ) ;
       if ( isRouteBetweenPowerConnectors ) return executeResultValue ;
@@ -73,10 +72,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
+      var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
+      var isWireEnteredShaft = false ;
+      var isPickedFromBottomToTop = fromPickResult.PickedConnector!.Origin.Z < toPickResult.PickedConnector!.Origin.Z ;
       Dictionary<string, List<string>> parentAndChildRoute = new() ;
       for ( int i = 0 ; i < 50 ; i++ ) {
-        var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
-        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, resultRoute, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute, ref isWireEnteredShaft, isPickedFromBottomToTop ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
@@ -96,7 +97,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         transaction.Commit( failureOptions ) ;
-        if ( isPassedShaft ) break ;
+
+        if ( ! isPassedShaft ) continue ;
+        if ( isWireEnteredShaft ) break ;
       }
       
       #region Change dimension of pullbox and set new label

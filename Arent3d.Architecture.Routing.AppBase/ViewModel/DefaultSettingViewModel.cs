@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.IO ;
-using System.IO.Compression ;
 using System.Linq ;
 using System.Text ;
 using System.Text.RegularExpressions ;
@@ -20,8 +19,10 @@ using System ;
 using System.Data ;
 using System.Globalization ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Autodesk.Revit.DB ;
-using MoreLinq.Extensions ;
+using CategoryModel = Arent3d.Architecture.Routing.AppBase.Model.CategoryModel ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using MessageBox = System.Windows.MessageBox ;
@@ -50,6 +51,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceedModelData ;
     private List<RegistrationOfBoardDataModel> _registrationOfBoardDataModelData ;
+    private List<CategoryModel> _categoriesWithCeedCode ;
+    private List<CategoryModel> _categoriesWithoutCeedCode ;
+
 
     public enum EcoNormalMode
     {
@@ -125,9 +129,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand LoadDefaultDbCommand => new RelayCommand( LoadDefaultDb ) ;
     
     public ICommand LoadAllDbCommand => new RelayCommand( LoadAllDb ) ;
+    
+    public ICommand LoadCeedCodeDataCommand => new RelayCommand( LoadCeedCodeData ) ;
 
     public ICommand LoadWiresAndCablesDataCommand => new RelayCommand( LoadWiresAndCablesData ) ;
-    
+
     public ICommand LoadConduitsDataCommand => new RelayCommand( LoadConduitsData ) ;
     
     public ICommand LoadHiroiSetMasterNormalDataCommand => new RelayCommand( LoadHiroiSetMasterNormalData ) ;
@@ -170,6 +176,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _allHiroiMasterModels = new List<HiroiMasterModel>() ;
       _ceedModelData = new List<CeedModel>() ;
       _registrationOfBoardDataModelData = new List<RegistrationOfBoardDataModel>() ;
+      _categoriesWithCeedCode = new List<CategoryModel>() ;
+      _categoriesWithoutCeedCode = new List<CategoryModel>() ;
       GetCsvFiles( defaultSettingStorable ) ;
       InitOldValueFloor( defaultSettingStorable ) ;
       
@@ -433,9 +441,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       using ( var progressData = progress?.Reserve( 0.6 ) ) {
         var ceedStorable = document.GetCeedStorable() ;
+        var storageService = new StorageService<Level, CeedUserModel>( ( (ViewPlan) document.ActiveView ).GenLevel ) ;
         if ( _ceedModelData.Any() ) {
+          var previousCeedModels = ceedStorable.CeedModelData ;
+          CeedViewModel.CheckChangeColor( _ceedModelData, previousCeedModels ) ;
           ceedStorable.CeedModelData = _ceedModelData ;
           ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+          ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithCeedCode ) ;
+          ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithoutCeedCode ) ;
+          
+          storageService.Data.IsShowOnlyUsingCode = false ;
+          storageService.Data.IsDiff = true ;
+          storageService.Data.IsExistUsingCode = false ;
         }
 
         var registrationOfBoardDataStorable = document.GetRegistrationOfBoardDataStorable() ;
@@ -449,6 +466,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             t.Start() ;
             if ( _ceedModelData.Any() ) {
               ceedStorable.Save() ;
+              storageService.SaveChange() ;
               document.MakeCertainAllConnectorFamilies() ;
             }
 
@@ -484,47 +502,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private string? GetFolderCsvPath()
-    {
-      var fileData = AssetManager.ReadFileEmbededSource( CompressionFileName ) ;
-      if ( null == fileData )
-        return null ;
-
-      var directoryPath = Path.Combine( Path.GetTempPath(), Path.GetFileNameWithoutExtension( CompressionFileName ) ) ;
-      ExtractFilesToFolder( directoryPath, fileData ) ;
-
-      return directoryPath ;
-    }
-
-    private void ExtractFilesToFolder( string directoryPath, byte[] zippedBuffer )
-    {
-      if ( Directory.Exists( directoryPath ) ) {
-        string[] filePaths = Directory.GetFiles( directoryPath, "*.*", SearchOption.TopDirectoryOnly ) ;
-        if ( filePaths.Length > 0 ) {
-          foreach ( var filePath in filePaths ) {
-            File.SetAttributes( filePath, FileAttributes.Normal ) ;
-            File.Delete( filePath ) ;
-          }
-        }
-      }
-      else {
-        Directory.CreateDirectory( directoryPath ) ;
-      }
-
-      using var zippedStream = new MemoryStream( zippedBuffer ) ;
-      using var zipArchive = new ZipArchive( zippedStream ) ;
-      foreach ( var zipArchiveEntry in zipArchive.Entries ) {
-        if ( string.IsNullOrEmpty( zipArchiveEntry.Name ) ) continue ;
-        var pathFileName = Path.Combine( directoryPath, zipArchiveEntry.Name ) ;
-        if ( ! File.Exists( pathFileName ) ) {
-          zipArchiveEntry.ExtractToFile( pathFileName ) ;
-        }
-        else if ( File.GetLastAccessTime( pathFileName ) <= zipArchiveEntry.LastWriteTime ) {
-          File.SetAttributes( pathFileName, FileAttributes.Normal ) ;
-          zipArchiveEntry.ExtractToFile( pathFileName, true ) ;
-        }
-      }
-    }
+    private string? GetFolderCsvPath() => AssetManager.GetFolderCompressionFilePath( AssetManager.AssetPath, CompressionFileName ) ;
     
     private string OpenFileDialog()
     {
@@ -535,6 +513,49 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return filePath ;
+    }
+
+    private void LoadCeedCodeData()
+    {
+      MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
+      OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+      string filePath = string.Empty ;
+      string fileEquipmentSymbolsPath = string.Empty ;
+      if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
+        filePath = openFileDialog.FileName ;
+        MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
+        OpenFileDialog openFileEquipmentSymbolsDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+        if ( openFileEquipmentSymbolsDialog.ShowDialog() == DialogResult.OK ) {
+          fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
+        }
+      }
+
+      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
+      var ( ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode) = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
+      if ( ! ceedModelData.Any() ) {
+        MessageBox.Show( "Load file failed.", "Error Message" ) ;
+        return ;
+      }
+      _ceedModelData = ceedModelData ;
+      _categoriesWithCeedCode = categoriesWithCeedCode ;
+      _categoriesWithoutCeedCode = categoriesWithoutCeedCode ;
+      MessageBox.Show( "Load file successful.", "Result Message" ) ;
+
+      const string ceedCodeFileName = " 【CeeD】セットコード一覧表" ;
+      const string equipmentSymbolsFileName = " 機器記号一覧表" ;
+      if ( CsvFileModels.FirstOrDefault( c => c.CsvName == ceedCodeFileName ) is { } ceedCodeFileModel ) {
+        ceedCodeFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
+        CsvFileModels = new ObservableCollection<CsvFileModel>( CsvFileModels ) ;
+      }
+      else
+        CsvFileModels.Add( new CsvFileModel( ceedCodeFileName, RenamePathToRelative( filePath ), Path.GetFileName( filePath ) ) ) ;
+      
+      if ( CsvFileModels.FirstOrDefault( c => c.CsvName == equipmentSymbolsFileName ) is { } equipmentSymbolsFileNameModel ) {
+        equipmentSymbolsFileNameModel.CsvFilePath = RenamePathToRelative( fileEquipmentSymbolsPath ) ;
+        CsvFileModels = new ObservableCollection<CsvFileModel>( CsvFileModels ) ;
+      }
+      else
+        CsvFileModels.Add( new CsvFileModel( equipmentSymbolsFileName, RenamePathToRelative( fileEquipmentSymbolsPath ), Path.GetFileName( fileEquipmentSymbolsPath ) ) ) ;
     }
     
     private void LoadWiresAndCablesData()
@@ -778,7 +799,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private bool LoadCeedCodeFile( string equipmentSymbolsFile, string ceedCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath, ObservableCollection<CsvFileModel> listCsvFile )
     {
       if ( File.Exists( equipmentSymbolsXlsxFilePath ) ) {
-        _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
+        ( _ceedModelData, _categoriesWithCeedCode, _categoriesWithoutCeedCode ) = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
         if ( _ceedModelData.Any() ) {
           listCsvFile.Add( new CsvFileModel( equipmentSymbolsFile, RenamePathToRelative( equipmentSymbolsXlsxFilePath ), equipmentSymbolsFile + ".xlsx" ) ) ;
           return true ;
@@ -786,14 +807,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       if ( File.Exists( equipmentSymbolsXlsFilePath ) ) {
-        _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsFilePath ) ;
+        ( _ceedModelData, _categoriesWithCeedCode, _categoriesWithoutCeedCode ) = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsFilePath ) ;
         if ( _ceedModelData.Any() ) {
           listCsvFile.Add( new CsvFileModel( equipmentSymbolsFile, RenamePathToRelative( equipmentSymbolsXlsxFilePath ), equipmentSymbolsFile + ".xls" ) ) ;
           return true ;
         }
       }
 
-      _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, string.Empty ) ;
+      ( _ceedModelData, _categoriesWithCeedCode, _categoriesWithoutCeedCode ) = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, string.Empty ) ;
       return _ceedModelData.Any() ;
     }
 

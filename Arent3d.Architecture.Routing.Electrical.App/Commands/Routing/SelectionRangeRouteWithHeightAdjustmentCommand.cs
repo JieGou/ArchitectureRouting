@@ -284,7 +284,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;
-      ConfirmUnsetCommandBase.ResetElementColor( document, allConnectors ) ;
+      ConfirmUnsetCommandBase.ResetElementColor( allConnectors ) ;
       return result ;
 
       static IEnumerable<FamilyInstance> EliminateSamePassPoints( FamilyInstance? firstPassPoint, IEnumerable<FamilyInstance> passPoints )

@@ -132,7 +132,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
 
-          [Button( typeof( ShowFallMarkCommand ), OnlyInitialized = true )]
+          [Button( typeof( ShowFallMarkCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
           private static class ShowFallMarkCommandButton
           {
           }
@@ -257,6 +257,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
           private static class EraseAllLimitRackCommandButton
+          {
+          }
+          
+          [Button( typeof( EraseSelectedLimitRacksCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedLimitRacksCommandButton
           {
           }
           

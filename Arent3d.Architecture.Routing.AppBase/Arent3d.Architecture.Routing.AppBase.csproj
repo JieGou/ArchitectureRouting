@@ -115,6 +115,10 @@
     <None Remove="resources\Filter_32x32.png" />
     <Resource Include="resources\Filter_32x32.png" />
     <Resource Include="resources\icon_folder_16x16.png" />
+    <None Remove="resources\icon_cancel.ico" />
+    <Resource Include="resources\icon_cancel.ico" />
+    <None Remove="resources\icon_ok.ico" />
+    <Resource Include="resources\icon_ok.ico" />
   </ItemGroup>
 
 </Project>

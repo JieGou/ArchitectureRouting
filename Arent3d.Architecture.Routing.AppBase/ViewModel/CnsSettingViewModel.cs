@@ -43,17 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SaveCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
         ( p ) => { cnsStorables.CnsSettingData = CnsSettingModels ; } // Execute()
       ) ;
-
-      SetConstructionItemForSymbolsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
-        ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex, CnsSettingStorable.UpdateItemType.Connector ) ; }
-        // Execute()
-      ) ;
-      SetConstructionItemForConduitsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
-        ( seletectedIndex ) => { SetConstructionItemForConduit( cnsStorables, seletectedIndex ) ; } // Execute()
-      ) ;
-      SetConstructionItemForRacksCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
-        ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex, CnsSettingStorable.UpdateItemType.Rack ) ; } // Execute()
-      ) ;
+      
       SetConstructionItemForAllCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
         ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex, CnsSettingStorable.UpdateItemType.All ) ; } // Execute()
       ) ;
@@ -79,9 +69,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand AddRowCommand { get ; set ; }
     public ICommand DeleteRowCommand { get ; set ; }
     public ICommand SaveCommand { get ; set ; }
-    public ICommand SetConstructionItemForSymbolsCommand { get ; set ; }
-    public ICommand SetConstructionItemForConduitsCommand { get ; set ; }
-    public ICommand SetConstructionItemForRacksCommand { get ; set ; }
     public ICommand SetConstructionItemForAllCommand { get ; set ; }
     public ICommand ApplyRangSelectionCommand { get ; set ; }
 
@@ -180,13 +167,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void SetConstructionItemForConduit( CnsSettingStorable cnsStorables, int seletectedIndex )
-    {
-      if ( seletectedIndex != -1 ) cnsStorables.SelectedIndex = seletectedIndex ;
-      cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Conduit ;
-      cnsStorables.CnsSettingData = CnsSettingModels ;
-    }
-    
     private void SetConstructionItemForRange( CnsSettingStorable cnsStorables, int seletectedIndex )
     {
       var item = CnsSettingModels.FirstOrDefault( x => x.IsDefaultItemChecked ) ;

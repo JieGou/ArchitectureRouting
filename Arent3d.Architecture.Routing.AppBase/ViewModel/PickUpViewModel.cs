@@ -294,7 +294,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string> routeName = new() ;
       List<(Element Connector, Element? Conduit)> pickUpElements = new() ;
         
-      var allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId || ( e is FamilyInstance f && f.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ).ToList() ;
+      var allConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GetConnectorFamilyType() != null ).ToList() ;
       foreach ( var connector in allConnector ) {
         connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
@@ -304,8 +304,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
       SetPickUpModels( pickUpModels, pickUpElements, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null, null, null, routeName ) ;
-      
-      var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+
+      var collector = new FilteredElementCollector( _document ) ;
+      var filter = new ElementMulticategoryFilter( BuiltInCategorySets.PickUpElements ) ;
+      var connectors = collector.WhereElementIsNotElementType().WherePasses( filter ).ToList() ;
       GetToConnectorsOfConduit( connectors, pickUpModels ) ;
       GetToConnectorsOfCables( connectors, pickUpModels ) ;
       GetDataFromSymbolInformation( pickUpModels ) ;
@@ -412,6 +414,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 }
                 else {
                   materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, null ) ;
+                  var value = pickUpElement.Connector.GetPropertyString(ElectricalRoutingElementParameter.Quantity);
+                  var qtt = string.IsNullOrEmpty( value ) ? 1 : int.Parse( value ) ;
+                  foreach ( var materialCode in materialCodes ) {
+                    materialCode.Quantity = $"{qtt}" ;
+                  }
                 }
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                   PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
@@ -761,7 +768,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
       if ( toConnector == null || (_detailTableModels.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null
-           &&  toConnector.GroupId == ElementId.InvalidElementId && toConnector.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
+           &&  toConnector.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
@@ -770,11 +777,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( registrationOfBoardDataModel == null )
           return false ;
 
-        if ( registrationOfBoardDataModel.MaterialCode1.Length > 2 && ! dictMaterialCode.Exists( m => m.MaterialCode == registrationOfBoardDataModel.MaterialCode1.Substring( 2 ) ) )
-          dictMaterialCode.Add( new MaterialCodeInfo( registrationOfBoardDataModel.MaterialCode1.Substring( 2 ), registrationOfBoardDataModel.Kind1, registrationOfBoardDataModel.Number1 ) ) ;
+        if ( registrationOfBoardDataModel.MaterialCode1.Length > 2 && ! dictMaterialCode.Exists( m => m.MaterialCode == Convert.ToInt32( registrationOfBoardDataModel.MaterialCode1 ).ToString() ) )
+          dictMaterialCode.Add( new MaterialCodeInfo( Convert.ToInt32( registrationOfBoardDataModel.MaterialCode1 ).ToString(), registrationOfBoardDataModel.Kind1, registrationOfBoardDataModel.Number1 ) ) ;
 
-        if ( registrationOfBoardDataModel.MaterialCode2.Length > 2 && ! dictMaterialCode.Exists( m => m.MaterialCode == registrationOfBoardDataModel.MaterialCode2.Substring( 2 ) ) )
-          dictMaterialCode.Add( new MaterialCodeInfo( registrationOfBoardDataModel.MaterialCode2.Substring( 2 ), registrationOfBoardDataModel.Kind2, registrationOfBoardDataModel.Number2 ) ) ;
+        if ( registrationOfBoardDataModel.MaterialCode2.Length > 2 && ! dictMaterialCode.Exists( m => m.MaterialCode == Convert.ToInt32( registrationOfBoardDataModel.MaterialCode2 ).ToString() ) )
+          dictMaterialCode.Add( new MaterialCodeInfo( Convert.ToInt32( registrationOfBoardDataModel.MaterialCode2 ).ToString(), registrationOfBoardDataModel.Kind2, registrationOfBoardDataModel.Number2 ) ) ;
       }
 
       pickUpConnectors.Add( (toConnector, conduit) ) ;
@@ -795,7 +802,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<int> pickUpNumbers, string connectorId, Element conduit )
     {
       var toConnector = allConnectors.SingleOrDefault( c => c.UniqueId == connectorId) ;
-      if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
+      if ( toConnector == null )
+        return false ;
       
       pickUpConnectors.Add( (toConnector, conduit) ) ;
 
@@ -825,7 +833,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      if ( connector != null && connector.GroupId != ElementId.InvalidElementId ) {
+      if ( connector != null ) {
         pickUpConnectors.Add( (connector, null) ) ;
         if ( ! _pickUpNumbers.ContainsValue( fromElementId + ", " + elementId ) ) {
           _pickUpNumbers.Add( _pickUpNumber, fromElementId + ", " + elementId ) ;
@@ -928,10 +936,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       foreach ( var symbolInformation in symbolInformations ) {
         var floor = symbolInformation.Floor ;
-        foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.Id ) ) {
-          PickUpItemModel newPickUpModel = new( null, floor, DefaultConstructionItem, ProductType.Conduit.GetFieldName(), ceedDetail.Specification, null, null, ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, 
-            ceedDetail.ProductName, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Total.ToString( CultureInfo.InvariantCulture ), ceedDetail.Unit, ceedDetail.Supplement, null, null, null,
-            ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode, null, null, null,ceedDetail.Total.ToString( CultureInfo.InvariantCulture ) ) ;
+        foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.SymbolUniqueId ) ) {
+          PickUpItemModel newPickUpModel = new( null, floor, DefaultConstructionItem, ceedDetail.Unit == "m" ? ProductType.Conduit.GetFieldName() : ProductType.Connector.GetFieldName(), ceedDetail.Specification, null, null, ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, 
+            ceedDetail.ProductName, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Unit == "m" ? $"{ceedDetail.Total.MetersToRevitUnits()}" : $"{ceedDetail.Total}", ceedDetail.Unit, ceedDetail.Supplement, null, null, null,
+            ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode, null, null, null, $"{ceedDetail.QuantitySet}" ) ;
           var oldPickUpModel = pickUpModels.FirstOrDefault( x => x.Floor == newPickUpModel.Floor && x.ProductName == newPickUpModel.ProductName && x.ProductCode == newPickUpModel.ProductCode 
                                                                  && x.Specification == newPickUpModel.Specification && x.ConstructionItems == newPickUpModel.ConstructionItems && x.Construction == newPickUpModel.Construction ) ;
           if ( null != oldPickUpModel ) {
@@ -1228,7 +1236,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       public string MaterialCode { get ; }
       public string Name { get ; }
-      public string Quantity { get ; }
+      public string Quantity { get ; set ; }
 
       public MaterialCodeInfo( string materialCode, string name, string quantity )
       {

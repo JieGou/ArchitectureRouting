@@ -153,6 +153,19 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new RackNotationStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get limit rack data from snoop DB.
+    /// </summary>
+    public static LimitRackStorable GetLimitRackStorable( this Document document )
+    {
+      try {
+        return LimitRackStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( LimitRackStorable.LimitRackStorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new LimitRackStorable( document ) ;
+      }
+    }
 
     /// <summary>
     /// Get text note data from snoop DB.
@@ -238,13 +251,14 @@ namespace Arent3d.Architecture.Routing.Extensions
 
     public static string GetDefaultConstructionItem( this Document document )
     {
+      const string defaultConstructionItem = "未設定" ; // 工事項目設定ではデフォルトが設定されていない場合、デフォルトの工事項目を「未設定」とする
       try {
         var cnsSettingStorable = GetCnsSettingStorable( document ) ;
-        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault(x=>x.IsDefaultItemChecked) ;
-        return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : String.Empty ;
+        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault( x => x.IsDefaultItemChecked ) ;
+        return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : defaultConstructionItem ;
       }
       catch ( Exception ) {
-        return String.Empty;
+        return defaultConstructionItem ;
       }
     }
 
@@ -304,6 +318,19 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new WireLengthNotationStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get ShaftOpeningModel data from snoop DB.
+    /// </summary>
+    public static ShaftOpeningStorable GetShaftOpeningStorable( this Document document )
+    {
+      try {
+        return ShaftOpeningStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ShaftOpeningStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new ShaftOpeningStorable( document ) ;
       }
     }
   }

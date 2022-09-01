@@ -18,9 +18,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         return document.Transaction( "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Unset" ), _ =>
         {
-          var elementNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && ( string.IsNullOrEmpty( constructionItem ) || constructionItem == DefaultConstructionItems )).ToList() ;
-          var color = new Color( 255, 215, 0 ) ;
-          ChangeElementColor( document, elementNotConstruction, color ) ;
+          var elementsNotHavingConstructionItem = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && ( string.IsNullOrEmpty( constructionItem ) || constructionItem == DefaultConstructionItems )).ToList() ;
+          var color = new Color( 255, 0, 0 ) ;
+          if ( elementsNotHavingConstructionItem.Any( t =>
+              {
+                var colorOfElement = t.Document.ActiveView.GetElementOverrides( t.Id ).ProjectionLineColor ;
+                if ( ! colorOfElement.IsValid ) return false ;
+                
+                return colorOfElement.Red == color.Red && colorOfElement.Blue == color.Blue && colorOfElement.Green == color.Green ;
+              } ) )
+            ResetElementColor( elementsNotHavingConstructionItem ) ;
+          else
+            ChangeElementColor( elementsNotHavingConstructionItem, color ) ;
 
           return Result.Succeeded ;
         } ) ;
@@ -31,20 +40,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    public static void ChangeElementColor( Document document, IEnumerable<Element> elements, Color color )
+    public static void ChangeElementColor(IEnumerable<Element> elements, Color color )
     {
       OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( color ) ;
       foreach ( var element in elements ) {
-        document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
+        element.Document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
       }
     }
     
-    public static void ResetElementColor( Document document, IEnumerable<Element> elements )
+    public static void ResetElementColor(IEnumerable<Element> elements )
     {
       OverrideGraphicSettings ogs = new() ;
       foreach ( var element in elements ) {
-        document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
+        element.Document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
       }
     }
   }
