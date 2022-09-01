@@ -396,7 +396,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       using ( var progressData = progress?.Reserve( 0.6 ) ) {
         var ceedStorable = document.GetCeedStorable() ;
-        var storageService = new StorageService<Level, CeedUserModel>( ( (ViewPlan) document.ActiveView ).GenLevel ) ;
+        var level = document.ActiveView?.GenLevel ?? new FilteredElementCollector(document).OfClass(typeof(Level)).OfType<Level>().OrderBy(x => x.Elevation).First();
+        var storageService = new StorageService<Level, CeedUserModel>( level ) ;
         if ( _ceedModelData.Any() ) {
           var previousCeedModels = ceedStorable.CeedModelData ;
           CeedViewModel.CheckChangeColor( _ceedModelData, previousCeedModels ) ;
