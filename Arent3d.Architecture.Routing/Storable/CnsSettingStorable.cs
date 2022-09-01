@@ -10,7 +10,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "A52AB9F8-1EB5-4BEF-9B7E-DC8CA228C12D" )]
+  [Guid( "1B299E62-B71D-4B4E-A3D3-3052FCB12197" )]
   [StorableVisibility( AppInfo.VendorId )]
   public sealed class CnsSettingStorable : StorableBase, IEquatable<CnsSettingStorable>
   {
