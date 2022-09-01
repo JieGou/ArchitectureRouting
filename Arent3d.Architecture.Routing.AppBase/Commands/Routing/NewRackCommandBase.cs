@@ -211,7 +211,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( element is Conduit ) // element is straight conduit
           {
             FamilyInstance? instance = null ;
-            if(specialLengthList is {} && specialLengthList.FirstOrDefault(x => x.Conduit.Id.Equals(element.Id)) is {} specialLengthItem && specialLengthItem.Conduit is Conduit )
+            if(specialLengthList?.FirstOrDefault(x => x.Conduit.Id.Equals(element.Id)) is { Conduit: Conduit } specialLengthItem )
               instance = CreateRackForStraightConduit( uiDocument, element, 0, specialLengthItem.StartParam, specialLengthItem.EndParam ) ;
             else
               instance = CreateRackForStraightConduit( uiDocument, element ) ;

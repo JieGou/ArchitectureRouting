@@ -165,13 +165,51 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         ( startParam, endParam ) = ( endParam, startParam ) ;
       return ( startParam, endParam ) ;
     }
-    
-    
+
+    public static bool IsOverlappedEndPoint( Element shortCurve, Element longCurve )
+    {
+      var (c11, c12) = Get2Connector( shortCurve ) ;
+      var (c21, c22) = Get2Connector( longCurve ) ;
+      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 ||
+           c22?.Origin is not { } p22 )
+        return false ;
+      var overlappedAt11 =
+        ( p11.IsAlmostEqualTo( p21 ) || p11.IsAlmostEqualTo( p22 ) ) && p12.IsBetween( p21, p22 ) ;
+      var overlappedAt12 =
+        ( p12.IsAlmostEqualTo( p21 ) || p12.IsAlmostEqualTo( p22 ) ) && p11.IsBetween( p21, p22 ) ;
+      return overlappedAt11 || overlappedAt12 ;
+    }
+
+    public static int RemoveShorterInDuplicatedRacks( this Document document, List<FamilyInstance> racks )
+    {
+      var ids = racks.Select( rack => rack.Id ) ;
+      var otherRacks = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
+        .Where( r => ! ids.Contains( r.Id ) ).ToList() ;
+
+      if ( !otherRacks.Any() )
+        return 0;
+      var deletedRacks = new List<FamilyInstance>() ;
+      var idsToRemove = new List<ElementId>() ;
+      foreach ( var thisRack in racks ) {
+        foreach ( var otherRack in otherRacks ) {
+          if ( IsOverlappedEndPoint( thisRack, otherRack ) ) {
+            idsToRemove.Add( thisRack.Id ) ;
+            deletedRacks.Add(thisRack);
+          }
+          else if ( IsOverlappedEndPoint( otherRack, thisRack ) )
+            idsToRemove.Add( thisRack.Id ) ;
+        }
+      }
+
+      deletedRacks.ForEach(r => racks.Remove(r));
+      document.Delete( idsToRemove ) ;
+      return idsToRemove.Count ;
+    }
   }
   public class ConduitFilter : ISelectionFilter
   {
-    private Document Doc { get ; set ; }
-    private IEnumerable<string>? RouteNames { get ; set ; }
+    private Document Doc { get ;  }
+    private IEnumerable<string>? RouteNames { get ; }
 
     public ConduitFilter( Document doc , IEnumerable<string>? routeNames = null )
     {
@@ -276,6 +314,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       // create racks along with conduits
       NewRackCommandBase.CreateRackForConduit( uiDocument, uiApp.Application, linkedConduits, racks,
         specialLengthList ) ;
+      document.RemoveShorterInDuplicatedRacks( racks ) ;
       // create annotations for racks
       NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racks ) ;
       ts.Commit() ;
