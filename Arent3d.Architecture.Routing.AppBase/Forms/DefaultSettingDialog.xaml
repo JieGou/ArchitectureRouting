@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d" x:Name="WdDefaultSettingDialog"
         WindowStartupLocation="CenterScreen"
-        Title="DefaultSettingDialog" Height="700" Width="1120" ResizeMode="NoResize">
+        Title="DefaultSettingDialog" Height="740" Width="1120" ResizeMode="NoResize">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -185,6 +185,12 @@
                         HorizontalAlignment="Stretch" />
                     
                     <Button
+                        Content="マスター読み込み"
+                        Command="{ Binding LoadCeedCodeDataCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+                    
+                    <Button
                         Content="電線・ケーブル一覧読み込み"
                         Command="{ Binding LoadWiresAndCablesDataCommand}"
                         Margin="0, 0,0,10"
@@ -227,7 +233,7 @@
                 </StackPanel>
 
                 <DataGrid Grid.Column="1"
-                          Height="260"
+                          Height="290"
                           Background="White"
                           ItemsSource="{Binding CsvFileModels}"
                           AutoGenerateColumns="False"
