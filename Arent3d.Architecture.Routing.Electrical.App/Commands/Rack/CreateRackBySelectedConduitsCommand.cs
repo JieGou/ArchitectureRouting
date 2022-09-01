@@ -21,7 +21,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
 {
   public static class CreateRackBySelectedConduitsCommandUtils
   {
-    public static void CreateRackForConduit( this UIDocument uiDocument, Application app, IEnumerable<Element> conduits, List<FamilyInstance> racks, List<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null ) => NewRackCommandBase.CreateRackForConduit( uiDocument, app, conduits, racks, specialLengthList ) ;
     public static bool IsBetween( this XYZ p, XYZ p1, XYZ p2 )
     {
       return Math.Abs( ( p2 - p ).AngleTo( p1 - p ) - Math.PI ) < 0.01 ;
@@ -214,7 +213,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       try {
         
         // select point 1 and conduit 1
-        var rf = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filterConduit, "電線管を選択して下さい。" ) ;
+        var rf = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filterConduit, "始点を選択して下さい。" ) ;
         XYZ p1 = rf.GlobalPoint ;
         if(doc.GetElement( rf ) is not MEPCurve cd1)
           return OperationResult<SelectState>.Cancelled;
@@ -231,7 +230,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
 
         // select point 2 on conduits that has route name exists in route names selected before
         filterConduit = new ConduitFilter( doc , routeNames ) ;
-        rf = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filterConduit, "point 2" ) ;
+        rf = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filterConduit, "終点を選択して下さい。" ) ;
         XYZ p2 = rf.GlobalPoint ;
         var cd2 = doc.GetElement( rf ) as MEPCurve ;
         var routeName = cd2?.GetRouteName() ?? "" ;
@@ -272,28 +271,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         specialLengthList.Add( (conduit1, firstParams.StartParam, firstParams.EndParam) );
       }
 
-      var dialogRes = new TaskDialog( "hi" )
-      {
-        CommonButtons = TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No,
-        MainIcon = TaskDialogIcon.TaskDialogIconWarning,
-        MainContent = "Create with real cable rack object?",
-      }.Show() ;
-      
-      
       ts.Start() ;
-      if ( dialogRes == TaskDialogResult.No ) {
-        var racks = new List<FamilyInstance>() ;
-        NewRackCommandBase.CreateRackForConduit( uiDocument, uiApp.Application, linkedConduits, racks,
-          specialLengthList ) ;
-        // insert notation for racks
-        NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racks ) ;
-      }
-      else if ( dialogRes == TaskDialogResult.Yes ) {
-        var racks = new List<Element>() ;
-        NewRackCommandBase.CreateCableTrayForConduits( uiDocument, linkedConduits, racks , specialLengthList) ;
-      }
-      else
-        return Result.Cancelled ;
+      var racks = new List<FamilyInstance>() ;
+      // create racks along with conduits
+      NewRackCommandBase.CreateRackForConduit( uiDocument, uiApp.Application, linkedConduits, racks,
+        specialLengthList ) ;
+      // create annotations for racks
+      NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racks ) ;
       ts.Commit() ;
       return Result.Succeeded ;
     }
