@@ -15,7 +15,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       FileName,
       FloorName,
       FloorHeight,
-      Scale
+      Scale, 
+      FloorHeightDisplay
     }
     
     protected override ImportDwgMappingModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -28,8 +29,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var floorName = deserializer.GetString( SerializeField.FloorName ) ;
       var floorHeight = deserializer.GetDouble( SerializeField.FloorHeight ) ;
       var scale = deserializer.GetInt( SerializeField.Scale ) ;
-
-      return new ImportDwgMappingModel( id, fullFilePath, fileName, floorName, floorHeight, scale ) ;
+      var floorHeightDisplay = deserializer.GetDouble( SerializeField.FloorHeightDisplay ) ;
+      return new ImportDwgMappingModel( id, fullFilePath, fileName, floorName, floorHeight, scale, floorHeightDisplay ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, ImportDwgMappingModel customTypeValue )
@@ -42,7 +43,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.FloorName, customTypeValue.FloorName ) ;
       serializerObject.Add( SerializeField.FloorHeight, customTypeValue.FloorHeight ) ;
       serializerObject.Add( SerializeField.Scale, customTypeValue.Scale ) ;
-
+      serializerObject.Add( SerializeField.FloorHeightDisplay, customTypeValue.FloorHeightDisplay ) ;
+      
       return serializerObject ;
     }
   }

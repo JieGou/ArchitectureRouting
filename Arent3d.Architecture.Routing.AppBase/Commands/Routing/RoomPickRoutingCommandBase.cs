@@ -170,7 +170,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( room != null ) {
         var pickRoom = document.GetElement( room.ElementId ) ;
         ElementId levelId = GetTrueLevelId( document, pickRoom ) ;
-        var isOut = RoomRouteManager.CheckPickElementIsInOrOutRoom( document, room, fromOrigin ) ;
+        var isOut = RoomRouteManager.IsPickedElementOutsideOfRoom( document, room, fromOrigin ) ;
         var (passPoints, _) = RoomRouteManager.InsertPassPointElement( document, name, levelId, diameter / 2, room, fromFixedHeight, isOut, fromConnectorId, toConnectorId ) ;
         if ( passPoints.Count > 1 ) {
           var passPoint = new PassPointEndPoint( passPoints.FirstOrDefault()! ) ;

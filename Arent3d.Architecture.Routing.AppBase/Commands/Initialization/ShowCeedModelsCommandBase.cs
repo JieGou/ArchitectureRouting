@@ -3,6 +3,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -40,10 +41,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
       
       dlgCeedModel.ShowDialog() ;
+      if ( viewModel.DwgImportIds.Any() ) {
+        using Transaction transaction = new( doc, "Remove dwg file" ) ;
+        transaction.Start() ;
+        doc.Delete( viewModel.DwgImportIds ) ;
+        transaction.Commit() ;
+      }
+
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) 
         return Result.Cancelled ;
       
-      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) 
+      if ( viewModel.SelectedCeedCode == null ) 
         return Result.Succeeded ;
       
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
@@ -108,8 +116,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             break ;
           }
         }
-        
-        if ( !viewModel.OriginCeedModels.Any(cmd=>cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == viewModel.SelectedDeviceSymbol) ) {
+
+        var deviceSymbol = viewModel.SelectedDeviceSymbol ?? string.Empty ;
+        if ( !viewModel.OriginCeedModels.Any(cmd=>cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == deviceSymbol ) ) {
           TaskDialog.Show( "Arent", $"We can not find any ceedmodel \"{viewModel.SelectedDeviceSymbol}\" match with this room \"{condition}\"。" ) ;
           return Result.Cancelled ;
         }
@@ -117,17 +126,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         var element = GenerateConnector( uiDoc, point.X, point.Y, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
-        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
+        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, deviceSymbol, viewModel.SelectedModelNum ) ;
         if ( element is FamilyInstance familyInstance ) {
           familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
-          familyInstance.SetProperty(ElectricalRoutingElementParameter.SymbolContent, viewModel.SelectedDeviceSymbol ?? string.Empty);
+          if ( ! string.IsNullOrEmpty( deviceSymbol ) ) familyInstance.SetProperty( ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ) ;
+          familyInstance.SetProperty(ElectricalRoutingElementParameter.Quantity, string.Empty);
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
-        var deviceSymbolTagType = doc.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ(point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z) ) ;
-        
+        if ( ! string.IsNullOrEmpty( deviceSymbol ) ) {
+          var symbolContentTag = element.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.SymbolContentTag : ElectricalRoutingFamilyType.SymbolContentEquipmentTag ;
+          var deviceSymbolTagType = doc.GetFamilySymbols( symbolContentTag ).FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ?? throw new InvalidOperationException() ;
+          IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ( point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z ) ) ;
+        }
+
+        var connectorUpdater = new ConnectorUpdater( doc.Application.ActiveAddInId ) ;
+        if ( ! UpdaterRegistry.IsUpdaterRegistered( connectorUpdater.GetUpdaterId() ) ) {
+          UpdaterRegistry.RegisterUpdater( connectorUpdater, doc ) ;
+          var multicategoryFilter = new ElementMulticategoryFilter( BuiltInCategorySets.OtherElectricalElements ) ;
+          UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), doc, multicategoryFilter, Element.GetChangeTypeAny() ) ;
+        }
+
         if ( element.HasParameter( switch2DSymbol ) ) 
           element.SetProperty( switch2DSymbol, true ) ;
         
