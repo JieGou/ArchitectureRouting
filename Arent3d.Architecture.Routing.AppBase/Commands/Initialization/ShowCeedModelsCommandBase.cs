@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
-      const string grade3 = "グレード3" ;
+      const string grade3FieldName = "グレード3" ;
       
       var doc = commandData.Application.ActiveUIDocument.Document ;
       if ( doc.ActiveView is not ViewPlan ) {
@@ -153,9 +153,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         
         if ( element.HasParameter( symbolMagnification ) ) 
           element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
-        
-        if ( element.HasParameter( grade3 ) ) 
-          element.SetProperty( grade3, DefaultSettingCommandBase.GetThreeDModeGradeCollection.Any(threeDGradeMode => threeDGradeMode == doc.GetDefaultSettingStorable().GradeSettingData.GradeMode)   );
+
+        if ( element.HasParameter( grade3FieldName ) )
+          element.SetProperty( grade3FieldName, DefaultSettingCommandBase.GradeFrom3To7Collection.Contains( doc.GetDefaultSettingStorable().GradeSettingData.GradeMode ) ) ;
 
         return Result.Succeeded ;
       } ) ;

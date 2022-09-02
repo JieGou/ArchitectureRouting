@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public class DefaultSettingCommandBase : IExternalCommand
   {
     private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultModeCommand" ;
-    private const string Grade3 = "グレード3" ;
+    private const string Grade3FieldName = "グレード3" ;
     private const string ArentDummyViewName = "Arent Dummy" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -90,7 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
-    public static  int[] GetThreeDModeGradeCollection => new[] { 3, 4, 5, 6, 7 } ;
+    public static  IEnumerable<int> GradeFrom3To7Collection => new[] { 3, 4, 5, 6, 7 } ;
     
     private List<ImportDwgMappingModel> GetFloorsDefault(Document doc)
     {
@@ -140,9 +140,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         Transaction transaction = new( document, SetDefaultEcoModeTransactionName ) ;
         transaction.Start() ;
-        var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3 ) ).ToList() ;
+        var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3FieldName ) ).ToList() ;
         foreach ( var instance in instances ) {
-          instance.SetProperty( Grade3, GetThreeDModeGradeCollection.Any( threeDGradeMode =>  threeDGradeMode == gradeMode ) ) ;
+          instance.SetProperty( Grade3FieldName, GradeFrom3To7Collection.Contains( gradeMode ) ) ;
         }
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
