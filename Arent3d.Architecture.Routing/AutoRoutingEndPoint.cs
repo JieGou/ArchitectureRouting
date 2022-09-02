@@ -112,6 +112,8 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public ILayerStack? LinkedRack => null ;
 
+    public IReadOnlyCollection<ILayerStack> PassingStacks { get ; } = Array.Empty<ILayerStack>() ;
+
     public Guid Id { get ; }
   }
 }
