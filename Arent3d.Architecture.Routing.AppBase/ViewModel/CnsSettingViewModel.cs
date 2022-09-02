@@ -106,7 +106,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       CnsSettingModels.Insert( 0,new CnsSettingModel( 0, DefaultCategoryName ) );
       AddDefaultValue() ;
-      CnsSettingStorable.ReadCnsFilePath = fileName ;
+      CnsSettingStorable.CnsFilePath = fileName ;
       SaveCnsStorable() ;
     }
 
@@ -127,9 +127,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       WriteContentsToFile( dlg.FileName ) ;
       
-      if ( string.IsNullOrEmpty( CnsSettingStorable.ReadCnsFilePath ) ) return ;
+      if ( string.IsNullOrEmpty( CnsSettingStorable.CnsFilePath ) ) return ;
       
-      WriteContentsToFile( CnsSettingStorable.ReadCnsFilePath ) ;
+      WriteContentsToFile( CnsSettingStorable.CnsFilePath ) ;
       SaveCnsStorable() ;
     }
 
@@ -144,8 +144,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void Save()
     {
       CnsSettingStorable.CnsSettingData = CnsSettingModels ;
-      if ( ! string.IsNullOrEmpty( CnsSettingStorable.ReadCnsFilePath ) )
-        WriteContentsToFile( CnsSettingStorable.ReadCnsFilePath );
+      if ( ! string.IsNullOrEmpty( CnsSettingStorable.CnsFilePath ) )
+        WriteContentsToFile( CnsSettingStorable.CnsFilePath );
     }
 
     private void WriteContentsToFile( string fileName )

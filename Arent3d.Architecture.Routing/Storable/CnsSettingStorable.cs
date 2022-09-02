@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Storable
     private const string CnsSettingField = "CnsSetting" ;
     private const string CnsFilePathField = "CnsFilePath" ;
     public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
-    public string ReadCnsFilePath { get ; set ; }
+    public string CnsFilePath { get ; set ; }
 
     public enum UpdateItemType
     {
@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.Storable
       CnsSettingData = new ObservableCollection<CnsSettingModel>() ;
       SelectedIndex = 0 ;
       ElementType = UpdateItemType.None ;
-      ReadCnsFilePath = string.Empty ;
+      CnsFilePath = string.Empty ;
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing.Storable
       CnsSettingData = new ObservableCollection<CnsSettingModel>() ;
       SelectedIndex = 0 ;
       ElementType = UpdateItemType.None ;
-      ReadCnsFilePath = string.Empty ;
+      CnsFilePath = string.Empty ;
     }
 
     public override string Name => CnsStorableName ;
@@ -63,13 +63,13 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       var dataSaved = reader.GetArray<CnsSettingModel>( CnsSettingField ) ;
       CnsSettingData = new ObservableCollection<CnsSettingModel>( dataSaved ) ;
-      ReadCnsFilePath = reader.GetSingle<string>( CnsFilePathField ) ;
+      CnsFilePath = reader.GetSingle<string>( CnsFilePathField ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
       writer.SetArray( CnsSettingField, CnsSettingData ) ;
-      writer.SetSingle( CnsFilePathField, ReadCnsFilePath ) ;
+      writer.SetSingle( CnsFilePathField, CnsFilePath ) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
