@@ -10,6 +10,7 @@ using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
+using MoreLinq ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -76,6 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var ceedDetailStorable = uiDocument.Document.GetCeedDetailStorable() ;
         ceedDetailStorable.AllCeedDetailModelData.RemoveAll( x => x.ParentId == symbolModel.SymbolUniqueId ) ;
+        viewModel.CeedDetailList.ForEach(x => x.ParentId = symbolModel.SymbolUniqueId);
         ceedDetailStorable.AllCeedDetailModelData.AddRange( viewModel.CeedDetailList ) ;
         ceedDetailStorable.Save() ;
 

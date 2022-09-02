@@ -1,11 +1,7 @@
-﻿using System ;
-using System.Linq ;
-using System.Windows ;
-using Arent3d.Architecture.Routing.AppBase.Extensions ;
+﻿using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
@@ -32,17 +28,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( null == connector )
         return Result.Cancelled ;
         
-      connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
-      if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) 
+      connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) ;
+      if ( string.IsNullOrEmpty( ceedCode ) ) 
         return Result.Cancelled ;
         
-      var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
-      var pickedText = ceedSetCode.FirstOrDefault() ?? string.Empty ;
-
-      if ( string.IsNullOrEmpty( pickedText ) ) 
-        return Result.Cancelled ;
-
-      var dataContext = new CeedDetailInformationViewModel( uiDoc.Document, pickedText ) ;
+      var ceedCodeModel = ceedCode!.Split( ':' ).ToList() ;
+      var ceedSetCode = ceedCodeModel.FirstOrDefault() ?? string.Empty ;
+      var deviceSymbol = ceedCodeModel.Count > 1 ? ceedCodeModel.ElementAt( 1 ) : string.Empty ;
+      var modelNumber = ceedCodeModel.Count > 2 ? ceedCodeModel.ElementAt( 2 ) : string.Empty ;
+      
+      var dataContext = new CeedDetailInformationViewModel( uiDoc.Document, ceedSetCode, deviceSymbol, modelNumber ) ;
       var ceedDetailInformationView = new CeedDetailInformationView { DataContext = dataContext};
       ceedDetailInformationView.ShowDialog() ;
       
@@ -60,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( elementType is not FamilySymbol familySymbol )
           return false ;
 
-        return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() ;
+        return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() || familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentEquipmentTag.GetFamilyName() ;
       }
 
       public bool AllowReference( Reference r, XYZ p )
