@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const int MinNumberOfMultiplicity = 5 ;
     private static readonly double MinLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
     private static readonly double CableTrayDefaultBendRadius = ( 16.0 ).MillimetersToRevitUnits() ;
-    private static readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
+    public static readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
     private readonly Dictionary<ElementId, List<Connector>> _elbowsToCreate = new() ;
     private readonly Dictionary<string, double> _routeLengthCache = new() ;
     private readonly Dictionary<string, double> _routeMaxWidthDictionary = new() ;
