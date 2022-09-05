@@ -1,20 +1,18 @@
 using System ;
-using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
-using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Revit.I18n ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using Autodesk.Revit.ApplicationServices ;
+using MoreLinq ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
+using Line = Autodesk.Revit.DB.Line ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
@@ -44,29 +42,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       return p1 + vCurve * ( point - p1 ).DotProduct( vCurve ) ;
     }
 
-    static bool IsPartlyOverlapped( Element curve1, Element curve2 )
-    {
-      if ( curve1.Id.Equals( curve2.Id ) )
-        return false ;
-      if ( curve1 is not MEPCurve || curve2 is not MEPCurve )
-        return false ;
-      var (con11, con12) = Get2Connector( curve1 ) ;
-      var (con21, con22) = Get2Connector( curve2 ) ;
-
-      var (point11, point12, point21, point22) = ( con11?.Origin, con12?.Origin, con21?.Origin, con22?.Origin ) ;
-      if ( point11 is null || point12 is null || point21 is null || point22 is null )
-        return false ;
-      if ( ( point11.IsAlmostEqualTo( point21 ) && point12.IsAlmostEqualTo( point22 ) ) ||
-           ( point11.IsAlmostEqualTo( point22 ) && point12.IsAlmostEqualTo( point21 ) ) )
-        return true ;
-      if ( ( point12 - point11 ).CrossProduct( point22 - point21 ).IsZeroLength() == false )
-        return false ;
-      return IsBetween( point11, point21, point22 ) || IsBetween( point12, point21, point22 ) ||
-             IsBetween( point21, point11, point12 ) || IsBetween( point22, point11, point12 ) ;
-    }
-    
-    
-    private static (Connector?, Connector?) Get2Connector( Element curve )
+    private static (Connector? Connector1, Connector? Connector2) Get2Connector( Element curve )
     {
       var cons = curve.GetConnectors() ;
       if(cons.Count() != 2)
@@ -166,44 +142,163 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       return ( startParam, endParam ) ;
     }
 
-    public static bool IsOverlappedEndPoint( Element shortCurve, Element longCurve )
+    #region Classify relative position of 2 racks
+    private static (Connector? ConnectorShort, Connector? ConnectorLong) IsOverlappedEndPoint( Element shortCurve, Element longCurve )
     {
       var (c11, c12) = Get2Connector( shortCurve ) ;
       var (c21, c22) = Get2Connector( longCurve ) ;
       if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 ||
            c22?.Origin is not { } p22 )
-        return false ;
-      var overlappedAt11 =
-        ( p11.IsAlmostEqualTo( p21 ) || p11.IsAlmostEqualTo( p22 ) ) && p12.IsBetween( p21, p22 ) ;
-      var overlappedAt12 =
-        ( p12.IsAlmostEqualTo( p21 ) || p12.IsAlmostEqualTo( p22 ) ) && p11.IsBetween( p21, p22 ) ;
-      return overlappedAt11 || overlappedAt12 ;
+        return ( null, null ) ;
+      if ( p11.IsAlmostEqualTo( p21 ) && p12.IsBetween( p21, p22 ))
+        return ( c11, c21 ) ;
+      if ( p11.IsAlmostEqualTo( p22 ) && p12.IsBetween( p21, p22 ))
+        return ( c11, c22 ) ;
+      if ( p12.IsAlmostEqualTo( p21 ) && p11.IsBetween( p21, p22 ))
+        return ( c12, c21 ) ;
+      if ( p12.IsAlmostEqualTo( p22 ) && p11.IsBetween( p21, p22 ))
+        return ( c12, c22 ) ;
+      
+      return ( null, null ) ;
+    }
+    
+    private static (Connector? ConnectorFirst, Connector? ConnectorSecond) IsOverlappedEachOther( Element firstCurve, Element secondCurve )
+    {
+      var (c11, c12) = Get2Connector( firstCurve ) ;
+      var (c21, c22) = Get2Connector( secondCurve ) ;
+      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 ||
+           c22?.Origin is not { } p22 )
+        return ( null, null ) ;
+      if ( p11.IsBetween( p21, p22 ) && p21.IsBetween( p11, p12 ) )
+        return ( c12, c22 ) ;
+      if ( p11.IsBetween( p21, p22 ) && p22.IsBetween( p11, p12 ) )
+        return ( c12, c21 ) ;
+      if ( p12.IsBetween( p21, p22 ) && p21.IsBetween( p11, p12 ) )
+        return ( c11, c22 ) ;
+      if ( p12.IsBetween( p21, p22 ) && p22.IsBetween( p11, p12 ) )
+        return ( c11, c21 ) ;
+
+      return ( null, null ) ;
+    }
+    
+    /// <summary>
+    /// Check if a curve is completely inside another curve
+    /// </summary>
+    /// <param name="shortCurve">first MEP curve</param>
+    /// <param name="longCurve">second MEP curve</param>
+    /// <returns>1: first is inside second, -1: second is inside first, 0: neither</returns>
+    private static int IsInside( Element firstCurve, Element secondCurve )
+    {
+      var (c11, c12) = Get2Connector( firstCurve ) ;
+      var (c21, c22) = Get2Connector( secondCurve ) ;
+      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 ||
+           c22?.Origin is not { } p22 )
+        return 0 ;
+      if ( p11.IsBetween( p21, p22 ) && p12.IsBetween( p21, p22 ) )
+        return 1 ;
+      if ( p21.IsBetween( p11, p12 ) && p22.IsBetween( p11, p12 ) )
+        return -1 ;
+      return 0 ;
+    }
+    
+
+    #endregion Relative position classify
+
+    private static void Reconnect( Connector disconnectedConnector, Connector reconnectedConnector )
+    {
+      var connectedConnectors = disconnectedConnector.GetConnectedConnectors().ToArray() ;
+      connectedConnectors.ForEach(disconnectedConnector.DisconnectFrom);
+      connectedConnectors.ForEach(c => {
+        if(!reconnectedConnector.IsConnectedTo(c))
+          reconnectedConnector.ConnectTo(c);
+      });
     }
 
-    public static int RemoveShorterInDuplicatedRacks( this Document document, List<FamilyInstance> racks )
+    private static bool TryExtendRack( Element firstCurve, Connector c1, Connector c2 )
+    {
+      var doc = firstCurve.Document ;
+      if ( firstCurve is not FamilyInstance firstFi )
+        return false ;
+      
+      // remember linking connectors
+      var connectedConnectors1 = c1.GetConnectedConnectors().ToArray() ;
+      var connectedConnectors2 = c2.GetConnectedConnectors().ToArray() ;
+      connectedConnectors1.ForEach(c1.DisconnectFrom);
+      connectedConnectors2.ForEach(c2.DisconnectFrom);
+      var startPoint = c1.Origin ;
+      var endPoint = c2.Origin ;
+      
+      // change length and rotate first curve
+      var tf1 = firstFi.GetTransform() ;
+      var needToReverse = ! tf1.BasisX.IsAlmostEqualTo( ( endPoint - startPoint ).Normalize() ) ;
+
+      if ( firstCurve.Location is LocationPoint lcPoint )
+        lcPoint.Point = startPoint ;
+      
+      ElementTransformUtils.RotateElement(doc, firstCurve.Id, Line.CreateBound(startPoint, startPoint + tf1.BasisZ), tf1.BasisX.AngleTo(endPoint - startPoint) );
+      
+      firstCurve.ParametersMap
+        .get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).Set( ( endPoint - startPoint ).GetLength() ) ;
+      
+      // reconnect:
+      if ( Get2Connector( firstCurve ) is not { Connector1: { } con1, Connector2: { } con2 } )
+        return false ;
+      if ( con2.Origin.IsAlmostEqualTo( startPoint ) )
+        ( con1, con2 ) = ( con2, con1 ) ;
+      connectedConnectors1.ForEach(con1.ConnectTo);
+      connectedConnectors2.ForEach(con2.ConnectTo);
+      doc.Regenerate();
+      return true ;
+
+    }
+    
+    public static void RemoveShorterInDuplicatedRacks( this Document document, List<FamilyInstance> racks )
     {
       var ids = racks.Select( rack => rack.Id ) ;
       var otherRacks = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
         .Where( r => ! ids.Contains( r.Id ) ).ToList() ;
 
       if ( !otherRacks.Any() )
-        return 0;
+        return ;
       var deletedRacks = new List<FamilyInstance>() ;
       var idsToRemove = new List<ElementId>() ;
       foreach ( var thisRack in racks ) {
         foreach ( var otherRack in otherRacks ) {
-          if ( IsOverlappedEndPoint( thisRack, otherRack ) ) {
+          
+          // case 1: overlap at an end point
+          if ( IsOverlappedEndPoint( thisRack, otherRack ) is { ConnectorShort: {} cDisConnectNew, ConnectorLong: {} cReConnectOld } ) {
             idsToRemove.Add( thisRack.Id ) ;
-            deletedRacks.Add(thisRack);
+            deletedRacks.Add( thisRack ) ;
+            Reconnect( cDisConnectNew, cReConnectOld ) ;
+            continue;
           }
-          else if ( IsOverlappedEndPoint( otherRack, thisRack ) )
-              idsToRemove.Add( otherRack.Id ) ;
+
+          if ( IsOverlappedEndPoint( otherRack, thisRack ) is { ConnectorShort: { } cDisConnectOld, ConnectorLong: { } cReConnectNew } ) {
+            idsToRemove.Add( otherRack.Id ) ;
+            Reconnect( cDisConnectOld, cReConnectNew ) ;
+            continue ;
+          }
+          
+          // case 2: completely inside
+          var isInSide = IsInside( thisRack, otherRack ) ;
+          if ( isInSide == 1 ) {
+            idsToRemove.Add( thisRack.Id ) ;
+            deletedRacks.Add( thisRack ) ;
+          }
+          else if ( isInSide == -1 ) {
+            idsToRemove.Add( otherRack.Id ) ;
+          }
+          
+          // case 3: overlap each other
+          if ( IsOverlappedEachOther( thisRack, otherRack ) is { ConnectorFirst: { } c1, ConnectorSecond: { } c2 } 
+               && TryExtendRack( thisRack, c1, c2 ) ) {
+            idsToRemove.Add( otherRack.Id ) ;
+          }
         }
       }
 
       deletedRacks.ForEach(r => racks.Remove(r));
       document.Delete( idsToRemove ) ;
-      return idsToRemove.Count ;
     }
   }
   public class ConduitFilter : ISelectionFilter
@@ -314,7 +409,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       // create racks along with conduits
       NewRackCommandBase.CreateRackForConduit( uiDocument, uiApp.Application, linkedConduits, racks,
         specialLengthList ) ;
+      
+      // resolve overlapped cases
       document.RemoveShorterInDuplicatedRacks( racks ) ;
+      
       // create annotations for racks
       NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racks ) ;
       ts.Commit() ;
