@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
 
-        var viewModel = new SymbolInformationViewModel( uiDocument.Document, symbolModel ) ;
+        var viewModel = new SymbolInformationViewModel( uiDocument, uiDocument.Document, symbolModel ) ;
         var dialog = new SymbolInformationDialog( viewModel ) ;
 
         if ( dialog.ShowDialog() != true || null == point ) 
