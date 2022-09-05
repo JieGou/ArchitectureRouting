@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
 {
   public static class CreateRackBySelectedConduitsCommandUtils
   {
-    public static bool IsBetween( this XYZ p, XYZ p1, XYZ p2 )
+    private static bool IsBetween( this XYZ p, XYZ p1, XYZ p2 )
     {
       return Math.Abs( ( p2 - p ).AngleTo( p1 - p ) - Math.PI ) < 0.01 ;
     }
@@ -44,10 +44,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
 
     private static (Connector? Connector1, Connector? Connector2) Get2Connector( Element curve )
     {
-      var cons = curve.GetConnectors() ;
-      if(cons.Count() != 2)
-        return ( null, null ) ;
-      return ( cons.ElementAt( 0 ), cons.ElementAt( 1 ) ) ;
+      var cons = curve.GetConnectors().ToArray() ;
+      return cons.Count() != 2 ? ( null, null ) : ( cons.ElementAt( 0 ), cons.ElementAt( 1 ) ) ;
     }
     
     private static (Connector?, Connector?) Get2Connector( Connector connector )
@@ -55,9 +53,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var (con1, con2) = Get2Connector( connector.Owner ) ;
       if ( con1?.Id == connector.Id )
         return ( con1, con2 ) ;
-      if ( con2?.Id == connector.Id )
-        return ( con2, con1 ) ;
-      return ( null, null ) ;
+      return con2?.Id == connector.Id ? ( con2, con1 ) : ( null, null ) ;
     }
 
     private static bool GetLinkedMepCurve(List<Element> accumulateList, Connector startConnector, Element? stopElement = null)
@@ -67,6 +63,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var ids = accumulateList.Select( el => el.Id ) ;
       var connectedConnectors = startConnector.GetConnectedConnectors() ;
       var connectedConnector = connectedConnectors.FirstOrDefault( con => ! ids.Contains( con.Owner.Id ) ) ;
+      if ( connectedConnector is null )
+        return false ;
       Element element = connectedConnector.Owner ;
       accumulateList.Add(element);
       if ( element.Id == stopElement?.Id )
@@ -202,7 +200,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
     }
     
 
-    #endregion Relative position classify
+    #endregion
 
     private static void Reconnect( Connector disconnectedConnector, Connector reconnectedConnector )
     {
@@ -252,7 +250,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
 
     }
     
-    public static void RemoveShorterInDuplicatedRacks( this Document document, List<FamilyInstance> racks )
+    public static void ResolveOverlapCases( this Document document, List<FamilyInstance> racks )
     {
       var ids = racks.Select( rack => rack.Id ) ;
       var otherRacks = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
@@ -364,10 +362,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         // select point 2 on conduits that has route name exists in route names selected before
         filterConduit = new ConduitFilter( doc , routeNames ) ;
         rf = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filterConduit, "終点を選択して下さい。" ) ;
-        XYZ p2 = rf.GlobalPoint ;
+        var p2 = rf.GlobalPoint ;
         var cd2 = doc.GetElement( rf ) as MEPCurve ;
         var routeName = cd2?.GetRouteName() ?? "" ;
-        cd1 = overlappedConduits.FirstOrDefault( cd => cd.GetRouteName() == routeName ) ;
+        cd1 = overlappedConduits.FirstOrDefault( cd => cd.GetRouteName() == routeName )! ;
 
         return new OperationResult<SelectState>( new SelectState( cd1,cd2, p1, p2, routeName ) ) ;
 
@@ -411,7 +409,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         specialLengthList ) ;
       
       // resolve overlapped cases
-      document.RemoveShorterInDuplicatedRacks( racks ) ;
+      document.ResolveOverlapCases( racks ) ;
       
       // create annotations for racks
       NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racks ) ;
