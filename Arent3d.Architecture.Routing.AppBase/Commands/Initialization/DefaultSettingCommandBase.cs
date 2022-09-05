@@ -8,11 +8,15 @@ using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using View = Autodesk.Revit.DB.View ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
+
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -21,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultModeCommand" ;
     private const string Grade3FieldName = "グレード3" ;
     private const string ArentDummyViewName = "Arent Dummy" ;
+    public const string TextNoteTypeNames = "ARENT_2.5MM_SIMPLE-BORDER, ARENT_2.5MM_DOUBLE-BORDER" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -454,6 +459,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           .Cast<ViewPlan>()
           .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
       
+      FilteredElementCollector allElementsInView = new FilteredElementCollector(document, document.ActiveView.Id);
+      var elementsInView = allElementsInView.ToElements();
+      var dataStorage = document.FindOrCreateDataStorage<BorderTextNoteModel>( true ) ;
+      var storageService = new StorageService<DataStorage, BorderTextNoteModel>( dataStorage ) ;
+      
       var allCurrentLevels = new FilteredElementCollector( document ).OfClass( typeof( Level ) ).ToList() ;
       var updateScaleTrans = new Transaction( document ) ;
       updateScaleTrans.SetName( "Update Scale" ) ;
@@ -465,6 +475,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( null != viewPlan.ViewTemplateId && document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale ) {
             viewTemplate.Scale = importDwgMappingModel.Scale ;
           }
+          
+          document.Regenerate();
+          UpdateSizeElement( document, elementsInView, storageService ) ;
         }
         
         var levelName = importDwgMappingModel.FloorName ;
@@ -472,6 +485,87 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         importDwgLevel?.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
       }
       updateScaleTrans.Commit() ;
+    }
+    
+    private void UpdateSizeElement( Document document, IList<Element> elementsInView, StorageService<DataStorage, BorderTextNoteModel> storageService )
+    {
+      // Update size text note border
+      var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[0].Trim() == textNote.Name ) ;
+      var textNoteDoubleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[1].Trim() == textNote.Name ) ;
+      foreach ( var textNoteBorder in textNoteSingleBorders ) {
+        var textNote = textNoteBorder as TextNote ;
+        if( textNote == null ) continue ;
+        
+        var curves = GetSingleBorderTextNote( textNote ) ;
+        var borderIds = CreateDetailCurve(document, textNote , curves) ;
+        SetDataForTextNote( storageService, textNote, borderIds ) ;
+      }
+      
+      foreach ( var textNoteBorder in textNoteDoubleBorders ) {
+        var textNote = textNoteBorder as TextNote ;
+        if( textNote == null ) continue ;
+        
+        var curves = GetDoubleBorderTextNote( textNote ) ;
+        var borderIds = CreateDetailCurve(document, textNote , curves) ;
+        SetDataForTextNote( storageService, textNote, borderIds ) ;
+      }
+      
+      // Update Y of ceedcode
+      var independentTags = elementsInView.Where( e => e is IndependentTag).ToList() ;
+      foreach ( var element in independentTags ) {
+        var independentTag = (IndependentTag) element ;
+        var independentTagPoint = independentTag.TagHeadPosition ;
+        if ( independentTagPoint == null ) continue ;
+        var taggedElementId = independentTag.GetTaggedLocalElementIds().FirstOrDefault() ;
+        if( taggedElementId == null ) continue ;
+        var taggedElement = document.GetElement( taggedElementId );
+        var taggedElementLocation = (taggedElement.Location as LocationPoint)!.Point ;
+        independentTag.TagHeadPosition  = new XYZ( taggedElementLocation.X, taggedElementLocation.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * document.ActiveView.Scale, taggedElementLocation.Z ) ;
+      }
+
+    }
+    
+    private IEnumerable<Curve> GetSingleBorderTextNote( TextNote textNote )
+    {
+      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+      return curveLoop.OfType<Curve>().ToList() ;
+    }
+
+    private IEnumerable<Curve> GetDoubleBorderTextNote(TextNote textNote)
+    {
+      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+      var curves = curveLoop.OfType<Curve>().ToList() ;
+      var curveLoopOffset = CurveLoop.CreateViaOffset(curveLoop, -0.5.MillimetersToRevitUnits() * textNote.Document.ActiveView.Scale, textNote.Document.ActiveView.ViewDirection);
+      curves.AddRange(curveLoopOffset.OfType<Curve>());
+      return curves ;
+    }
+    
+    private static List<ElementId> CreateDetailCurve( Document document, TextNote textNote, IEnumerable<Curve> curves )
+    {
+      var curveIds = new List<ElementId>() ;
+      var graphicStyle = document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      foreach ( var curve in curves ) {
+        var dl = document.Create.NewDetailCurve( (View) document.GetElement( textNote.OwnerViewId ), curve ) ;
+        dl.LineStyle = graphicStyle;
+        curveIds.Add(dl.Id);
+      }
+      return curveIds ;
+    }
+    
+    private void SetDataForTextNote(StorageService<DataStorage, BorderTextNoteModel> storageService, TextNote textNote, List<ElementId> newDetailLineIds )
+    {
+      if ( storageService.Data.BorderTextNotes.ContainsKey(textNote.Id.IntegerValue) ) {
+        var oldDetailCurveIds = storageService.Data.BorderTextNotes[textNote.Id.IntegerValue].BorderIds.Where( x => x != ElementId.InvalidElementId ).ToList() ;
+        if( oldDetailCurveIds.Any() ) 
+           textNote.Document.Delete( oldDetailCurveIds ) ;
+
+        storageService.Data.BorderTextNotes[ textNote.Id.IntegerValue ] = new BorderModel { BorderIds = newDetailLineIds } ;
+        storageService.SaveChange();
+      }
+      else {
+        storageService.Data.BorderTextNotes.Add( textNote.Id.IntegerValue, new BorderModel { BorderIds = newDetailLineIds } );
+        storageService.SaveChange();
+      }
     }
   }
 }
