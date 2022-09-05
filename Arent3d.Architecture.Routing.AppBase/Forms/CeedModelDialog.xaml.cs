@@ -23,7 +23,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       rowStyle.Setters.Add( new EventSetter( MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
       rowStyle.Setters.Add( new EventSetter( MouseLeftButtonUpEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
-      ViewModel.DtGrid = DtGrid ;
       if ( ViewModel.IsExistUsingCode ) {
         CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
       }
@@ -48,12 +47,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void ShowCeedModelNumberColumn_Checked( object sender, RoutedEventArgs e )
     {
-      ViewModel.ShowCeedModelNumberColumn( LbCeedModelNumbers, CmbCeedModelNumbers ) ;
+      ViewModel.ShowCeedModelNumberColumn( DtGrid, LbCeedModelNumbers, CmbCeedModelNumbers ) ;
     }
 
     private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
     {
-      ViewModel.UnShowCeedModelNumberColumn( LbCeedModelNumbers, CmbCeedModelNumbers ) ;
+      ViewModel.UnShowCeedModelNumberColumn( DtGrid, LbCeedModelNumbers, CmbCeedModelNumbers ) ;
     }
 
     private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
@@ -113,7 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   // ReSharper disable once ClassNeverInstantiated.Global
   public class DesignCeedViewModel : CeedViewModel
   {
-    public DesignCeedViewModel() : base( default! )
+    public DesignCeedViewModel() : base( default!, default!, default! )
     {
     }
   }
