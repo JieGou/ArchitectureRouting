@@ -197,7 +197,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
             deletedRacks.Add(thisRack);
           }
           else if ( IsOverlappedEndPoint( otherRack, thisRack ) )
-            idsToRemove.Add( thisRack.Id ) ;
+              idsToRemove.Add( otherRack.Id ) ;
         }
       }
 
