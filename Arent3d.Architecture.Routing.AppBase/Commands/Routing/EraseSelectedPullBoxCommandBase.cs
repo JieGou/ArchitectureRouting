@@ -214,6 +214,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           result.Add( ( routeName, segment ) ) ;
         }
       }
+      
+      // Drop routes in RouteCache
+      var selectedRoutes = Route.CollectAllDescendantBranches( routesRelatedPullBox ) ;
+      var droppedRoutes = selectedRoutes.Where( r => result.All( t => t.RouteName != r.RouteName ) )
+        .Select( r => r.RouteName ) ;
+      var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      routeCache.Drop( droppedRoutes ) ;
+      
 
       //Delete label of pull box
       var level = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).SingleOrDefault( l => l.Id == elementPullBox.LevelId ) ;
@@ -320,9 +328,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var recreatedRoutes = Route.GetAllRelatedBranches( selectedRoutes ) ;
       recreatedRoutes.ExceptWith( selectedRoutes ) ;
       RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), false ) ;
-
-      var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      routeCache.Drop( selectedRoutes.ConvertAll( route => route.RouteName ) ) ;
 
       // Returns affected but not deleted routes to recreate them.
       return recreatedRoutes.ToSegmentsWithName().EnumerateAll() ;
