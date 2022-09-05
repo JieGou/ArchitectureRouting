@@ -4,6 +4,7 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
+using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -29,7 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
-      const string grade3 = "グレード3" ;
+      const string grade3FieldName = "グレード3" ;
       
       var uiDocument = commandData.Application.ActiveUIDocument ;
       if ( uiDocument.ActiveView is not ViewPlan ) {
@@ -44,10 +45,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var dialog = new CeedModelDialog( viewModel ) ;
       
       dialog.ShowDialog() ;
+      if ( viewModel.DwgImportIds.Any() ) {
+        using Transaction transaction = new( uiDocument.Document, "Remove dwg file" ) ;
+        transaction.Start() ;
+        uiDocument.Document.Delete( viewModel.DwgImportIds ) ;
+        transaction.Commit() ;
+      }
+
       if ( ! ( dialog.DialogResult ?? false ) ) 
         return Result.Cancelled ;
       
-      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) 
+      if ( viewModel.SelectedCeedCode == null ) 
         return Result.Succeeded ;
 
       var result = uiDocument.Document.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
@@ -82,20 +90,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
           
         var deviceSymbol = viewModel.SelectedDeviceSymbol ?? string.Empty ;
-        var text = StringWidthUtils.IsHalfWidth( deviceSymbol ) ? StringWidthUtils.ToFullWidth( deviceSymbol ) : deviceSymbol ;
-        connector.SetProperty(ElectricalRoutingElementParameter.SymbolContent, text);
+        if ( ! string.IsNullOrEmpty( deviceSymbol ) ) {
+          var text = StringWidthUtils.IsHalfWidth( deviceSymbol ) ? StringWidthUtils.ToFullWidth( deviceSymbol ) : deviceSymbol ;
+          connector.SetProperty(ElectricalRoutingElementParameter.SymbolContent, text);
 
-        var deviceSymbolTagType = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        IndependentTag.Create( uiDocument.Document, deviceSymbolTagType.Id, uiDocument.ActiveView.Id, new Reference( connector ), false, TagOrientation.Horizontal, new XYZ(placePoint.X, placePoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * uiDocument.ActiveView.Scale, placePoint.Z) ) ;
+          var symbolContentTag = connector.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.SymbolContentTag : ElectricalRoutingFamilyType.SymbolContentEquipmentTag ;
+          var deviceSymbolTagType = uiDocument.Document.GetFamilySymbols( symbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+          IndependentTag.Create( uiDocument.Document, deviceSymbolTagType.Id, uiDocument.ActiveView.Id, new Reference( connector ), false, TagOrientation.Horizontal, new XYZ(placePoint.X, placePoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * uiDocument.ActiveView.Scale, placePoint.Z) ) ;
+          
+          var connectorUpdater = new ConnectorUpdater( uiDocument.Document.Application.ActiveAddInId ) ;
+          if ( ! UpdaterRegistry.IsUpdaterRegistered( connectorUpdater.GetUpdaterId() ) ) {
+            UpdaterRegistry.RegisterUpdater( connectorUpdater, uiDocument.Document ) ;
+            var multicategoryFilter = new ElementMulticategoryFilter( BuiltInCategorySets.OtherElectricalElements ) ;
+            UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), uiDocument.Document, multicategoryFilter, Element.GetChangeTypeAny() ) ;
+          }
+        }
+        
         
         if ( connector.HasParameter( switch2DSymbol ) ) 
           connector.SetProperty( switch2DSymbol, true ) ;
         
         if ( connector.HasParameter( symbolMagnification ) ) 
           connector.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
-        
-        if ( connector.HasParameter( grade3 ) ) 
-          connector.SetProperty( grade3, uiDocument.Document.GetDefaultSettingStorable().GradeSettingData.GradeMode == 3 );
+
+        if ( connector.HasParameter( grade3FieldName ) )
+          connector.SetProperty( grade3FieldName, DefaultSettingCommandBase.GradeFrom3To7Collection.Contains( uiDocument.Document.GetDefaultSettingStorable().GradeSettingData.GradeMode ) ) ;
 
         return Result.Succeeded ;
       } ) ;
