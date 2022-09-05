@@ -4,6 +4,7 @@ using System.IO ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Commands.PostCommands ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
@@ -18,12 +19,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     public ObservableCollection<ConnectorFamilyInfo> ConnectorFamilyList { get ; } = new() ;
     private readonly Document _document ;
+    private readonly StorageService<Level, CeedUserModel> _storageService ;
+    private readonly IPostCommandExecutorBase? _postCommandExecutor ;
 
-    public SelectConnectorFamily( Document document )
+    public SelectConnectorFamily( Document document, StorageService<Level, CeedUserModel> storageService, IPostCommandExecutorBase? postCommandExecutor )
     {
       InitializeComponent() ;
       _document = document ;
-      _document.GetCeedStorable() ;
+      _storageService = storageService ;
+      _postCommandExecutor = postCommandExecutor ;
       LoadConnectorFamilyList() ;
     }
 
@@ -44,23 +48,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! sourcePaths.Any() ) return ;
       try {
         var connectorFamilyUploadFiles = new List<string>() ;
+        List<LoadFamilyCommandParameter> familyParameters = new() ;
         foreach ( var sourcePath in sourcePaths ) {
           var fileName = Path.GetFileName( sourcePath ) ;
-          var resultLoadConnectorFamily = LoadConnectorFamily( sourcePath, fileName ) ;
-          if ( ! resultLoadConnectorFamily ) continue ;
-          var isExistedFileName = ConnectorFamilyList.SingleOrDefault( f => f.ToString() == fileName ) != null ;
-          if ( isExistedFileName ) continue ;
-          ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
-          connectorFamilyUploadFiles.Add( fileName ) ;
+          familyParameters.Add( new LoadFamilyCommandParameter( sourcePath, fileName ) ) ;
         }
 
-        var storageService = new StorageService<Level, CeedUserModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
-        var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
-        storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
-        using Transaction t = new( _document, "Save connector family upload data" ) ;
-        t.Start() ;
-        storageService.SaveChange() ;
-        t.Commit() ;
+        _postCommandExecutor?.LoadFamilyCommand( familyParameters ) ;
+        foreach ( var familyParameter in familyParameters ) {
+          var isExistedFileName = ConnectorFamilyList.SingleOrDefault( f => f.ToString() == familyParameter.FamilyFileName ) != null ;
+          if ( isExistedFileName ) continue ;
+          ConnectorFamilyList.Add( new ConnectorFamilyInfo( familyParameter.FamilyFileName ) ) ;
+          connectorFamilyUploadFiles.Add( familyParameter.FamilyFileName ) ;
+        }
+
+        var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! _storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
+        _storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
+        //using Transaction t = new( _document, "Save connector family upload data" ) ;
+        //t.Start() ;
+        //storageService.SaveChange() ;
+        //t.Commit() ;
       }
       catch {
         MessageBox.Show( "Load connector's family failed.", "Error" ) ;
@@ -74,10 +81,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var imagePath = ConnectorFamilyManager.GetFolderPath() ;
       if ( ! Directory.Exists( imagePath ) ) Directory.CreateDirectory( imagePath ) ;
       var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
-      using Transaction t = new( _document, "Load connector's family" ) ;
-      t.Start() ;
+      // using Transaction t = new( _document, "Load connector's family" ) ;
+      // t.Start() ;
       var connectorFamily = LoadFamily( filePath, connectorFamilyName ) ;
-      t.Commit() ;
+      //t.Commit() ;
 
       return connectorFamily != null ;
     }
@@ -111,8 +118,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void LoadConnectorFamilyList()
     {
-      var storageService = new StorageService<Level, CeedUserModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
-      foreach ( var fileName in  storageService.Data.ConnectorFamilyUploadData ) {
+      foreach ( var fileName in  _storageService.Data.ConnectorFamilyUploadData ) {
         ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
       }
 
