@@ -226,7 +226,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         for ( var i = 0 ; i < completeImportDwgMappingModels.Count() ; i++ ) {
           var importDwgMappingModel = completeImportDwgMappingModels[ i ] ;
           if ( string.IsNullOrEmpty( importDwgMappingModel.FullFilePath ) ) continue ;
-          var levelName = "Level " + importDwgMappingModel.FloorName ;
+          var levelName = importDwgMappingModel.FloorName ;
           var importDwgLevel = allCurrentLevels.FirstOrDefault( x => x.Name.Equals( levelName ) ) ;
           if ( importDwgLevel == null ) {
             importDwgLevel = Level.Create( doc, importDwgMappingModel.FloorHeight ) ;
@@ -315,7 +315,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             uiDocument.RequestViewChange( pCurrView ) ;
             uiDocument.ActiveView = viewPlansWithoutDummy[ 0 ] ;
             
-            var levelIdDummies = doc.GetAllElements<Level>().Where( x=> x.Name == "Level " + ArentDummyViewName ).Select( x=>x.Id ).ToList() ;
+            var levelIdDummies = doc.GetAllElements<Level>().Where( x=> x.Name == ArentDummyViewName ).Select( x=>x.Id ).ToList() ;
             using var removeArentDummyView = new Transaction( doc ) ;
             removeArentDummyView.SetName( "Remove view Arent dummy and level" ) ;
             removeArentDummyView.Start() ;
@@ -434,7 +434,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var viewFamily = new FilteredElementCollector( doc ).OfClass( typeof( ViewFamilyType ) ).Cast<ViewFamilyType>().First( x => x.ViewFamily == ViewFamily.FloorPlan ) ;
 
       var level = Level.Create( doc, floorHeight) ;
-      level.Name = "Level " + floorName ;
+      level.Name = floorName ;
 
       var viewPlan = ViewPlan.Create( doc, viewFamily.Id, level.Id ) ;
       viewPlan.Name = floorName ;
@@ -459,8 +459,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           .Cast<ViewPlan>()
           .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
       
-      FilteredElementCollector allElementsInView = new FilteredElementCollector(document, document.ActiveView.Id);
-      var elementsInView = allElementsInView.ToElements();
       var dataStorage = document.FindOrCreateDataStorage<BorderTextNoteModel>( true ) ;
       var storageService = new StorageService<DataStorage, BorderTextNoteModel>( dataStorage ) ;
       
@@ -477,6 +475,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
           
           document.Regenerate();
+          FilteredElementCollector allElementsInView = new FilteredElementCollector(document, viewPlan.Id);
+          var elementsInView = allElementsInView.ToElements();
           UpdateSizeElement( document, elementsInView, storageService ) ;
         }
         
