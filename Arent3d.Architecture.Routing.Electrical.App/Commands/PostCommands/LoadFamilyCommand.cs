@@ -7,7 +7,7 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands
 {
   [RevitAddin( Guid )]
-  [DisplayName( "Load Family Command" )]
+  [DisplayName( "Load connector family" )]
   [Transaction( TransactionMode.Manual )]
   public class LoadFamilyCommand : LoadFamilyCommandBase
   {

@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
   
   public class LoadFamilyCommandBase : RoutingExternalAppCommandBaseWithParam<List<LoadFamilyCommandParameter>>
   {
-    protected override string GetTransactionName() => "TransactionName.Commands.PostCommands.CreateSymbolContentTagCommand".GetAppStringByKeyOrDefault( "Load Family Command" ) ;
+    protected override string GetTransactionName() => "TransactionName.Commands.PostCommands.CreateSymbolContentTagCommand".GetAppStringByKeyOrDefault( "Load connector family" ) ;
 
     protected override ExecutionResult Execute( List<LoadFamilyCommandParameter> familyParameters, Document document, TransactionWrapper transaction )
     {

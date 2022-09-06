@@ -995,8 +995,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       dtGrid.ItemsSource = newCeedModels ;
       return true ;
     }
-    
-    public bool CreateConnector()
+
+    public void CreateConnector()
     {
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
@@ -1004,15 +1004,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( _document ) ;
       var defaultConstructionItem = _document.GetDefaultConstructionItem() ;
 
-      if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) )
-        return true ;
-      
+      if ( SelectedCeedCode == null )
+        return ;
+
       XYZ? point ;
       try {
         point = _uiDocument.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        return false ;
+        return ;
       }
 
       var condition = "屋外" ; // デフォルトの条件
@@ -1033,33 +1033,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
           else {
             TaskDialog.Show( "Arent", "部屋の外で電気シンボルを作成することができません。部屋の中の場所を指定してください！" ) ;
-            return false ;
+            return ;
           }
 
           break ;
-        case > 1 when CreateRoomCommandBase.TryGetConditions( _uiDocument.Document, out var conditions ) && conditions.Any() :
+        case > 1 when CreateRoomCommandBase.TryGetConditions( _document, out var conditions ) && conditions.Any() :
           var vm = new ArentRoomViewModel { Conditions = conditions } ;
           var view = new ArentRoomView { DataContext = vm } ;
           view.ShowDialog() ;
           if ( ! vm.IsCreate )
-            return false ;
+            return ;
 
           if ( IsShowCondition && SelectedCondition != vm.SelectedCondition ) {
             TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
-            return false ;
+            return ;
           }
 
           condition = vm.SelectedCondition ;
           break ;
         case > 1 :
           TaskDialog.Show( "Arent", "指定された条件が見つかりませんでした。" ) ;
-          return false ;
+          return ;
         default :
         {
           if ( rooms.First().TryGetProperty( ElectricalRoutingElementParameter.RoomCondition, out string? value ) && ! string.IsNullOrEmpty( value ) ) {
             if ( IsShowCondition && SelectedCondition != value ) {
               TaskDialog.Show( "Arent", "指定した条件が部屋の条件と一致していないので、再度ご確認ください。" ) ;
-              return false ;
+              return ;
             }
 
             condition = value ;
@@ -1069,11 +1069,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      if ( ! OriginCeedModels.Any( cmd => cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == SelectedDeviceSymbol ) ) {
+      var deviceSymbol = SelectedDeviceSymbol ?? string.Empty ;
+      if ( ! OriginCeedModels.Any( cmd => cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == deviceSymbol ) ) {
         TaskDialog.Show( "Arent", $"We can not find any ceedmodel \"{SelectedDeviceSymbol}\" match with this room \"{condition}\"。" ) ;
-        return false ;
+        return ;
       }
-      
+
       var ecoMode = _defaultSettingStorable.EcoSettingData.IsEcoMode.ToString() ;
       var level = _uiDocument.ActiveView.GenLevel ;
       var heightOfConnector = _document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
@@ -1082,7 +1083,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( element is FamilyInstance familyInstance ) {
         familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
         familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
-        familyInstance.SetProperty( ElectricalRoutingElementParameter.SymbolContent, SelectedDeviceSymbol ?? string.Empty ) ;
+        if ( ! string.IsNullOrEmpty( deviceSymbol ) ) familyInstance.SetProperty( ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ) ;
+        familyInstance.SetProperty( ElectricalRoutingElementParameter.Quantity, string.Empty ) ;
         familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
       }
 
@@ -1095,9 +1097,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
 
       if ( element.HasParameter( grade3 ) )
-        element.SetProperty( grade3, _defaultSettingStorable.GradeSettingData.GradeMode == 3 ) ;
-
-      return true ;
+        element.SetProperty( grade3, DefaultSettingCommandBase.GradeFrom3To7Collection.Contains( _defaultSettingStorable.GradeSettingData.GradeMode ) ) ;
     }
     
     private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType, string ecoMode )

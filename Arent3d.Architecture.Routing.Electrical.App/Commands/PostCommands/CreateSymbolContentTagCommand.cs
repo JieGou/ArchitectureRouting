@@ -6,7 +6,7 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands
 {
   [RevitAddin( Guid )]
-  [DisplayName( "Create Symbol Content Tag" )]
+  [DisplayName( "Create connector" )]
   [Transaction( TransactionMode.Manual )]
   public class CreateSymbolContentTagCommand : CreateSymbolContentTagCommandBase
   {
