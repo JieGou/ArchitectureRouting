@@ -10,13 +10,15 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "A52AB9F8-1EB5-4BEF-9B7E-DC8CA228C12D" )]
+  [Guid( "1B299E62-B71D-4B4E-A3D3-3052FCB12197" )]
   [StorableVisibility( AppInfo.VendorId )]
   public sealed class CnsSettingStorable : StorableBase, IEquatable<CnsSettingStorable>
   {
-    public const string StorableName = "Cns Setting" ;
+    public const string CnsStorableName = "Cns Setting" ;
     private const string CnsSettingField = "CnsSetting" ;
+    private const string CnsFilePathField = "CnsFilePath" ;
     public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
+    public string CnsFilePath { get ; set ; }
 
     public enum UpdateItemType
     {
@@ -40,6 +42,7 @@ namespace Arent3d.Architecture.Routing.Storable
       CnsSettingData = new ObservableCollection<CnsSettingModel>() ;
       SelectedIndex = 0 ;
       ElementType = UpdateItemType.None ;
+      CnsFilePath = string.Empty ;
     }
 
     /// <summary>
@@ -51,24 +54,28 @@ namespace Arent3d.Architecture.Routing.Storable
       CnsSettingData = new ObservableCollection<CnsSettingModel>() ;
       SelectedIndex = 0 ;
       ElementType = UpdateItemType.None ;
+      CnsFilePath = string.Empty ;
     }
 
-    public override string Name => StorableName ;
+    public override string Name => CnsStorableName ;
 
     protected override void LoadAllFields( FieldReader reader )
     {
       var dataSaved = reader.GetArray<CnsSettingModel>( CnsSettingField ) ;
       CnsSettingData = new ObservableCollection<CnsSettingModel>( dataSaved ) ;
+      CnsFilePath = reader.GetSingle<string>( CnsFilePathField ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
       writer.SetArray( CnsSettingField, CnsSettingData ) ;
+      writer.SetSingle( CnsFilePathField, CnsFilePath ) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
     {
       generator.SetArray<CnsSettingModel>( CnsSettingField ) ;
+      generator.SetSingle<string>( CnsFilePathField ) ;
     }
 
 

@@ -30,5 +30,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( sender is not Button { DataContext: ImportDwgMappingModel item } ) return ;
       ViewModel.LoadDwgFile( item ) ;
     }
+
+    private void CellValueChanged( object sender, RoutedEventArgs e )
+    {
+      var selectedItem = (ImportDwgMappingModel)DtGrid.SelectedItem ; 
+      
+      ViewModel.UpdateFloorHeight( selectedItem );
+    }
   }
 }

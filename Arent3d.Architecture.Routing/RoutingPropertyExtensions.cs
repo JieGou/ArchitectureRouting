@@ -1,7 +1,4 @@
-using System ;
-using System.Linq ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 #if DEBUG
@@ -135,6 +132,10 @@ namespace Arent3d.Architecture.Routing
     [Parameter( "bd2c2a04-5b41-40f4-b59b-bbb50f5d1c74", "Symbol Content", DataType.Text, ParameterVisibility.ReadOnlyOnHasValue, DescriptionKey = "Symbol Content")]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
     SymbolContent,
+    
+    [Parameter( "8510104a-b42c-4b9b-ad19-57dd4ce3bb11", "数量", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "数量")]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
+    Quantity,
     
     [Parameter( "05a6c3f6-ce5b-4bcb-a683-4087b928fe6d", "Text", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Text")]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]

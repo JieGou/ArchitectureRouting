@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d" x:Name="WdDefaultSettingDialog"
         WindowStartupLocation="CenterScreen"
-        Title="DefaultSettingDialog" Height="700" Width="1120" ResizeMode="NoResize">
+        Title="DefaultSettingDialog" Height="740" Width="1120" ResizeMode="NoResize">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -109,8 +109,20 @@
                         </DataGridTextColumn>
                         
                         <DataGridTextColumn Header="階高" Width="100" CanUserSort="False">
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="{x:Type TextBox}">
+                                    <EventSetter Event="LostFocus" Handler="CellValueChanged" />
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                            
+                            <DataGridTextColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsEnabledFloorHeight}" />
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                            
                             <DataGridTextColumn.Binding>
-                                <Binding Path="FloorHeight" NotifyOnTargetUpdated="True"
+                                <Binding Path="FloorHeightDisplay" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
@@ -185,6 +197,12 @@
                         HorizontalAlignment="Stretch" />
                     
                     <Button
+                        Content="マスター読み込み"
+                        Command="{ Binding LoadCeedCodeDataCommand}"
+                        Margin="0, 0,0,10"
+                        HorizontalAlignment="Stretch" />
+                    
+                    <Button
                         Content="電線・ケーブル一覧読み込み"
                         Command="{ Binding LoadWiresAndCablesDataCommand}"
                         Margin="0, 0,0,10"
@@ -227,7 +245,7 @@
                 </StackPanel>
 
                 <DataGrid Grid.Column="1"
-                          Height="260"
+                          Height="290"
                           Background="White"
                           ItemsSource="{Binding CsvFileModels}"
                           AutoGenerateColumns="False"
