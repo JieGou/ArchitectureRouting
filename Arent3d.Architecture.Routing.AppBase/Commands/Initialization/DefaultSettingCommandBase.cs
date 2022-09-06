@@ -521,6 +521,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var taggedElement = document.GetElement( taggedElementId );
         var taggedElementLocation = (taggedElement.Location as LocationPoint)!.Point ;
         independentTag.TagHeadPosition  = new XYZ( taggedElementLocation.X, taggedElementLocation.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * document.ActiveView.Scale, taggedElementLocation.Z ) ;
+        
+        // Set シンボル倍率 parameter of ceedcode if exist
+        taggedElement.LookupParameter( "シンボル倍率" )?.Set( document.ActiveView.Scale ) ;
       }
 
     }
