@@ -73,7 +73,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
       ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
       ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
-      ViewModel.Save() ;
       ViewModel.CreateConnector() ;
     }
 

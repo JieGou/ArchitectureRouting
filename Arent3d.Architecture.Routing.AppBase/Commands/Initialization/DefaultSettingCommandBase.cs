@@ -78,6 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
           LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
+          UpdateCeedDockPaneDataContext( uiDocument ) ;
           return Result.Succeeded ;
         }
       }
@@ -473,5 +474,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       updateScaleTrans.Commit() ;
     }
+    
+    protected virtual void UpdateCeedDockPaneDataContext( UIDocument uiDocument ) {}
   }
 }

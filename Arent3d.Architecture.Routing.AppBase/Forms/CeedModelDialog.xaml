@@ -344,7 +344,7 @@
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <ContentControl Content="{Binding Canvas}" />
+                                <Image Source="{Binding FloorPlanImage}" Stretch="None" />
                             </StackPanel>
                         </DataTemplate>
                     </ListView.ItemTemplate>
