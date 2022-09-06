@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         /// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/rectangl_0tiq.asp
         /// </remarks>
         [StructLayout(LayoutKind.Sequential)]
-        private class POINT
+        private struct POINT
         {
             /// <summary>
             /// Specifies the x-coordinate of the point. 
@@ -40,12 +40,12 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         /// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/windowing/hooks/hookreference/hookstructures/cwpstruct.asp
         /// </remarks>
         [StructLayout(LayoutKind.Sequential)]
-        private class MouseHookStruct
+        private struct MouseHookStruct
         {
             /// <summary>
             /// Specifies a POINT structure that contains the x- and y-coordinates of the cursor, in screen coordinates. 
             /// </summary>
-            public POINT? pt;
+            public POINT pt;
             /// <summary>
             /// Handle to the window that will receive the mouse message corresponding to the mouse event. 
             /// </summary>
@@ -64,12 +64,12 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         /// The MSLLHOOKSTRUCT structure contains information about a low-level keyboard input event. 
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        private class MouseLLHookStruct
+        private struct MouseLLHookStruct
         {
             /// <summary>
             /// Specifies a POINT structure that contains the x- and y-coordinates of the cursor, in screen coordinates. 
             /// </summary>
-            public POINT? pt;
+            public POINT pt;
             /// <summary>
             /// If the message is WM_MOUSEWHEEL, the high-order word of this member is the wheel delta. 
             /// The low-order word is reserved. A positive value indicates that the wheel was rotated forward, 
@@ -111,7 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         /// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/windowing/hooks/hookreference/hookstructures/cwpstruct.asp
         /// </remarks>
         [StructLayout(LayoutKind.Sequential)]
-        private class KeyboardHookStruct
+        private struct KeyboardHookStruct
         {
             /// <summary>
             /// Specifies a virtual-key code. The code must be a value in the range 1 to 254. 
@@ -675,7 +675,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
                         clickCount = 1;
 
                 //generate event 
-                var e = new MouseEventArgs(button, clickCount, mouseHookStruct.pt!.x, mouseHookStruct.pt!.y, mouseDelta);
+                var e = new MouseEventArgs(button, clickCount, mouseHookStruct.pt.x, mouseHookStruct.pt.y, mouseDelta);
                 //raise it
                 OnMouseActivity(this, e);
             }
