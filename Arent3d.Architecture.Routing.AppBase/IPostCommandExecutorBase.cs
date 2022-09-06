@@ -11,7 +11,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     void ApplySelectedFromToChangesCommand( Route route, IReadOnlyCollection<SubRoute> subRoutes, RouteProperties properties ) ;
 
-    void CreateSymbolContentTagCommand( Element element, XYZ point ) ;
+    void CreateSymbolContentTagCommand( Element element, XYZ point, string deviceSymbol ) ;
 
     bool LoadFamilyCommand( List<LoadFamilyCommandParameter> familyParameters ) ;
   }

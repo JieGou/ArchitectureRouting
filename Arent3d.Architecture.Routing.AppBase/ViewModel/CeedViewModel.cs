@@ -1088,7 +1088,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
       }
 
-      _postCommandExecutor?.CreateSymbolContentTagCommand( element, point ) ;
+      _postCommandExecutor?.CreateSymbolContentTagCommand( element, point, deviceSymbol ) ;
 
       if ( element.HasParameter( switch2DSymbol ) )
         element.SetProperty( switch2DSymbol, true ) ;
