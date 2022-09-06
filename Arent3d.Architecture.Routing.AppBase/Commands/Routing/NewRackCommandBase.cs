@@ -200,7 +200,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return location == otherLocation ;
     }
 
-    public static void CreateRackForConduit( UIDocument uiDocument, Application app, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks , List<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
+    public static void CreateRackForConduit2( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute,
+      List<FamilyInstance> racks, double rackWidth,
+      List<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
     {
       var document = uiDocument.Document ;
       var connectors = new List<Connector>() ;
@@ -210,12 +212,79 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           transaction.Start() ;
           if ( element is Conduit ) // element is straight conduit
           {
-            FamilyInstance? instance = null ;
+            FamilyInstance? instance ;
             if(specialLengthList?.FirstOrDefault(x => x.Conduit.Id.Equals(element.Id)) is { Conduit: Conduit } specialLengthItem )
-              instance = CreateRackForStraightConduit( uiDocument, element, 0, specialLengthItem.StartParam, specialLengthItem.EndParam ) ;
+              instance = CreateRackForStraightConduit( uiDocument, element, rackWidth, false, specialLengthItem.StartParam, specialLengthItem.EndParam ) ;
             else
-              instance = CreateRackForStraightConduit( uiDocument, element ) ;
+              instance = CreateRackForStraightConduit( uiDocument, element, rackWidth, false ) ;
 
+            // check cable tray exists
+            if ( ExistsCableTray( document, instance ) ) {
+              transaction.RollBack() ;
+              continue ;
+            }
+
+            // save connectors of cable rack
+            connectors.AddRange( instance.GetConnectorManager()!.Connectors.Cast<Connector>() ) ;
+
+            racks.Add( instance );
+          }
+          else // element is conduit fitting
+          {
+            // Ignore the case of vertical conduits in the oz direction
+            if ( element is not FamilyInstance conduitFitting 
+                 || conduitFitting.FacingOrientation.IsAlmostEqualTo(XYZ.BasisZ)
+                 || conduitFitting.FacingOrientation.IsAlmostEqualTo(-XYZ.BasisZ) 
+                 || conduitFitting.HandOrientation.IsAlmostEqualTo(XYZ.BasisZ) 
+                 || conduitFitting.HandOrientation.IsAlmostEqualTo(-XYZ.BasisZ) )
+              continue ;
+
+            var location = ( element.Location as LocationPoint )! ;
+            var elbow = CreateRackForFittingConduit( uiDocument, conduitFitting, location ) ;
+            // check cable tray exists
+            if ( ExistsCableTray( document, elbow ) ) {
+              transaction.RollBack() ;
+              continue ;
+            }
+            var conduitElbowLength = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ).AsDouble() ;
+            var rackElbowRadius = conduitFitting.GetParameter( "中心から終端" )!.AsDouble() - conduitElbowLength - rackWidth.MillimetersToRevitUnits()/2 ;
+            SetParameter( elbow, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackWidth.MillimetersToRevitUnits() ) ;
+            SetParameter( elbow, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackElbowRadius ) ;
+            // save connectors of cable rack
+            connectors.AddRange( elbow.GetConnectors() ) ;
+            
+            racks.Add( elbow );
+          }
+
+          transaction.Commit() ;
+        }
+        catch {
+          transaction.RollBack() ;
+        }
+      }
+
+      // connect all connectors
+      foreach ( var connector in connectors ) {
+        if ( connector.IsConnected ||
+             connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) is not { } otherConnectors )
+          continue ;
+        if ( GetConnectorClosestTo( otherConnectors, connector.Origin, MaxDistanceTolerance ) is {} connectTo )
+          connector.ConnectTo( connectTo ) ;
+      }
+    }
+
+    public static void CreateRackForConduit( UIDocument uiDocument, Application app, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
+    {
+      var document = uiDocument.Document ;
+      var connectors = new List<Connector>() ;
+      foreach ( var element in allElementsInRoute ) {
+        using var transaction = new SubTransaction( uiDocument.Document ) ;
+        try {
+          transaction.Start() ;
+          if ( element is Conduit ) // element is straight conduit
+          {
+            var instance = CreateRackForStraightConduit( uiDocument, element ) ;
+            
             // check cable tray exists
             if ( ExistsCableTray( document, instance ) ) {
               transaction.RollBack() ;
@@ -232,22 +301,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           else // element is conduit fitting
           {
             var conduit = ( element as FamilyInstance )! ;
-
+            
             // Ignore the case of vertical conduits in the oz direction
             if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z) {
               continue ;
             }
-
+            
             var location = ( element.Location as LocationPoint )! ;
-
+            
             var instance = CreateRackForFittingConduit( uiDocument, conduit, location ) ;
-
+            
             // check cable tray exists
             if ( ExistsCableTray( document, instance ) ) {
               transaction.RollBack() ;
               continue ;
             }
-
+            
             // save connectors of cable rack
             connectors.AddRange( instance.GetConnectors() ) ;
             
@@ -275,11 +344,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
     
-    public static FamilyInstance CreateRackForStraightConduit( UIDocument uiDocument, Element element, double cableRackWidth = 0 , double startParam = 0.0, double endParam = 1.0)
+    public static FamilyInstance CreateRackForStraightConduit( UIDocument uiDocument, Element element, double cableRackWidth = 0 , bool useViewScale = true, double startParam = 0.0, double endParam = 1.0)
     {
       var document = uiDocument.Document ;
       var conduit = ( element as Conduit )! ;
-      var scaleRatio = uiDocument.Document.ActiveView.Scale / 100.0 ;
+      var scaleRatio = useViewScale ? uiDocument.Document.ActiveView.Scale / 100.0 : 1 ;
 
       var location = ( element.Location as LocationCurve )! ;
       var line = ( location.Curve as Line )! ;

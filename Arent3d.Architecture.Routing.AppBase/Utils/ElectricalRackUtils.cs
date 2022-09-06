@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return false ;
     }
 
-    public static List<Element> FindLinkedRacks( this MEPCurve startCurve, MEPCurve endCurve )
+    public static List<Element> GetLinkedMEPCurves( this MEPCurve startCurve, MEPCurve endCurve )
     {
       if ( startCurve.Id == endCurve.Id )
         return new List<Element>() { startCurve } ;

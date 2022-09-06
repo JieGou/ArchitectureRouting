@@ -3,6 +3,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
+using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
@@ -22,7 +23,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateRackBySelectedConduitsCommand : IExternalCommand
   {
-    private record SelectState( MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint ) ;
+    private record SelectState( MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint,double RackWidth, bool IsRound ) ;
     private OperationResult<SelectState> OperateUI( ExternalCommandData commandData )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -52,8 +53,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         var secondSelectedConduit = doc.GetElement( pickedConduitReference ) as MEPCurve ;
         var routeName = secondSelectedConduit?.GetRouteName() ?? "" ;
         firstSelectedConduit = overlappedConduits.FirstOrDefault( cd => cd.GetRouteName() == routeName )! ;
+        
+        // show size dialog
+        var dialog = new RackSizeDialog() ;
+        if(dialog.ShowDialog() is false)
+          return OperationResult<SelectState>.Cancelled;
+        
+        // width is currently in mm unit !!!
+        var (rackWidth, isRound) = dialog ;
 
-        return new OperationResult<SelectState>( new SelectState( firstSelectedConduit ,secondSelectedConduit, firstSelectedPoint, secondSelectedPoint ) ) ;
+        return new OperationResult<SelectState>( new SelectState( firstSelectedConduit ,secondSelectedConduit, firstSelectedPoint, secondSelectedPoint , rackWidth, isRound ) ) ;
 
       }
       catch ( OperationCanceledException ) {
@@ -66,7 +75,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var uiApp = commandData.Application ;
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-
       // select conduit, start point, end point of rack
       var uiResult = OperateUI( commandData ) ;
       if ( !uiResult.HasValue || uiResult.Value.FirstSelectedConduit is not { } firstSelectedConduit|| uiResult.Value.SecondSelectedConduit is not { } secondSelectedConduit ) {
@@ -75,7 +83,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       
       // make cable racks:
       using var createRackTransaction = new Transaction( document, "手動でラックを作成する" ) ;
-      var linkedConduits = firstSelectedConduit.FindLinkedRacks( secondSelectedConduit ) ;
+      var linkedConduits = firstSelectedConduit.GetLinkedMEPCurves( secondSelectedConduit ) ;
       var specialLengthList = new List<(Element Conduit, double StartParam, double EndParam)>() ;
       if ( firstSelectedConduit.Id != secondSelectedConduit.Id ) {
         var firstParams = firstSelectedConduit.CalculateParam( uiResult.Value.StartPoint, linkedConduits.ElementAt( 1 )) ;
@@ -91,8 +99,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       createRackTransaction.Start() ;
       var racks = new List<FamilyInstance>() ;
       // create racks along with conduits
-      NewRackCommandBase.CreateRackForConduit( uiDocument, uiApp.Application, linkedConduits, racks,
-        specialLengthList ) ;
+      NewRackCommandBase.CreateRackForConduit2( uiDocument, linkedConduits, racks, uiResult.Value.RackWidth, specialLengthList ) ;
       
       // resolve overlapped cases
       document.ResolveOverlapCases( racks ) ;
