@@ -5,7 +5,6 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs ;
 using MessageBox = System.Windows.MessageBox ;
-using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -18,24 +17,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
       DataContext = viewModel ;
       BtnReplaceSymbol.IsEnabled = false ;
-      if ( ViewModel.IsExistUsingCode ) {
-        CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
-      }
     }
 
     public CeedDockPaneContent()
     {
       InitializeComponent() ;
-    }
-
-    private void Button_LoadData( object sender, RoutedEventArgs e )
-    {
-      ViewModel.Load( CbShowOnlyUsingCode ) ;
-      if ( CbShowDiff.IsChecked == false ) {
-        CbShowDiff.IsChecked = true ;
-      }
-
-      BtnReplaceSymbol.IsEnabled = false ;
     }
 
     private void CmbKeyDown( object sender, KeyEventArgs e )
@@ -55,19 +41,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.UnShowCeedModelNumberColumn( DtGrid, LbCeedModelNumbers, CmbCeedModelNumbers ) ;
     }
 
-    private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
-    {
-      ViewModel.LoadUsingCeedModel( CbShowOnlyUsingCode ) ;
-    }
-
     private void ShowOnlyUsingCode_Checked( object sender, RoutedEventArgs e )
     {
       ViewModel.ShowOnlyUsingCode() ;
+      CbShowDiff.IsChecked = false ;
     }
 
     private void ShowOnlyUsingCode_UnChecked( object sender, RoutedEventArgs e )
     {
       ViewModel.UnShowOnlyUsingCode() ;
+      CbShowDiff.IsChecked = false ;
     }
 
     private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
@@ -80,14 +63,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.ReplaceMultipleSymbols( DtGrid ) ;
     }
 
-    private void DtGrid_OnMouseDoubleClick( object sender, MouseButtonEventArgs e )
+    private void PreviewListMouseDoubleClick( object sender, MouseButtonEventArgs e )
     {
-      if ( ( (DataGrid) sender ).SelectedItem is not CeedModel ceedModel ) return ;
-      ViewModel.SelectedDeviceSymbol = ceedModel.GeneralDisplayDeviceSymbol ;
-      ViewModel.SelectedCondition = ceedModel.Condition ;
-      ViewModel.SelectedCeedCode = ceedModel.CeedSetCode ;
-      ViewModel.SelectedModelNum = ceedModel.ModelNumber ;
-      ViewModel.SelectedFloorPlanType = ceedModel.FloorPlanType ;
+      var listView = ( sender as ListView ) ! ;
+      if ( listView.SelectedValue == null ) return ;
+      var selectedItem = (CeedViewModel.PreviewListInfo) listView.SelectedValue ;
+      ViewModel.SelectedDeviceSymbol = selectedItem.GeneralDisplayDeviceSymbol ;
+      ViewModel.SelectedCondition = selectedItem.Condition ;
+      ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
+      ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
+      ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
+      ViewModel.Save() ;
       ViewModel.CreateConnector() ;
     }
 
@@ -103,6 +89,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       ViewModel.SelectedCeedModel = ceedModel ;
       BtnReplaceSymbol.IsEnabled = true ;
+      ViewModel.ShowPreviewList( ceedModel ) ;
     }
   }
 
