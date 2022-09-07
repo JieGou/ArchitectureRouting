@@ -1,6 +1,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
@@ -11,6 +12,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using NPOI.SS.Formula.Functions ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
@@ -23,11 +25,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateRackBySelectedConduitsCommand : IExternalCommand
   {
-    private record SelectState( MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint,double RackWidth, bool IsRound ) ;
+    private record SelectState( string RouteName, MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint, double RackWidth, bool IsRound ) ;
     private OperationResult<SelectState> OperateUI( ExternalCommandData commandData )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var doc = uiDocument.Document ;
+      
+      // only allow command to run in floor plan
+      if ( doc.ActiveView.ViewType is not ViewType.FloorPlan ) {
+        new TaskDialog("エラー")
+        {
+          MainContent = "平面図でコマンドを実行してください",
+          MainIcon = TaskDialogIcon.TaskDialogIconInformation,
+          TitleAutoPrefix = false,
+        }.Show() ;
+        return OperationResult<SelectState>.Cancelled;
+      }
       var filterConduit = new ConduitRouteNamesFilter( doc ) ;
       var allConduits = doc.GetAllElements<Conduit>() ;
       try {
@@ -59,10 +72,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         if(dialog.ShowDialog() is false)
           return OperationResult<SelectState>.Cancelled;
         
-        // width is currently in mm unit !!!
+        // WARNING: width is currently in mm unit !!!
         var (rackWidth, isRound) = dialog ;
 
-        return new OperationResult<SelectState>( new SelectState( firstSelectedConduit ,secondSelectedConduit, firstSelectedPoint, secondSelectedPoint , rackWidth, isRound ) ) ;
+        return new OperationResult<SelectState>( new SelectState( routeName, firstSelectedConduit ,secondSelectedConduit, firstSelectedPoint, secondSelectedPoint , rackWidth, isRound ) ) ;
 
       }
       catch ( OperationCanceledException ) {
@@ -81,9 +94,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         return Result.Cancelled ;
       }
       
-      // make cable racks:
-      using var createRackTransaction = new Transaction( document, "手動でラックを作成する" ) ;
+      // detect conduit array between first and last selected conduit
       var linkedConduits = firstSelectedConduit.GetLinkedMEPCurves( secondSelectedConduit ) ;
+      
+      // calculate lengths of first and last rack
       var specialLengthList = new List<(Element Conduit, double StartParam, double EndParam)>() ;
       if ( firstSelectedConduit.Id != secondSelectedConduit.Id ) {
         var firstParams = firstSelectedConduit.CalculateParam( uiResult.Value.StartPoint, linkedConduits.ElementAt( 1 )) ;
@@ -95,19 +109,39 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         var firstParams = firstSelectedConduit.CalculateParam( uiResult.Value.StartPoint, uiResult.Value.EndPoint) ;
         specialLengthList.Add( (firstSelectedConduit, firstParams.StartParam, firstParams.EndParam) );
       }
-
+      
+      // start generate new racks
+      using var createRackTransaction = new Transaction( document, "手動でラックを作成する" ) ;
       createRackTransaction.Start() ;
-      var racks = new List<FamilyInstance>() ;
+      var racksAndFittings = new List<FamilyInstance>() ;
       // create racks along with conduits
-      NewRackCommandBase.CreateRackForConduit2( uiDocument, linkedConduits, racks, uiResult.Value.RackWidth, specialLengthList ) ;
+      NewRackCommandBase.CreateRacksForConduits( uiDocument, linkedConduits, racksAndFittings, uiResult.Value.RackWidth, specialLengthList ) ;
       
       // resolve overlapped cases
-      document.ResolveOverlapCases( racks ) ;
+      document.ResolveOverlapCases( racksAndFittings ) ;
       
+      // create boundary detail lines
+      var rackMap = CreateRackMap( uiResult.Value.RouteName, racksAndFittings ) ;
+        NewLimitRackCommandBase.DrawRackBoundaryLines( document, new []{rackMap}, uiResult.Value.IsRound ) ;
+
       // create annotations for racks
-      NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racks ) ;
+      NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racksAndFittings ) ;
+      
       createRackTransaction.Commit() ;
       return Result.Succeeded ;
+    }
+    
+    private static RackMap CreateRackMap( string routeName, List<FamilyInstance> racksAndFittings )
+    {
+      var map = new RackMap( routeName) ;
+      foreach ( var item in racksAndFittings ) {
+        if(item.IsRack())
+          map.CableTrays.Add(item);
+        else
+          map.CableTrayFittings.Add(item);
+        map.RackIds.Add(item.UniqueId);
+      }
+      return map ;
     }
   }
 }

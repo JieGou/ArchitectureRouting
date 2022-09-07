@@ -200,16 +200,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return location == otherLocation ;
     }
 
-    public static void CreateRackForConduit2( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute,
+    public static void CreateRacksForConduits( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute,
       List<FamilyInstance> racks, double rackWidth,
       List<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
     {
       var document = uiDocument.Document ;
       var connectors = new List<Connector>() ;
       foreach ( var element in allElementsInRoute ) {
-        using var transaction = new SubTransaction( uiDocument.Document ) ;
+        using var subTransaction = new SubTransaction( uiDocument.Document ) ;
         try {
-          transaction.Start() ;
+          subTransaction.Start() ;
           if ( element is Conduit ) // element is straight conduit
           {
             FamilyInstance? instance ;
@@ -220,7 +220,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
             // check cable tray exists
             if ( ExistsCableTray( document, instance ) ) {
-              transaction.RollBack() ;
+              subTransaction.RollBack() ;
               continue ;
             }
 
@@ -240,26 +240,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               continue ;
 
             var location = ( element.Location as LocationPoint )! ;
+            // create new cable rack elbow fitting
             var elbow = CreateRackForFittingConduit( uiDocument, conduitFitting, location ) ;
-            // check cable tray exists
+            // undo if the same thing exists
             if ( ExistsCableTray( document, elbow ) ) {
-              transaction.RollBack() ;
+              subTransaction.RollBack() ;
               continue ;
             }
-            var conduitElbowLength = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ).AsDouble() ;
-            var rackElbowRadius = conduitFitting.GetParameter( "中心から終端" )!.AsDouble() - conduitElbowLength - rackWidth.MillimetersToRevitUnits()/2 ;
+            
+            // set elbow width
             SetParameter( elbow, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackWidth.MillimetersToRevitUnits() ) ;
-            SetParameter( elbow, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackElbowRadius ) ;
+            
+            // set elbow bending radius
+            var fittingLengthName = "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ;
+            if ( conduitFitting.GetParameter( "中心から終端" ) is {} paramFromCenter && conduitFitting.GetParameter( fittingLengthName ) is { } paramFittingLength ) {
+              var rackElbowRadius = paramFromCenter.AsDouble() - paramFittingLength.AsDouble() - rackWidth.MillimetersToRevitUnits()/2 ;
+              if(rackElbowRadius > 0 )
+                SetParameter( elbow, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackElbowRadius ) ;
+            }
+            
             // save connectors of cable rack
             connectors.AddRange( elbow.GetConnectors() ) ;
-            
             racks.Add( elbow );
           }
 
-          transaction.Commit() ;
+          subTransaction.Commit() ;
         }
         catch {
-          transaction.RollBack() ;
+          subTransaction.RollBack() ;
         }
       }
 

@@ -75,7 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           
           document.Regenerate() ;
 
-          var newRacks = ConnectedRacks( document, rackMaps ) ;
+          var newRacks = ConnectedRacks( document, rackMaps, IsCircle, false ) ;
 
           //insert notation for racks
           NewRackCommandBase.CreateNotationForRack( document, app, newRacks ) ;
@@ -139,7 +139,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       limitRackStorable.Save() ;
     }
 
-    private IEnumerable<FamilyInstance> ConnectedRacks( Document document,  ICollection<RackMap> rackMaps )
+    static public void DrawRackBoundaryLines( Document document, ICollection<RackMap> rackMaps, bool isRoundAnnotation )
+    {
+      ConnectedRacks( document, rackMaps, isRoundAnnotation, true ) ;
+    }
+
+    static public IEnumerable<FamilyInstance> ConnectedRacks( Document document,  ICollection<RackMap> rackMaps, bool isRoundAnnotation, bool onlyDrawDetailLine  )
     {
       double tolerance = 10d.MillimetersToRevitUnits() ;
       var cableTrayWidth = WidthCableTrayDefault2D ;
@@ -165,11 +170,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var locationAfterIntersect = IntersectFitting( locationTempt, fittings, tolerance ) ;
           var cableTray = groupCableTray[ 0 ] ;
           newCableTrays.Add( (FamilyInstance)cableTray ) ;
-          cableTray.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) ).Set( locationAfterIntersect.Length ) ;
+          if ( ! onlyDrawDetailLine )
+            cableTray.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) ).Set( locationAfterIntersect.Length ) ;
           cableTrayWidth = cableTray.LookupParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ;
           infoCableTrays.Add( (locationAfterIntersect, cableTrayWidth ) ) ;
+
+          if ( onlyDrawDetailLine )
+            continue;
+          
+          // move rack down
           var locationCableTray = ( cableTray.Location as LocationPoint )!.Point ;
           var pointNearest = locationAfterIntersect.GetEndPoint( 0 ).DistanceTo( locationCableTray ) < locationAfterIntersect.GetEndPoint( 1 ).DistanceTo( locationCableTray ) ? locationAfterIntersect.GetEndPoint( 0 ) : locationAfterIntersect.GetEndPoint( 1 ) ;
+          
           ElementTransformUtils.MoveElement( document, cableTray.Id, new XYZ( pointNearest.X, pointNearest.Y, locationCableTray.Z ) - locationCableTray ) ;
         
           groupCableTray.RemoveAt( 0 ) ;
@@ -177,7 +189,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           document.Delete( groupCableTray.Select( x => x.UniqueId ).EnumerateAll() ) ;
         }
 
-        if ( ! IsCircle ) {
+        if ( ! isRoundAnnotation ) {
           var newInfoCableTrays = ExtendCurves( document, infoCableTrays, fittings.Cast<FamilyInstance>().ToList() ) ;
           var curveLoops = GroupCurves( newInfoCableTrays ).Select( x => CurveLoop.CreateViaThicken( x.CurveLoop, cableTrayWidth, XYZ.BasisZ ) ) ;
           var lineStyle = GetLineStyle( document, EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
@@ -220,7 +232,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
     
-    private List<List<Curve>> MergeCurves( List<Curve> curves )
+    private static List<List<Curve>> MergeCurves( List<Curve> curves )
     {
       var curvesGroups = new List<List<Curve>>() ;
       var mergeCurves = new List<Curve>() ;
@@ -248,7 +260,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return curvesGroups ;
     }
 
-    private bool AddCurve( Curve curve, ref List<Curve> curves )
+    private static bool AddCurve( Curve curve, ref List<Curve> curves )
     {
       if ( curves.Count == 0 ) {
         curves.Add( curve ) ;

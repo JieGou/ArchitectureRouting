@@ -36,8 +36,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     private static (Connector? Connector1, Connector? Connector2) Get2Connector( Element curve )
     {
-      var cons = curve.GetConnectors().ToArray() ;
-      return cons.Count() != 2 ? ( null, null ) : ( cons.ElementAt( 0 ), cons.ElementAt( 1 ) ) ;
+      var connectorsOfConduit = curve.GetConnectors().ToArray() ;
+      return connectorsOfConduit.Length != 2 ? ( null, null ) : ( connectorsOfConduit.ElementAt( 0 ), connectorsOfConduit.ElementAt( 1 ) ) ;
     }
 
     private static (Connector?, Connector?) Get2Connector( Connector connector )
@@ -48,7 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return con2?.Id == connector.Id ? ( con2, con1 ) : ( null, null ) ;
     }
 
-    private static bool GetLinkedMepCurve( List<Element> accumulateList, Connector startConnector,
+    private static bool GetConnectedMepCurveList( List<Element> accumulateList, Connector startConnector,
       Element? stopElement = null )
     {
       if ( ! startConnector.IsConnected )
@@ -62,10 +62,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       accumulateList.Add( element ) ;
       if ( element.Id == stopElement?.Id )
         return true ;
-      var (con1, con2) = Get2Connector( connectedConnector ) ;
-      if ( con2 is { } )
-        return GetLinkedMepCurve( accumulateList, con2, stopElement ) ;
-      return false ;
+      var (_, con2) = Get2Connector( connectedConnector ) ;
+      return con2 is { } && GetConnectedMepCurveList( accumulateList, con2, stopElement );
     }
 
     public static List<Element> GetLinkedMEPCurves( this MEPCurve startCurve, MEPCurve endCurve )
@@ -74,10 +72,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         return new List<Element>() { startCurve } ;
       var (start1, start2) = Get2Connector( startCurve ) ;
       var accumulateList = new List<Element>() { startCurve } ;
-      if ( start1 is { } && GetLinkedMepCurve( accumulateList, start1, endCurve ) )
+      if ( start1 is { } && GetConnectedMepCurveList( accumulateList, start1, endCurve ) )
         return accumulateList ;
       accumulateList = new List<Element>() { startCurve } ;
-      if ( start2 is { } && GetLinkedMepCurve( accumulateList, start2, endCurve ) )
+      if ( start2 is { } && GetConnectedMepCurveList( accumulateList, start2, endCurve ) )
         return accumulateList ;
       accumulateList.Clear() ;
 
@@ -132,6 +130,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       if ( startParam > endParam )
         ( startParam, endParam ) = ( endParam, startParam ) ;
       return ( startParam, endParam ) ;
+    }
+    
+    public static bool IsRack( this FamilyInstance fi )
+    {
+      return fi.Document.GetElementById<ElementType>( fi.GetTypeId() ) is {} elementType && elementType.FamilyName.Equals( ElectricalRoutingFamilyType.CableTray.GetFamilyName() ) ;
+    }
+
+    private static double RackWidth( this FamilyInstance fi )
+    {
+      if ( fi.GetParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( fi.Document, "トレイ幅" ) )
+          is not { } param )
+        return 0 ;
+      return param.AsDouble() ;
     }
 
     #region Classify relative position of 2 racks
@@ -250,9 +261,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     public static void ResolveOverlapCases( this Document document, List<FamilyInstance> racks )
     {
+      var rackWidth = ! racks.Any()? 0 : racks[ 0 ].RackWidth() ;
+      if ( rackWidth == 0 )
+        return ;
       var ids = racks.Select( rack => rack.Id ) ;
       var otherRacks = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
-        .Where( r => ! ids.Contains( r.Id ) ).ToList() ;
+        .Where( r => ! ids.Contains( r.Id ) && r.RackWidth().Equals(rackWidth) ).ToList() ;
 
       if ( ! otherRacks.Any() )
         return ;
