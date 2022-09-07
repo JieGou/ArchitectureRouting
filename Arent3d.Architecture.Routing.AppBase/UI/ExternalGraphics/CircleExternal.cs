@@ -12,12 +12,10 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 
         public override void DrawExternal()
         {
-            this.DrawingServer.LineList.Clear();
-            this.DrawingServer.ArcList.Clear();
+            this.DrawingServer.CurveList.Clear();
 
-            if (this.DrawingServer == null ||
-                this.DrawingServer.BasePoint == null ||
-                this.DrawingServer.NextPoint == null ||
+            if (this.DrawingServer?.BasePoint == null || 
+                this.DrawingServer.NextPoint == null || 
                 this.DrawingServer.BasePoint.DistanceTo(this.DrawingServer.NextPoint) <= 0.001)
             {
                 return;
@@ -34,8 +32,8 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             
             if ( center.DistanceTo( point ) > 0.001 ) {
                 var circle = Arc.Create( center, radius, startAngle, endAngle, xAxis, yAxis ) ;
-                this.DrawingServer.ArcList.Add( circle );
-                this.DrawingServer.LineList.Add( Line.CreateBound( center, point ) ) ;
+                this.DrawingServer.CurveList.Add( circle );
+                this.DrawingServer.CurveList.Add( Line.CreateBound( center, point ) ) ;
             }
         }
     }

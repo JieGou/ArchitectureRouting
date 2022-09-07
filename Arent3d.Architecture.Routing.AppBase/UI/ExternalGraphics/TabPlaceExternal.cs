@@ -1,8 +1,9 @@
 ﻿using System ;
-using System.Runtime.InteropServices ;
+using System.Collections.Generic ;
+using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -11,8 +12,10 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
     public class TabPlaceExternal : DrawExternalBase
     {
         private int _numberOfTabs ;
-        private readonly double _radius ;
+        private readonly double _width ;
         private readonly UIDocument _uiDocument ;
+        private readonly IList<Curve> _curves ;
+        private readonly XYZ _locationPoint ;
         private readonly ModelessOkCancelDialog _dialog ;
         
         private XYZ? _firstPoint ;
@@ -31,24 +34,73 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         }
         
         public XYZ? SecondPoint { get ; set ; }
+        
         public XYZ? PlacePoint { get ; set ; }
         
-        public TabPlaceExternal( UIApplication uiApplication, double radius, ModelessOkCancelDialog dialog ) : base( uiApplication )
+        public TabPlaceExternal( UIApplication uiApplication, List<Curve> curves, XYZ locationPoint, ModelessOkCancelDialog dialog ) : base( uiApplication )
         {
             _uiDocument = uiApplication.ActiveUIDocument ;
-            _radius = radius ;
+            _curves = curves ;
+            _locationPoint = locationPoint ;
             _dialog = dialog ;
+
+            _width = 0.5 * GetWidth( curves ) ;
+        }
+
+        private static double GetWidth( IList<Curve> curves )
+        {
+            if ( ! curves.Any() )
+                throw new ArgumentException( nameof( curves ) ) ;
+
+            var xs = curves.SelectMany( x => x.Tessellate().Select( y => y.X ) ).EnumerateAll() ;
+            return xs.Max() - xs.Min() ;
+        }
+
+        private List<Curve> TransformCurves( IList<Curve> curves, XYZ? placePoint, XYZ? direction )
+        {
+            var curveTransforms = new List<Curve>() ;
+            if ( ! curves.Any() || placePoint is null)
+                return curveTransforms ;
+
+            var curveTranslations = new List<Curve>() ;
+            var vector = new XYZ( placePoint.X, placePoint.Y, _locationPoint.Z ) - _locationPoint ;
+            var transform = Transform.CreateTranslation( vector ) ;
+            foreach ( var curve in curves ) 
+                curveTranslations.Add(curve.CreateTransformed(transform));
+
+            if ( direction != null ) {
+                var curveRotations = new List<Curve>() ;
+                transform = Transform.CreateRotationAtPoint(XYZ.BasisZ, XYZ.BasisY.AngleTo(direction), placePoint);
+                foreach ( var curveTranslation in curveTranslations ) 
+                    curveRotations.Add(curveTranslation.CreateTransformed(transform));
+
+                curveTransforms = curveRotations ;
+            }
+            else {
+                curveTransforms = curveTranslations ;
+            }
+
+            return curveTransforms ;
         }
 
         public override void DrawExternal()
         {
-            DrawingServer.ArcList.Clear() ;
+            DrawingServer.CurveList.Clear() ;
 
-            if ( DrawingServer.BasePoint == null || DrawingServer.NextPoint == null || DrawingServer.BasePoint.DistanceTo( DrawingServer.NextPoint ) <= _uiDocument.Document.Application.ShortCurveTolerance )
+            if ( DrawingServer.BasePoint is null || 
+                 DrawingServer.NextPoint is null ||
+                 PlacePoint is null)
                 return ;
 
-            var circle = Arc.Create( DrawingServer.BasePoint, _radius, 0, 2 * Math.PI, _uiDocument.ActiveView.RightDirection, _uiDocument.ActiveView.UpDirection ) ;
-            DrawingServer.ArcList.Add( circle ) ;
+            if ( SecondPoint is null ) {
+                var curves = TransformCurves( _curves, PlacePoint, null ) ;
+                DrawingServer.CurveList = curves ;
+            }
+            else if ( FirstPoint != null ) {
+                var vector = (SecondPoint - new XYZ( FirstPoint.X, FirstPoint.Y, SecondPoint.Z )).Normalize() ;
+                var curves = TransformCurves( _curves, PlacePoint, vector ) ;
+                DrawingServer.CurveList = curves ;
+            }
         }
 
         public override void OnKeyPressActivity( object sender, KeyPressEventArgs e )
@@ -73,13 +125,13 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
                         break ;
                     case 1 :
                     {
-                        var transform = Transform.CreateTranslation( direction.CrossProduct( _uiDocument.ActiveView.ViewDirection ) * _radius ) ;
+                        var transform = Transform.CreateTranslation( direction.CrossProduct( _uiDocument.ActiveView.ViewDirection ) * _width ) ;
                         DrawingServer.BasePoint = transform.OfPoint( FirstPoint ) ;
                         break ;
                     }
                     default :
                     {
-                        var transform = Transform.CreateTranslation( direction.CrossProduct( _uiDocument.ActiveView.ViewDirection ).Negate() * _radius ) ;
+                        var transform = Transform.CreateTranslation( direction.CrossProduct( _uiDocument.ActiveView.ViewDirection ).Negate() * _width ) ;
                         DrawingServer.BasePoint = transform.OfPoint( FirstPoint ) ;
                         break ;
                     }

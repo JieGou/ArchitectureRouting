@@ -1,4 +1,5 @@
 ﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -63,6 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var level = uiDocument.Document.ActiveView.GenLevel ;
         var heightOfConnector = uiDocument.Document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         var connector = GenerateConnector( uiDocument, 0, 0, heightOfConnector, level, viewModel.SelectedFloorPlanType ?? string.Empty ) ;
+        uiDocument.Document.Regenerate();
 
         var ( placePoint, direction ) = PickPoint( uiDocument, connector ) ;
         if ( null == placePoint )
@@ -176,12 +178,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return true ;
     }
 
-    private static (XYZ? PlacePoint, XYZ? Direction) PickPoint( UIDocument uiDocument, Element symbolInstance )
+    private static (XYZ? PlacePoint, XYZ? Direction) PickPoint( UIDocument uiDocument, FamilyInstance symbolInstance )
     {
       var dlg = new ModelessOkCancelDialog() ;
       dlg.AlignToView(uiDocument.GetActiveUIView());
       dlg.Show();
       dlg.FocusRevit();
+      
+      var curves = GetCurvesAtTopFaceFromElement( symbolInstance ) ;
+      var locationPoint = ( (LocationPoint) symbolInstance.Location ).Point ;
       
       TabPlaceExternal? tabPlaceExternal = null ;
       XYZ? placePoint = null ;
@@ -192,7 +197,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           return ( placePoint, direction ) ;
         }
         
-        tabPlaceExternal = new TabPlaceExternal( uiDocument.Application, symbolInstance.GetPropertyDouble("W") * 0.5, dlg ) ;
+        tabPlaceExternal = new TabPlaceExternal( uiDocument.Application, curves, locationPoint, dlg ) ;
         while ( true ) {
           if ( null == tabPlaceExternal.FirstPoint ) {
             var (x, y, z) = uiDocument.Selection.PickPoint() ;
@@ -236,6 +241,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return ( placePoint, direction ) ;
+    }
+
+    private static List<Curve> GetCurvesAtTopFaceFromElement( Element connector )
+    {
+      var options = new Options { DetailLevel = ViewDetailLevel.Fine } ;
+      var geometries = GeometryHelper.GetGeometryObjectsFromElementInstance( connector, options ).EnumerateAll() ;
+      var curves = geometries.OfType<Curve>().Select(x => x.Clone()).ToList() ;
+      
+      foreach ( var solid in geometries.OfType<Solid>() ) {
+        foreach ( var planarFace in solid.Faces.OfType<PlanarFace>() ) {
+          if(Math.Abs(Math.Abs(planarFace.FaceNormal.DotProduct(XYZ.BasisZ)) - 1) > GeometryHelper.Tolerance)
+            continue;
+
+          foreach ( EdgeArray edgeArray in planarFace.EdgeLoops ) 
+            foreach ( Edge edge in edgeArray ) 
+              curves.Add(edge.AsCurve().Clone());
+        }
+      }
+
+      return curves ;
     }
 
     private FamilyInstance GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType )

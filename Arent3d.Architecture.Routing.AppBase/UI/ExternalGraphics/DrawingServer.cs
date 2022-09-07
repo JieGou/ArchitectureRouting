@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 
         public string GetVendorId()
         {
-            return "STSO";
+            return AppInfo.VendorId;
         }
 
         public ExternalServiceId GetServiceId()
@@ -102,39 +102,22 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             }
         }
 
-        public virtual List<Line> PrepareProfile()
+        public virtual List<Curve> PrepareProfile()
         {
-            return new List<Line>();
-        }
-
-        public virtual List<Arc> ArcPrepareProfile()
-        {
-            return new List<Arc>() ;
+            return new List<Curve>();
         }
 
         public virtual void CreateBufferStorageForElement(DisplayStyle displayStyle, View view)
         {
             this._edgeBufferStorage = new RenderingPassBufferStorage(displayStyle);
 
-            var lines = this.PrepareProfile();
-            var circles = this.ArcPrepareProfile() ;
-            if ( circles.Count > 0 ) {
-                foreach (var edge in circles)
-                {
-                    var xyzs = edge.Tessellate();
-                    this._edgeBufferStorage.VertexBufferCount += xyzs.Count;
-                    this._edgeBufferStorage.PrimitiveCount += xyzs.Count - 1;
-                    this._edgeBufferStorage.EdgeXYZs.Add(xyzs);
-                }
-            }
-            else {
-                foreach (var edge in lines)
-                {
-                    var xyzs = edge.Tessellate();
-                    this._edgeBufferStorage.VertexBufferCount += xyzs.Count;
-                    this._edgeBufferStorage.PrimitiveCount += xyzs.Count - 1;
-                    this._edgeBufferStorage.EdgeXYZs.Add(xyzs);
-                }
+            var curves = this.PrepareProfile();
+            foreach (var curve in curves)
+            {
+                var xyzs = curve.Tessellate();
+                this._edgeBufferStorage.VertexBufferCount += xyzs.Count;
+                this._edgeBufferStorage.PrimitiveCount += xyzs.Count - 1;
+                this._edgeBufferStorage.EdgeXYZs.Add(xyzs);
             }
 
             this.ProcessEdges(this._edgeBufferStorage);

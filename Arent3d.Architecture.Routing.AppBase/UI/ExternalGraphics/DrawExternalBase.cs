@@ -76,8 +76,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             {
                 this.DrawingServer.BasePoint = null;
                 this.DrawingServer.NextPoint = null;
-                this.DrawingServer.LineList.Clear();
-                this.DrawingServer.ArcList.Clear();
+                this.DrawingServer.CurveList.Clear();
                
                 var externalGraphics = new DrawingServerHost();
                 externalGraphics.UnRegisterServer(this.DrawingServer.Document);

@@ -190,7 +190,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged() ;
       }
     }
-
+    
     private ObservableCollection<CategoryModel>? _categories ;
 
     public ObservableCollection<CategoryModel> Categories

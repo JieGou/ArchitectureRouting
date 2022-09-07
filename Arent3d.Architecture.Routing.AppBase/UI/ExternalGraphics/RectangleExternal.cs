@@ -12,11 +12,10 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 
         public override void DrawExternal()
         {
-            this.DrawingServer.LineList.Clear();
+            this.DrawingServer.CurveList.Clear();
 
-            if (this.DrawingServer == null ||
-                this.DrawingServer.BasePoint == null ||
-                this.DrawingServer.NextPoint == null ||
+            if (this.DrawingServer?.BasePoint == null || 
+                this.DrawingServer.NextPoint == null || 
                 this.DrawingServer.BasePoint.DistanceTo(this.DrawingServer.NextPoint) <= 0.001)
             {
                 return;
@@ -32,7 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
                     var cpt = points[k];
                     if (lpt.DistanceTo(cpt) > 0.001)
                     {
-                        this.DrawingServer.LineList.Add(Line.CreateBound(lpt, cpt));
+                        this.DrawingServer.CurveList.Add(Line.CreateBound(lpt, cpt));
                     }
 
                     lpt = cpt;
