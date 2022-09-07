@@ -9,6 +9,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -16,12 +17,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     public record PickState(List<Route> RoutesRelatedPullBox, Element PullBox, Dictionary<string, string> RouteNameDictionary ) ;
     protected abstract AddInType GetAddInType() ;
-    
+    protected virtual ISelectionFilter GetFilter() => new PullPoxPickFilter();
+
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, new PullPoxPickFilter() ) ;
+
+      Reference? pickedPullBox ;
+      try {
+        pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, GetFilter() ) ;
+      }
+      catch ( OperationCanceledException ) {
+        return OperationResult<PickState>.Cancelled ;
+      }
+
       var elementPullBox = document.GetElement( pickedPullBox?.ElementId ) ;
       
       //Get information to reroute

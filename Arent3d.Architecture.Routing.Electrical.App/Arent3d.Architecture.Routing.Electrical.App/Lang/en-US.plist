@@ -238,8 +238,11 @@
         <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
         <string>Symbol Information</string>
 
-        <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
+        <key>Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
         <string>Create Pullbox</string>
+
+        <key>Electrical.App.Commands.Routing.HandholeRoutingCommand</key>
+        <string>Create Handhole</string>
 
         <key> Electrical.App.Commands.Routing.ChangePullBoxDimensionCommand</key>
         <string>Change Pullbox Dimension</string>
@@ -548,5 +551,8 @@
 
         <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
         <string>Pick Up&#xA;Number Setting</string>
+
+        <key>Electrical.App.Commands.Routing.EraseSelectedHandholeCommand</key>
+        <string>Delete Handhole</string>
     </dict>
 </plist>

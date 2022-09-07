@@ -235,11 +235,17 @@
         <key>Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
         <string>プルボックス配置</string>
 
+        <key>Electrical.App.Commands.Routing.HandholeRoutingCommand</key>
+        <string>ハンドホール配置</string>
+
         <key>Electrical.App.Commands.Routing.ChangePullBoxDimensionCommand</key>
         <string>プルボックス&#xA;自動計算</string>
 
         <key>Electrical.App.Commands.Routing.EraseSelectedPullBoxCommand</key>
         <string>プルボックス削除</string>
+
+        <key>Electrical.App.Commands.Routing.EraseSelectedHandholeCommand</key>
+        <string>ハンドホール削除</string>
 
         <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
         <string>電気シンボル集計</string>
@@ -539,4 +545,3 @@
         <string>印刷モード切替</string>
     </dict>
 </plist>
-

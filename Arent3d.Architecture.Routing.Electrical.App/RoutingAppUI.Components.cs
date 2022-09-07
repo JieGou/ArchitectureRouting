@@ -431,6 +431,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( PressureGuidingTubeCommand ), OnlyInitialized = true )]
           private static class PressureGuidingTubeButton { }
+          
+          [Button( typeof( HandholeRoutingCommand ), OnlyInitialized = true )]
+          private static class HandholeRoutingCommandButton { }
+
+          [Button( typeof( EraseSelectedHandholeCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedHandholeCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.routing.selectionRangeRouting", TitleKey = "Electrical.App.Panels.Routing.Routing.SelectionRangeRouting" )]
