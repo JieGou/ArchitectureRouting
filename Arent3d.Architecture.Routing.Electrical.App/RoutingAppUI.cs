@@ -47,8 +47,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )
     {
       _registerFromToTreeCommand.Initialize( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
-      var uiDocument = new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ).ActiveUIDocument ;
+      
+      // create ceed dockable pane
+      var uiApplication = new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ;
+      var uiDocument = uiApplication.ActiveUIDocument ;
       CeedModelDockPanelProvider?.CustomInitiator( uiDocument, uiDocument.Document ) ;
+      var dpid = new DockablePaneId( PaneId ) ;
+      DockablePane dockPane = uiApplication.GetDockablePane( dpid ) ;
+      dockPane.Hide() ;
     }
 
     private CeedModelView CeedModelDockablePaneRegisters( UIControlledApplication application )
@@ -56,7 +62,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       var data = new DockablePaneProviderData() ;
       var ceedModelDockPanelProvider = new CeedModelView() ;
       data.FrameworkElement = ceedModelDockPanelProvider ;
-      DockablePaneState state = new() { DockPosition = DockPosition.Right } ;
+      DockablePaneState state = new()
+      {
+        DockPosition = DockPosition.Tabbed, 
+        TabBehind = DockablePanes.BuiltInDockablePanes.ElementView
+      } ;
       data.InitialState = state ;
 
       var dpid = new DockablePaneId( PaneId ) ;

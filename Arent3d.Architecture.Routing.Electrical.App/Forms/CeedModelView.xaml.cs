@@ -1,5 +1,4 @@
-﻿using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+﻿using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -11,7 +10,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     {
       data.FrameworkElement = this ;
 
-      data.InitialState = new DockablePaneState { DockPosition = DockPosition.Right } ;
+      data.InitialState = new DockablePaneState
+      {
+        DockPosition = DockPosition.Tabbed, 
+        TabBehind = DockablePanes.BuiltInDockablePanes.ElementView
+      } ;
     }
 
     public CeedModelView()

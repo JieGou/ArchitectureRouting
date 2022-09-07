@@ -3,10 +3,11 @@ using System.Windows.Controls ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Autodesk.Revit.UI ;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs ;
 using MessageBox = System.Windows.MessageBox ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Forms
+namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
   public partial class CeedDockPaneContent : UserControl
   {
@@ -89,6 +90,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.SelectedCeedModel = ceedModel ;
       BtnReplaceSymbol.IsEnabled = true ;
       ViewModel.ShowPreviewList( ceedModel ) ;
+    }
+
+    private void ButtonOk_OnClick( object sender, RoutedEventArgs e )
+    {
+      var dpId = new DockablePaneId( RoutingAppUI.PaneId ) ;
+      if ( ! DockablePane.PaneIsRegistered( dpId ) ) return ;
+      ViewModel.ResetData() ;
+      DockablePane dockPane = ViewModel.UiDocument.Application.GetDockablePane( dpId ) ;
+      dockPane.Hide() ;
     }
   }
 
