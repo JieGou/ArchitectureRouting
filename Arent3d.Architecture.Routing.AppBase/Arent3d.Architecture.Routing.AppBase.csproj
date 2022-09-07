@@ -23,6 +23,12 @@
     <None Update="resources\ElectricalCategory.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="resources\拾い出し集計表_template.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="resources\拾い根拠確認表_template.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -109,6 +115,10 @@
     <None Remove="resources\Filter_32x32.png" />
     <Resource Include="resources\Filter_32x32.png" />
     <Resource Include="resources\icon_folder_16x16.png" />
+    <None Remove="resources\icon_cancel.ico" />
+    <Resource Include="resources\icon_cancel.ico" />
+    <None Remove="resources\icon_ok.ico" />
+    <Resource Include="resources\icon_ok.ico" />
   </ItemGroup>
 
 </Project>

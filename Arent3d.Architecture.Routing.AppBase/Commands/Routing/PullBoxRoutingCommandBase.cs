@@ -10,15 +10,18 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PullBoxRoutingCommandBase : RoutingCommandBase<PullBoxRoutingCommandBase.PickState>
   {
-    public record PickState( PointOnRoutePicker.PickInfo PickInfo, FamilyInstance PullBox, double HeightConnector, double HeightWire, XYZ RouteDirection, bool IsCreatePullBoxWithoutSettingHeight, bool IsAutoCalculatePullBoxSize, XYZ? PositionLabel, PullBoxModel? SelectedPullBox, XYZ? FromDirection, XYZ? ToDirection ) ;
+    public record PickState( PointOnRoutePicker.PickInfo PickInfo, FamilyInstance PullBox, double HeightConnector, double HeightWire, XYZ RouteDirection, bool IsCreatePullBoxWithoutSettingHeight, bool IsAutoCalculatePullBoxSize, XYZ? PositionLabel, PullBoxModel? SelectedPullBox, XYZ? FromDirection, XYZ? ToDirection, Dictionary<string, List<string>> ParentAndChildRoute ) ;
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
     protected virtual ConnectorFamilyType? ConnectorType => null ;
     protected abstract AddInType GetAddInType() ;
@@ -30,9 +33,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
 
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      PointOnRoutePicker.PickInfo? pickInfo ;
+      try {
+        pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      }
+      catch ( OperationCanceledException ) {
+        return OperationResult<PickState>.Cancelled ;
+      }
+
       var pullBoxViewModel = new PullBoxViewModel(document) ;
-      
       var sv = new PullBoxDialog { DataContext = pullBoxViewModel } ;
       sv.ShowDialog() ;
       if ( true != sv.DialogResult ) return OperationResult<PickState>.Cancelled ;
@@ -68,32 +77,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         position = new XYZ( originX, originY, heightConnector ) ;
       }
 
-      return new OperationResult<PickState>( new PickState( pickInfo, pullBox, heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, pullBoxViewModel.IsAutoCalculatePullBoxSize, position, pullBoxViewModel.SelectedPullBox, fromDirection, toDirection ) ) ;
+      return new OperationResult<PickState>( new PickState( pickInfo, pullBox, heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, pullBoxViewModel.IsAutoCalculatePullBoxSize, position, pullBoxViewModel.SelectedPullBox, fromDirection, toDirection, new Dictionary<string, List<string>>() ) ) ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (pickInfo, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, _, _, _, fromDirection, toDirection ) = pickState ;
+      var (pickInfo, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, _, _, _, fromDirection, toDirection, parentAndChildRoute ) = pickState ;
       var route = pickInfo.SubRoute.Route ;
       var systemType = route.GetMEPSystemType() ;
       var curveType = route.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
-      Dictionary<string, List<string>> parentAndChildRoute = new() ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection ) ;
+      var allowedTiltedPiping = CheckAllowedTiltedPiping( route.GetAllConnectors().ToList() ) ;
+      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute, fromDirection, toDirection, null, false, allowedTiltedPiping ) ;
 
       return result ;
     }
 
+    private bool CheckAllowedTiltedPiping( ICollection<Connector> connectors )
+    {
+      if ( ! connectors.Any() ) return false ;
+      foreach ( var connector in connectors ) {
+        var (x, y, z) = ( connector.Owner as FamilyInstance )!.FacingOrientation ;
+        if ( x is not ( 1 or -1 ) && y is not ( 1 or -1 ) && z is not ( 1 or -1 ) ) {
+          return true ;
+        }
+      }
+      
+      return false ;
+    }
+
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
     {
-      var (_, pullBox, _, _, _, _, isAutoCalculatePullBoxSize, positionLabel, selectedPullBox, _, _ ) = result ;
+      var (_, pullBox, _, _, _, _, isAutoCalculatePullBoxSize, positionLabel, selectedPullBox, _, _, parentAndChildRoute) = result ;
       
       #region Change dimension of pullbox and set new label
       
-      var detailSymbolStorable = document.GetDetailSymbolStorable() ;
-      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
-      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       CsvStorable? csvStorable = null ;
       List<ConduitsModel>? conduitsModelData = null ;
       List<HiroiMasterModel>? hiroiMasterModels = null;
@@ -103,9 +122,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       }
       
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, detailSymbolStorable, pullBoxInfoStorable,
-        conduitsModelData, hiroiMasterModels, scale, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, isAutoCalculatePullBoxSize, selectedPullBox ) ;
+      var level = document.ActiveView.GenLevel ;
+      if ( level != null ) {
+        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
+        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       
+        PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
+          conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, isAutoCalculatePullBoxSize, selectedPullBox ) ;
+      }
+
+      #endregion
+      
+      #region Change Representative Route Name
+
+      if ( ! parentAndChildRoute.Any() ) return executeResultValue ;
+      using Transaction transactionChangeRepresentativeRouteName = new( document ) ;
+      transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
+      foreach ( var (parentRouteName, childRouteNames ) in parentAndChildRoute ) {
+        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => childRouteNames.Contains(c.GetRouteName()! ) ).ToList() ;
+        foreach ( var conduit in conduits ) {
+          conduit.TrySetProperty( RoutingParameter.RepresentativeRouteName, parentRouteName ) ;
+        }
+      }
+
+      transactionChangeRepresentativeRouteName.Commit() ;
+
       #endregion
       
       return executeResultValue ;

@@ -2,11 +2,13 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
@@ -29,7 +31,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
     {
       var elm = InsertPassPointElement( document, pickInfo ) ;
       var route = pickInfo.SubRoute.Route ;
-      var routeRecords = GetRelatedBranchSegments( route ) ;
+      var routeRecords = GetRelatedBranchSegments( route ).ToList()  ;
+      if ( !routeRecords.Any() ) routeRecords = GetRelatedBranchSegments( document, route, pickInfo.Element, elm, pickInfo.RouteNameDictionary ).ToList() ;
       return routeRecords.Concat( PickCommandUtil.GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm ).ToSegmentsWithName( route.RouteName ) ).EnumerateAll() ;
     }
 
@@ -49,6 +52,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
       passPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toConnectorUniqueId ) ;
       passPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromConnectorUniqueId ) ;
       return passPoint ;
+    }
+
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetRelatedBranchSegments( Document document, Route route, Element insertingElement, Instance passPointElement, Dictionary<string, string> routeNameDictionary )
+    {
+      const double tolerance = 0.01 ;
+      var routeName = route.RouteName ;
+      var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( e => e.GetRouteName() == routeName ) ;
+      var relatedSegments = new List<(string RouteName, RouteSegment Segment)>() ;
+      if ( conduitOfRoute == null ) return relatedSegments ;
+      {
+        var dic = RouteCache.Get( DocumentKey.Get( document ) ) ;
+        var representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+        if ( string.IsNullOrEmpty( representativeRouteName ) ) return relatedSegments ;
+        var conduit = insertingElement as Conduit ;
+        var insertingElementOrigin = ( ( conduit!.Location as LocationCurve )!.Curve as Line )!.GetEndPoint( 0 ) ;
+        var allBranchRouteNames = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( e => e.GetRouteName() != routeName && ( representativeRouteName == routeName ? e.GetRepresentativeRouteName() == routeName : e.GetRepresentativeRouteName() == representativeRouteName ) ).Select( e => e.GetRouteName() ! ).Distinct() ;
+        foreach ( var branchRouteName in allBranchRouteNames ) {
+          if ( false == dic.TryGetValue( branchRouteName, out var branchRoute ) ) continue ;
+          var element = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit )
+            .FirstOrDefault( e => e.GetRouteName() == branchRouteName && ( e is Conduit c && insertingElementOrigin.DistanceTo( ( ( c.Location as LocationCurve )!.Curve as Line )!.GetEndPoint( 0 ) ) < tolerance ) ) ;
+          if ( element == null ) continue ;
+          var subRoute = branchRoute.GetSubRoute( element.GetSubRouteIndex() ?? -1 ) ;
+          if ( null == subRoute ) continue ;
+          var segments = PickCommandUtil.GetNewSegmentList( subRoute, element, passPointElement ).ToSegmentsWithName( branchRouteName ) ;
+          relatedSegments.AddRange( segments ) ;
+          if ( ! routeNameDictionary.ContainsKey( branchRouteName ) ) {
+            routeNameDictionary.Add( branchRouteName, element.GetRepresentativeRouteName()! ) ;
+          }
+        }
+      }
+
+      return relatedSegments ;
     }
 
     private static (string, string) GetFromAndToConnectorUniqueId( Document document, string fromElementUniqueId, string toElementUniqueId )

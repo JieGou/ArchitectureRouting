@@ -2,7 +2,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.StorableConverter ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using InvalidOperationException = Autodesk.Revit.Exceptions.InvalidOperationException ;
@@ -76,25 +75,12 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
-    /// Get location type settings data from snoop DB.
-    /// </summary>
-    public static LocationTypeStorable GetLocationTypeStorable( this Document document )
-    {
-      try {
-        return LocationTypeStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( LocationTypeStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new LocationTypeStorable( document ) ;
-      }
-    }
-
-    /// <summary>
     /// Get CNS Setting data from snoop DB.
     /// </summary>
     public static CnsSettingStorable GetCnsSettingStorable( this Document document )
     {
       try {
-        return CnsSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CnsSettingStorable.StorableName ) ;
+        return CnsSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CnsSettingStorable.CnsStorableName ) ;
       }
       catch ( InvalidOperationException ) {
         return new CnsSettingStorable( document ) ;
@@ -128,45 +114,6 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
-    /// Get pick up data from snoop DB.
-    /// </summary>
-    public static PickUpStorable GetPickUpStorable( this Document document )
-    {
-      try {
-        return PickUpStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( PickUpStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new PickUpStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get detail symbol data from snoop DB.
-    /// </summary>
-    public static DetailSymbolStorable GetDetailSymbolStorable( this Document document )
-    {
-      try {
-        return DetailSymbolStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailSymbolStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new DetailSymbolStorable( document ) ;
-      }
-    }
-    
-    /// <summary>
-    /// Get pull box data from snoop DB.
-    /// </summary>
-    public static PullBoxInfoStorable GetPullBoxInfoStorable( this Document document )
-    {
-      try {
-        return PullBoxInfoStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( PullBoxInfoStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new PullBoxInfoStorable( document ) ;
-      }
-    }
-
-    /// <summary>
     /// Get rack notation data from snoop DB.
     /// </summary>
     public static RackNotationStorable GetRackNotationStorable( this Document document )
@@ -178,17 +125,17 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new RackNotationStorable( document ) ;
       }
     }
-
+    
     /// <summary>
-    /// Get detail table data from snoop DB.
+    /// Get limit rack data from snoop DB.
     /// </summary>
-    public static DetailTableStorable GetDetailTableStorable( this Document document )
+    public static LimitRackStorable GetLimitRackStorable( this Document document )
     {
       try {
-        return DetailTableStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailTableStorable.StorableName ) ;
+        return LimitRackStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( LimitRackStorable.LimitRackStorableName ) ;
       }
       catch ( InvalidOperationException ) {
-        return new DetailTableStorable( document ) ;
+        return new LimitRackStorable( document ) ;
       }
     }
 
@@ -261,28 +208,16 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
     }
 
-    /// <summary>
-    /// Get ConduitAndDetailCurve data from snoop DB.
-    /// </summary>
-    public static ConduitAndDetailCurveStorable GetConduitAndDetailCurveStorable( this Document document )
-    {
-      try {
-        return ConduitAndDetailCurveStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ConduitAndDetailCurveStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new ConduitAndDetailCurveStorable( document ) ;
-      }
-    }
-
     public static string GetDefaultConstructionItem( this Document document )
     {
+      const string defaultConstructionItem = "未設定" ; // 工事項目設定ではデフォルトが設定されていない場合、デフォルトの工事項目を「未設定」とする
       try {
         var cnsSettingStorable = GetCnsSettingStorable( document ) ;
-        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault(x=>x.IsDefaultItemChecked) ;
-        return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : String.Empty ;
+        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault( x => x.IsDefaultItemChecked ) ;
+        return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : defaultConstructionItem ;
       }
       catch ( Exception ) {
-        return String.Empty;
+        return defaultConstructionItem ;
       }
     }
 
@@ -331,6 +266,31 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new ChangePlumbingInformationStorable( document ) ;
       }
     }
-
+    
+    /// <summary>
+    /// Get TextNotePickUpModel data from snoop DB.
+    /// </summary>
+    public static WireLengthNotationStorable GetWireLengthNotationStorable( this Document document )
+    {
+      try {
+        return WireLengthNotationModelStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( WireLengthNotationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WireLengthNotationStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get ShaftOpeningModel data from snoop DB.
+    /// </summary>
+    public static ShaftOpeningStorable GetShaftOpeningStorable( this Document document )
+    {
+      try {
+        return ShaftOpeningStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ShaftOpeningStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new ShaftOpeningStorable( document ) ;
+      }
+    }
   }
 }

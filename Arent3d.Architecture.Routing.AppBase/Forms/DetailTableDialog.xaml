@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         x:Name="DetailTableWindow"
         WindowStartupLocation="CenterScreen"
-        Title="明細表作成" Height="980" Width="1150" ResizeMode="NoResize" Topmost="True"
+        Title="明細表作成" Height="980" Width="1150" ResizeMode="NoResize"
         d:DataContext="{d:DesignInstance {x:Type view:DesignDetailTableViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <Style x:Key="DefaultButtonStyle" TargetType="{x:Type Button}">
@@ -95,7 +95,7 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1000" Height="410" RowHeight="25" Margin="20, 70" ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1000" Height="410" RowHeight="25" Margin="20, 70" ItemsSource="{Binding DetailTableItemModels}" CanUserAddRows="False" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow">
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
@@ -372,13 +372,13 @@
                 <DataGridTemplateColumn Header="アース本数" Width="45" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding NumberOfGrounds, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding Path=NumberOfGround, Mode=TwoWay}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
                         <DataTemplate>
-                            <ComboBox SelectedValue="{Binding NumberOfGrounds}"
-                                      Text="{Binding NumberOfGrounds, Mode=TwoWay}"
+                            <ComboBox SelectedValue="{Binding Path=NumberOfGround}"
+                                      Text="{Binding Path=NumberOfGround, Mode=TwoWay}"
                                       DisplayMemberPath="Type" 
                                       SelectedValuePath="Name"
                                       ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
@@ -638,7 +638,7 @@
         </DataGrid>
         
         <DataGrid x:Name="DtReferenceGrid" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="1000" Height="370" RowHeight="25" Margin="20, 70" 
-                  ItemsSource="{Binding ReferenceDetailTableModels}" 
+                  ItemsSource="{Binding ReferenceDetailTableItemModels}" 
                   CanUserAddRows="False" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" >
             

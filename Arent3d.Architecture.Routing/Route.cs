@@ -1,6 +1,5 @@
 using System ;
 using System.Collections.Generic ;
-using System.ComponentModel ;
 using System.Diagnostics ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
@@ -240,7 +239,7 @@ namespace Arent3d.Architecture.Routing
       }
       else {
         // new sub route.
-        var subRoute = new SubRoute( this, _subRoutes.Count ) ;
+        var subRoute = new SubRoute( this, _subRoutes.Count, segment.AllowedTiltedPiping ) ;
         subRoute.AddSegment( segment ) ;
         _subRoutes.Add( subRoute ) ;
         _subRouteMap.Add( ( fromEndPoint.Key, true ), subRoute ) ;

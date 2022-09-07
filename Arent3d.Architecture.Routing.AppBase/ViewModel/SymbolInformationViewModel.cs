@@ -18,16 +18,14 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class SymbolInformationViewModel : NotifyPropertyChanged
   {
     public const string LenghtMaterialType = "長さ物" ;
-    private const double QuantityDefault = 100 ;
-    private const string UnitDefault = "m" ;
-    private const string TrajectoryDefault = "100" ;
+    private const double QuantityDefault = 10 ;
+    private const string TrajectoryDefault = "10" ;
     private const string ConstructionClassificationDefault = "導圧管類" ;
 
     private const string ElectricalCategoryFileName = "ElectricalCategory.xlsx" ;
@@ -37,9 +35,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private bool _isInChangeLoop ;
 
-    private readonly Document? _document ;
-
-    private ExternalCommandData _commandData ;
+    private readonly Document _document ;
 
     public ICommand AddCeedDetailCommand => new RelayCommand( AddCeedDetail ) ;
     public ICommand DeleteCeedDetailCommand => new RelayCommand( DeleteCeedDetail ) ;
@@ -50,26 +46,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public SymbolInformationModel SymbolInformation { get ; }
 
-    private List<ElectricalCategoryModel> _electricalCategoriesEco ;
-    private List<ElectricalCategoryModel> _electricalCategoriesNormal ;
-    private Dictionary<string, string> _dictElectricalCategoriesEcoKey ;
-    private Dictionary<string, string> _dictElectricalCategoriesNormalKey ;
+    private readonly List<ElectricalCategoryModel> _electricalCategoriesEco ;
+    private readonly List<ElectricalCategoryModel> _electricalCategoriesNormal ;
+    private readonly Dictionary<string, string> _dictElectricalCategoriesEcoKey ;
+    private readonly Dictionary<string, string> _dictElectricalCategoriesNormalKey ;
 
     #region SymbolSetting
 
     public readonly Array SymbolKinds = Enum.GetValues( typeof( SymbolKindEnum ) ) ;
-    public readonly Array SymbolCoordinates = Enum.GetValues( typeof( SymbolCoordinateEnum ) ) ;
+    public readonly Array SymbolCoordinates = Enum.GetValues( typeof( SymbolCoordinate ) ) ;
     public readonly Array SymbolColors = SymbolColor.DictSymbolColor.Keys.ToArray() ;
 
     public SymbolKindEnum SelectedSymbolKind
     {
-      get => (SymbolKindEnum) Enum.Parse( typeof( SymbolKindEnum ), SymbolInformation.SymbolKind! ) ;
+      get => (SymbolKindEnum) Enum.Parse( typeof( SymbolKindEnum ), SymbolInformation.SymbolKind ) ;
       set => SymbolInformation.SymbolKind = value.GetFieldName() ;
     }
 
-    public SymbolCoordinateEnum SelectedSymbolCoordinate
+    public SymbolCoordinate SelectedSymbolCoordinate
     {
-      get => (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), SymbolInformation.SymbolCoordinate! ) ;
+      get => (SymbolCoordinate) Enum.Parse( typeof( SymbolCoordinate ), SymbolInformation.SymbolCoordinate ) ;
       set => SymbolInformation.SymbolCoordinate = value.GetFieldName() ;
     }
 
@@ -78,7 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     #region CeedDetail Setting
 
     private CsvStorable? _csvStorable ;
-    private CsvStorable CsvStorable => _csvStorable ??= _document!.GetCsvStorable() ;
+    private CsvStorable CsvStorable => _csvStorable ??= _document.GetCsvStorable() ;
 
     private List<HiroiMasterModel>? _hiroiMasterModels ;
     private List<HiroiMasterModel> HiroiMasterModels => _hiroiMasterModels ??= CsvStorable.HiroiMasterModelData ;
@@ -160,22 +156,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #endregion
 
-    #region Command
+    #region Commands
 
     private void ShowCeedCodeDialog()
     {
       try {
-        var ceedViewModel = new CeedViewModel( _commandData ) ;
+        var ceedViewModel = new CeedViewModel( _document ) ;
         var dlgCeedModel = new CeedModelDialog( ceedViewModel ) ;
 
         if ( dlgCeedModel.ShowDialog() == false ) return ;
 
         var allowInputQuantity = false ;
-        var ceedModelNumber = ceedViewModel?.SelectedCeedModel?.CeedModelNumber ;
+        var ceedModelNumber = ceedViewModel.SelectedCeedModel?.CeedModelNumber ;
         var hiroisetSelected = HiroiSetMasterNormalModels.FirstOrDefault( x => x.ParentPartModelNumber == ceedModelNumber ) ;
 
         if ( null != hiroisetSelected )
-          AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel?.SelectedCeedModel, allowInputQuantity ) ;
+          AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel.SelectedCeedModel, allowInputQuantity ) ;
 
         //Case seconde row with _N at the end.
         ceedModelNumber += "_N" ;
@@ -183,9 +179,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         hiroisetSelected = HiroiSetMasterNormalModels.FirstOrDefault( x => x.ParentPartModelNumber == ceedModelNumber ) ;
 
         if ( null != hiroisetSelected )
-          AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel?.SelectedCeedModel, allowInputQuantity ) ;
+          AddCeedDetailBaseOnHiroiSetMaster( hiroisetSelected, ceedViewModel.SelectedCeedModel, allowInputQuantity ) ;
       }
       catch {
+        // Ignored
       }
     }
 
@@ -212,9 +209,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( materialCode ) ) return ;
       var hiroiMaster = HiroiMasterModels.FirstOrDefault( x => CompareBuzaiCDAndMaterialCode( x.Buzaicd, materialCode ) ) ;
       if ( null == hiroiMaster ) return ;
-      var ceedSetCodeArray = ceedModel?.CeedSetCode?.Split( ':' ) ;
+      var ceedSetCodeArray = ceedModel?.CeedSetCode.Split( ':' ) ;
       var ceedCode = ceedSetCodeArray?.Length > 0 ? ceedSetCodeArray[ 0 ] : string.Empty ;
-      var newCeedDetail = new CeedDetailModel( hiroiMaster.Buzaicd, name, hiroiMaster.Kikaku, string.Empty, QuantityDefault.ToString(), hiroiMaster.Tani, SymbolInformation.Id, TrajectoryDefault,
+      var newCeedDetail = new CeedDetailModel( hiroiMaster.Buzaicd, name, hiroiMaster.Kikaku, string.Empty, $"{QuantityDefault}", hiroiMaster.Tani, SymbolInformation.SymbolUniqueId, TrajectoryDefault,
         hiroiMaster.Size1, hiroiMaster.Size2, hiroiMaster.Hinmei, CeedDetailList.Count + 1, hiroiMaster.Type, string.Empty, ceedModel?.ModelNumber, ceedCode,
         ConstructionClassificationDefault, allowInputQuantity ? 0 : 1, 1, 1, string.Empty, allowInputQuantity, ceedModel?.Name, isConduit ) ;
       if ( ! newCeedDetail.AllowInputQuantity )
@@ -243,7 +240,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       ElectricalCategoryViewModel electricalCategoryViewModel =
-        new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, _dictElectricalCategoriesEcoKey, _dictElectricalCategoriesNormalKey, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, QuantityDefault, TrajectoryDefault, SymbolInformation.Id) ;
+        new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, _dictElectricalCategoriesEcoKey, _dictElectricalCategoriesNormalKey, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, QuantityDefault, TrajectoryDefault, SymbolInformation.SymbolUniqueId) ;
       ElectricalCategoryDialog dialog = new(electricalCategoryViewModel) ;
       if ( true != dialog.ShowDialog() ) return ;
       if ( null == electricalCategoryViewModel.CeedDetailSelected ) return ;
@@ -282,7 +279,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var hiroiMasterDialog = new HiroiMasterDialog( hiroiMasterViewModel ) ;
       if ( true == hiroiMasterDialog.ShowDialog() ) {
         var productName = hiroiMasterViewModel.HiroiMasterSelected?.Syurui == LenghtMaterialType ? hiroiMasterViewModel.HiroiMasterSelected?.Kikaku : hiroiMasterViewModel.HiroiMasterSelected?.Hinmei ;
-        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, productName, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault.ToString(), hiroiMasterViewModel.HiroiMasterSelected?.Tani, this.SymbolInformation.Id, TrajectoryDefault,
+        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, productName, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", $"{QuantityDefault}", hiroiMasterViewModel.HiroiMasterSelected?.Tani, this.SymbolInformation.SymbolUniqueId, TrajectoryDefault,
           hiroiMasterViewModel.HiroiMasterSelected?.Size1, hiroiMasterViewModel.HiroiMasterSelected?.Size2, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, CeedDetailList.Count + 1, hiroiMasterViewModel.HiroiMasterSelected?.Type, string.Empty,string.Empty, string.Empty, string.Empty, 1, 1, 1, string.Empty, true, string.Empty ) ;
         CeedDetailList.Add( ceedDetailModel ) ;
         CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
@@ -294,11 +291,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var selectedHiroiMaster = HiroiMasterModels.FirstOrDefault( x => x.Buzaicd == buzaiCd ) ;
       if ( null == selectedHiroiMaster ) return ;
       var productName = selectedHiroiMaster.Syurui == LenghtMaterialType ? selectedHiroiMaster.Kikaku : selectedHiroiMaster.Hinmei ;
-      var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, productName, selectedHiroiMaster.Kikaku, "", QuantityDefault.ToString(), selectedHiroiMaster.Tani, SymbolInformation.Id, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2,
+      var ceedDetailModel = new CeedDetailModel( selectedHiroiMaster.Buzaicd, productName, selectedHiroiMaster.Kikaku, "", $"{QuantityDefault}", selectedHiroiMaster.Tani, SymbolInformation.SymbolUniqueId, TrajectoryDefault, selectedHiroiMaster.Size1, selectedHiroiMaster.Size2,
         selectedHiroiMaster.Hinmei, CeedDetailList.Count + 1, selectedHiroiMaster.Type, string.Empty, string.Empty, string.Empty, string.Empty, 0, 1, QuantityDefault, string.Empty, true, string.Empty ) ;
       
-      if ( _document == null ) return ;
-      var csvStorable = _document!.GetCsvStorable() ;
+      var csvStorable = _document.GetCsvStorable() ;
       var conduit = csvStorable.ConduitsModelData.FirstOrDefault( x => x.PipingType + x.Size == ceedDetailModel.ProductName ) ;
       ceedDetailModel.IsConduit = conduit != null ;
       
@@ -321,15 +317,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #endregion
 
-    public SymbolInformationViewModel( Document? document, SymbolInformationModel? symbolInformationModel, ExternalCommandData commandData )
+    public SymbolInformationViewModel( Document document, SymbolInformationModel? symbolInformationModel)
     {
-      _commandData = commandData ;
       _document = document ;
       SymbolInformation = symbolInformationModel ?? new SymbolInformationModel() ;
-      var ceedDetailModelData = _document!.GetCeedDetailStorable().AllCeedDetailModelData ;
+      var ceedDetailModelData = _document.GetCeedDetailStorable().AllCeedDetailModelData ;
 
-      if ( ! string.IsNullOrEmpty( SymbolInformation.Id ) && SymbolInformation.Id != "-1" ) {
-        CeedDetailList = new ObservableCollectionEx<CeedDetailModel>( ceedDetailModelData.FindAll( x => x.ParentId == SymbolInformation.Id ).OrderBy( x => x.Order ) ) ;
+      if ( ! string.IsNullOrEmpty( SymbolInformation.SymbolUniqueId ) ) {
+        CeedDetailList = new ObservableCollectionEx<CeedDetailModel>( ceedDetailModelData.FindAll( x => x.ParentId == SymbolInformation.SymbolUniqueId ).OrderBy( x => x.Order ) ) ;
       }
       else {
         CeedDetailList = new ObservableCollectionEx<CeedDetailModel>() ;

@@ -1,4 +1,5 @@
-﻿using System.Linq ;
+﻿using System ;
+using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -12,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     public static double LeaderOffsetSheet => 0.6;
     public static double TotalHeight => TextSize + 2 * LeaderOffsetSheet ;
     
-    public static TextNoteType? FindOrCreateTextNoteType(Document document)
+    public static TextNoteType? FindOrCreateTextNoteType(Document document, bool isVisible = true)
     {
       var textNoteTypes = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).OfType<TextNoteType>().EnumerateAll() ;
       if ( ! textNoteTypes.Any() )
@@ -30,6 +31,35 @@ namespace Arent3d.Architecture.Routing.AppBase
       textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( 0.75 ) ;
       textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( LeaderOffsetSheet.MillimetersToRevitUnits() ) ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+
+      if( !isVisible )
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+      
+      return textNoteType ;
+    }
+
+    public static TextNoteType? FindOrCreateTextNoteType(Document document, double textSize, bool isVisible = true)
+    {
+      var textNoteTypeName = $"ARENT3D_{Math.Round( textSize, 2 )}MM_0.75" ;
+      var textNoteTypes = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).OfType<TextNoteType>().EnumerateAll() ;
+      if ( ! textNoteTypes.Any() )
+        return null ;
+      
+      var textNoteType = textNoteTypes.SingleOrDefault( x => x.Name == textNoteTypeName ) ;
+      if ( null != textNoteType ) 
+        return textNoteType ;
+      
+      textNoteType = textNoteTypes.First().Duplicate(textNoteTypeName) as TextNoteType;
+      if ( null == textNoteType )
+        return null ;
+      
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( textSize.MillimetersToRevitUnits() ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( 0.75 ) ;
+      textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( LeaderOffsetSheet.MillimetersToRevitUnits() ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+      
+      if( !isVisible )
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
 
       return textNoteType ;
     }

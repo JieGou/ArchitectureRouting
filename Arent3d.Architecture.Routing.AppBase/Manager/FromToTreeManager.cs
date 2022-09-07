@@ -10,6 +10,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
+using RibbonButton = Autodesk.Windows.RibbonButton ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
@@ -33,6 +34,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       FromToTreeUiManager?.FromToTreeView.ClearSelection() ;
       FromToTreeUiManager?.FromToTreeView.CustomInitiator( UiApp, addInType ) ;
       SetSelectionInViewToFromToTree( doc, addInType ) ;
+
+      UpdateIsEnableButton( doc ) ;
     }
 
     /// <summary>
@@ -73,6 +76,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
+    private void UpdateIsEnableButton( Document document )
+    {
+      const string dummyName = "Dummy" ;
+      var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => ! string.IsNullOrEmpty( c.GetRouteName() ) && c.GetRouteName()!.Contains( dummyName ) ).Select( c => c.Id ).Distinct().ToList() ;
+      var isEnable = ! allConduits.Any() ;
+      var targetTabName = "Electrical.App.Routing.TabName".GetAppStringByKey() ;
+      var selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
+      if ( selectionTab == null ) return ;
+
+      using var transaction = new Transaction( document, "Enable buttons" ) ;
+      transaction.Start() ;
+      foreach ( var panel in selectionTab.Panels ) {
+        if ( panel.Source.Title == "Electrical.App.Panels.Routing.Confirmation".GetAppStringByKeyOrDefault( "Confirmation" ) ) {
+          foreach ( var item in panel.Source.Items ) {
+            if ( ! ( item is RibbonButton ribbonButton && ribbonButton.Text == "Electrical.App.Commands.Routing.CreateDummyConduitsIn3DViewCommand".GetDocumentStringByKeyOrDefault( document, "Show\nConduits in 3D" ) ) ) {
+              item.IsEnabled = isEnable ;
+            }
+          }
+        }
+        else {
+          panel.IsEnabled = isEnable ;
+        }
+      }
+
+      transaction.Commit() ;
+    }
+    
     // document opened event
     public virtual void OnDocumentOpened( AddInType addInType )
     {

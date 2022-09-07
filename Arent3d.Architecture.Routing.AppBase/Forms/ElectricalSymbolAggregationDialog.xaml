@@ -6,7 +6,7 @@
         xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
-        Title="内容表示" Height="400" Width="820" x:Name="ElectricalSymbolAggregationWindown"
+        Title="拾い結果" Height="400" Width="820" x:Name="ElectricalSymbolAggregationWindown"
         d:DataContext="{d:DesignInstance {x:Type forms:DesignElectricalSymbolAggregationViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <Style x:Key="CenterGridHeaderStyle" TargetType="DataGridColumnHeader">

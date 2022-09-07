@@ -88,16 +88,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           errorMess = string.Empty ;
           continue ;
         }
-        var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
-        var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
+        var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.FromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.FromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.FromConnectorInfo.ModelNumber ) ;
+        var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.ToConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.ToConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.ToConnectorInfo.ModelNumber ) ;
         if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
 
         if ( fromConnectorCeedModel != null && showCeedModelSymbols.Any( legend => legend == fromConnectorCeedModel.LegendDisplay ) ) {
-          ceedModelList.Add( new( fromConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, routeName! ) ) ;
+          ceedModelList.Add( new( fromConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.FromConnectorUniqueId, routeName! ) ) ;
         }
 
         if ( toConnectorCeedModel != null && showCeedModelSymbols.Any( legend => legend == toConnectorCeedModel.LegendDisplay ) ) {
-          ceedModelList.Add( new( toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId, routeName! ) ) ;
+          ceedModelList.Add( new( toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.ToConnectorUniqueId, routeName! ) ) ;
         }
       }
       
@@ -159,7 +159,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var allConduitWithDirectionByZ = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.Location is LocationCurve { Curve: Line line } && ( line.Direction.Z is 1 or -1 ) ).Distinct().ToDictionary( c => c, c => (( c.Location as LocationCurve )?.Curve as Line)?.Origin ?? new XYZ() ) ;
       var connector = document.GetElement( connectorUniqueId ) ;
       var connectorLocation = ( connector.Location as LocationPoint ) ! ;
-      var (x , y, z ) = connectorLocation.Point ;
+      var (x , y, _ ) = connectorLocation.Point ;
       var conduit = allConduitWithDirectionByZ.Where( c => c.Key.GetRouteName() == routeName && Math.Abs( c.Value!.X - x ) < 0.01 && Math.Abs( c.Value.Y - y ) < 0.01 ).Select( c => c.Key ).FirstOrDefault() ;
       if ( conduit == null ) return ( plumbingType, plumbingSize, isExposure, isInDoor) ;
       {
@@ -176,7 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     }
 
   
-    private static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo, string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
+    private static (string FromConnectorUniqueId, ConnectorInfo FromConnectorInfo, string ToConnectorUniqueId, ConnectorInfo ToConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
     {
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ) ;
       Element? fromConnector = null ;
@@ -232,6 +232,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         electricalSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
         electricalSchedule.Name = scheduleName ;
         electricalSchedule.TrySetProperty( ElectricalRoutingElementParameter.ScheduleBaseName, scheduleName ) ;
+        
+        AddField( electricalSchedule ) ;
       }
       
       CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;
@@ -296,6 +298,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       tsdHeader.MergeCells( new TableMergedCell( 1, 3, 1, 4 ) ) ;
       tsdHeader.SetCellText( 1, 3, "配管" ) ;
 
+      var totalWidth = 0d ;
       for ( var i = 0 ; i < defaultColumnCount ; i++ ) {
         if ( i < 3 ) tsdHeader.MergeCells( new TableMergedCell( 1, i, 2, i ) ) ;
         var columnWidth = 0.1 ;
@@ -321,7 +324,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         tsdHeader.SetColumnWidth( i, columnWidth ) ;
+        totalWidth += columnWidth ;
       }
+
+      viewSchedule.GetTableData().Width = totalWidth ;
 
       var electricalSymbolRecordsGroup = electricalSymbolRecords
         .GroupBy( e => new { e.FloorPlanSymbol, e.GeneralDisplayDeviceSymbol } )
@@ -370,7 +376,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           string wiringType = string.IsNullOrEmpty( item.WireStrip ) || item.WireStrip == "-" ? $"{item.WireType + item.WireSize,-15}{"x " + count,15}" : $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
           string plumbingType = "(" + item.PipingType + item.PipingSize + ")" ;
           string floorPlanSymbol = detailTableModel!.FloorPlanSymbol ;
-          string generalDisplayDeviceSymbol =  detailTableModel!.GeneralDisplayDeviceSymbol ;
+          string generalDisplayDeviceSymbol =  detailTableModel.GeneralDisplayDeviceSymbol ;
           ElectricalSymbolRecord electricalSymbolRecord = new ElectricalSymbolRecord( floorPlanSymbol,
             generalDisplayDeviceSymbol, plumbingType, wiringType, item.IsInDoor ) ;
           electricalSymbolRecords.Add( electricalSymbolRecord ) ;
@@ -390,6 +396,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return Path.Combine( resourcesPath, "Images", fileName ) ;
+    }
+
+    private static void AddField( ViewSchedule viewSchedule )
+    {
+      var markId = new ElementId( BuiltInParameter.ALL_MODEL_MARK ) ;
+      var schedulableField = new SchedulableField( ScheduleFieldType.Instance, markId ) ;
+      var scheduleFields = viewSchedule.Definition.GetFieldOrder().Select( x => viewSchedule.Definition.GetField( x ) ) ;
+      if ( scheduleFields.Any(x => x.GetSchedulableField() == schedulableField) )
+        return ;
+
+      var scheduleField = viewSchedule.Definition.AddField( schedulableField ) ;
+      
+      var equalScheduleFilter = new ScheduleFilter(scheduleField.FieldId, ScheduleFilterType.Equal, string.Empty);
+      viewSchedule.Definition.AddFilter(equalScheduleFilter);
+      
+      var notEqualScheduleFilter = new ScheduleFilter(scheduleField.FieldId, ScheduleFilterType.NotEqual, string.Empty);
+      viewSchedule.Definition.AddFilter(notEqualScheduleFilter);
+
+      viewSchedule.Definition.ShowHeaders = false ;
     }
   }
 }

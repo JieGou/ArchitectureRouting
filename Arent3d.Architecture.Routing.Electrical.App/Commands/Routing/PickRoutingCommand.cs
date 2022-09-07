@@ -6,6 +6,8 @@ using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -32,7 +34,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return PickCommandUtil.CreateBranchingRouteEndPoint( newPickResult, anotherPickResult, routeProperty, classificationInfo, AppCommandSettings.FittingSizeCalculator, newPickIsFrom ) ;
     }
 
-    protected override DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo )
+    protected override DialogInitValues CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo )
     {
       var curveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, null ) ;
 
@@ -41,7 +43,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => curveType.Category.Name ;
 
-    protected override MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType )
+    protected override MEPSystemClassificationInfo GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType )
     {
       return MEPSystemClassificationInfo.CableTrayConduit ;
     }
@@ -56,21 +58,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       if ( ! PullBoxRouteManager.IsGradeUnderThree( document ) ) return executeResultValue ;
 
       var registrationOfBoardDataModels = document.GetRegistrationOfBoardDataStorable().RegistrationOfBoardData ;
-      var (fromPickResult, toPickResult, _, _, _, _) = state ;
+      
+      // Todo: 斜めルーティングの場合はPullBoxを無視する
+      var (fromPickResult, toPickResult, _, _, _, _, _, _, _) = state ;
+
       var listConnectors = new List<Element>() { fromPickResult.PickedElement, toPickResult.PickedElement } ;
       var isRouteBetweenPowerConnectors = IsRouteBetweenPowerConnectors( listConnectors, registrationOfBoardDataModels ) ;
       if ( isRouteBetweenPowerConnectors ) return executeResultValue ;
       
-      using var progress = ShowProgressBar( "Routing...", false ) ;
+      using var progress = ShowProgressBar( "Generating pull box...", false ) ;
       List<string> boards = new() ;
       List<XYZ> pullBoxPositions = new() ;
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
+      var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
+      var isWireEnteredShaft = false ;
+      var isPickedFromBottomToTop = fromPickResult.PickedConnector!.Origin.Z < toPickResult.PickedConnector!.Origin.Z ;
       Dictionary<string, List<string>> parentAndChildRoute = new() ;
       for ( int i = 0 ; i < 50 ; i++ ) {
-        var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
-        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, resultRoute, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute, ref isWireEnteredShaft, isPickedFromBottomToTop ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
@@ -90,24 +97,28 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         transaction.Commit( failureOptions ) ;
-        if ( isPassedShaft ) break ;
+
+        if ( ! isPassedShaft ) continue ;
+        if ( isWireEnteredShaft ) break ;
       }
       
       #region Change dimension of pullbox and set new label
-      
-      var detailSymbolStorable = document.GetDetailSymbolStorable() ;
-      var pullBoxInfoStorable = document.GetPullBoxInfoStorable() ;
       var csvStorable = document.GetCsvStorable() ;
       var conduitsModelData = csvStorable.ConduitsModelData ;
       var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       var scale = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var baseLengthOfLine = scale / 100d ;
+      var level = document.ActiveView.GenLevel ;
+      if ( level != null ) {
+        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
+        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
 
-      foreach ( var pullBoxElement in pullBoxElements ) {
-        var (pullBox, position) = pullBoxElement ;
-        var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
-        PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, detailSymbolStorable, pullBoxInfoStorable,
-          conduitsModelData, hiroiMasterModels, scale, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
+        foreach ( var pullBoxElement in pullBoxElements ) {
+          var (pullBox, position) = pullBoxElement ;
+          var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
+          PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
+            conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
+        }
       }
 
       #endregion

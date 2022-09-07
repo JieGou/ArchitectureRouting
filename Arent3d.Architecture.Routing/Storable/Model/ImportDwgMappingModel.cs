@@ -8,8 +8,9 @@
     public string FloorName { get ; set ; }
     public double FloorHeight { get ; set ; }
     public int Scale { get ; set ; }
+    public double FloorHeightDisplay { get ; set ; }
     
-    public ImportDwgMappingModel( string? id, string? fullFilePath, string? fileName, string? floorName, double? floorHeight, int? scale )
+    public ImportDwgMappingModel( string? id, string? fullFilePath, string? fileName, string? floorName, double? floorHeight, int? scale, double? floorHeightDisplay )
     {
       Id = id ?? string.Empty ;
       FullFilePath = fullFilePath ?? string.Empty ;
@@ -17,6 +18,7 @@
       FloorName = floorName ?? string.Empty ;
       FloorHeight = floorHeight ?? 0 ;
       Scale = scale ?? 100 ;
+      FloorHeightDisplay = floorHeightDisplay ?? 0 ;
     }
   }
 }

@@ -139,7 +139,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
               WriteFileTxtIncludePath(path, folderBrowserDialog.SelectedPath ) ;
               var folderModel = GetFolderModel( _storageService.Data.BrowseFolderPath ) ;
               var folderModelList = new List<FolderModel>() ;
-              if ( null != folderModel ) folderModelList.Add( folderModel ) ;
+              if ( null != folderModel ) {
+                SetFolderByOldSelectedFolder( folderModel ) ;
+                folderModelList.Add( folderModel ) ;
+              }
               Folders = new ObservableCollection<FolderModel>( folderModelList ) ;
             }
           }
@@ -229,6 +232,37 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
 
       return folderModel ;
+    }
+
+    private void SetFolderByOldSelectedFolder( FolderModel folder )
+    {
+      if ( ! Folders.Any() ) return ;
+      var prevFolder = FindOldFolder( folder.Path, Folders ) ;
+      if ( prevFolder != null ) {
+        folder.IsExpanded = prevFolder.IsExpanded ;
+        folder.IsSelected = prevFolder.IsSelected ;
+      }
+
+      if ( ! folder.Folders.Any() ) return ;
+      foreach ( var subFolder in folder.Folders ) {
+        SetFolderByOldSelectedFolder( subFolder ) ;
+        if ( subFolder.IsSelected || subFolder.IsExpanded )
+          folder.IsExpanded = true ;
+      }
+    }
+
+    private FolderModel? FindOldFolder( string path, IEnumerable<FolderModel> folders )
+    {
+      var folderModels = folders.ToList() ;
+      var prevFolder = folderModels.FirstOrDefault( f => f.Path == path ) ;
+      if ( prevFolder != null ) return prevFolder ;
+      foreach ( var folder in folderModels ) {
+        if ( prevFolder == null && folder.Folders.Any() ) {
+          prevFolder = FindOldFolder( path, folder.Folders ) ;
+        }
+      }
+
+      return prevFolder ;
     }
 
     private void RecursiveFolder( IEnumerable<string> paths, ref FolderModel folderModel )
