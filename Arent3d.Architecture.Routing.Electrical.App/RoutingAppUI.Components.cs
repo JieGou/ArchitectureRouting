@@ -238,6 +238,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
+          [Button( typeof( NewLimitRackSelectionRangeCommand ), OnlyInitialized = true )]
+          private static class NewLimitRackSelectionRangeCommandButton
+          {
+          }
+          
           [Button( typeof( NewLimitRackCircleCommand ), OnlyInitialized = true )]
           private static class NewLimitRackCircleCommandButton
           {

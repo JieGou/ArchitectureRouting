@@ -124,6 +124,12 @@
         <key>Electrical.App.Commands.Initialization.ChangeFamilyGradeCommand</key>
         <string>グレード設定</string>
 
+        <key>Electrical.App.Commands.Routing.NewLimitRackCommand</key>
+        <string>ラック作成（全体）</string>
+
+        <key>Electrical.App.Commands.Routing.NewLimitRackSelectionRangeCommand</key>
+        <string>ラック作成（選択範囲）</string>
+
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラックを作成する&#xA;すべてのコンジット用</string>
 
