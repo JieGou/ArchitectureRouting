@@ -545,6 +545,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
+    private static string ToUpperHalfWidth( string text )
+    {
+      var convertedString = text.Normalize(NormalizationForm.FormKC).ToUpper() ;
+      return convertedString ;
+    }
+
     public void Search()
     {
       var data = IsExistUsingCode ? _usingCeedModel : _ceedModels ;
@@ -553,9 +559,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( IsExistUsingCode && IsShowOnlyUsingCode ) data = _usingCeedModel.Where( c => c.IsUsingCode ).ToList() ;
       if ( ! IsShowCondition ) data = GroupCeedModel( data ) ;
       data = GroupCeedModelsByCeedModelNumber( data ) ;
-      data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => c.GeneralDisplayDeviceSymbol.ToUpper().Contains( _selectedDeviceSymbol.ToUpper() ) ).ToList() ;
-      data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => c.CeedSetCode.ToUpper().Contains( _selectedCeedSetCode.ToUpper() ) ).ToList() ;
-      data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => c.ModelNumber.ToUpper().Contains( _selectedModelNumber.ToUpper() ) ).ToList() ;
+      
+      var searchText = ToUpperHalfWidth( _selectedDeviceSymbol ) ;
+      data = string.IsNullOrEmpty( _selectedDeviceSymbol ) ? data : data.Where( c => ToUpperHalfWidth( c.GeneralDisplayDeviceSymbol ).Contains( searchText ) ).ToList() ;
+      
+      searchText = ToUpperHalfWidth( _selectedCeedSetCode ) ;
+      data = string.IsNullOrEmpty( _selectedCeedSetCode ) ? data : data.Where( c => ToUpperHalfWidth(c.CeedSetCode).Contains( searchText ) ).ToList() ;
+      
+      searchText = ToUpperHalfWidth( _selectedModelNumber ) ;
+      data = string.IsNullOrEmpty( _selectedModelNumber ) ? data : data.Where( c => ToUpperHalfWidth(c.ModelNumber).Contains( searchText ) ).ToList() ;
+      
       CeedModels.AddRange( data ) ;
       ResetSelectedCategory( Categories ) ;
       ResetSelectedCategory( CategoriesPreview ) ;
