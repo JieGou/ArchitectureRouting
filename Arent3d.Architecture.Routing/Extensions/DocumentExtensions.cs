@@ -108,7 +108,7 @@ namespace Arent3d.Architecture.Routing.Extensions
     public static CnsSettingStorable GetCnsSettingStorable( this Document document )
     {
       try {
-        return CnsSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CnsSettingStorable.StorableName ) ;
+        return CnsSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CnsSettingStorable.CnsStorableName ) ;
       }
       catch ( InvalidOperationException ) {
         return new CnsSettingStorable( document ) ;

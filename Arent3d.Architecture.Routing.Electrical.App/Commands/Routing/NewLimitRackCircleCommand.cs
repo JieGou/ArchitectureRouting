@@ -11,5 +11,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   {
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
     protected override bool IsCircle => true ;
+    protected override bool IsSelectionRange => false ;
   }
 }

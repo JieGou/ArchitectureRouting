@@ -11,7 +11,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public enum GradeMode
   {
-    Grade3,
+    GradeFrom3To7,
     Grade1Grade2
   }
 
@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public IReadOnlyDictionary<GradeMode, string> GradeModes { get ; } = new Dictionary<GradeMode, string>
     {
-      [ GradeMode.Grade3 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}3", 
+      [ GradeMode.GradeFrom3To7 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}3~", 
       [ GradeMode.Grade1Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}1-2",
     } ;
 

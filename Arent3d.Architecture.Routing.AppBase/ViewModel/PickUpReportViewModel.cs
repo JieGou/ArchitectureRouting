@@ -966,21 +966,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return pickUpModelByProductCodes ;
     }
-    
-    private string IsSegmentConnectedToPoPullBox( Document document, RouteSegment lastSegment )
-    {
-      var pullBoxUniqueId = string.Empty ;
-      var toEndPointKey = lastSegment.ToEndPoint.Key ;
-      var toElementId = toEndPointKey.GetElementUniqueId() ;
-      if ( string.IsNullOrEmpty( toElementId ) ) 
-        return pullBoxUniqueId ;
-      var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-        .FirstOrDefault( c => c.UniqueId == toElementId ) ;
-      if ( toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
-        pullBoxUniqueId = toConnector.UniqueId ;
-      return pullBoxUniqueId ;
-    }
-    
+
     private void CopyTemplateSummary( IWorkbook workbook, ISheet sourceWorkSheet, ISheet destinationWorksheet, int rowStart )
     {
       int i = 0 ;
