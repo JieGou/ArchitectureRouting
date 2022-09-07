@@ -107,7 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       // get all elements in route
       var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
-      CreateRackForConduit( uiDocument, app, allElementsInRoute, racks ) ;
+      CreateRackForConduit( uiDocument, allElementsInRoute, racks ) ;
     }
 
     /// <summary>
@@ -278,7 +278,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public static void CreateRackForConduit( UIDocument uiDocument, Application app, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
+    public static void CreateRackForConduit( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
     {
       var document = uiDocument.Document ;
       var connectors = new List<Connector>() ;

@@ -40,12 +40,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return connectorsOfConduit.Length != 2 ? ( null, null ) : ( connectorsOfConduit.ElementAt( 0 ), connectorsOfConduit.ElementAt( 1 ) ) ;
     }
 
-    private static (Connector?, Connector?) Get2Connector( Connector connector )
+    private static Connector? GetOppositeConnector( Connector connector )
     {
       var (con1, con2) = Get2Connector( connector.Owner ) ;
       if ( con1?.Id == connector.Id )
-        return ( con1, con2 ) ;
-      return con2?.Id == connector.Id ? ( con2, con1 ) : ( null, null ) ;
+        return con2 ;
+      return con2?.Id == connector.Id ? con1 : null ;
     }
 
     private static bool GetConnectedMepCurveList( List<Element> accumulateList, Connector startConnector,
@@ -58,12 +58,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var connectedConnector = connectedConnectors.FirstOrDefault( con => ! ids.Contains( con.Owner.Id ) ) ;
       if ( connectedConnector is null )
         return false ;
-      Element element = connectedConnector.Owner ;
+      var element = connectedConnector.Owner ;
       accumulateList.Add( element ) ;
       if ( element.Id == stopElement?.Id )
         return true ;
-      var (_, con2) = Get2Connector( connectedConnector ) ;
-      return con2 is { } && GetConnectedMepCurveList( accumulateList, con2, stopElement );
+      var oppositeConnector = GetOppositeConnector( connectedConnector ) ;
+      return oppositeConnector is { } && GetConnectedMepCurveList( accumulateList, oppositeConnector, stopElement );
     }
 
     public static List<Element> GetLinkedMEPCurves( this MEPCurve startCurve, MEPCurve endCurve )
@@ -111,22 +111,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return routeToCon2 ? ( endParam, 1.0 ) : ( startParam, endParam ) ;
     }
 
-    public static (double StartParam, double EndParam) CalculateParam( this MEPCurve thisCurve, XYZ point1, XYZ point2 )
+    public static (double StartParam, double EndParam) CalculateParam( this MEPCurve mepCurve, XYZ point1, XYZ point2 )
     {
       var resParams = ( 0.0, 1.0 ) ;
-      var (thisCon1, thisCon2) = Get2Connector( thisCurve ) ;
-      if ( thisCon1 is null || thisCon2 is null )
+      var (startConnector, endConnector) = Get2Connector( mepCurve ) ;
+      if ( startConnector is null || endConnector is null )
         return resParams ;
 
-      if ( thisCurve.Location is not LocationCurve { Curve: Line line } )
+      if ( mepCurve.Location is not LocationCurve { Curve: Line line } )
         return resParams ;
 
       // arrange connect so that vector connector 1 to connect 2 is same way as curve's direction
-      if ( line.Direction.IsAlmostEqualTo( ( thisCon2.Origin - thisCon1.Origin ).Normalize() ) == false )
-        ( thisCon1, thisCon2 ) = ( thisCon2, thisCon1 ) ;
+      if ( line.Direction.IsAlmostEqualTo( ( endConnector.Origin - startConnector.Origin ).Normalize() ) == false )
+         startConnector = endConnector;
 
-      var startParam = ( point1 - thisCon1.Origin ).DotProduct( line.Direction ) / line.Length ;
-      var endParam = ( point2 - thisCon1.Origin ).DotProduct( line.Direction ) / line.Length ;
+      var startParam = ( point1 - startConnector.Origin ).DotProduct( line.Direction ) / line.Length ;
+      var endParam = ( point2 - startConnector.Origin ).DotProduct( line.Direction ) / line.Length ;
       if ( startParam > endParam )
         ( startParam, endParam ) = ( endParam, startParam ) ;
       return ( startParam, endParam ) ;
@@ -190,8 +190,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     /// <summary>
     /// Check if a curve is completely inside another curve
     /// </summary>
-    /// <param name="shortCurve">first MEP curve</param>
-    /// <param name="longCurve">second MEP curve</param>
+    /// <param name="firstCurve">first MEP curve</param>
+    /// <param name="secondCurve">second MEP curve</param>
     /// <returns>1: first is inside second, -1: second is inside first, 0: neither</returns>
     private static int IsInside( Element firstCurve, Element secondCurve )
     {
@@ -236,17 +236,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       // change length and rotate first curve
       var tf1 = firstFi.GetTransform() ;
-      var needToReverse = ! tf1.BasisX.IsAlmostEqualTo( ( endPoint - startPoint ).Normalize() ) ;
 
       if ( firstCurve.Location is LocationPoint lcPoint )
         lcPoint.Point = startPoint ;
 
-      ElementTransformUtils.RotateElement( doc, firstCurve.Id, Line.CreateBound( startPoint, startPoint + tf1.BasisZ ),
-        tf1.BasisX.AngleTo( endPoint - startPoint ) ) ;
-
-      firstCurve.ParametersMap
-        .get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) )
-        .Set( ( endPoint - startPoint ).GetLength() ) ;
+      ElementTransformUtils.RotateElement( doc, firstCurve.Id, Line.CreateBound( startPoint, startPoint + tf1.BasisZ ), tf1.BasisX.AngleTo( endPoint - startPoint ) ) ;
+      firstCurve.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).Set( ( endPoint - startPoint ).GetLength() ) ;
 
       // reconnect:
       if ( Get2Connector( firstCurve ) is not { Connector1: { } con1, Connector2: { } con2 } )

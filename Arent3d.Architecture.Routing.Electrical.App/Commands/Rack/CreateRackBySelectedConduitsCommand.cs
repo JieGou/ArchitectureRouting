@@ -12,7 +12,6 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using NPOI.SS.Formula.Functions ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
@@ -122,7 +121,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       
       // create boundary detail lines
       var rackMap = CreateRackMap( uiResult.Value.RouteName, racksAndFittings ) ;
-        NewLimitRackCommandBase.DrawRackBoundaryLines( document, new []{rackMap}, uiResult.Value.IsRound ) ;
+      NewLimitRackCommandBase.DrawRackBoundaryLines( document, new []{rackMap}, uiResult.Value.IsRound ) ;
 
       // create annotations for racks
       NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racksAndFittings ) ;
