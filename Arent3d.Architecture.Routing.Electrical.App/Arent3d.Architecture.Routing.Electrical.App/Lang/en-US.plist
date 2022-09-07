@@ -115,6 +115,12 @@
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>CNS Setting</string>
 
+        <key>Electrical.App.Commands.Routing.NewLimitRackCommand</key>
+        <string>Create Limit Rack</string>
+        
+        <key>Electrical.App.Commands.Routing.NewLimitRackSelectionRangeCommand</key>
+        <string>Create Limit Rack&#xA;(Selection Range)</string>
+        
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack&#xA;For All</string>
 
