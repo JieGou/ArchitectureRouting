@@ -37,12 +37,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
             if ( ! Directory.Exists( imagePath ) ) Directory.CreateDirectory( imagePath ) ;
             var connectorFamilyName = param.FamilyFileName.Replace( ".rfa", "" ) ;
             if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == connectorFamilyName ) is Family ) {
-              var confirmMessage = MessageBox.Show( $"モデル{connectorFamilyName}がすでに存在していますが、上書きしますか。", "Message", MessageBoxButtons.OKCancel ) ;
-              if ( confirmMessage == DialogResult.Cancel ) {
-                param.IsLoaded = true ;
-                continue ;
-              }
-
               document.LoadFamily( param.FilePath, new CeedViewModel.FamilyOption( true ), out var overwriteFamily ) ;
               if ( overwriteFamily == null ) {
                 param.IsLoaded = true ;

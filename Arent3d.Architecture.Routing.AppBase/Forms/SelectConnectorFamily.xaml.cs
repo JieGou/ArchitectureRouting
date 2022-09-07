@@ -19,14 +19,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     public ObservableCollection<ConnectorFamilyInfo> ConnectorFamilyList { get ; } = new() ;
     private readonly Document _document ;
-    private readonly StorageService<Level, CeedUserModel> _storageService ;
+    public StorageService<Level, CeedUserModel> StorageService { get ; }
     private readonly IPostCommandExecutorBase? _postCommandExecutor ;
 
     public SelectConnectorFamily( Document document, StorageService<Level, CeedUserModel> storageService, IPostCommandExecutorBase? postCommandExecutor )
     {
       InitializeComponent() ;
       _document = document ;
-      _storageService = storageService ;
+      StorageService = storageService ;
       _postCommandExecutor = postCommandExecutor ;
       LoadConnectorFamilyList() ;
     }
@@ -48,26 +48,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! sourcePaths.Any() ) return ;
       try {
         var connectorFamilyUploadFiles = new List<string>() ;
-        List<LoadFamilyCommandParameter> familyParameters = new() ;
-        foreach ( var sourcePath in sourcePaths ) {
-          var fileName = Path.GetFileName( sourcePath ) ;
-          familyParameters.Add( new LoadFamilyCommandParameter( sourcePath, fileName ) ) ;
+        if ( _postCommandExecutor == null ) {
+          foreach ( var sourcePath in sourcePaths ) {
+            var fileName = Path.GetFileName( sourcePath ) ;
+            var resultLoadConnectorFamily = LoadConnectorFamily( sourcePath, fileName ) ;
+            if ( ! resultLoadConnectorFamily ) continue ;
+            var isExistedFileName = ConnectorFamilyList.SingleOrDefault( f => f.ToString() == fileName ) != null ;
+            if ( isExistedFileName ) continue ;
+            ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
+            connectorFamilyUploadFiles.Add( fileName ) ;
+          }
+        }
+        else {
+          List<LoadFamilyCommandParameter> familyParameters = new() ;
+          foreach ( var sourcePath in sourcePaths ) {
+            var fileName = Path.GetFileName( sourcePath ) ;
+            var isExistedFileNames = ConnectorFamilyList.SingleOrDefault( f => f.ToString() == fileName ) != null ;
+            if ( isExistedFileNames ) {
+              var familyName = fileName.Replace( ".rfa", "" ) ;
+              var confirmMessage = MessageBox.Show( $"モデル{familyName}がすでに存在していますが、上書きしますか。", "Message", MessageBoxButtons.OKCancel ) ;
+              if ( confirmMessage == System.Windows.Forms.DialogResult.OK ) {
+                familyParameters.Add( new LoadFamilyCommandParameter( sourcePath, fileName ) ) ;
+              }
+            }
+            else {
+              familyParameters.Add( new LoadFamilyCommandParameter( sourcePath, fileName ) ) ;
+              ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
+              connectorFamilyUploadFiles.Add( fileName ) ;
+            }
+          }
+
+          _postCommandExecutor.LoadFamilyCommand( familyParameters ) ;
         }
 
-        _postCommandExecutor?.LoadFamilyCommand( familyParameters ) ;
-        foreach ( var familyParameter in familyParameters ) {
-          var isExistedFileName = ConnectorFamilyList.SingleOrDefault( f => f.ToString() == familyParameter.FamilyFileName ) != null ;
-          if ( isExistedFileName ) continue ;
-          ConnectorFamilyList.Add( new ConnectorFamilyInfo( familyParameter.FamilyFileName ) ) ;
-          connectorFamilyUploadFiles.Add( familyParameter.FamilyFileName ) ;
-        }
-
-        var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! _storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
-        _storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
-        //using Transaction t = new( _document, "Save connector family upload data" ) ;
-        //t.Start() ;
-        //storageService.SaveChange() ;
-        //t.Commit() ;
+        var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! StorageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
+        StorageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
       }
       catch {
         MessageBox.Show( "Load connector's family failed.", "Error" ) ;
@@ -81,10 +96,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var imagePath = ConnectorFamilyManager.GetFolderPath() ;
       if ( ! Directory.Exists( imagePath ) ) Directory.CreateDirectory( imagePath ) ;
       var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
-      // using Transaction t = new( _document, "Load connector's family" ) ;
-      // t.Start() ;
+      using Transaction t = new( _document, "Load connector's family" ) ;
+      t.Start() ;
       var connectorFamily = LoadFamily( filePath, connectorFamilyName ) ;
-      //t.Commit() ;
+      t.Commit() ;
 
       return connectorFamily != null ;
     }
@@ -118,7 +133,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void LoadConnectorFamilyList()
     {
-      foreach ( var fileName in  _storageService.Data.ConnectorFamilyUploadData ) {
+      foreach ( var fileName in  StorageService.Data.ConnectorFamilyUploadData ) {
         ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
       }
 
