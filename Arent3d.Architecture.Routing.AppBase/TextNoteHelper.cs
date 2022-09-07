@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     public static double LeaderOffsetSheet => 0.6;
     public static double TotalHeight => TextSize + 2 * LeaderOffsetSheet ;
     
-    public static TextNoteType? FindOrCreateTextNoteType(Document document)
+    public static TextNoteType? FindOrCreateTextNoteType(Document document, bool isVisible = true)
     {
       var textNoteTypes = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).OfType<TextNoteType>().EnumerateAll() ;
       if ( ! textNoteTypes.Any() )
@@ -32,6 +32,9 @@ namespace Arent3d.Architecture.Routing.AppBase
       textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( LeaderOffsetSheet.MillimetersToRevitUnits() ) ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
 
+      if( !isVisible )
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+      
       return textNoteType ;
     }
 

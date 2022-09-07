@@ -1612,7 +1612,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return textNote ;
     }
     
-    public static string IsSegmentConnectedToPoPullBox( Document document, RouteSegment lastSegment )
+    public static string IsSegmentConnectedToPullBox( Document document, RouteSegment lastSegment )
     {
       var pullBoxUniqueId = string.Empty ;
       var toEndPointKey = lastSegment.ToEndPoint.Key ;
