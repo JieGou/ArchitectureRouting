@@ -167,7 +167,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var ceedViewModel = new CeedViewModel( _uiDocument, _document, null ) ;
         var dlgCeedModel = new CeedModelDialog( ceedViewModel ) ;
 
-        //if ( dlgCeedModel.ShowDialog() == false ) return ;
+        if ( dlgCeedModel.ShowDialog() == false ) return ;
 
         var allowInputQuantity = false ;
         var ceedModelNumber = ceedViewModel.SelectedCeedModel?.CeedModelNumber ;

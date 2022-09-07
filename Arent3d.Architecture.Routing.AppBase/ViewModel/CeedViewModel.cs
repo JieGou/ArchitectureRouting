@@ -43,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     private const string LegendNoDisplay = "×" ;
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
-    private readonly UIDocument _uiDocument ;
+    public UIDocument UiDocument { get ; }
     private readonly Document _document ;
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
@@ -290,7 +290,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       {
         return new RelayCommand<Window>( wd => null != wd, wd =>
         {
-          Save() ;
+          UpdateCeedStorableAndStorageServiceData() ;
           wd.DialogResult = true ;
           wd.Close() ;
         } ) ;
@@ -299,7 +299,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public CeedViewModel( UIDocument uiDocument, Document document, IPostCommandExecutorBase? postCommandExecutor )
     {
-      _uiDocument = uiDocument ;
+      UiDocument = uiDocument ;
       _document = document ;
       _defaultSettingStorable = _document.GetDefaultSettingStorable() ;
       _postCommandExecutor = postCommandExecutor ;
@@ -526,23 +526,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return newCeedModels ;
     }
 
-    public void Save()
+    private void SaveCeedStorableAndStorageService()
     {
       try {
-        //using Transaction t = new( _document, "Save data" ) ;
-        //t.Start() ;
-        _storageService.Data.IsShowCeedModelNumber = IsShowCeedModelNumber ;
-        _storageService.Data.IsShowCondition = IsShowCondition ;
-        _storageService.Data.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
-        _storageService.Data.IsDiff = IsShowDiff ;
-        _storageService.Data.IsExistUsingCode = IsExistUsingCode ;
-        _storageService.SaveChange() ;
-        
-        _ceedStorable.CeedModelUsedData = _usingCeedModel ;
-        //_ceedStorable.Save() ;
-        //t.Commit() ;
+        if ( _postCommandExecutor == null ) {
+          using Transaction t = new( _document, "Save CeeD data" ) ;
+          t.Start() ;
+          _ceedStorable.Save() ;
+          _storageService.SaveChange() ;
+          t.Commit() ;
+        }
+        else {
+          _postCommandExecutor.SaveCeedStorableAndStorageServiceCommand( _ceedStorable, _storageService ) ;
+        }
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
       }
     }
 
@@ -575,6 +574,30 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ResetSelectedCategory( Categories ) ;
       ResetSelectedCategory( CategoriesPreview ) ;
       AddModelNumber() ;
+      UpdateCeedStorableAndStorageServiceData() ;
+    }
+
+    public void UpdateCeedStorableAndStorageServiceData()
+    {
+      _storageService.Data.IsShowCeedModelNumber = IsShowCeedModelNumber ;
+      _storageService.Data.IsShowCondition = IsShowCondition ;
+      _storageService.Data.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
+      _storageService.Data.IsDiff = IsShowDiff ;
+      _storageService.Data.IsExistUsingCode = IsExistUsingCode ;
+
+      _ceedStorable.CeedModelUsedData = _usingCeedModel ;
+
+      SaveCeedStorableAndStorageService() ;
+    }
+    
+    public void ResetData()
+    {
+      CeedModels.Clear() ;
+      PreviewList.Clear() ;
+      ResetComboboxValue() ;
+      ResetSelectedCategory( Categories ) ;
+      ResetSelectedCategory( CategoriesPreview ) ;
+      UpdateCeedStorableAndStorageServiceData() ;
     }
 
     private void ResetComboboxValue()
@@ -584,7 +607,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SelectedDeviceSymbolValue = string.Empty ;
     }
 
-    public void LoadUsingCeedModel()
+    private void LoadUsingCeedModel()
     {
       if ( _ceedStorable.CeedModelData.Any() ) {
         OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx", Multiselect = false } ;
@@ -612,23 +635,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         usingCeedModel = usingCeedModel.Distinct().ToList() ;
         _usingCeedModel = usingCeedModel ;
         IsVisibleShowUsingCode = Visibility.Visible ;
+        IsShowDiff = false ;
         IsShowOnlyUsingCode = true ;
         IsExistUsingCode = true ;
         LoadData() ;
 
         if ( ! _usingCeedModel.Any() ) return ;
-        try {
-          //using Transaction t = new( _document, "Save data" ) ;
-          //t.Start() ;
-          _ceedStorable.CeedModelUsedData = _usingCeedModel ;
-          _storageService.Data.IsShowOnlyUsingCode = true ;
-          _storageService.Data.IsExistUsingCode = true ;
-          //_ceedStorable.Save() ;
-          //_storageService.SaveChange();
-          //t.Commit() ;
-        }
-        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        }
+        UpdateCeedStorableAndStorageServiceData() ;
       }
       else {
         MessageBox.Show( "Please read csv.", "Message" ) ;
@@ -692,15 +705,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      // try {
-      //   using Transaction t = new( _document, "Save CeeD data" ) ;
-      //   t.Start() ;
-      //   _ceedStorable.Save() ;
-      //   t.Commit() ;
-      // }
-      // catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-      //   MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
-      // }
+      SaveCeedStorableAndStorageService() ;
     }
 
     private List<CeedModel> GetCeedModels( IEnumerable<CeedModel> allCeedModels )
@@ -739,6 +744,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var selectConnectorFamilyDialog = new SelectConnectorFamily( _document, _storageService, _postCommandExecutor ) ;
       selectConnectorFamilyDialog.ShowDialog() ;
       if ( ! ( selectConnectorFamilyDialog.DialogResult ?? false ) ) return ;
+      _storageService.Data.ConnectorFamilyUploadData = selectConnectorFamilyDialog.StorageService.Data.ConnectorFamilyUploadData ;
       var selectedConnectorFamily = selectConnectorFamilyDialog.ConnectorFamilyList.SingleOrDefault( f => f.IsSelected ) ;
       if ( selectedConnectorFamily == null ) {
         MessageBox.Show( "No connector family selected.", "Error" ) ;
@@ -807,7 +813,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if ( connectorFamilyFiles.Any() && connectorFamilyReplacements.Any() ) {
             bool result ;
             using ( var progressData = progress.Reserve( 0.6 ) ) {
-              result = IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( _document, _ceedModels, _usingCeedModel, connectorFamilyReplacements, connectorFamilyFiles ) ;
+              result = IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( _ceedModels, _usingCeedModel, connectorFamilyReplacements, connectorFamilyFiles ) ;
               progressData.ThrowIfCanceled() ;
             }
 
@@ -861,18 +867,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      //using Transaction loadTransaction = new( document, "Load connector's family" ) ;
-      //loadTransaction.Start() ;
-      List<LoadFamilyCommandParameter> familyParameters = ( from connectorFamilyPath in connectorFamilyPaths select new LoadFamilyCommandParameter( connectorFamilyPath, string.Empty ) ).ToList() ;
+      if ( _postCommandExecutor == null ) {
+        using Transaction loadTransaction = new( document, "Load connector's family" ) ;
+        loadTransaction.Start() ;
+        foreach ( var connectorFamilyPath in connectorFamilyPaths ) {
+          var isLoadFamilySuccessfully = true ;
+          var connectorFamilyFile = Path.GetFileName( connectorFamilyPath ) ;
+          var connectorFamily = LoadFamily( document, connectorFamilyPath, ref isLoadFamilySuccessfully ) ;
+          if ( connectorFamily != null || ( connectorFamily == null && isLoadFamilySuccessfully && existedConnectorFamilies.ContainsValue( connectorFamilyPath ) ) )
+            connectorFamilyFiles.Add( connectorFamilyFile ) ;
+        }
 
-      _postCommandExecutor?.LoadFamilyCommand( familyParameters ) ;
-      foreach ( var familyParameter in familyParameters ) {
-        //if ( ! existedConnectorFamilies.ContainsValue( familyParameter.FilePath ) ) continue ;
-        var connectorFamilyFile = Path.GetFileName( familyParameter.FilePath ) ;
-        connectorFamilyFiles.Add( connectorFamilyFile ) ;
+        loadTransaction.Commit() ;
+      }
+      else {
+        List<LoadFamilyCommandParameter> familyParameters = ( from connectorFamilyPath in connectorFamilyPaths select new LoadFamilyCommandParameter( connectorFamilyPath, string.Empty ) ).ToList() ;
+        _postCommandExecutor.LoadFamilyCommand( familyParameters ) ;
+        connectorFamilyFiles.AddRange( from familyParameter in familyParameters select Path.GetFileName( familyParameter.FilePath ) ) ;
       }
 
-      //loadTransaction.Commit() ;
       return connectorFamilyFiles ;
     }
 
@@ -893,7 +906,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private bool IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( Document document, List<CeedModel>? allCeedModels, List<CeedModel>? usingCeedModel, IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
+    private bool IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( List<CeedModel>? allCeedModels, List<CeedModel>? usingCeedModel, IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
     {
       List<string> deviceSymbolsNotHaveConnectorFamily = new() ;
       if ( allCeedModels != null ) {
@@ -953,17 +966,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! _storageService.Data.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
       _storageService.Data.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
 
-      // try {
-      //   //using Transaction t = new( document, "Save CeeD data" ) ;
-      //   //t.Start() ;
-      //   _ceedStorable.Save() ;
-      //   _storageService.SaveChange() ;
-      //   //t.Commit() ;
-      // }
-      // catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-      //   MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
-      //   return false ;
-      // }
+      SaveCeedStorableAndStorageService() ;
 
       if ( deviceSymbolsNotHaveConnectorFamily.Any() ) {
         MessageBox.Show( NotExistConnectorFamilyInFolderModelWarningMessage + "対象の一般表示用機器記号：" + string.Join( ", ", deviceSymbolsNotHaveConnectorFamily ), "Message" ) ;
@@ -1009,7 +1012,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       XYZ? point ;
       try {
-        point = _uiDocument.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        point = UiDocument.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return ;
@@ -1076,9 +1079,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       var ecoMode = _defaultSettingStorable.EcoSettingData.IsEcoMode.ToString() ;
-      var level = _uiDocument.ActiveView.GenLevel ;
+      var level = UiDocument.ActiveView.GenLevel ;
       var heightOfConnector = _document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-      var element = GenerateConnector( _uiDocument, point.X, point.Y, heightOfConnector, level, SelectedFloorPlanType ?? string.Empty, ecoMode ) ;
+      var element = GenerateConnector( UiDocument, point.X, point.Y, heightOfConnector, level, SelectedFloorPlanType ?? string.Empty, ecoMode ) ;
       var ceedCode = string.Join( ":", SelectedCeedCode, SelectedDeviceSymbol, SelectedModelNum ) ;
       if ( element is FamilyInstance familyInstance ) {
         familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
