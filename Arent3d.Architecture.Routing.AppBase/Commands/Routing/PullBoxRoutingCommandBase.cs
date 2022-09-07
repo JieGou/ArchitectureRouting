@@ -133,13 +133,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       
       var level = document.ActiveView.GenLevel ;
+      StorageService<Level, DetailSymbolModel>? storageDetailSymbolService = null ;
+      StorageService<Level, PullBoxInfoModel>? storagePullBoxInfoServiceByLevel = null ;
       if ( level != null ) {
-        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
-        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
-      
-        PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
-          conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
+        storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
+        storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       }
+      
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
+        conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
 
       #endregion
       
