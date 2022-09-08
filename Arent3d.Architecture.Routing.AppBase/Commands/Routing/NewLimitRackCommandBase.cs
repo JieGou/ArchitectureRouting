@@ -7,8 +7,10 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -80,8 +82,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
             routingElementGroups = document.CollectAllMultipliedRoutingElements( pickedMepCurves, MinNumberOfMultiplicity ) ;
           }
-          else 
+          else {
             routingElementGroups = document.CollectAllMultipliedRoutingElements( MinNumberOfMultiplicity ) ;
+          }
 
           var representativeMepCurvesFromRoutingElements = routingElementGroups.SelectMany( s => s.Value ).Where( p =>
           {
@@ -99,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             
               var representativeConduit = ( representativeMepCurve as Conduit )! ;
 
-              var cableRackWidth = CalcCableRackWidth( routingElementGroup, routes ) ;
+              var cableRackWidth = CalcCableRackWidth( document, routingElementGroup, routes ) ;
 
               CreateCableRackForConduit( uiDocument, representativeConduit, cableRackWidth, racks, rackMaps ) ;
             }
@@ -123,7 +126,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         return result ;
       }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      catch ( OperationCanceledException ) {
         return Result.Cancelled ;
       }
       catch ( Exception e ) {
@@ -132,24 +135,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private double CalcCableRackWidth( KeyValuePair<string, List<MEPCurve>> routingElementGroup, RouteCache routes )
+    private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingElementGroup, RouteCache routes )
     {
       double cableRackWidth ;
-      if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) )
+      if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) ) {
         cableRackWidth = _routeMaxWidthDictionary[ routingElementGroup.Key ] ;
+      }
       else {
-        cableRackWidth = routingElementGroup.Value.GroupBy( s => s.GetRouteName() ).Sum( p =>
-        {
-          var routeName = p.First().GetRouteName() ?? string.Empty ;
-          if ( string.IsNullOrEmpty( routeName ) ) return 0 ;
-
+        var widthAndClassifications = new List<(double Diameter, string Classification)>() ;
+        foreach ( var mepCurves in routingElementGroup.Value.GroupBy( s => s.GetRouteName() ) ) {
+          var routeName = mepCurves.First().GetRouteName() ?? string.Empty ;
+          if ( string.IsNullOrEmpty( routeName ) ) 
+            continue;
+          
+          var classification = GetClassification( document, routeName ) ;
           var route = routes.FirstOrDefault( s => s.Key == routeName ) ;
-          return ( route.Value.UniqueDiameter?.RevitUnitsToMillimeters() ?? 0 ) + 10 ;
-        } ) ;
-        cableRackWidth = ( 120 + cableRackWidth ) * 0.6 ;
+          widthAndClassifications.Add(((route.Value.UniqueDiameter?.RevitUnitsToMillimeters() ?? 0 ) + 10, classification));
+        }
+
+        var typeOnes = new List<double>() ;
+        var typeTwos = new List<double>() ;
+
+        foreach ( var widthAndClassification in widthAndClassifications ) {
+          if ( widthAndClassification.Classification == $"{CreateDetailTableCommandBase.SignalType.低電圧}" || widthAndClassification.Classification == $"{CreateDetailTableCommandBase.SignalType.動力}" ) {
+            typeOnes.Add(widthAndClassification.Diameter) ;
+          }
+          else {
+            typeTwos.Add(widthAndClassification.Diameter);
+          }
+        }
+
+        cableRackWidth = ( typeOnes.Count > 0 ? ( 120 + typeOnes.Sum() ) * 0.6 : 0 ) + ( typeTwos.Count > 0 ? ( 60 + typeOnes.Sum() ) * 1.2 : 0 ) ;
 
         foreach ( var width in CableTrayWidthMapping ) {
-          if ( ! ( cableRackWidth <= width ) ) continue ;
+          if (  cableRackWidth > width ) 
+            continue ;
+          
           cableRackWidth = width ;
           break ;
         }
@@ -161,6 +182,50 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     #region Methods
+
+    private static string GetClassification( Document document, string routeName )
+    {
+      var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, false ) ;
+      if ( null == toConnector )
+        return string.Empty ;
+    
+      var ceedCode = toConnector.GetPropertyString( ElectricalRoutingElementParameter.CeedCode ) ?? string.Empty ;
+      if ( string.IsNullOrEmpty( ceedCode ) )
+        return string.Empty ;
+    
+      var ceedStorage = document.GetCeedStorable() ;
+      var ceedModel = ceedStorage.CeedModelData.FirstOrDefault( x => $"{x.CeedSetCode}:{x.GeneralDisplayDeviceSymbol}:{x.ModelNumber}" == ceedCode ) ;
+      if ( null == ceedModel )
+        return string.Empty ;
+
+      var hasProperty = toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? value ) ;
+      if ( ! hasProperty || string.IsNullOrEmpty(value))
+        return string.Empty ;
+
+      var isEcoMode = bool.Parse( value ) ;
+      
+      var csvStorage = document.GetCsvStorable() ;
+      var parentPartModelNumber = ( isEcoMode ? csvStorage.HiroiSetCdMasterEcoModelData : csvStorage.HiroiSetCdMasterNormalModelData ).FirstOrDefault( x => x.SetCode == ceedCode.Split(':').First() )?.LengthParentPartModelNumber ;
+      if ( string.IsNullOrEmpty( parentPartModelNumber ) )
+        return string.Empty ;
+      
+      var materialCode = ( isEcoMode ? csvStorage.HiroiSetMasterEcoModelData : csvStorage.HiroiSetMasterNormalModelData ).FirstOrDefault( x => x.ParentPartModelNumber == parentPartModelNumber )?.MaterialCode1 ;
+      if ( string.IsNullOrEmpty( materialCode ) )
+        return string.Empty ;
+
+      var wireIdentifier = PickUpViewModel.FormatRyakumeicd( csvStorage.HiroiMasterModelData.FirstOrDefault( x => x.Buzaicd == int.Parse(materialCode).ToString("D6") )?.Ryakumeicd ?? string.Empty ) ;
+      if ( string.IsNullOrEmpty( wireIdentifier ) )
+        return string.Empty ;
+
+      var wiresAndCablesModelData = csvStorage.WiresAndCablesModelData.FirstOrDefault( x =>
+      {
+        var numberOfHeartsOrLogarithm = int.TryParse( x.NumberOfHeartsOrLogarithm, out var result ) && result > 0 ? x.NumberOfHeartsOrLogarithm : string.Empty ;
+        var wireId = $"{x.WireType}{x.DiameterOrNominal}{( ! string.IsNullOrEmpty( numberOfHeartsOrLogarithm ) ? $"x{numberOfHeartsOrLogarithm}{x.COrP}" : string.Empty )}" ;
+        return wireId == wireIdentifier ;
+      } ) ;
+
+      return wiresAndCablesModelData?.Classification ?? string.Empty ;
+    }
     
     private static void StoreLimitRackModels( Document document,List<RackMap> rackMaps )
     {
@@ -695,7 +760,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         racks.Add( instance ) ;
 
-        if ( 1.0 != line.Direction.Z && -1.0 != line.Direction.Z ) {
+        if ( Math.Abs(Math.Abs(line.Direction.Z) - 1) > GeometryHelper.Tolerance) {
           var elbows = conduit.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd().Select( c => c.Owner ).OfType<FamilyInstance>() ;
           foreach ( var elbow in elbows ) {
             if ( _elbowsToCreate.ContainsKey( elbow.Id ) ) {
@@ -730,7 +795,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         transaction.Start() ;
         var conduit = document.GetElementById<FamilyInstance>( elementId )! ;
 
-        if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z ) {
+        if ( conduit.FacingOrientation.Z is 1.0 or -1.0 || conduit.HandOrientation.Z is -1.0 or 1.0 ) {
           return ;
         }
 
