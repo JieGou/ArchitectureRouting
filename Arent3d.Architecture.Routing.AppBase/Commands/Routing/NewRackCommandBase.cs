@@ -9,8 +9,6 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
 using System.Globalization ;
-using System.Windows ;
-using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -197,9 +195,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return location == otherLocation ;
     }
 
-    public static void CreateRacksForConduits( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute,
-      List<FamilyInstance> racks, double rackWidth,
-      List<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
+    public static void CreateRacksForConduits( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks, double rackWidth, List<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
     {
       var document = uiDocument.Document ;
       var connectors = new List<Connector>() ;
@@ -210,7 +206,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( element is Conduit ) // element is straight conduit
           {
             FamilyInstance? instance ;
-            if(specialLengthList?.FirstOrDefault(x => x.Conduit.Id.Equals(element.Id)) is { Conduit: Conduit } specialLengthItem )
+            if ( specialLengthList?.FirstOrDefault( x => x.Conduit.Id.Equals( element.Id ) ) is { Conduit: Conduit } specialLengthItem )
               instance = CreateRackForStraightConduit( uiDocument, element, rackWidth, false, specialLengthItem.StartParam, specialLengthItem.EndParam ) ;
             else
               instance = CreateRackForStraightConduit( uiDocument, element, rackWidth, false ) ;
@@ -223,42 +219,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
             // save connectors of cable rack
             connectors.AddRange( instance.GetConnectorManager()!.Connectors.Cast<Connector>() ) ;
-
-            racks.Add( instance );
+            racks.Add( instance ) ;
           }
           else // element is conduit fitting
           {
             // Ignore the case of vertical conduits in the oz direction
-            if ( element is not FamilyInstance conduitFitting 
-                 || conduitFitting.FacingOrientation.IsAlmostEqualTo(XYZ.BasisZ)
-                 || conduitFitting.FacingOrientation.IsAlmostEqualTo(-XYZ.BasisZ) 
-                 || conduitFitting.HandOrientation.IsAlmostEqualTo(XYZ.BasisZ) 
-                 || conduitFitting.HandOrientation.IsAlmostEqualTo(-XYZ.BasisZ) )
+            if ( element is not FamilyInstance conduitFitting || conduitFitting.FacingOrientation.IsAlmostEqualTo( XYZ.BasisZ ) || conduitFitting.FacingOrientation.IsAlmostEqualTo( -XYZ.BasisZ ) || conduitFitting.HandOrientation.IsAlmostEqualTo( XYZ.BasisZ ) || conduitFitting.HandOrientation.IsAlmostEqualTo( -XYZ.BasisZ ) )
               continue ;
 
             var location = ( element.Location as LocationPoint )! ;
             // create new cable rack elbow fitting
             var elbow = CreateRackForFittingConduit( uiDocument, conduitFitting, location ) ;
+
+            // set elbow width
+            SetParameter( elbow, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackWidth.MillimetersToRevitUnits() ) ;
+
+            // set elbow bending radius
+            var fittingLengthName = "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ;
+            if ( conduitFitting.GetParameter( "中心から終端" ) is { } paramFromCenter && conduitFitting.GetParameter( fittingLengthName ) is { } paramFittingLength ) {
+              var rackElbowRadius = paramFromCenter.AsDouble() - paramFittingLength.AsDouble() - rackWidth.MillimetersToRevitUnits() / 2 ;
+              if ( rackElbowRadius > 0 )
+                SetParameter( elbow, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackElbowRadius ) ;
+            }
+
+            // WARNING: connectors become not completed after set parameters and need to call Regenerate()
+            document.Regenerate() ;
+
             // undo if the same thing exists
             if ( ExistsCableTray( document, elbow ) ) {
               subTransaction.RollBack() ;
               continue ;
             }
-            
-            // set elbow width
-            SetParameter( elbow, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackWidth.MillimetersToRevitUnits() ) ;
-            
-            // set elbow bending radius
-            var fittingLengthName = "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ;
-            if ( conduitFitting.GetParameter( "中心から終端" ) is {} paramFromCenter && conduitFitting.GetParameter( fittingLengthName ) is { } paramFittingLength ) {
-              var rackElbowRadius = paramFromCenter.AsDouble() - paramFittingLength.AsDouble() - rackWidth.MillimetersToRevitUnits()/2 ;
-              if(rackElbowRadius > 0 )
-                SetParameter( elbow, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), rackElbowRadius ) ;
-            }
-            
+
             // save connectors of cable rack
             connectors.AddRange( elbow.GetConnectors() ) ;
-            racks.Add( elbow );
+            racks.Add( elbow ) ;
           }
 
           subTransaction.Commit() ;
@@ -270,11 +265,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // connect all connectors
       foreach ( var connector in connectors ) {
-        if ( connector.IsConnected ||
-             connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) is not { } otherConnectors )
+        if ( connector.IsConnected || connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) is not { } otherConnectors )
           continue ;
-        if ( GetConnectorClosestTo( otherConnectors, connector.Origin, MaxDistanceTolerance ) is {} connectTo )
+        if ( GetConnectorClosestTo( otherConnectors, connector.Origin, MaxDistanceTolerance ) is { } connectTo )
           connector.ConnectTo( connectTo ) ;
+        document.Regenerate() ;
       }
     }
 

@@ -21,7 +21,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var (con1, con2) = Get2Connector( mepCurve ) ;
       if ( con1?.Origin is not { } p1 || con2?.Origin is not { } p2 )
         return false ;
-
       return point.IsBetween( p1, p2 ) ;
     }
 
@@ -70,15 +69,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       if ( startCurve.Id == endCurve.Id )
         return new List<Element>() { startCurve } ;
       var (start1, start2) = Get2Connector( startCurve ) ;
+      // try to find endCurve from start1
       var accumulateList = new List<Element>() { startCurve } ;
       if ( start1 is { } && GetConnectedMepCurveList( accumulateList, start1, endCurve ) )
         return accumulateList ;
+      // try to find endCurve from start2
       accumulateList = new List<Element>() { startCurve } ;
       if ( start2 is { } && GetConnectedMepCurveList( accumulateList, start2, endCurve ) )
         return accumulateList ;
+      // if failed to find a connected road between startCurve and endCurve, return an empty list
       accumulateList.Clear() ;
-
-
       return accumulateList ;
     }
 
