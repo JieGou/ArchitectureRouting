@@ -70,7 +70,8 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 
             if ( direction != null ) {
                 var curveRotations = new List<Curve>() ;
-                transform = Transform.CreateRotationAtPoint(XYZ.BasisZ, XYZ.BasisY.AngleTo(direction), placePoint);
+                var angle = XYZ.BasisY.AngleTo(direction) ;
+                transform = Transform.CreateRotationAtPoint(XYZ.BasisZ, angle > 0.5 * Math.PI ? Math.PI - angle : angle, placePoint);
                 foreach ( var curveTranslation in curveTranslations ) 
                     curveRotations.Add(curveTranslation.CreateTransformed(transform));
 
@@ -97,7 +98,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
                 DrawingServer.CurveList = curves ;
             }
             else if ( FirstPoint != null ) {
-                var vector = (SecondPoint - new XYZ( FirstPoint.X, FirstPoint.Y, SecondPoint.Z )).Normalize() ;
+                var vector = (SecondPoint - FirstPoint).Normalize() ;
                 var curves = TransformCurves( _curves, PlacePoint, vector ) ;
                 DrawingServer.CurveList = curves ;
             }
