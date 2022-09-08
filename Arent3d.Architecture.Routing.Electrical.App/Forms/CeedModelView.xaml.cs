@@ -28,5 +28,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       CeedModels = new CeedDockPaneContent( viewModel ) ;
       DataContext = viewModel ;
     }
+    
+    public void HideDockPane( UIApplication uiApplication )
+    {
+      var dpId = new DockablePaneId( RoutingAppUI.PaneId ) ;
+      DockablePane dockPane = uiApplication.GetDockablePane( dpId ) ;
+      if ( dockPane.IsShown() )
+        dockPane.Hide() ;
+    }
   }
 }

@@ -4,6 +4,7 @@ using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
@@ -18,6 +19,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       document.EraseAllConnectorFamilies() ;
       document.EraseAllElectricalRoutingFamilies();
       CreateCylindricalShaftCommandBase.DeleteAllShaftOpening(document);
+      RoutingAppUI.CeedModelDockPanelProvider?.HideDockPane( new UIDocument( document ).Application ) ;
       base.UnSetup( document ) ;
       document.DeleteEntireSchema();
     }

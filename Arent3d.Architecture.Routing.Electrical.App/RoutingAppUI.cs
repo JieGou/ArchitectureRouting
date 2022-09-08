@@ -52,9 +52,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       var uiApplication = new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ;
       var uiDocument = uiApplication.ActiveUIDocument ;
       CeedModelDockPanelProvider?.CustomInitiator( uiDocument, uiDocument.Document ) ;
-      var dpid = new DockablePaneId( PaneId ) ;
-      DockablePane dockPane = uiApplication.GetDockablePane( dpid ) ;
-      dockPane.Hide() ;
+      CeedModelDockPanelProvider?.HideDockPane( uiApplication ) ;
     }
 
     private CeedModelView CeedModelDockablePaneRegisters( UIControlledApplication application )
@@ -69,9 +67,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       } ;
       data.InitialState = state ;
 
-      var dpid = new DockablePaneId( PaneId ) ;
-      if ( ! DockablePane.PaneIsRegistered( dpid ) ) {
-        application.RegisterDockablePane( dpid, PaneName, ceedModelDockPanelProvider ) ;
+      var dpId = new DockablePaneId( PaneId ) ;
+      if ( ! DockablePane.PaneIsRegistered( dpId ) ) {
+        application.RegisterDockablePane( dpId, PaneName, ceedModelDockPanelProvider ) ;
       }
 
       return ceedModelDockPanelProvider ;
