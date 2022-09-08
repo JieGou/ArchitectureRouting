@@ -1,4 +1,3 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
@@ -13,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
   {
     private static bool IsBetween( this XYZ p, XYZ p1, XYZ p2 )
     {
-      return Math.Abs( ( p2 - p ).AngleTo( p1 - p ) - Math.PI ) < 0.01 ;
+      return ( p.DistanceTo( p1 ) + p.DistanceTo( p2 ) ).Equals( p1.DistanceTo( p2 ) ) ;
     }
 
     public static bool HasPoint( this MEPCurve mepCurve, XYZ point )
