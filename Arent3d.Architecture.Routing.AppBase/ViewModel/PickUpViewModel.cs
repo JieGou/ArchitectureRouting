@@ -355,7 +355,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var direction = productType == ProductType.Conduit ? directionZ[ index ] : string.Empty ;
         var ceedCodeModel = GetCeedSetCodeOfElement( element ) ;
         var routeName = routeNames.Any() ? routeNames[ index ] ?? string.Empty : string.Empty;
-        if ( _ceedModels.Any() && ceedCodeModel.Any() && ! ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ) {
+        if ( _ceedModels.Any() && ceedCodeModel.Any() && ! ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole ) ) {
           ceedSetCode = ceedCodeModel.First() ;
           
           deviceSymbol = ceedCodeModel.Count > 1 ? ceedCodeModel.ElementAt( 1 ) : string.Empty ;
@@ -462,7 +462,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
         }
 
-        if ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) {
+        if ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole ) {
           var materialCodes = new List<MaterialCodeInfo>() ;
           var materialCodePullBox = element.ParametersMap.get_Item( PullBoxRouteManager.MaterialCodeParameter ).AsString() ;
           

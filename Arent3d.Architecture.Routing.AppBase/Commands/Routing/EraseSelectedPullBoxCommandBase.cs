@@ -297,7 +297,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       public bool AllowElement( Element e )
       {
-        return ( ((FamilyInstance) e).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
+        return e is FamilyInstance familyInstance && familyInstance.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ;
       }
 
       public bool AllowReference( Reference r, XYZ p )

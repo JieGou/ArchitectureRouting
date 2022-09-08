@@ -248,7 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       pullBoxesInShaft = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
         .Where( c =>
         {
-          if ( c.GetConnectorFamilyType() != ConnectorFamilyType.PullBox ) return false ;
+          if ( c.GetConnectorFamilyType() is not ConnectorFamilyType.PullBox and not ConnectorFamilyType.Handhole ) return false ;
 
           var locationPoint = ( c.Location as LocationPoint )?.Point ;
           if ( locationPoint == null || ! IsNearShaft( locationPoint, shaftLocation ) ||
@@ -933,7 +933,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var pullBoxesInShaft = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
         .Where( c =>
         {
-          if ( c.GetConnectorFamilyType() != ConnectorFamilyType.PullBox ) return false ;
+          if ( c.GetConnectorFamilyType() is not ConnectorFamilyType.PullBox and not ConnectorFamilyType.Handhole ) return false ;
 
           var locationPoint = ( c.Location as LocationPoint )?.Point ;
           return locationPoint != null && IsNearShaft( locationPoint, shaftLocation ) &&
@@ -1599,7 +1599,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public static IEnumerable<TextNote> GetTextNotesOfPullBox( Document document, bool isOnlyCalculatedSizePullBoxes = false )
     {
       var pullBoxes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-        .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
+        .Where( e => e.GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole ) ;
       if ( isOnlyCalculatedSizePullBoxes )
         pullBoxes = pullBoxes.Where( e => Convert.ToBoolean( e.ParametersMap.get_Item( IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
       var pullBoxUniqueIds = pullBoxes.Select( e => e.UniqueId ).ToList() ;
@@ -1621,7 +1621,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         return pullBoxUniqueId ;
       var toConnector = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
         .FirstOrDefault( c => c.UniqueId == toElementId ) ;
-      if ( toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
+      if ( toConnector != null && toConnector.GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole )
         pullBoxUniqueId = toConnector.UniqueId ;
       return pullBoxUniqueId ;
     }
@@ -1629,7 +1629,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private static FamilyInstance? FindPullBoxByLocation( Document document, double originX, double originY, double originZ )
     {
       var pullBoxes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-        .Where( c => c.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ;
+        .Where( c => c.GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole ) ;
       
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var baseLengthOfLine = scale / 100d ;

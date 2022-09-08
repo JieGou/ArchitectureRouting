@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       public bool AllowElement( Element e )
       {
-        return ( (FamilyInstance) e ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ;
+        return e is FamilyInstance familyInstance && familyInstance.GetConnectorFamilyType() == ConnectorFamilyType.Handhole ;
       }
 
       public bool AllowReference( Reference r, XYZ p )

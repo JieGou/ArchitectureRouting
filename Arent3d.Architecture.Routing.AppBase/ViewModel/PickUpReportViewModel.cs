@@ -837,7 +837,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         return false ;
       var toConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
         .FirstOrDefault( c => c.UniqueId == toElementId ) ;
-      return toConnector != null && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ;
+      return toConnector != null && toConnector.GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole ;
     }
     
     private bool IsSegmentFromPowerToPullBox( RouteSegment? lastSegment )
@@ -853,7 +853,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         .FirstOrDefault( c => c.UniqueId == fromElementId ) ;
       var toConnector = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures )
         .FirstOrDefault( c => c.UniqueId == toElementId ) ;
-      return fromConnector != null && toConnector != null && fromConnector.GetConnectorFamilyType() == ConnectorFamilyType.Power && toConnector.GetConnectorFamilyType() == ConnectorFamilyType.PullBox;
+      return fromConnector != null && toConnector != null && fromConnector.GetConnectorFamilyType() == ConnectorFamilyType.Power && toConnector.GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole ;
     }
     
     private List<InforDisplay> GetInforDisplays(List<PickUpItemModel> pickUpModels, RouteCache routes)

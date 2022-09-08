@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( Result.Failed == result ) {
           TaskDialog.Show( "Dialog.Commands.Initialization.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup".GetAppStringByKeyOrDefault( null ) ) ;
         }
-        
+
         AfterInitialize( document ) ;
 
         return result ;
@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     protected virtual void BeforeInitialize( Document document )
     {
     }
-    
+
     protected virtual void AfterInitialize( Document document )
     {
     }
@@ -49,7 +49,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     protected virtual bool Setup( Document document )
     {
-      return document.SetupRoutingFamiliesAndParameters() ;
+      try {
+        return document.SetupRoutingFamiliesAndParameters() ;
+      }
+      catch ( Exception e ) {
+        Console.WriteLine( e ) ;
+        throw ;
+      }
     }
   }
 }

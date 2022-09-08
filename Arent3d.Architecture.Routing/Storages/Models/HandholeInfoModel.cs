@@ -3,7 +3,7 @@ using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  [Schema( "3749C0D6-4CCB-403F-9CDE-13CD0E4C767B", nameof( HandholeInfoModel ) )]
+  [Schema( "D2BB9B40-65BD-4DF1-AEB5-5441FE12B6B2", nameof( HandholeInfoModel ) )]
   public class HandholeInfoModel : IDataModel
   {
     public HandholeInfoModel()
@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     public List<HandholeInfoItemModel> HandholeInfoData { get ; set ; } = new() ;
   }
 
-  [Schema( "DFBB9DEE-F2C5-4538-91DD-B6BFAE60567C", nameof( HandholeInfoItemModel ) )]
+  [Schema( "F20DB3DC-9A89-4F9C-8C8F-1EBEAB027866", nameof( HandholeInfoItemModel ) )]
   public class HandholeInfoItemModel : IDataModel
   {
     public HandholeInfoItemModel()

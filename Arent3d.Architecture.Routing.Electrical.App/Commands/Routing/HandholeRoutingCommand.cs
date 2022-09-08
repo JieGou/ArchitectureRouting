@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.Handhole ;
 
-    protected override ConnectorFamilyType? ConnectorType => ConnectorFamilyType.PullBox ;
+    protected override ConnectorFamilyType? ConnectorType => ConnectorFamilyType.Handhole ;
 
     protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => curveType.Category.Name ;
   }
