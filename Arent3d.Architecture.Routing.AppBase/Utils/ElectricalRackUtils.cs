@@ -9,7 +9,7 @@ using MoreLinq ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Utils
 {
-  public static class CableRackUtils
+  public static class ElectricalRackUtils
   {
     private static bool IsBetween( this XYZ p, XYZ p1, XYZ p2 )
     {
@@ -48,14 +48,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return con2?.Id == connector.Id ? con1 : null ;
     }
 
-    private static bool GetConnectedMepCurveList( List<Element> accumulateList, Connector startConnector,
-      Element? stopElement = null )
+    private static bool GetConnectedMepCurveList( List<Element> accumulateList, Connector startConnector, Element? stopElement = null )
     {
       if ( ! startConnector.IsConnected )
         return false ;
       var ids = accumulateList.Select( el => el.Id ) ;
       var connectedConnectors = startConnector.GetConnectedConnectors() ;
-      var connectedConnector = connectedConnectors.FirstOrDefault( con => ! ids.Contains( con.Owner.Id ) ) ;
+      var connectedConnector = connectedConnectors.SingleOrDefault( con => ! ids.Contains( con.Owner.Id ) ) ;
       if ( connectedConnector is null )
         return false ;
       var element = connectedConnector.Owner ;
@@ -63,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       if ( element.Id == stopElement?.Id )
         return true ;
       var oppositeConnector = GetOppositeConnector( connectedConnector ) ;
-      return oppositeConnector is { } && GetConnectedMepCurveList( accumulateList, oppositeConnector, stopElement );
+      return oppositeConnector is { } && GetConnectedMepCurveList( accumulateList, oppositeConnector, stopElement ) ;
     }
 
     public static List<Element> GetLinkedMEPCurves( this MEPCurve startCurve, MEPCurve endCurve )
@@ -83,8 +82,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return accumulateList ;
     }
 
-    public static (double StartParam, double EndParam) CalculateParam( this MEPCurve thisCurve, XYZ point,
-      Element nextCurve )
+    public static (double StartParam, double EndParam) CalculateParam( this MEPCurve thisCurve, XYZ point, Element nextCurve )
     {
       var resParams = ( 0.0, 1.0 ) ;
       var (thisCon1, thisCon2) = Get2Connector( thisCurve ) ;
@@ -123,7 +121,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       // arrange connect so that vector connector 1 to connect 2 is same way as curve's direction
       if ( line.Direction.IsAlmostEqualTo( ( endConnector.Origin - startConnector.Origin ).Normalize() ) == false )
-         startConnector = endConnector;
+        startConnector = endConnector ;
 
       var startParam = ( point1 - startConnector.Origin ).DotProduct( line.Direction ) / line.Length ;
       var endParam = ( point2 - startConnector.Origin ).DotProduct( line.Direction ) / line.Length ;
@@ -131,29 +129,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         ( startParam, endParam ) = ( endParam, startParam ) ;
       return ( startParam, endParam ) ;
     }
-    
+
     public static bool IsRack( this FamilyInstance fi )
     {
-      return fi.Document.GetElementById<ElementType>( fi.GetTypeId() ) is {} elementType && elementType.FamilyName.Equals( ElectricalRoutingFamilyType.CableTray.GetFamilyName() ) ;
+      return fi.Document.GetElementById<ElementType>( fi.GetTypeId() ) is { } elementType && elementType.FamilyName.Equals( ElectricalRoutingFamilyType.CableTray.GetFamilyName() ) ;
     }
 
     private static double RackWidth( this FamilyInstance fi )
     {
-      if ( fi.GetParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( fi.Document, "トレイ幅" ) )
-          is not { } param )
+      if ( fi.GetParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( fi.Document, "トレイ幅" ) ) is not { } param )
         return 0 ;
       return param.AsDouble() ;
     }
 
     #region Classify relative position of 2 racks
 
-    private static (Connector? ConnectorShort, Connector? ConnectorLong) IsOverlappedEndPoint( Element shortCurve,
-      Element longCurve )
+    private static (Connector? ConnectorShort, Connector? ConnectorLong) IsOverlappedEndPoint( Element shortCurve, Element longCurve )
     {
       var (c11, c12) = Get2Connector( shortCurve ) ;
       var (c21, c22) = Get2Connector( longCurve ) ;
-      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 ||
-           c22?.Origin is not { } p22 )
+      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 || c22?.Origin is not { } p22 )
         return ( null, null ) ;
       if ( p11.IsAlmostEqualTo( p21 ) && p12.IsBetween( p21, p22 ) )
         return ( c11, c21 ) ;
@@ -167,13 +162,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return ( null, null ) ;
     }
 
-    private static (Connector? ConnectorFirst, Connector? ConnectorSecond) IsOverlappedEachOther( Element firstCurve,
-      Element secondCurve )
+    private static (Connector? ConnectorFirst, Connector? ConnectorSecond) IsOverlappedEachOther( Element firstCurve, Element secondCurve )
     {
       var (c11, c12) = Get2Connector( firstCurve ) ;
       var (c21, c22) = Get2Connector( secondCurve ) ;
-      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 ||
-           c22?.Origin is not { } p22 )
+      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 || c22?.Origin is not { } p22 )
         return ( null, null ) ;
       if ( p11.IsBetween( p21, p22 ) && p21.IsBetween( p11, p12 ) )
         return ( c12, c22 ) ;
@@ -197,8 +190,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     {
       var (c11, c12) = Get2Connector( firstCurve ) ;
       var (c21, c22) = Get2Connector( secondCurve ) ;
-      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 ||
-           c22?.Origin is not { } p22 )
+      if ( c11?.Origin is not { } p11 || c12?.Origin is not { } p12 || c21?.Origin is not { } p21 || c22?.Origin is not { } p22 )
         return 0 ;
       if ( p11.IsBetween( p21, p22 ) && p12.IsBetween( p21, p22 ) )
         return 1 ;
@@ -256,12 +248,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     public static void ResolveOverlapCases( this Document document, List<FamilyInstance> racks )
     {
-      var rackWidth = ! racks.Any()? 0 : racks[ 0 ].RackWidth() ;
+      var rackWidth = ! racks.Any() ? 0 : racks[ 0 ].RackWidth() ;
       if ( rackWidth == 0 )
         return ;
       var ids = racks.Select( rack => rack.Id ) ;
-      var otherRacks = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
-        .Where( r => ! ids.Contains( r.Id ) && r.RackWidth().Equals(rackWidth) ).ToList() ;
+      var otherRacks = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting ).Where( r => ! ids.Contains( r.Id ) && r.RackWidth().Equals( rackWidth ) ).ToList() ;
 
       if ( ! otherRacks.Any() )
         return ;
@@ -270,16 +261,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       foreach ( var thisRack in racks ) {
         foreach ( var otherRack in otherRacks ) {
           // case 1: overlap at an end point
-          if ( IsOverlappedEndPoint( thisRack, otherRack ) is
-              { ConnectorShort: { } cDisConnectNew, ConnectorLong: { } cReConnectOld } ) {
+          if ( IsOverlappedEndPoint( thisRack, otherRack ) is { ConnectorShort: { } cDisConnectNew, ConnectorLong: { } cReConnectOld } ) {
             idsToRemove.Add( thisRack.Id ) ;
             deletedRacks.Add( thisRack ) ;
             Reconnect( cDisConnectNew, cReConnectOld ) ;
             continue ;
           }
 
-          if ( IsOverlappedEndPoint( otherRack, thisRack ) is
-              { ConnectorShort: { } cDisConnectOld, ConnectorLong: { } cReConnectNew } ) {
+          if ( IsOverlappedEndPoint( otherRack, thisRack ) is { ConnectorShort: { } cDisConnectOld, ConnectorLong: { } cReConnectNew } ) {
             idsToRemove.Add( otherRack.Id ) ;
             Reconnect( cDisConnectOld, cReConnectNew ) ;
             continue ;
@@ -296,8 +285,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
           }
 
           // case 3: overlap each other
-          if ( IsOverlappedEachOther( thisRack, otherRack ) is { ConnectorFirst: { } c1, ConnectorSecond: { } c2 } &&
-               TryExtendRack( thisRack, c1, c2 ) ) {
+          if ( IsOverlappedEachOther( thisRack, otherRack ) is { ConnectorFirst: { } c1, ConnectorSecond: { } c2 } && TryExtendRack( thisRack, c1, c2 ) ) {
             idsToRemove.Add( otherRack.Id ) ;
           }
         }

@@ -14,10 +14,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       var helper = new WindowInteropHelper( this ) { Owner = Autodesk.Windows.ComponentManager.ApplicationWindow } ;
     }
 
-    public void Deconstruct( out double width, out bool isRoundBendingAnnotation )
+    public double SelectedWidthInMillimeter( )
     {
-      width = double.Parse(cmbSizes.Text);
-      isRoundBendingAnnotation = rdRound.IsChecked?? false ;
+      return double.Parse(cmbSizes.Text);
     }
 
     private void OnOkClicked( object sender, RoutedEventArgs e )
