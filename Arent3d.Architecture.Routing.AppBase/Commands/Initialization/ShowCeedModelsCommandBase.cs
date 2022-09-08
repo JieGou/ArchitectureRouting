@@ -83,8 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         ElementTransformUtils.MoveElement( uiDocument.Document, connector.Id, new XYZ( placePoint.X, placePoint.Y, heightOfConnector) - new XYZ( 0, 0, heightOfConnector ) ) ;
         if ( null != direction ) {
           var line = Line.CreateBound( placePoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( placePoint ) ) ;
-          var angle = XYZ.BasisY.AngleTo(direction) ;
-          ElementTransformUtils.RotateElement(uiDocument.Document, connector.Id, line, angle > 0.5 * Math.PI ? Math.PI - angle : angle );
+          ElementTransformUtils.RotateElement(uiDocument.Document, connector.Id, line, TabPlaceExternal.GetAngle(direction) );
         }
         
         var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;

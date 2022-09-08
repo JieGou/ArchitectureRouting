@@ -70,8 +70,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
 
             if ( direction != null ) {
                 var curveRotations = new List<Curve>() ;
-                var angle = XYZ.BasisY.AngleTo(direction) ;
-                transform = Transform.CreateRotationAtPoint(XYZ.BasisZ, angle > 0.5 * Math.PI ? Math.PI - angle : angle, placePoint);
+                transform = Transform.CreateRotationAtPoint(XYZ.BasisZ, GetAngle(direction), placePoint);
                 foreach ( var curveTranslation in curveTranslations ) 
                     curveRotations.Add(curveTranslation.CreateTransformed(transform));
 
@@ -82,6 +81,16 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             }
 
             return curveTransforms ;
+        }
+
+        public static double GetAngle(XYZ direction )
+        {
+            var angle = direction.AngleTo( XYZ.BasisY ) ;
+            
+            if ( direction.X <= 0 )
+                return angle ;
+            
+            return -angle ;
         }
 
         public override void DrawExternal()
