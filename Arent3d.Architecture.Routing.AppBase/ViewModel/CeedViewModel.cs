@@ -1013,6 +1013,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       XYZ? point ;
       try {
         point = UiDocument.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        if ( _document.ActiveView is not ViewPlan ) {
+          TaskDialog.Show( "Arent", "This view is not the view plan!" ) ;
+          return ;
+        }
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return ;
