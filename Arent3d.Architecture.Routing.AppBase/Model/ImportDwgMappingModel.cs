@@ -190,6 +190,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       return defaultSymbolMagnification ;
     }
     
+    public static double GetMagnificationOfView( int viewScale )
+    {
+      var defaultSymbolMagnification = viewScale * SetRatio( viewScale ) ;
+      return defaultSymbolMagnification ;
+    }
+    
     private static double SetRatio( int scale )
     {
       return scale switch

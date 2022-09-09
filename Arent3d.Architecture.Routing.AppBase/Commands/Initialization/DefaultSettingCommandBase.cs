@@ -477,7 +477,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           document.Regenerate();
           FilteredElementCollector allElementsInView = new FilteredElementCollector(document, viewPlan.Id);
           var elementsInView = allElementsInView.ToElements();
-          UpdateSizeElement( document, elementsInView, storageService ) ;
+          UpdateSizeElement( document, elementsInView, storageService, importDwgMappingModel.Scale ) ;
         }
         
         var levelName = importDwgMappingModel.FloorName ;
@@ -487,7 +487,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       updateScaleTrans.Commit() ;
     }
     
-    private void UpdateSizeElement( Document document, IList<Element> elementsInView, StorageService<DataStorage, BorderTextNoteModel> storageService )
+    private void UpdateSizeElement( Document document, IList<Element> elementsInView, StorageService<DataStorage, BorderTextNoteModel> storageService, int viewScale )
     {
       // Update size text note border
       var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[0].Trim() == textNote.Name ) ;
@@ -511,6 +511,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       
       // Update Y of ceedcode
+      var scale = ImportDwgMappingModel.GetMagnificationOfView( viewScale ) ;
       var independentTags = elementsInView.Where( e => e is IndependentTag).ToList() ;
       foreach ( var element in independentTags ) {
         var independentTag = (IndependentTag) element ;
@@ -520,10 +521,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if( taggedElementId == null ) continue ;
         var taggedElement = document.GetElement( taggedElementId );
         var taggedElementLocation = (taggedElement.Location as LocationPoint)!.Point ;
-        independentTag.TagHeadPosition  = new XYZ( taggedElementLocation.X, taggedElementLocation.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * document.ActiveView.Scale, taggedElementLocation.Z ) ;
+        independentTag.TagHeadPosition  = new XYZ( taggedElementLocation.X, taggedElementLocation.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * scale, taggedElementLocation.Z ) ;
         
         // Set シンボル倍率 parameter of ceedcode if exist
-        taggedElement.LookupParameter( "シンボル倍率" )?.Set( document.ActiveView.Scale ) ;
+        taggedElement.LookupParameter( "シンボル倍率" )?.Set( scale ) ;
       }
 
     }
