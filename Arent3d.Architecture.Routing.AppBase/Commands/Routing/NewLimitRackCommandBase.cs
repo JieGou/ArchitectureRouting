@@ -143,12 +143,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       else {
         var widthAndClassifications = new List<(double Diameter, string Classification)>() ;
+        var ceedCodeAndClassifications = new Dictionary<string, string>() ;
         foreach ( var mepCurves in routingElementGroup.Value.GroupBy( s => s.GetRouteName() ) ) {
           var routeName = mepCurves.First().GetRouteName() ?? string.Empty ;
           if ( string.IsNullOrEmpty( routeName ) ) 
             continue;
           
-          var classification = GetClassification( document, routeName ) ;
+          var classification = GetClassification( document, routeName, ceedCodeAndClassifications ) ;
           var route = routes.FirstOrDefault( s => s.Key == routeName ) ;
           widthAndClassifications.Add(((route.Value.UniqueDiameter?.RevitUnitsToMillimeters() ?? 0 ) + 10, classification));
         }
@@ -183,7 +184,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     #region Methods
 
-    private static string GetClassification( Document document, string routeName )
+    private static string GetClassification( Document document, string routeName, Dictionary<string, string> ceedCodeAndClassifications )
     {
       var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, false ) ;
       if ( null == toConnector )
@@ -192,6 +193,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var ceedCode = toConnector.GetPropertyString( ElectricalRoutingElementParameter.CeedCode ) ?? string.Empty ;
       if ( string.IsNullOrEmpty( ceedCode ) )
         return string.Empty ;
+
+      if ( ! ceedCodeAndClassifications.ContainsKey( ceedCode ) ) {
+        ceedCodeAndClassifications.Add(ceedCode, string.Empty);
+      }
+      else {
+        return ceedCodeAndClassifications[ ceedCode ] ;
+      }
     
       var ceedStorage = document.GetCeedStorable() ;
       var ceedModel = ceedStorage.CeedModelData.FirstOrDefault( x => $"{x.CeedSetCode}:{x.GeneralDisplayDeviceSymbol}:{x.ModelNumber}" == ceedCode ) ;
@@ -224,7 +232,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return wireId == wireIdentifier ;
       } ) ;
 
-      return wiresAndCablesModelData?.Classification ?? string.Empty ;
+      var classification = wiresAndCablesModelData?.Classification ?? string.Empty ;
+      ceedCodeAndClassifications[ ceedCode ] = classification ;
+      
+      return classification ;
     }
     
     private static void StoreLimitRackModels( Document document,List<RackMap> rackMaps )
