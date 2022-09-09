@@ -839,15 +839,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName, false ) ;
       var value = toConnector?.GetPropertyString(ElectricalRoutingElementParameter.Quantity);
       var quantity = string.IsNullOrEmpty( value ) ? 1 : int.Parse( value ) ;
-      string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
-      string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
-      string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
-      string plumbingType = detailSymbolItemModel.PlumbingType ;
+      var floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
+      var constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
+      var isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
+      var plumbingType = detailSymbolItemModel.PlumbingType ;
 
       var ceedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == detailSymbolItemModel.Code && x.GeneralDisplayDeviceSymbol == detailSymbolItemModel.DeviceSymbol ) ;
       if ( ceedModel != null && ! string.IsNullOrEmpty( ceedModel.CeedSetCode ) && ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ) {
         var ceedCode = ceedModel.CeedSetCode ;
-        var remark = ceedModel.GeneralDisplayDeviceSymbol ;
+        var remark = quantity > 1 ? $"{ceedModel.GeneralDisplayDeviceSymbol}x{quantity}" : ceedModel.GeneralDisplayDeviceSymbol ;
         var hiroiCdModel = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetCdMasterEcoModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeedSetCode ) : hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeedSetCode ) ;
         var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeedModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeedModelNumber ) ).Skip( 1 ) ;
         var constructionClassification = hiroiCdModel?.ConstructionClassification ;
