@@ -20,9 +20,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public ObservableCollection<ConnectorFamilyInfo> ConnectorFamilyList { get ; } = new() ;
     private readonly Document _document ;
     public StorageService<Level, CeedUserModel> StorageService { get ; }
-    private readonly IPostCommandExecutorBase? _postCommandExecutor ;
+    private readonly IElectricalPostCommandExecutorBase? _postCommandExecutor ;
 
-    public SelectConnectorFamily( Document document, StorageService<Level, CeedUserModel> storageService, IPostCommandExecutorBase? postCommandExecutor )
+    public SelectConnectorFamily( Document document, StorageService<Level, CeedUserModel> storageService, IElectricalPostCommandExecutorBase? postCommandExecutor )
     {
       InitializeComponent() ;
       _document = document ;

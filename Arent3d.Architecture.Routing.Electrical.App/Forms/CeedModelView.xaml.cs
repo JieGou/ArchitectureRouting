@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     
     public void CustomInitiator( UIDocument uiDocument, Document document )
     {
-      var viewModel = new CeedViewModel( uiDocument, document, new PostCommandExecutor() ) ;
+      var viewModel = new CeedViewModel( uiDocument, document, new CeedPostCommandExecutor() ) ;
       CeedModels = new CeedDockPaneContent( viewModel ) ;
       DataContext = viewModel ;
     }

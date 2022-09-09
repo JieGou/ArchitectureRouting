@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly CeedStorable _ceedStorable ;
     private readonly StorageService<Level, CeedUserModel> _storageService ;
     private readonly DefaultSettingStorable _defaultSettingStorable ;
-    private readonly IPostCommandExecutorBase? _postCommandExecutor ;
+    private readonly IElectricalPostCommandExecutorBase? _postCommandExecutor ;
     private List<string> _ceedModelNumberOfPreviewCategories ;
 
     public IReadOnlyCollection<CeedModel> OriginCeedModels => new ReadOnlyCollection<CeedModel>( _ceedModels );
@@ -297,7 +297,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public CeedViewModel( UIDocument uiDocument, Document document, IPostCommandExecutorBase? postCommandExecutor )
+    public CeedViewModel( UIDocument uiDocument, Document document, IElectricalPostCommandExecutorBase? postCommandExecutor )
     {
       UiDocument = uiDocument ;
       _document = document ;
