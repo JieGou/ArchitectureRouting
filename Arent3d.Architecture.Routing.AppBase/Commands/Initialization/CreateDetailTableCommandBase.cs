@@ -4,7 +4,6 @@ using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -13,6 +12,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
+using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -835,6 +835,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       DetailSymbolItemModel detailSymbolItemModel, bool isParentRoute, bool mixConstructionItems )
     {
       var element = pickedObjects.FirstOrDefault( p => p.UniqueId == detailSymbolItemModel.ConduitUniqueId ) ;
+      var routeName = RouteUtil.GetMainRouteName(element?.GetRouteName());
+      var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName, false ) ;
+      var value = toConnector?.GetPropertyString(ElectricalRoutingElementParameter.Quantity);
+      var quantity = string.IsNullOrEmpty( value ) ? 1 : int.Parse( value ) ;
       string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
       string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
       string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
@@ -861,7 +865,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( ! listMaterialCode.Any() ) continue ;
 
           detailTableItemModels.AddRange( CreateDetailTableItemModelsByMaterialCode( hiroiMasterModelData, wiresAndCablesModelData, detailSymbolItemModel, isParentRoute, mixConstructionItems, listMaterialCode,
-            constructionItem, floor, ceedCode, plumbingType, constructionClassification, remark, isEcoMode ) ) ;
+            constructionItem, floor, ceedCode, plumbingType, constructionClassification, remark, isEcoMode, quantity ) ) ;
         }
       }
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
@@ -875,13 +879,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         if ( listMaterialCode.Any() ) {
           detailTableItemModels.AddRange( CreateDetailTableItemModelsByMaterialCode( hiroiMasterModelData, wiresAndCablesModelData, detailSymbolItemModel, isParentRoute, mixConstructionItems, listMaterialCode, 
-            constructionItem, floor, detailSymbolItemModel.Code, plumbingType, "", "", isEcoMode ) ) ;
+            constructionItem, floor, detailSymbolItemModel.Code, plumbingType, "", "", isEcoMode, quantity ) ) ;
         }
       }
     }
 
     private static IEnumerable<DetailTableItemModel> CreateDetailTableItemModelsByMaterialCode( IEnumerable<HiroiMasterModel> hiroiMasterModelData, IReadOnlyCollection<WiresAndCablesModel> wiresAndCablesModelData, DetailSymbolItemModel detailSymbolItemModel, bool isParentRoute,
-      bool mixConstructionItems, List<string> listMaterialCode, string constructionItem, string floor, string ceedCode, string plumbingType, string? constructionClassification, string remark, string isEcoMode )
+      bool mixConstructionItems, List<string> listMaterialCode, string constructionItem, string floor, string ceedCode, string plumbingType, string? constructionClassification, string remark, string isEcoMode, int quantity )
     {
       var detailTableItemModels = new List<DetailTableItemModel>() ;
       var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
@@ -915,7 +919,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           wireType, 
           wireSize, 
           wireStrip, 
-          "1", 
+          $"{quantity}", 
           string.Empty,
           string.Empty,
           string.Empty, 
