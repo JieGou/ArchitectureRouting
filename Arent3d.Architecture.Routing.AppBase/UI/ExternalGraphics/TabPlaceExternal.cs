@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             return xs.Max() - xs.Min() ;
         }
 
-        private List<Curve> TransformCurves( IList<Curve> curves, XYZ? placePoint, XYZ? direction )
+        private List<Curve> TransformCurves( IList<Curve> curves, XYZ? placePoint, XYZ? direction, XYZ? firstPoint )
         {
             var curveTransforms = new List<Curve>() ;
             if ( ! curves.Any() || placePoint is null)
@@ -68,9 +68,9 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             foreach ( var curve in curves ) 
                 curveTranslations.Add(curve.CreateTransformed(transform));
 
-            if ( direction != null ) {
+            if ( direction != null && firstPoint != null ) {
                 var curveRotations = new List<Curve>() ;
-                transform = Transform.CreateRotationAtPoint(XYZ.BasisZ, GetAngle(direction), placePoint);
+                transform = Transform.CreateRotationAtPoint(XYZ.BasisZ, GetAngle(direction, firstPoint, placePoint), placePoint);
                 foreach ( var curveTranslation in curveTranslations ) 
                     curveRotations.Add(curveTranslation.CreateTransformed(transform));
 
@@ -83,14 +83,46 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             return curveTransforms ;
         }
 
-        public static double GetAngle(XYZ direction )
+        public static double GetAngle( XYZ direction, XYZ firstPoint, XYZ placePoint )
         {
-            var angle = direction.AngleTo( XYZ.BasisY ) ;
-            
-            if ( direction.X <= 0 )
+            const double tolerance = 0.0001 ;
+            if ( direction.X < 0 )
+                direction = direction.Negate() ;
+            if ( IsAboveLine( direction, firstPoint, placePoint ) ) {
+                var angle = direction.AngleTo( XYZ.BasisY ) ;
+                if ( angle < tolerance || Math.Abs( angle - 0.5 * Math.PI ) < tolerance || Math.Abs( angle - Math.PI ) < tolerance )
+                    return 0 ;
+
+                if ( angle < 0.5 * Math.PI )
+                    angle = 0.5 * Math.PI - angle ;
+                else
+                    angle = -( angle - Math.PI * 0.5 ) ;
+
                 return angle ;
+            }
+            else {
+                var angle = direction.AngleTo( XYZ.BasisX.Negate() ) ;
+                if ( angle < tolerance || Math.Abs( angle - 0.5 * Math.PI ) < tolerance )
+                    return 0 ;
+
+                if ( angle < 0.5 * Math.PI )
+                    angle = Math.PI - angle ;
+
+                if ( direction.Y >= 0 )
+                    return -angle ;
+
+                return angle ;
+            }
+        }
+
+        private static bool IsAboveLine( XYZ direction, XYZ firstPoint, XYZ placePoint )
+        {
+            var vector = direction.Normalize() ;
+            if ( vector.X < 0 )
+                vector = vector.Negate() ;
             
-            return -angle ;
+            double equation( XYZ point ) => -vector.Y * (point.X - firstPoint.X) + vector.X * (point.Y - firstPoint.Y);
+            return equation( placePoint ) >= 0 ;
         }
 
         public override void DrawExternal()
@@ -103,12 +135,12 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
                 return ;
 
             if ( SecondPoint is null ) {
-                var curves = TransformCurves( _curves, PlacePoint, null ) ;
+                var curves = TransformCurves( _curves, PlacePoint, null, null ) ;
                 DrawingServer.CurveList = curves ;
             }
             else if ( FirstPoint != null ) {
-                var vector = (SecondPoint - FirstPoint).Normalize() ;
-                var curves = TransformCurves( _curves, PlacePoint, vector ) ;
+                var vector = (new XYZ(SecondPoint.X, SecondPoint.Y, FirstPoint.Z) - FirstPoint).Normalize() ;
+                var curves = TransformCurves( _curves, PlacePoint, vector, FirstPoint ) ;
                 DrawingServer.CurveList = curves ;
             }
         }
@@ -127,7 +159,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
                     return;
                 
                 _numberOfTabs++ ;
-                var direction = ( SecondPoint - FirstPoint ).Normalize() ;
+                var direction = ( new XYZ(SecondPoint.X, SecondPoint.Y, FirstPoint.Z) - FirstPoint ).Normalize() ;
                     
                 switch ( _numberOfTabs % 3 ) {
                     case 0 :

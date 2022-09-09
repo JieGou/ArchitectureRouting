@@ -66,7 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var connector = GenerateConnector( uiDocument, 0, 0, heightOfConnector, level, viewModel.SelectedFloorPlanType ?? string.Empty ) ;
         uiDocument.Document.Regenerate();
 
-        var ( placePoint, direction ) = PickPoint( uiDocument, connector ) ;
+        var ( placePoint, direction, firstPoint ) = PickPoint( uiDocument, connector ) ;
         if ( null == placePoint )
           return Result.Cancelled ;
 
@@ -81,9 +81,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         ElementTransformUtils.MoveElement( uiDocument.Document, connector.Id, new XYZ( placePoint.X, placePoint.Y, heightOfConnector) - new XYZ( 0, 0, heightOfConnector ) ) ;
-        if ( null != direction ) {
+        if ( null != direction && null != firstPoint) {
           var line = Line.CreateBound( placePoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( placePoint ) ) ;
-          ElementTransformUtils.RotateElement(uiDocument.Document, connector.Id, line, TabPlaceExternal.GetAngle(direction) );
+          ElementTransformUtils.RotateElement(uiDocument.Document, connector.Id, line, TabPlaceExternal.GetAngle(direction, firstPoint, placePoint) );
         }
         
         var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNum ) ;
@@ -178,7 +178,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return true ;
     }
 
-    private static (XYZ? PlacePoint, XYZ? Direction) PickPoint( UIDocument uiDocument, FamilyInstance symbolInstance )
+    private static (XYZ? PlacePoint, XYZ? Direction, XYZ? FirstPoint) PickPoint( UIDocument uiDocument, FamilyInstance symbolInstance )
     {
       var dlg = new ModelessOkCancelDialog() ;
       dlg.AlignToView(uiDocument.GetActiveUIView());
@@ -191,10 +191,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       TabPlaceExternal? tabPlaceExternal = null ;
       XYZ? placePoint = null ;
       XYZ? direction = null ;
+      XYZ? firstPoint = null ;
       try {
         if ( ! symbolInstance.HasParameter( "W" ) ) {
           dlg.Close();
-          return ( placePoint, direction ) ;
+          return ( placePoint, direction, firstPoint ) ;
         }
         
         tabPlaceExternal = new TabPlaceExternal( uiDocument.Application, curves, locationPoint, dlg ) ;
@@ -221,8 +222,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           case false when null != tabPlaceExternal :
           {
             placePoint = tabPlaceExternal.PlacePoint ;
-            if(null != tabPlaceExternal.SecondPoint && null != tabPlaceExternal.FirstPoint)
-              direction = ( tabPlaceExternal.SecondPoint - tabPlaceExternal.FirstPoint ).Normalize() ;
+            if ( null != tabPlaceExternal.SecondPoint && null != tabPlaceExternal.FirstPoint ) {
+              direction = ( new XYZ(tabPlaceExternal.SecondPoint.X, tabPlaceExternal.SecondPoint.Y, tabPlaceExternal.FirstPoint.Z) - tabPlaceExternal.FirstPoint ).Normalize() ;
+              firstPoint = tabPlaceExternal.FirstPoint ;
+            }
             break ;
           }
           case true :
@@ -240,7 +243,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         tabPlaceExternal?.Dispose();
       }
 
-      return ( placePoint, direction ) ;
+      return ( placePoint, direction, firstPoint ) ;
     }
 
     private static List<Curve> GetCurvesAtTopFaceFromElement( Element connector )
