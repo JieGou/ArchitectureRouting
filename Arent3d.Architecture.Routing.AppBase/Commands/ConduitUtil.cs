@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
@@ -113,17 +114,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       return detailTableModels ;
     }
 
-    public static ( string, string ) GetFromElementIdAndToElementIdOfConduit( Element conduit )
+    public static ( IEndPoint? FromEndPoint, IEndPoint? ToEndPoint ) GetFromElementIdAndToElementIdOfConduit( Element conduit )
     {
-      var fromElementId = string.Empty ;
-      var toElementId = string.Empty ;
+      IEndPoint? fromEndPoint = null, toEndPoint = null ;
       var fromEndPoints = conduit.GetNearestEndPoints( true ).ToList() ;
       if ( fromEndPoints.Any() )
-        fromElementId = fromEndPoints.First().Key.GetElementUniqueId() ;
+        fromEndPoint = fromEndPoints.First() ;
       var toEndPoints = conduit.GetNearestEndPoints( false ).ToList() ;
       if ( toEndPoints.Any() )
-        toElementId = toEndPoints.First().Key.GetElementUniqueId() ;
-      return ( fromElementId, toElementId ) ;
+        toEndPoint = toEndPoints.First() ;
+      return ( fromEndPoint, toEndPoint ) ;
     }
   }
 }
