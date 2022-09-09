@@ -307,7 +307,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       var oldCeedStorable = _document.GetCeedStorable() ;
       _ceedStorable = _document.GetCeedStorable() ;
-      _storageService = new StorageService<Level, CeedUserModel>(((ViewPlan)_document.ActiveView).GenLevel) ;
+      var level = _document.ActiveView?.GenLevel ?? new FilteredElementCollector(_document).OfClass(typeof(Level)).OfType<Level>().OrderBy(x => x.Elevation).First();
+      _storageService = new StorageService<Level, CeedUserModel>( level ) ;
       
       if ( ! oldCeedStorable.CeedModelData.Any() ) {
         _ceedModels = new List<CeedModel>() ;
