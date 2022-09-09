@@ -334,7 +334,7 @@
  
                 </DataGrid.Columns>
             </DataGrid>
-            <StackPanel DockPanel.Dock="Left" Margin="20, 0" Width="260" >
+            <StackPanel DockPanel.Dock="Left" Margin="20, 0, 10, 0" Width="260" >
                 <Label Content="プレビュー" FontWeight="Bold" />
                 <ListView ItemsSource="{Binding PreviewList}" Height="648"
                           ScrollViewer.HorizontalScrollBarVisibility="Hidden" 
