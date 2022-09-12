@@ -196,7 +196,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       return defaultSymbolMagnification ;
     }
     
-    private static double SetRatio( int scale )
+    public static double SetRatio( int scale )
     {
       return scale switch
       {
