@@ -232,14 +232,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var targetTabName = "Electrical.App.Routing.TabName".GetAppStringByKey() ;
       var selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
       if ( selectionTab == null ) return ;
+
+      var targetRibbonPanel = UIHelper.GetRibbonPanelFromName( "Electrical.App.Panels.Routing.Drawing".GetAppStringByKeyOrDefault( "Drawing" ), selectionTab ) ;
+      if ( targetRibbonPanel == null ) return ;
       
-      foreach ( var panel in selectionTab.Panels ) {
-        if ( panel.Source.Title == "Electrical.App.Panels.Routing.Settings".GetAppStringByKeyOrDefault( "Settings" ) ) {
-          foreach ( var item in panel.Source.Items ) {
-            if ( ! ( item is RibbonButton ribbonButton && ribbonButton.Text == "Electrical.App.Commands.Initialization.CreateDetailSymbolCommand".GetDocumentStringByKeyOrDefault( document, "Create\nDetail Symbol" ) ) ) {
-              item.IsEnabled = isEnable ;
-            }
-          }
+      foreach ( var ribbonItem in targetRibbonPanel.Source.Items ) {
+        if ( ribbonItem is not RibbonSplitButton ribbonSplitButton ) continue ;
+          
+        foreach ( var rItem in ribbonSplitButton.Items ) {
+          if ( rItem is not RibbonButton ribbonButton || ribbonButton.Text != "Electrical.App.Commands.Initialization.CreateDetailSymbolCommand".GetDocumentStringByKeyOrDefault( document, "Create\nDetail Symbol" ) ) continue ;
+            
+          rItem.IsEnabled = isEnable ;
+          break ;
         }
       }
     }
