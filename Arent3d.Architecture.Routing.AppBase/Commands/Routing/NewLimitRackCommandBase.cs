@@ -7,69 +7,105 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Utility ;
-using Autodesk.Revit.ApplicationServices ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class NewLimitRackCommandBase : IExternalCommand
   {
+    #region Constants & read-only variables
+
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
-
-    private readonly int minNumberOfMultiplicity = 5 ;
-    private readonly double minLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
-    private readonly double cableTrayDefaultBendRadius = ( 16.0 ).MillimetersToRevitUnits() ;
-
-    private readonly double[] cableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
-
-    private Dictionary<ElementId, List<Connector>> elbowsToCreate = new Dictionary<ElementId, List<Connector>>() ;
-
-    private Dictionary<string, double> routeLengthCache = new Dictionary<string, double>() ;
-
-    private Dictionary<string, Dictionary<int, double>> routeMaxWidthCache = new Dictionary<string, Dictionary<int, double>>() ;
-
+    private static readonly double MaxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
+    private const int MinNumberOfMultiplicity = 5 ;
+    private static readonly double MinLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
+    private static readonly double CableTrayDefaultBendRadius = ( 16.0 ).MillimetersToRevitUnits() ;
+    public static readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
+    private readonly Dictionary<ElementId, List<Connector>> _elbowsToCreate = new() ;
+    private readonly Dictionary<string, double> _routeLengthCache = new() ;
+    private readonly Dictionary<string, double> _routeMaxWidthDictionary = new() ;
     private static readonly double WidthCableTrayDefault2D = 300d.MillimetersToRevitUnits() ;
+    private const string TransactionKey = "TransactionName.Commands.Rack.CreateLimitCableRack" ;
+    private static readonly string TransactionName = TransactionKey.GetAppStringByKeyOrDefault( "Create Limit Cable" ) ;
+
+    #endregion
+
+    #region Properties
 
     protected abstract AddInType GetAddInType() ;
     protected abstract bool IsCircle { get ; }
+    protected abstract bool IsSelectionRange { get ; }
 
-    private const string TransactionKey = "TransactionName.Commands.Rack.CreateLimitCableRack" ;
-    private readonly string _transactioName = TransactionKey.GetAppStringByKeyOrDefault( "Create Limit Cable" ) ;
+    #endregion
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      UIApplication uiApp = commandData.Application ;
-      Application app = uiApp.Application ;
-      
+
+      var uiApp = commandData.Application ;
+      var app = uiApp.Application ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var rackMaps = new List<RackMap>() ;
 
       try {
-        var result = document.Transaction( _transactioName, _ =>
+        var result = document.Transaction( TransactionName, _ =>
         {
           var racks = new List<FamilyInstance>() ;
           var fittings = new List<FamilyInstance>() ;
-          var elements = document.CollectAllMultipliedRoutingElements( minNumberOfMultiplicity ).ToList() ;
-          foreach ( var element in elements ) {
-            var (mepCurve, subRoute) = element ;
-            if ( RouteLength( subRoute.Route.RouteName, elements, document ) >= minLengthOfConduit ) {
-              var conduit = ( mepCurve as Conduit )! ;
-              var cableRackWidth = CalcCableRackMaxWidth( element, elements, document ) ;
+          Dictionary<string, List<MEPCurve>> routingElementGroups ;
+          if ( IsSelectionRange ) {
+            List<Element> pickedObjects ;
+            try {
+              pickedObjects = uiDocument.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
+            }
+            catch ( OperationCanceledException ) {
+              return Result.Cancelled ;
+            }
+            if ( ! pickedObjects.Any() ) return Result.Cancelled ;
 
-              CreateCableRackForConduit( uiDocument, conduit, cableRackWidth, racks, rackMaps ) ;
+            var pickedMepCurves = new List<MEPCurve>() ;
+            foreach ( var pickedObject in pickedObjects )
+              if ( pickedObject is MEPCurve mepCurve )
+                pickedMepCurves.Add( mepCurve ) ;
+
+            routingElementGroups = document.CollectAllMultipliedRoutingElements( pickedMepCurves, MinNumberOfMultiplicity ) ;
+          }
+          else 
+            routingElementGroups = document.CollectAllMultipliedRoutingElements( MinNumberOfMultiplicity ) ;
+
+          var representativeMepCurvesFromRoutingElements = routingElementGroups.SelectMany( s => s.Value ).Where( p =>
+          {
+            if ( p.GetSubRouteInfo() is not { } subRouteInfo ) return false;
+            return p.GetRepresentativeSubRoute() == subRouteInfo ;
+          } ).EnumerateAll() ;
+          
+          foreach ( var routingElementGroup in routingElementGroups ) {
+            foreach ( var representativeMepCurve in routingElementGroup.Value ) {
+              if ( representativeMepCurve?.GetSubRouteInfo() is not { } subRouteInfo || representativeMepCurve.GetRepresentativeSubRoute() != subRouteInfo ) 
+                continue ;
+              
+              if ( ! ( GetLengthOfRoute( representativeMepCurve.GetRouteName()!, representativeMepCurvesFromRoutingElements, document ) >= MinLengthOfConduit ) )
+                continue ;
+            
+              var representativeConduit = ( representativeMepCurve as Conduit )! ;
+
+              var cableRackWidth = CalcCableRackWidth( routingElementGroup, routes ) ;
+
+              CreateCableRackForConduit( uiDocument, representativeConduit, cableRackWidth, racks, rackMaps ) ;
             }
           }
 
-          foreach ( var elbow in elbowsToCreate ) {
+          foreach ( var elbow in _elbowsToCreate ) {
             CreateElbow( uiDocument, elbow.Key, elbow.Value, fittings, rackMaps ) ;
           }
           
@@ -96,7 +132,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void StoreLimitRackModels(Document document,List<RackMap> rackMaps )
+    private double CalcCableRackWidth( KeyValuePair<string, List<MEPCurve>> routingElementGroup, RouteCache routes )
+    {
+      double cableRackWidth ;
+      if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) )
+        cableRackWidth = _routeMaxWidthDictionary[ routingElementGroup.Key ] ;
+      else {
+        cableRackWidth = routingElementGroup.Value.GroupBy( s => s.GetRouteName() ).Sum( p =>
+        {
+          var routeName = p.First().GetRouteName() ?? string.Empty ;
+          if ( string.IsNullOrEmpty( routeName ) ) return 0 ;
+
+          var route = routes.FirstOrDefault( s => s.Key == routeName ) ;
+          return ( route.Value.UniqueDiameter?.RevitUnitsToMillimeters() ?? 0 ) + 10 ;
+        } ) ;
+        cableRackWidth = ( 120 + cableRackWidth ) * 0.6 ;
+
+        foreach ( var width in CableTrayWidthMapping ) {
+          if ( ! ( cableRackWidth <= width ) ) continue ;
+          cableRackWidth = width ;
+          break ;
+        }
+
+        _routeMaxWidthDictionary.Add( routingElementGroup.Key, cableRackWidth ) ;
+      }
+
+      return cableRackWidth ;
+    }
+
+    #region Methods
+    
+    private static void StoreLimitRackModels( Document document,List<RackMap> rackMaps )
     {
       var limitRackStorable = document.GetAllStorables<LimitRackStorable>().FirstOrDefault() ?? document.GetLimitRackStorable() ;
       
@@ -119,14 +185,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void RemoveUnusedLimitRackModels(Document document, LimitRackStorable limitRackStorable)
+    private static void RemoveUnusedLimitRackModels( Document document, LimitRackStorable limitRackStorable )
     {
       var unUsesLimitRackModels = new List<LimitRackModel>() ;
       if ( ! limitRackStorable.LimitRackModels.Any() ) return ;
       foreach ( var limitRackModel in limitRackStorable.LimitRackModels ) {
         var racks = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.RackTypeElements ) ;
         
-        if (limitRackModel.RackIds.Any(rackId => racks.Any(rack=>rack.UniqueId == rackId))) continue;
+        if (limitRackModel.RackIds.Any( rackId => racks.Any( rack => rack.UniqueId == rackId ) ) ) continue;
         unUsesLimitRackModels.Add( limitRackModel ) ;
       }
 
@@ -171,7 +237,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var locationCableTray = ( cableTray.Location as LocationPoint )!.Point ;
           var pointNearest = locationAfterIntersect.GetEndPoint( 0 ).DistanceTo( locationCableTray ) < locationAfterIntersect.GetEndPoint( 1 ).DistanceTo( locationCableTray ) ? locationAfterIntersect.GetEndPoint( 0 ) : locationAfterIntersect.GetEndPoint( 1 ) ;
           ElementTransformUtils.MoveElement( document, cableTray.Id, new XYZ( pointNearest.X, pointNearest.Y, locationCableTray.Z ) - locationCableTray ) ;
-        
+
           groupCableTray.RemoveAt( 0 ) ;
           RemoveRackIdWhenCombineRacksToOneInCaches( rackMaps.EnumerateAll(), groupCableTray ) ;
           document.Delete( groupCableTray.Select( x => x.UniqueId ).EnumerateAll() ) ;
@@ -196,9 +262,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var detailCurveIds = CreateDetailLines( document, curveLoops, lineStyle).EnumerateAll() ;
           rackIdMap.RackDetailCurveIds.AddRange( detailCurveIds ) ;
         }
-
       }
-      
+
       return newCableTrays ;
     }
 
@@ -214,9 +279,55 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       for ( var i = 0; i < rackIdCount; i++ ) {
         var rack = racks.ElementAt( i ) ;
         var rackMap = rackMaps.FirstOrDefault( rm => rm.RackIds.Any( r => r == rack.UniqueId ) ) ;
-        if ( rackMap != null && rackMap.CableTrays.Contains( rack ) ) rackMap?.CableTrays.Remove( rack ) ;
-        if ( rackMap != null && rackMap.CableTrayFittings.Contains( rack ) ) rackMap?.CableTrays.Remove( rack ) ;
+        if ( rackMap != null && rackMap.CableTrays.Contains( rack ) ) rackMap.CableTrays.Remove( rack ) ;
+        if ( rackMap != null && rackMap.CableTrayFittings.Contains( rack ) ) rackMap.CableTrays.Remove( rack ) ;
         rackMap?.RackIds.Remove( rack.UniqueId ) ;
+      }
+    }
+
+    /// <summary>
+    /// caching new rack instance by route name
+    /// </summary>
+    /// <param name="rackMaps"></param>
+    /// <param name="rack"></param>
+    /// <param name="routeElement"></param>
+    /// /// <param name="isAddToCableTray"> if isAddToCableTray is true, the rack will be add to cable tray collection, else the rack will be add to cable tray fittings collection</param>
+    private static void UpdateRouteNameAndRacksCaches( ICollection<RackMap> rackMaps, Element rack, Element routeElement, bool isAddToCableTray = true )
+    {
+      /*
+       *  We need to caches rack instance by routeName because if the new rack instance is not direction with x or y,
+       * then we can't map detail curve and rack side by side
+       */
+      var routeName = routeElement.GetRouteName()! ;
+
+      if ( string.IsNullOrEmpty( routeName ) ) return ;
+
+      var rackMap = rackMaps.FirstOrDefault( rm => rm.RouteName == routeName ) ;
+
+      if ( rackMap is null ) {
+        // Add new rack to cable tray collection
+        var newRackMap = new RackMap( routeName ) ;
+        newRackMap.RackIds.Add( rack.UniqueId ) ;
+        if ( isAddToCableTray ) {
+          newRackMap.CableTrays.Add( rack ) ;
+        }
+        // Add new rack to cable tray fitting collection
+        else {
+          newRackMap.CableTrayFittings.Add( rack ) ;
+        }
+        rackMaps.Add( newRackMap );
+      }
+      else {
+        // Add new rack to cable tray collection
+        if ( isAddToCableTray ) {
+          rackMap.CableTrays.Add( rack ) ;
+        }
+        // Add new rack to cable tray fitting collection
+        else {
+          rackMap.CableTrayFittings.Add( rack ) ;
+        }
+
+        rackMap.RackIds.Add( rack.UniqueId ) ;
       }
     }
     
@@ -345,9 +456,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return subCategory ;
     }
 
-    public static IEnumerable<(CurveLoop CurveLoop, double Width)> GroupCurves( IEnumerable<(Line LocationLine, double Width)> inforCableTrays )
+    private static IEnumerable<(CurveLoop CurveLoop, double Width)> GroupCurves( IEnumerable<(Line LocationLine, double Width)> infoCableTrays )
     {
-      var cloneCurves = inforCableTrays.ToList() ;
+      var cloneCurves = infoCableTrays.ToList() ;
       var curveLoops = new List<(CurveLoop CurveLoop, double Width)>() ;
       // Algorithm to group interconnected curves
       while ( cloneCurves.Count > 0 ) {
@@ -417,7 +528,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return curveLoop ;
     }
 
-    private static List<(Line LocationLine, double Width)> ExtendCurves( Document document, List<( Line LocationLine, double Width)> infoCableTrays, List<FamilyInstance> fittings )
+    private static List<(Line LocationLine, double Width)> ExtendCurves( Document document, List<( Line LocationLine, double Width )> infoCableTrays, List<FamilyInstance> fittings )
     {
       var newInfoCableTrays = new List<(Line LocationLine, double Width)>() ;
       foreach ( var infoCableTray in infoCableTrays ) {
@@ -493,7 +604,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return groupRacks ;
     }
 
-    private static Line IntersectFitting( Line locationCableTray, IEnumerable<Element> fittings, double torance )
+    private static Line IntersectFitting( Line locationCableTray, IEnumerable<Element> fittings, double tolerance )
     {
       var pointOnLines = fittings.Select( x => GetConnector( x ).Select( y => y.Origin ) ).SelectMany( x => x ).Where( x =>
       {
@@ -501,7 +612,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( null == result )
           return false ;
 
-        return result.Distance < torance ;
+        return result.Distance < tolerance ;
       } ).ToList() ;
 
       if ( pointOnLines.Count is > 2 or 0 )
@@ -555,7 +666,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     /// <summary>
-    /// Creat cable rack for Conduit
+    ///   Create cable rack for Conduit
     /// </summary>
     /// <param name="uiDocument"></param>
     /// <param name="conduit"></param>
@@ -564,16 +675,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="rackMaps"></param>
     private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth, List<FamilyInstance> racks, ICollection<RackMap> rackMaps )
     {
-      if ( conduit != null ) {
-        var document = uiDocument.Document ;
+      var document = uiDocument.Document ;
 
-        using var transaction = new SubTransaction( document ) ;
-        try {
-          transaction.Start() ;
-          var location = ( conduit.Location as LocationCurve )! ;
-          var line = ( location.Curve as Line )! ;
+      using var transaction = new SubTransaction( document ) ;
+      try {
+        transaction.Start() ;
+        var location = ( conduit.Location as LocationCurve )! ;
+        var line = ( location.Curve as Line )! ;
 
-          var instance = NewRackCommandBase.CreateRackForStraightConduit( uiDocument, conduit, cableRackWidth ) ;
+        var instance = NewRackCommandBase.CreateRackForStraightConduit( uiDocument, conduit, cableRackWidth ) ;
 
           // check cable tray exists
           if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
@@ -583,71 +693,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           
           UpdateRouteNameAndRacksCaches( rackMaps, instance,conduit ) ;
 
-          racks.Add( instance ) ;
+        racks.Add( instance ) ;
 
-          if ( 1.0 != line.Direction.Z && -1.0 != line.Direction.Z ) {
-            var elbows = conduit.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd().Select( c => c.Owner ).OfType<FamilyInstance>() ;
-            foreach ( var elbow in elbows ) {
-              if ( elbowsToCreate.ContainsKey( elbow.Id ) ) {
-                elbowsToCreate[ elbow.Id ].Add( NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(), ( elbow.Location as LocationPoint )!.Point )! ) ;
-              }
-              else {
-                elbowsToCreate.Add( elbow.Id, new List<Connector>() { NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(), ( elbow.Location as LocationPoint )!.Point )! } ) ;
-              }
+        if ( 1.0 != line.Direction.Z && -1.0 != line.Direction.Z ) {
+          var elbows = conduit.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd().Select( c => c.Owner ).OfType<FamilyInstance>() ;
+          foreach ( var elbow in elbows ) {
+            if ( _elbowsToCreate.ContainsKey( elbow.Id ) ) {
+              _elbowsToCreate[ elbow.Id ].Add( NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(), ( elbow.Location as LocationPoint )!.Point )! ) ;
+            }
+            else {
+              _elbowsToCreate.Add( elbow.Id, new List<Connector>() { NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(), ( elbow.Location as LocationPoint )!.Point )! } ) ;
             }
           }
+        }
 
-          transaction.Commit() ;
-        }
-        catch {
-          transaction.RollBack() ;
-        }
+        transaction.Commit() ;
       }
-    }
-
-    /// <summary>
-    /// caching new rack instance by route name
-    /// </summary>
-    /// <param name="rackMaps"></param>
-    /// <param name="rack"></param>
-    /// <param name="routeElement"></param>
-    /// /// <param name="isAddToCableTray"> if isAddToCableTray is true, the rack will be add to cable tray collection, else the rack will be add to cable tray fittings collection</param>
-    private static void UpdateRouteNameAndRacksCaches( ICollection<RackMap> rackMaps, Element rack, Element routeElement, bool isAddToCableTray = true )
-    {
-      /*
-       *  We need to caches rack instance by routeName because if the new rack instance is not direction with x or y,
-       * then we can't map detail curve and rack side by side
-       */
-      var routeName = routeElement.GetRouteName()! ;
-
-      if ( string.IsNullOrEmpty( routeName ) ) return ;
-
-      var rackMap = rackMaps.FirstOrDefault( rm => rm.RouteName == routeName ) ;
-
-      if ( rackMap is null ) {
-        // Add new rack to cable tray collection
-        var newRackMap = new RackMap( routeName ) ;
-        newRackMap.RackIds.Add( rack.UniqueId ) ;
-        if ( isAddToCableTray ) {
-          newRackMap.CableTrays.Add( rack ) ;
-        }
-        // Add new rack to cable tray fitting collection
-        else {
-          newRackMap.CableTrayFittings.Add( rack ) ;
-        }
-        rackMaps.Add( newRackMap );
-      }
-      else {
-        // Add new rack to cable tray collection
-        if ( isAddToCableTray ) {
-          rackMap.CableTrays.Add( rack ) ;
-        }
-        // Add new rack to cable tray fitting collection
-        else {
-          rackMap.CableTrayFittings.Add( rack ) ;
-        }
-
-        rackMap.RackIds.Add( rack.UniqueId ) ;
+      catch {
+        transaction.RollBack() ;
       }
     }
 
@@ -658,7 +721,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="elementId"></param>
     /// <param name="connectors"></param>
     /// <param name="racks"></param>
-    /// /// <param name="rackMaps"></param>
+    /// <param name="rackMaps"></param>
     private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors, List<FamilyInstance> racks, ICollection<RackMap> rackMaps )
     {
       var document = uiDocument.Document ;
@@ -672,8 +735,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         var location = ( conduit.Location as LocationPoint )! ;
-        var instance = NewRackCommandBase.CreateRackForFittingConduit( uiDocument, conduit, location, cableTrayDefaultBendRadius ) ;
-        
+        var instance = NewRackCommandBase.CreateRackForFittingConduit( uiDocument, conduit, location, CableTrayDefaultBendRadius ) ;
+
         // check cable tray exists
         if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
           transaction.RollBack() ;
@@ -693,12 +756,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         foreach ( var connector in instance.GetConnectors() ) {
           var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
-          if ( null != otherConnectors ) {
-            var connectTo = NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
-            if ( connectTo != null ) {
-              connector.ConnectTo( connectTo ) ;
-            }
-          }
+          var connectTo = NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin, MaxDistanceTolerance ) ;
+          if ( connectTo != null ) connector.ConnectTo( connectTo ) ;
         }
 
         UpdateRouteNameAndRacksCaches( rackMaps, instance, conduit, false ) ;
@@ -713,88 +772,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     /// <summary>
-    /// Calculate cable rack width base on sum diameter of route
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="subRoute"></param>
-    /// <returns></returns>
-    private double CalcCableRackWidth( Document document, SubRoute subRoute )
-    {
-      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      var sumDiameter = subRoute.GetSubRouteGroup().Sum( s => routes.GetSubRoute( s )?.GetDiameter().RevitUnitsToMillimeters() + 10 ) + 120 ;
-      var cableTraywidth = 0.6 * sumDiameter ;
-      foreach ( var width in cableTrayWidthMapping ) {
-        if ( cableTraywidth <= width ) {
-          cableTraywidth = width ;
-          return cableTraywidth!.Value ;
-        }
-      }
-
-      return cableTraywidth!.Value ;
-    }
-
-    /// <summary>
-    /// Calculate cable rack max width
-    /// </summary>
-    /// <param name="element"></param>
-    /// <param name="elements"></param>
-    /// <param name="document"></param>
-    /// <returns></returns>
-    private double CalcCableRackMaxWidth( (MEPCurve, SubRoute) element, IEnumerable<(MEPCurve, SubRoute)> elements, Document document )
-    {
-      var routeName = element.Item2.Route.RouteName ;
-      var routeElements = elements.Where( x => x.Item2.Route.RouteName == routeName ) ;
-      var maxWidth = 0.0 ;
-      if ( routeMaxWidthCache.ContainsKey( routeName ) ) {
-        var elbowsConnected = element.Item1.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd().Select( c => c.Owner ).OfType<FamilyInstance>() ;
-        var straightsConnected = element.Item1.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd().Select( c => c.Owner ).OfType<Conduit>() ;
-        if ( elbowsConnected.Any() && straightsConnected.Any() && null != element.Item2.PreviousSubRoute && straightsConnected.First().GetSubRouteIndex()!.Value == element.Item2.PreviousSubRoute!.SubRouteIndex ) {
-          var key = routeMaxWidthCache[ routeName ].Keys.Where( x => x <= element.Item2.PreviousSubRoute!.SubRouteIndex ).Max() ;
-          return routeMaxWidthCache[ routeName ][ key ] ;
-        }
-        else if ( elbowsConnected.Any() && ( null == element.Item2.PreviousSubRoute || ( null != element.Item2.PreviousSubRoute && straightsConnected.Any() && straightsConnected.First().GetSubRouteIndex()!.Value != element.Item2.PreviousSubRoute!.SubRouteIndex ) ) && ! routeMaxWidthCache[ routeName ].ContainsKey( element.Item2.SubRouteIndex ) ) {
-          maxWidth = CalcCableRackWidth( document, element.Item2 ) ;
-          routeMaxWidthCache[ routeName ].Add( element.Item2.SubRouteIndex, maxWidth ) ;
-          return maxWidth ;
-        }
-        else {
-          var key = routeMaxWidthCache[ routeName ].Keys.Where( x => x <= element.Item2.SubRouteIndex ).Max() ;
-          return routeMaxWidthCache[ routeName ][ key ] ;
-        }
-      }
-      else {
-        foreach ( var (mepCurve, subRoute) in routeElements ) {
-          var cableTraywidth = CalcCableRackWidth( document, subRoute ) ;
-          if ( cableTraywidth > maxWidth ) {
-            maxWidth = cableTraywidth ;
-          }
-        }
-
-        Dictionary<int, double> routeWidths = new Dictionary<int, double>() ;
-        routeWidths.Add( element.Item2.SubRouteIndex, maxWidth ) ;
-        routeMaxWidthCache.Add( routeName, routeWidths ) ;
-        return maxWidth ;
-      }
-    }
-
-    /// <summary>
     /// Calculate cable rack length
     /// </summary>
     /// <param name="routeName"></param>
     /// <param name="elements"></param>
     /// <param name="document"></param>
     /// <returns></returns>
-    private double RouteLength( string routeName, IEnumerable<(MEPCurve, SubRoute)> elements, Document document )
+    private double GetLengthOfRoute( string routeName, IEnumerable<MEPCurve> elements, Document document )
     {
-      if ( routeLengthCache.ContainsKey( routeName ) ) {
-        return routeLengthCache[ routeName ] ;
+      var routeNameArray = routeName.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      if ( _routeLengthCache.ContainsKey( routeName ) ) {
+        return _routeLengthCache[ routeName ] ;
       }
 
-      var routeLength = elements.Where( x => x.Item2.Route.RouteName == routeName ).Sum( x => ( x.Item1 as Conduit )!.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ) ;
+      var routeLength = elements.Where( x =>
+      {
+        var rName = x.GetRouteName() ?? string.Empty ;
+        if ( string.IsNullOrEmpty( rName ) ) return false ;
+        var rNameArray = rName.Split( '_' ) ;
+        rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+        return rName == routeName ;
+      } ).Sum( x => ( x as Conduit )!.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ) ;
 
-      routeLengthCache.Add( routeName, routeLength ) ;
+      _routeLengthCache.Add( routeName, routeLength ) ;
 
       return routeLength ;
     }
+    
+    #endregion
   }
 }

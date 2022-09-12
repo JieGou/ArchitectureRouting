@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.ComponentModel ;
+using System.Globalization ;
 using System.IO ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -93,6 +94,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       } 
     }
     
+    private string _floorHeightDisplay ;
+
+    public string FloorHeightDisplay
+    {
+      get => _floorHeightDisplay ;
+      set
+      {
+        _floorHeightDisplay = value ;
+        OnPropertyChanged() ;
+      }
+    }
+    
+    private bool _isEnabledFloorHeight ;
+    public bool IsEnabledFloorHeight
+    { 
+      get => _isEnabledFloorHeight ;
+      set
+      {
+        _isEnabledFloorHeight = value ;
+        OnPropertyChanged() ;
+      } 
+    }
+
     public string this[ string columnName ]
     {
       get
@@ -113,9 +137,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _floorHeight = floorHeight ;
       _isEnabled = true ;
       _isDeleted = true ;
+      _isEnabledFloorHeight = true ;
+      _floorHeightDisplay = "0" ;
     }
 
-    public ImportDwgMappingModel( string fileName, string floorName, double floorHeight, int scale )
+    public ImportDwgMappingModel( string fileName, string floorName, double floorHeight, int scale, double floorHeightDisplay = 0 )
     {
       Id = Guid.NewGuid().ToString() ;
       _fullFilePath = fileName ;
@@ -125,6 +151,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _scale = scale ;
       _isEnabled = true ;
       _isDeleted = true ;
+      _floorHeightDisplay = floorHeightDisplay.ToString( CultureInfo.InvariantCulture );
+      _isEnabledFloorHeight = true ;
     }
     
     public ImportDwgMappingModel( Storable.Model.ImportDwgMappingModel item, bool isNotDeleted )
@@ -137,6 +165,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _scale = item.Scale ;
       _isEnabled = false ;
       _isDeleted = isNotDeleted ;
+      _floorHeightDisplay = item.FloorHeightDisplay.ToString( CultureInfo.InvariantCulture ) ;
+      _isEnabledFloorHeight = true ;
+    }
+    
+    public ImportDwgMappingModel(string id,string fileName, string floorName, double floorHeight, int scale, double floorHeightDisplay = 0 )
+    {
+      Id = id ;
+      _fullFilePath = fileName ;
+      _fileName = ! string.IsNullOrEmpty( fileName ) ? Path.GetFileName( fileName ) : "" ;
+      _floorName = floorName ;
+      _floorHeight = floorHeight ;
+      _scale = scale ;
+      _isEnabled = true ;
+      _isDeleted = true ;
+      _floorHeightDisplay = floorHeightDisplay.ToString( CultureInfo.InvariantCulture );
+      _isEnabledFloorHeight = true ;
     }
 
     public static double GetDefaultSymbolMagnification( Document document )

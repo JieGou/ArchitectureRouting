@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public class DefaultSettingCommandBase : IExternalCommand
   {
     private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultModeCommand" ;
-    private const string Grade3 = "グレード3" ;
+    private const string Grade3FieldName = "グレード3" ;
     private const string ArentDummyViewName = "Arent Dummy" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
           var deletedFloorName = viewModel.DeletedFloorName ;
           SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
-
+          
           if ( deletedFloorName.Any() ) {
             RemoveViews( document, deletedFloorName, uiDocument ) ;
           }
@@ -90,6 +90,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
     
+    public static  IEnumerable<int> GradeFrom3To7Collection => new[] { 3, 4, 5, 6, 7 } ;
+    
     private List<ImportDwgMappingModel> GetFloorsDefault(Document doc)
     {
       List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( doc )
@@ -101,12 +103,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var floorName = view.Name ;
         HeightSettingStorable settingStorables = doc.GetHeightSettingStorable() ;
         var height = settingStorables.HeightSettingsData.Values.FirstOrDefault( x => x.LevelId.ToString() == view.GenLevel.Id.ToString() )?.Elevation ?? 0 ;
+        
         var scale = view.Scale ;
 
         importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, floorName, height, scale ) ) ;
       }
-      
-      return importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ;
+
+      var importDwgMappingModelsGroups = importDwgMappingModels.OrderBy( x => x.FloorHeight )
+        .GroupBy( x => x.FloorHeight )
+        .Select( x=>x.ToList() )
+        .ToList() ;
+      var result = new List<ImportDwgMappingModel>() ;
+
+      // Add first item
+      foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[0] ) {
+        result.Add( importDwgMappingModelsGroup );
+      }
+
+      for ( int i = 1 ; i < importDwgMappingModelsGroups.Count ; i++ ) {
+        var heightCurrentLevel = importDwgMappingModelsGroups[ i ].First().FloorHeight ;
+        var heightPreviousLevel = importDwgMappingModelsGroups[ i - 1 ].First().FloorHeight ;
+        var height = heightCurrentLevel - heightPreviousLevel ;
+        
+        foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[i] ) {
+          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight,
+            importDwgMappingModelsGroup.Scale, height ) ;
+          result.Add( importDwgModel );
+        }
+      }
+
+      return result ;
     }
     
     private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, int gradeMode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
@@ -114,9 +140,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         Transaction transaction = new( document, SetDefaultEcoModeTransactionName ) ;
         transaction.Start() ;
-        var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3 ) ).ToList() ;
+        var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3FieldName ) ).ToList() ;
         foreach ( var instance in instances ) {
-          instance.SetProperty( Grade3, gradeMode == 3 ) ;
+          instance.SetProperty( Grade3FieldName, GradeFrom3To7Collection.Contains( gradeMode ) ) ;
         }
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
@@ -143,10 +169,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       foreach ( var item in importDwgMappingModels ) {
         var oldImportDwgMappingModel = defaultSettingStorable.ImportDwgMappingData.SingleOrDefault( i => i.FloorName == item.FloorName ) ;
+        double value = 0.0 ;
+        double.TryParse( item.FloorHeightDisplay, out value ) ;
         if ( oldImportDwgMappingModel == null ) {
-          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale ) ) ;
+          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, value ) ) ;
         }
         else {
+          oldImportDwgMappingModel.FloorHeightDisplay = value ;
           oldImportDwgMappingModel.FloorHeight = item.FloorHeight ;
           oldImportDwgMappingModel.Scale = item.Scale ;
         }
@@ -183,7 +212,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var viewFamily = new FilteredElementCollector( doc ).OfClass( typeof( ViewFamilyType ) ).Cast<ViewFamilyType>().First( x => x.ViewFamily == ViewFamily.FloorPlan ) ;
         var allCurrentLevels = new FilteredElementCollector( doc ).OfClass( typeof( Level ) ).ToList() ;
         var allCurrentViewPlans = new FilteredElementCollector( doc ).OfClass( typeof( ViewPlan ) ).ToList() ;
-        ViewPlan? firstViewPlan = null ;
 
         #region Import
 
@@ -218,7 +246,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           importDwgLevel.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
           if ( isNewView ) doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out ElementId importElementId ) ;
-          
         }
 
         importTrans.Commit() ;
@@ -248,7 +275,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         #region Create 3D ALL view
 
-        if ( firstViewPlan != null ) commandData.Application.ActiveUIDocument.ActiveView = firstViewPlan ;
+        View? view3dAll = null ;
         using var create3DTrans = new Transaction( doc ) ;
         create3DTrans.SetName( "Create 3D ALL view" ) ;
         create3DTrans.Start() ;
@@ -257,9 +284,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var allCurrent3DView = new FilteredElementCollector( doc ).OfClass( typeof( View3D ) ).ToList() ;
           const string view3DName = "3D ALL" ;
           var current3DView = allCurrent3DView.FirstOrDefault( x => x.Name.Equals( view3DName ) ) ;
-          if ( current3DView != null ) doc.Delete( current3DView.Id ) ;
-          current3DView = View3D.CreateIsometric( doc, threeDimensionalViewFamilyType.Id ) ;
-          current3DView.Name = view3DName ;
+          if ( current3DView == null ) 
+          {
+            current3DView = View3D.CreateIsometric( doc, threeDimensionalViewFamilyType.Id ) ;
+            current3DView.Name = view3DName ;
+          }
+          view3dAll = (View) current3DView  ;
         }
 
         create3DTrans.Commit() ;
@@ -273,17 +303,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var viewPlansWithoutDummy = viewPlans.Where( x => x.Name != ArentDummyViewName ).ToList() ;
         
         #region Remove view Arent dummy
-        if ( viewPlansWithoutDummy.Count > 1 ) {
-          var viewIdArentDummyView = viewPlans.Where( x => x.Name == ArentDummyViewName ).Select( p=>p.Id ).ToList() ;
+        if ( viewPlansWithoutDummy.Count >= 1 ) {
+          var viewIdArentDummyView = viewPlans.Where( x => x.Name == ArentDummyViewName ).Select( x=>x.Id ).ToList() ;
           if ( viewIdArentDummyView.Any() ) {
             var pCurrView = uiDocument.ActiveView ;
             uiDocument.RequestViewChange( pCurrView ) ;
             uiDocument.ActiveView = viewPlansWithoutDummy[ 0 ] ;
             
+            var levelIdDummies = doc.GetAllElements<Level>().Where( x=> x.Name == "Level " + ArentDummyViewName ).Select( x=>x.Id ).ToList() ;
             using var removeArentDummyView = new Transaction( doc ) ;
-            removeArentDummyView.SetName( "Remove view Arent dummy" ) ;
+            removeArentDummyView.SetName( "Remove view Arent dummy and level" ) ;
             removeArentDummyView.Start() ;
             doc.Delete( viewIdArentDummyView ) ;
+            doc.Delete( levelIdDummies ) ;
             removeArentDummyView.Commit() ;
           }
         }
@@ -303,6 +335,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         setViewRangeTransaction.Commit() ;
         #endregion
+
+        if ( view3dAll != null ) 
+        {
+          uiDocument.RequestViewChange( view3dAll ) ;
+        }
       }
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
@@ -324,12 +361,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void RemoveViews( Document document, List<string> deletedFloorName, UIDocument uiDocument )
     {
       try {
-        var deletedViewIds = document.GetAllElements<View>()
-          .Where( e => deletedFloorName.Contains( e.Name ) ).Select( e => e.Id ).ToList() ;
-        List<ViewPlan> views = new List<ViewPlan>(
-          new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( ViewPlan ) )
-            .Cast<ViewPlan>()
-            .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+        var deletedViews = document.GetAllElements<View>().Where( e => deletedFloorName.Any( x=> x == e.Name ) && ViewType.FloorPlan == e.ViewType).ToList() ;
+        var deletedViewIds = deletedViews.Select( x => x.Id ).ToList() ;
+        var deletedLevels = deletedViews.Select( x => x.GenLevel.Id ).ToList() ;
+        List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( ViewPlan ) )
+          .Cast<ViewPlan>()
+          .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+        IList<ElementId> categoryIds = new List<ElementId>();
+        var importInstances = new FilteredElementCollector( document )
+          .OfClass( typeof( ImportInstance ) ).Cast<ImportInstance>()
+          .Where( x => deletedLevels.Any( l => l == x.LevelId ) ) ;
+        foreach ( var importInstance in importInstances )
+        {
+          ElementId catId = importInstance.Category.Id;
+          if (!categoryIds.Contains(catId)) categoryIds.Add(catId);
+        }
+        
         if (views.Count() == deletedViewIds.Count()) {
           ArentViewDummy( uiDocument ) ;
         }
@@ -356,9 +403,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             uiDocument.ActiveView = viewsTemp[ 0 ] ;
           }
         }
-        var removeViewsTrans = new Transaction( document, "Remove Views " ) ;
+        var removeViewsTrans = new Transaction( document, "Remove Views, Level, Dwg linked " ) ;
         removeViewsTrans.Start() ;
         document.Delete( deletedViewIds ) ;
+        document.Delete( deletedLevels ) ;
+        document.Delete(categoryIds);
         removeViewsTrans.Commit() ;
       }
       catch ( Exception exception ) {
@@ -369,6 +418,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void ArentViewDummy( UIDocument uiDocument )
     {
       var doc = uiDocument.Document ;
+      
       var importTrans = new Transaction( doc ) ;
       importTrans.SetName( "Import" ) ;
       importTrans.Start() ;
@@ -379,6 +429,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var viewFamily = new FilteredElementCollector( doc ).OfClass( typeof( ViewFamilyType ) ).Cast<ViewFamilyType>().First( x => x.ViewFamily == ViewFamily.FloorPlan ) ;
 
       var level = Level.Create( doc, floorHeight) ;
+      level.Name = "Level " + floorName ;
 
       var viewPlan = ViewPlan.Create( doc, viewFamily.Id, level.Id ) ;
       viewPlan.Name = floorName ;
@@ -389,6 +440,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       level.SetProperty( BuiltInParameter.LEVEL_ELEV, floorHeight.MillimetersToRevitUnits() ) ;
       importTrans.Commit() ;
+      
       
       var pCurrView = uiDocument.ActiveView ;
       uiDocument.RequestViewChange( pCurrView ) ;

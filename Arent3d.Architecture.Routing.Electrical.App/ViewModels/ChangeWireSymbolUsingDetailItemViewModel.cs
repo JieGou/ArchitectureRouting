@@ -6,11 +6,11 @@ using System.Windows ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
@@ -21,7 +21,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class ChangeWireSymbolUsingDetailItemViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly LocationTypeStorable _settingStorable ;
+    private readonly StorageService<Level, LocationTypeModel> _locationTypeStorage;
+    private readonly StorageService<Level, ConduitAndDetailCurveModel> _conduitAndDetailCurveStorage;
 
     private static Dictionary<string, string>? _wireSymbolOptions ;
 
@@ -55,7 +56,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public string TypeNameSelected
     {
-      get { return _typeNameSelected ??= TypeNames.FirstOrDefault( x => x == _settingStorable.LocationType ) ?? TypeNames.First() ; }
+      get { return _typeNameSelected ??= TypeNames.FirstOrDefault( x => x == _locationTypeStorage.Data.LocationType ) ?? TypeNames.First() ; }
       set
       {
         _typeNameSelected = value ;
@@ -75,7 +76,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public ChangeWireSymbolUsingDetailItemViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _settingStorable = _uiDocument.Document.GetLocationTypeStorable() ;
+      _locationTypeStorage = new StorageService<Level, LocationTypeModel>(((ViewPlan)uiDocument.ActiveView).GenLevel) ;
+      _conduitAndDetailCurveStorage = new StorageService<Level, ConduitAndDetailCurveModel>(((ViewPlan)uiDocument.ActiveView).GenLevel) ;
     }
 
     #region Commands
@@ -119,20 +121,32 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           familySymbol.Activate();
 
         var lineStyle = GetLineStyle( _uiDocument.Document, ChangeWireTypeCommand.SubcategoryName ) ;
-        var conduitAndDetailCurveStorable = _uiDocument.Document.GetConduitAndDetailCurveStorable() ;
+        
         curves.ForEach( x =>
         {
           var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
           detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, WireSymbolOptions[ TypeNameSelected ], false ) ) ;
+          _conduitAndDetailCurveStorage.Data.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
+          {
+            ConduitId = x.Value,
+            DetailCurveId = detailCurve.UniqueId,
+            WireType = WireSymbolOptions[ TypeNameSelected ],
+            IsLeakRoute = false
+          } ) ;
         } ) ;
         lines.ForEach( x =>
         {
           var line = _uiDocument.Document.Create.NewFamilyInstance( x.Key, familySymbol, _uiDocument.ActiveView ) ;
-          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, WireSymbolOptions[ TypeNameSelected ], false ) ) ;
+          _conduitAndDetailCurveStorage.Data.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
+          {
+            ConduitId = x.Value,
+            DetailCurveId = line.UniqueId,
+            WireType = WireSymbolOptions[ TypeNameSelected ],
+            IsLeakRoute = false
+          }) ;
         } ) ;
         
-        conduitAndDetailCurveStorable.Save() ;
+        _conduitAndDetailCurveStorage.SaveChange() ;  
 
         transaction.Commit() ;
       }
@@ -176,8 +190,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if(null != dropCategory)
         _uiDocument.ActiveView.SetCategoryHidden(dropCategory.Id, true);
         
-      _settingStorable.LocationType = TypeNameSelected ;
-      _settingStorable.Save();
+      _locationTypeStorage.Data.LocationType = TypeNameSelected ;
+      _locationTypeStorage.SaveChange() ;
       trans.Commit() ;
       
       transactionGroup.Assimilate() ;
@@ -213,5 +227,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     }
 
     #endregion
+    
   }
 }

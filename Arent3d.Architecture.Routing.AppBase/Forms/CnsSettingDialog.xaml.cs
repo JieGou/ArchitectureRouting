@@ -7,6 +7,7 @@ using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using System.ComponentModel ;
+using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -39,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedItem = ( (CnsSettingModel) grdCategories.SelectedItem ) ;
       if ( selectedItem.CategoryName == "未設定" ) return ;
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
       grdCategories.IsReadOnly = false ;
       _isEditModel = true ;
       grdCategories.CurrentCell = new DataGridCellInfo( grdCategories.SelectedItem, grdCategories.Columns[ 1 ] ) ; 
@@ -68,6 +70,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           e.Cancel = true ;
           return ;
         }
+
+        var input= ((TextBox)e.EditingElement).Text ;
+        if ( ! IsValidConstructionItemName(input) ) {
+          _editingRowIndex = e.Row.GetIndex() ;
+          _isEditModel = false ;
+          grdCategories.ItemsSource.Cast<CnsSettingModel>().ToList()[ _editingRowIndex ].CategoryName = string.Empty ;
+          e.Cancel = true ;
+          return ;
+        }
       }
 
       _isEditModel = false ;
@@ -77,6 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void AddNewRow_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
       if ( _cnsSettingViewModel.AddRowCommand.CanExecute( null ) )
         _cnsSettingViewModel.AddRowCommand.Execute( null ) ;
       grdCategories.IsReadOnly = false ;
@@ -92,6 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedItem = ( (CnsSettingModel) grdCategories.SelectedItem ) ;
       if ( selectedItem.CategoryName == "未設定" ) return ;
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
       if ( _cnsSettingViewModel.DeleteRowCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.DeleteRowCommand.Execute( grdCategories.SelectedIndex ) ;
     }
@@ -99,6 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Export_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
       if ( _cnsSettingViewModel.WriteFileCommand.CanExecute( null ) )
         _cnsSettingViewModel.WriteFileCommand.Execute( null ) ;
     }
@@ -106,6 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Import_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
       if ( _cnsSettingViewModel.ReadFileCommand.CanExecute( null ) )
         _cnsSettingViewModel.ReadFileCommand.Execute( null ) ;
       try {
@@ -124,6 +139,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void AllElementsApply_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
       Close_Dialog() ;
       if ( _cnsSettingViewModel.SetConstructionItemForAllCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.SetConstructionItemForAllCommand.Execute( grdCategories.SelectedIndex ) ;
@@ -132,6 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Save_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
       Close_Dialog() ;
       if ( _cnsSettingViewModel.SaveCommand.CanExecute( null ) )
         _cnsSettingViewModel.SaveCommand.Execute( null ) ;
@@ -233,6 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void ApplyRangSelection_Click( object sender, RoutedEventArgs e )
     {
       if ( CheckDuplicateName( e ) ) return ;
+      if ( ! IsValidConstructionItemName() ) return ;
       Close_Dialog() ;
       if ( _cnsSettingViewModel.ApplyRangSelectionCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.ApplyRangSelectionCommand.Execute( grdCategories.SelectedIndex ) ;
@@ -335,5 +353,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       tx.Commit();
     }
     
+    private bool IsValidConstructionItemName(string? input = null)
+    {
+      
+      if ( input == null ) 
+      {
+        var selectedItem = ( (CnsSettingModel?) grdCategories.SelectedItem ) ;
+        if ( selectedItem == null ) return true ;
+       
+        foreach ( var cnsSettingModel in grdCategories.ItemsSource.Cast<CnsSettingModel>() ) {
+          input = cnsSettingModel.CategoryName.Trim() ;
+          var m = Regex.Match(input, @"[\[/\?\]\*\\:\']");
+          var nameIsValid = ( ! m.Success && ( ! string.IsNullOrEmpty(input) ) && ( input.Length <= 31 ) );
+
+          if ( nameIsValid ) continue ;
+          MessageBox.Show( @" 入力された工事項目名称が正しくありません。次のいずれかを確認してください。" + "\n" 
+                                                                     + @"・名前が31文字以上になっている。" + "\n" 
+                                                                     + @"・制限されている文字が入っている ： \ / ? * ' ] [ " + "\n" 
+                                                                     + @"・名前が空白になっている。" , "Error") ;
+          return false ;
+        }
+      }
+      else 
+      {
+        input = input.Trim() ;
+        var m = Regex.Match(input, @"[\[/\?\]\*\\:\']");
+        var nameIsValid = ! m.Success && ! string.IsNullOrEmpty(input) && input.Length <= 31;
+
+        if ( nameIsValid ) return true ;
+        MessageBox.Show( @" 入力された工事項目名称が正しくありません。次のいずれかを確認してください。" + "\n" 
+                                                                   + @"・名前が31文字以上になっている。" + "\n" 
+                                                                   + @"・制限されている文字が入っている ： \ / ? * ' ] [ " + "\n" 
+                                                                   + @"・名前が空白になっている。" , "Error") ;
+        return false ;
+      }
+
+      return true;
+    }
   }
 }
