@@ -10,6 +10,7 @@ using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Windows ;
@@ -24,8 +25,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private readonly Document _document ;
 
-    private readonly string _gradeMode ;
-
     private List<DisplaySettingByGradeItemModel> _dataDisplaySettingByGradeModel ;
 
     private DisplaySettingByGradeItemModel _selectedGradeItemModel ;
@@ -35,16 +34,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _document = document ;
       _selectedGradeItemModel = new DisplaySettingByGradeItemModel() ;
 
-      var defaultSettingStorable = _document.GetDefaultSettingStorable() ;
-      _gradeMode = defaultSettingStorable.GradeSettingData.GradeMode switch
-      {
-        1 or 2 => "1~2",
-        _ => defaultSettingStorable.GradeSettingData.GradeMode.ToString()
-      } ;
-
       var dataStorage = document.FindOrCreateDataStorage<DisplaySettingByGradeModel>( false ) ;
       _displaySettingByGradeStorageService = new StorageService<DataStorage, DisplaySettingByGradeModel>( dataStorage ) ;
       _dataDisplaySettingByGradeModel = _displaySettingByGradeStorageService.Data.DisplaySettingByGradeData ;
+      var gradeDisplayMode = _displaySettingByGradeStorageService.Data.GradeDisplayMode ;
+      if ( string.IsNullOrEmpty( gradeDisplayMode ) ) {
+        var defaultSettingStorable = _document.GetDefaultSettingStorable() ;
+        gradeDisplayMode = defaultSettingStorable.GradeSettingData.GradeMode switch
+        {
+          1 or 2 => "1~2",
+          _ => defaultSettingStorable.GradeSettingData.GradeMode.ToString()
+        } ;
+      }
 
       if ( ! _dataDisplaySettingByGradeModel.Any() ) {
         _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( GradeMode1Or2,
@@ -73,7 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       // Set default value for grade selection
-      _selectedGradeItemModel = DataDisplaySettingByGradeModel.Find( t => t.GradeMode == _gradeMode ) ??
+      _selectedGradeItemModel = DataDisplaySettingByGradeModel.Find( t => t.GradeMode == gradeDisplayMode ) ??
                                 new DisplaySettingByGradeItemModel() ;
     }
 
@@ -110,23 +111,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       using var transactionGroup = new TransactionGroup( _document, "Setup Display Setting By Grade" ) ;
       transactionGroup.Start() ;
-      
-      SaveDisplaySettingByGradeStorageService() ;
 
-      var applyGradeItemModel = SelectedGradeItemModel ;
-      // var applyGradeItemModel = DataDisplaySettingByGradeModel.Find( t => t.GradeMode == _gradeMode ) ;
       var views = _document.GetAllElements<View>()
-        .Where( v => v is View3D or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
+        .Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
       
       using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
       setupTransaction.Start() ;
       
-      SetupDisplayWiring( views, applyGradeItemModel.Wiring.IsVisible ) ;
-      SetupDisplayDetailSymbol( views, applyGradeItemModel.DetailSymbol.IsVisible ) ;
-      SetupDisplayPullBox( views, applyGradeItemModel.PullBox.IsVisible ) ;
-      // SetupDisplayDetailSymbol( views, applyGradeItemModel.DetailSymbol.IsVisible ) ;
+      SetupDisplayWiring( views, SelectedGradeItemModel.Wiring.IsVisible ) ;
+      SetupDisplayDetailSymbol( views, SelectedGradeItemModel.DetailSymbol.IsVisible ) ;
+      SetupDisplayPullBox( views, SelectedGradeItemModel.PullBox.IsVisible ) ;
+      SetupDisplayLegend( views, SelectedGradeItemModel.Legend ) ;
 
       setupTransaction.Commit() ;
+      
+      SaveDisplaySettingByGradeStorageService() ;
+      
+      UpdateIsEnableButton( _document, SelectedGradeItemModel.DetailSymbol.IsVisible ) ;
 
       transactionGroup.Commit() ;
       window.DialogResult = true ;
@@ -179,6 +180,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       // Detail symbols
       var hiddenOrUnhiddenElements = new List<Element>() ;
+
       foreach ( var view in views ) {
         if ( view is not ViewPlan ) continue ;
           
@@ -190,8 +192,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
-
-      UpdateIsEnableButton( _document, isVisible ) ;
     }
     
     private void SetupDisplayPullBox( List<View> views, bool isVisible )
@@ -209,21 +209,50 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
     
-    private static void HideOrUnhideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
+    private void SetupDisplayLegend( List<View> views, DisplaySettingByGradeItemDetailsModel displaySettingByGradeItemDetailsModel )
     {
-      if ( isVisible ) {
-        foreach ( var v in views ) {
-          var hiddenElementIds = hiddenOrUnhiddenElements.Where( e => e.IsHidden( v ) ).Select( h => h.Id ).ToList() ;
-          if ( hiddenElementIds.Any() )
-            v.UnhideElements( hiddenElementIds ) ;
+      // Legends
+      var legendViews = _document.GetAllElements<View>().Where( vp => vp.ViewType == ViewType.Legend ).ToList() ;
+      if ( ! legendViews.Any() ) return ;
+      
+      if ( displaySettingByGradeItemDetailsModel.IsVisible ) {
+        if ( displaySettingByGradeItemDetailsModel.HiddenElementIds.Any() ) {
+          foreach ( var legendView in legendViews ) {
+            var hiddenElementIds = displaySettingByGradeItemDetailsModel.HiddenElementIds.Where( e => _document.GetElement( e ) is
+              { } element && element.IsHidden( legendView ) ).Select( e => _document.GetElement( e ).Id ).ToList() ;
+            if ( hiddenElementIds.Any() )
+              legendView.UnhideElements( hiddenElementIds );
+          }
         }
       }
       else {
-        foreach ( var v in views ) {
-          var unhiddenElementIds = hiddenOrUnhiddenElements.Where( e => ! e.IsHidden( v ) ).Select( h => h.Id ).ToList() ;
-          if ( unhiddenElementIds.Any() )
-            v.HideElements( unhiddenElementIds ) ;
+        foreach ( var legendView in legendViews ) {
+          var allElementsInLegendView = new FilteredElementCollector( _document, legendView.Id ) ;
+          displaySettingByGradeItemDetailsModel.HiddenElementIds = allElementsInLegendView.Select( e => e.UniqueId ).ToList() ;
+          legendView.HideElements( allElementsInLegendView.ToElementIds() );
         }
+      }
+      
+      var hiddenOrUnhiddenElements = _document.GetAllElements<Viewport>().Where( vp => legendViews.Any( lv => lv.Id.IntegerValue == vp.ViewId.IntegerValue ) ).EnumerateAll();
+      HideOrUnhideElements( views, displaySettingByGradeItemDetailsModel.IsVisible, hiddenOrUnhiddenElements ) ;
+    }
+    
+    private static void HideOrUnhideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
+    {
+      views.ForEach( v => HideOrUnhideElements( v, isVisible, hiddenOrUnhiddenElements ) ) ;
+    }
+
+    private static void HideOrUnhideElements( View view, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
+    {
+      if ( isVisible ) {
+        var hiddenElementIds = hiddenOrUnhiddenElements.Where( e => e.IsHidden( view ) ).Select( h => h.Id ).ToList() ;
+        if ( hiddenElementIds.Any() )
+          view.UnhideElements( hiddenElementIds ) ;
+      }
+      else {
+        var unhiddenElementIds = hiddenOrUnhiddenElements.Where( e => ! e.IsHidden( view ) ).Select( h => h.Id ).ToList() ;
+        if ( unhiddenElementIds.Any() )
+          view.HideElements( unhiddenElementIds ) ;
       }
     }
 
@@ -241,9 +270,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           
         foreach ( var rItem in ribbonSplitButton.Items ) {
           if ( rItem is not RibbonButton ribbonButton || ribbonButton.Text != "Electrical.App.Commands.Initialization.CreateDetailSymbolCommand".GetDocumentStringByKeyOrDefault( document, "Create\nDetail Symbol" ) ) continue ;
-            
+
+          using var transaction = new Transaction( document, "Update IsEnabled Button" ) ;
+          transaction.Start() ;
           rItem.IsEnabled = isEnable ;
-          break ;
+          transaction.Commit() ;
+          
+          return ;
         }
       }
     }
@@ -253,6 +286,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       using Transaction transaction = new(_document, "Save Display Setting By Grade") ;
       transaction.Start() ;
       _displaySettingByGradeStorageService.Data.DisplaySettingByGradeData = _dataDisplaySettingByGradeModel ;
+      _displaySettingByGradeStorageService.Data.GradeDisplayMode = _selectedGradeItemModel.GradeMode ;
       _displaySettingByGradeStorageService.SaveChange() ;
       transaction.Commit() ;
     }

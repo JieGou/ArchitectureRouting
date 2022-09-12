@@ -9,15 +9,20 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     public DisplaySettingByGradeModel()
     {
       DisplaySettingByGradeData = new List<DisplaySettingByGradeItemModel>() ;
+      GradeDisplayMode = string.Empty ;
     }
 
-    public DisplaySettingByGradeModel( List<DisplaySettingByGradeItemModel>? displaySettingByGradeData )
+    public DisplaySettingByGradeModel( List<DisplaySettingByGradeItemModel>? displaySettingByGradeData, string? gradeDisplayMode )
     {
       DisplaySettingByGradeData = displaySettingByGradeData ?? new List<DisplaySettingByGradeItemModel>() ;
+      GradeDisplayMode = gradeDisplayMode ?? string.Empty ;
     }
 
     [Field( Documentation = "Display Setting By Grade Data" )]
     public List<DisplaySettingByGradeItemModel> DisplaySettingByGradeData { get ; set ; }
+    
+    [Field( Documentation = "Grade Display Mode" )]
+    public string GradeDisplayMode { get ; set ; }
   }
 
   [Schema( "EF7E901A-DEB4-4FD5-AB39-91FCB3D0AE38", nameof( DisplaySettingByGradeItemModel ) )]
@@ -29,18 +34,18 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       Wiring = new DisplaySettingByGradeItemDetailsModel() ;
       DetailSymbol = new DisplaySettingByGradeItemDetailsModel() ;
       PullBox = new DisplaySettingByGradeItemDetailsModel() ;
-      AirConditionerLegend = new DisplaySettingByGradeItemDetailsModel() ;
+      Legend = new DisplaySettingByGradeItemDetailsModel() ;
     }
 
     public DisplaySettingByGradeItemModel( string? gradeMode, DisplaySettingByGradeItemDetailsModel? wiring,
       DisplaySettingByGradeItemDetailsModel? detailSymbol, DisplaySettingByGradeItemDetailsModel? pullBox,
-      DisplaySettingByGradeItemDetailsModel? airConditionerLegend )
+      DisplaySettingByGradeItemDetailsModel? legend )
     {
       GradeMode = gradeMode ?? string.Empty ;
       Wiring = wiring ?? new DisplaySettingByGradeItemDetailsModel() ;
       DetailSymbol = detailSymbol ?? new DisplaySettingByGradeItemDetailsModel() ;
       PullBox = pullBox ?? new DisplaySettingByGradeItemDetailsModel() ;
-      AirConditionerLegend = airConditionerLegend ?? new DisplaySettingByGradeItemDetailsModel() ;
+      Legend = legend ?? new DisplaySettingByGradeItemDetailsModel() ;
     }
 
     [Field( Documentation = "Grade Mode" )]
@@ -55,8 +60,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     [Field( Documentation = "Pull Box" )]
     public DisplaySettingByGradeItemDetailsModel PullBox { get ; set ; }
 
-    [Field( Documentation = "Air Conditioner Legend" )]
-    public DisplaySettingByGradeItemDetailsModel AirConditionerLegend { get ; set ; }
+    [Field( Documentation = "Legend" )]
+    public DisplaySettingByGradeItemDetailsModel Legend { get ; set ; }
   }
 
   [Schema( "7330D52B-EF2B-4D58-9E99-878F30C4858C", nameof( DisplaySettingByGradeItemDetailsModel ) )]
@@ -66,18 +71,21 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     {
       IsEnabled = false ;
       IsVisible = true ;
+      HiddenElementIds = new List<string>() ;
     }
 
-    public DisplaySettingByGradeItemDetailsModel( bool? isEnabled, bool? isVisible )
+    public DisplaySettingByGradeItemDetailsModel( bool? isEnabled, bool? isVisible, List<string>? hiddenElementIds = null )
     {
       IsEnabled = isEnabled ?? false ;
       IsVisible = isVisible ?? true ;
+      HiddenElementIds = hiddenElementIds ?? new List<string>() ;
     }
 
-    public DisplaySettingByGradeItemDetailsModel( bool? isEnabled )
+    public DisplaySettingByGradeItemDetailsModel( bool? isEnabled, List<string>? hiddenElementIds = null )
     {
       IsEnabled = isEnabled ?? false ;
       IsVisible = ! IsEnabled ;
+      HiddenElementIds = hiddenElementIds ?? new List<string>() ;
     }
 
     [Field( Documentation = "IsEnabled" )]
@@ -85,5 +93,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
 
     [Field( Documentation = "IsVisible" )]
     public bool IsVisible { get ; set ; }
+
+    [Field( Documentation = "Hidden Element Ids" )]
+    public List<string> HiddenElementIds { get ; set ; }
   }
 }
