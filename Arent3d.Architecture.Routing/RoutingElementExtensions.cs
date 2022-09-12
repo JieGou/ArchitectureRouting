@@ -50,11 +50,6 @@ namespace Arent3d.Architecture.Routing
       document.UnloadAllRoutingParameters() ;
     }
 
-    private static string GetElbowTypeName( Document document )
-    {
-      return "Routing.Revit.DummyConduit.ElbowTypeName".GetDocumentStringByKeyOrDefault( document, "M_電線管エルボ - 鉄鋼" ) ;
-    }
-    
     private static string GetRadius50ElbowTypeName( Document document )
     {
       return "Routing.Revit.DummyConduit.Radius50ElbowTypeName".GetDocumentStringByKeyOrDefault( document, "M_電線管エルボ - 鉄鋼 - 曲げ半径50mm - Arent" ) ;
@@ -131,7 +126,6 @@ namespace Arent3d.Architecture.Routing
 
     private static void EraseArentConduitType( Document document )
     {
-      var elbowTypeName = GetElbowTypeName( document ) ;
       var conduitTypeName = GetConduitTypeName( document ) ;
       var sizes = ConduitSizeSettings.GetConduitSizeSettings( document ) ;
       var standards = document.GetStandardTypes().ToList() ;
