@@ -48,10 +48,6 @@
                     <CheckBox HorizontalAlignment="Left" IsEnabled="{Binding SelectedGradeItemModel.PullBox.IsEnabled}"
                               IsChecked="{Binding SelectedGradeItemModel.PullBox.IsVisible}" Content="プルボックス"
                               Margin="30 10 0 0" FontSize="13" />
-                    <CheckBox HorizontalAlignment="Left"
-                              IsEnabled="{Binding SelectedGradeItemModel.Legend.IsEnabled}"
-                              IsChecked="{Binding SelectedGradeItemModel.Legend.IsVisible}"
-                              Content="空調機凡例" Margin="30 10 0 15" FontSize="13" />
                 </StackPanel>
             </GroupBox>
         </StackPanel>

@@ -50,27 +50,27 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ! _dataDisplaySettingByGradeModel.Any() ) {
         _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( GradeMode1Or2,
           new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( false ),
-          new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
+          new DisplaySettingByGradeItemDetailsModel( false ) ) ) ;
 
         _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "3",
           new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( false ),
-          new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
+          new DisplaySettingByGradeItemDetailsModel( false ) ) ) ;
 
         _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "4",
           new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( false ),
-          new DisplaySettingByGradeItemDetailsModel( true ), new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
+          new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
 
         _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "5",
           new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( false ),
-          new DisplaySettingByGradeItemDetailsModel( true ), new DisplaySettingByGradeItemDetailsModel( false ) ) ) ;
+          new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
 
         _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "6",
           new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( true ),
-          new DisplaySettingByGradeItemDetailsModel( true ), new DisplaySettingByGradeItemDetailsModel( false ) ) ) ;
+          new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
 
         _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "7",
           new DisplaySettingByGradeItemDetailsModel( true ), new DisplaySettingByGradeItemDetailsModel( true ),
-          new DisplaySettingByGradeItemDetailsModel( true ), new DisplaySettingByGradeItemDetailsModel( false ) ) ) ;
+          new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
       }
 
       // Set default value for grade selection
@@ -121,7 +121,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SetupDisplayWiring( views, SelectedGradeItemModel.Wiring.IsVisible ) ;
       SetupDisplayDetailSymbol( views, SelectedGradeItemModel.DetailSymbol.IsVisible ) ;
       SetupDisplayPullBox( views, SelectedGradeItemModel.PullBox.IsVisible ) ;
-      SetupDisplayLegend( views, SelectedGradeItemModel.Legend ) ;
 
       setupTransaction.Commit() ;
       
@@ -207,34 +206,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( t => labelOfPullBoxIds.Contains( t.UniqueId ) ) ) ;
       
       HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
-    }
-    
-    private void SetupDisplayLegend( List<View> views, DisplaySettingByGradeItemDetailsModel displaySettingByGradeItemDetailsModel )
-    {
-      // Legends
-      var legendViews = _document.GetAllElements<View>().Where( vp => vp.ViewType == ViewType.Legend ).ToList() ;
-      if ( ! legendViews.Any() ) return ;
-      
-      if ( displaySettingByGradeItemDetailsModel.IsVisible ) {
-        if ( displaySettingByGradeItemDetailsModel.HiddenElementIds.Any() ) {
-          foreach ( var legendView in legendViews ) {
-            var hiddenElementIds = displaySettingByGradeItemDetailsModel.HiddenElementIds.Where( e => _document.GetElement( e ) is
-              { } element && element.IsHidden( legendView ) ).Select( e => _document.GetElement( e ).Id ).ToList() ;
-            if ( hiddenElementIds.Any() )
-              legendView.UnhideElements( hiddenElementIds );
-          }
-        }
-      }
-      else {
-        foreach ( var legendView in legendViews ) {
-          var allElementsInLegendView = new FilteredElementCollector( _document, legendView.Id ) ;
-          displaySettingByGradeItemDetailsModel.HiddenElementIds = allElementsInLegendView.Select( e => e.UniqueId ).ToList() ;
-          legendView.HideElements( allElementsInLegendView.ToElementIds() );
-        }
-      }
-      
-      var hiddenOrUnhiddenElements = _document.GetAllElements<Viewport>().Where( vp => legendViews.Any( lv => lv.Id.IntegerValue == vp.ViewId.IntegerValue ) ).EnumerateAll();
-      HideOrUnhideElements( views, displaySettingByGradeItemDetailsModel.IsVisible, hiddenOrUnhiddenElements ) ;
     }
     
     private static void HideOrUnhideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )

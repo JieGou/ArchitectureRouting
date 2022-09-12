@@ -34,18 +34,15 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       Wiring = new DisplaySettingByGradeItemDetailsModel() ;
       DetailSymbol = new DisplaySettingByGradeItemDetailsModel() ;
       PullBox = new DisplaySettingByGradeItemDetailsModel() ;
-      Legend = new DisplaySettingByGradeItemDetailsModel() ;
     }
 
     public DisplaySettingByGradeItemModel( string? gradeMode, DisplaySettingByGradeItemDetailsModel? wiring,
-      DisplaySettingByGradeItemDetailsModel? detailSymbol, DisplaySettingByGradeItemDetailsModel? pullBox,
-      DisplaySettingByGradeItemDetailsModel? legend )
+      DisplaySettingByGradeItemDetailsModel? detailSymbol, DisplaySettingByGradeItemDetailsModel? pullBox )
     {
       GradeMode = gradeMode ?? string.Empty ;
       Wiring = wiring ?? new DisplaySettingByGradeItemDetailsModel() ;
       DetailSymbol = detailSymbol ?? new DisplaySettingByGradeItemDetailsModel() ;
       PullBox = pullBox ?? new DisplaySettingByGradeItemDetailsModel() ;
-      Legend = legend ?? new DisplaySettingByGradeItemDetailsModel() ;
     }
 
     [Field( Documentation = "Grade Mode" )]
@@ -59,9 +56,6 @@ namespace Arent3d.Architecture.Routing.Storages.Models
 
     [Field( Documentation = "Pull Box" )]
     public DisplaySettingByGradeItemDetailsModel PullBox { get ; set ; }
-
-    [Field( Documentation = "Legend" )]
-    public DisplaySettingByGradeItemDetailsModel Legend { get ; set ; }
   }
 
   [Schema( "7330D52B-EF2B-4D58-9E99-878F30C4858C", nameof( DisplaySettingByGradeItemDetailsModel ) )]
