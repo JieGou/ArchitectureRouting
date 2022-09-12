@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       // Delete "Arent電線" table in [Manage -> MEPSetting -> electrical setting -> conduit sizes]
       var conduitTypeName = RoutingElementExtensions.GetConduitTypeName( document ) ;
-      var arentConduitStandard = document.GetAllElements<ElementType>().OfCategory( BuiltInCategory.OST_ConduitStandards ).FirstOrDefault( x => x.Name == conduitTypeName ) ;
+      var arentConduitStandard = document.GetAllElements<ElementType>().OfCategory( BuiltInCategory.OST_ConduitStandards ).SingleOrDefault( x => x.Name == conduitTypeName ) ;
       if ( arentConduitStandard is { } )
         document.Delete( arentConduitStandard.Id ) ;
     }

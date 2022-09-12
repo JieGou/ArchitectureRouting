@@ -70,51 +70,46 @@ namespace Arent3d.Architecture.Routing
     }
 
     /// Add new "Arent電線" conduit size setting
-    private static (Element? ArentStandard, string CopyFromStandardName, bool IsNewlyCreated) AddArentConduitStandard( Document document , string newStandardName )
+    private static (Element? ArentStandard, string CopyFromStandardName) AddArentConduitStandard( Document document, string newStandardName )
     {
-      var isNewlyCreated = false ;
-      
       var sizeStandards = ConduitSizeSettings.GetConduitSizeSettings( document ) ;
-      var standardNames = sizeStandards.Select(table => table.Key).ToList() ;
+      var standardNames = sizeStandards.Select( table => table.Key ).ToList() ;
       var copyFromStandard = standardNames.Last() ;
-      
+
       // create "Arent電線" standard table if not existing
       if ( ! standardNames.Contains( newStandardName ) ) {
-        if(!sizeStandards.CreateConduitStandardTypeFromExisingStandardType( document, newStandardName, copyFromStandard )) 
-          return ( null, "", false ) ;
-        isNewlyCreated = true ;
+        if ( ! sizeStandards.CreateConduitStandardTypeFromExisingStandardType( document, newStandardName, copyFromStandard ) )
+          return ( null, "" ) ;
       }
-      
+
       // in "Arent電線" standard table, change bending radius of all sizes to 50mm by removing existing sizes and adding modified ones
-      var sizeSetting = sizeStandards.FirstOrDefault( x => x.Key == newStandardName ) ;
-      List<(ConduitSize OldSize, ConduitSize NewSize)> listOldNewSize = sizeSetting.Value.Select( size => ( size,
-        new ConduitSize( size.NominalDiameter, size.InnerDiameter, size.OuterDiameter,
-          ( 50.0 ).MillimetersToRevitUnits(), true, true ) ) ).ToList() ;
-        
+      var sizeSetting = sizeStandards.SingleOrDefault( x => x.Key == newStandardName ) ;
+      List<(ConduitSize OldSize, ConduitSize NewSize)> listOldNewSize = sizeSetting.Value.Select( size => ( size, new ConduitSize( size.NominalDiameter, size.InnerDiameter, size.OuterDiameter, ( 50.0 ).MillimetersToRevitUnits(), true, true ) ) ).ToList() ;
+
       foreach ( var pair in listOldNewSize ) {
         sizeStandards.RemoveSize( newStandardName, pair.OldSize.NominalDiameter ) ;
         sizeStandards.AddSize( newStandardName, pair.NewSize ) ;
       }
-        
+
       // add a new size of 0.8 (inner diameter) to sizeSetting
       var conduitSize = new ConduitSize( GetConduitTypeNominalDiameter( document ), ( 0.8 ).MillimetersToRevitUnits(), ( 1.2 ).MillimetersToRevitUnits(), ( 16.0 ).MillimetersToRevitUnits(), true, true ) ;
       sizeStandards.RemoveSize( newStandardName, conduitSize.NominalDiameter ) ;
       sizeStandards.AddSize( newStandardName, conduitSize ) ;
-      
-      var arentConduitStandard = document.GetAllElements<ElementType>().OfCategory( BuiltInCategory.OST_ConduitStandards ).FirstOrDefault( x => x.Name == newStandardName ) ;
 
-      return ( arentConduitStandard, copyFromStandard, isNewlyCreated ) ;
+      var arentConduitStandard = document.GetAllElements<ElementType>().OfCategory( BuiltInCategory.OST_ConduitStandards ).SingleOrDefault( x => x.Name == newStandardName ) ;
+
+      return ( arentConduitStandard, copyFromStandard ) ;
     }
 
     public static void AddArentConduitType( Document document )
     {
       // Add new "Arent電線" conduit size setting
       var conduitTypeName = GetConduitTypeName( document ) ;
-      var ( arentStandard, copyFromStandardName, isNewlyCreated) = AddArentConduitStandard( document, conduitTypeName ) ;
+      var (arentStandard, copyFromStandardName) = AddArentConduitStandard( document, conduitTypeName ) ;
 
       var elbowTypeName = GetRadius50ElbowTypeName( document ) ;
       var elbowCurveType = document.GetAllElements<FamilySymbol>().OfCategory( BuiltInCategory.OST_ConduitFitting ).FirstOrDefault( x => x.FamilyName == elbowTypeName ) ;
-      
+
       // Get type by "Standard" parameter
       var allConduitTypes = document.GetAllElements<ConduitType>() ;
       var curveTypes = allConduitTypes.Where( c => c.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ).AsValueString() == copyFromStandardName ).ToList() ;
@@ -122,16 +117,15 @@ namespace Arent3d.Architecture.Routing
         curveTypes = allConduitTypes.ToList() ;
       foreach ( var curveType in curveTypes ) {
         var arentExistingConduitType = allConduitTypes.FirstOrDefault( c => c.Name == conduitTypeName && c.FamilyName == curveType.FamilyName ) ;
-        var arentNewConduitType = arentExistingConduitType?? curveType.Duplicate( conduitTypeName ) as ConduitType;
-        
+        var arentNewConduitType = arentExistingConduitType ?? curveType.Duplicate( conduitTypeName ) as ConduitType ;
+
         // Change "Bend (曲げ)" setting to "M_電線管エルボ - 鉄鋼 - 曲げ半径50mm - Arent"
         arentNewConduitType!.Elbow = elbowCurveType ;
-        
+
         // Set "standard" parameter of conduit type to "Arent電線"
         if ( arentStandard == null ) continue ;
         var parameterStandard = arentNewConduitType.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ) ;
         parameterStandard.Set( arentStandard.Id ) ;
-
       }
     }
 
