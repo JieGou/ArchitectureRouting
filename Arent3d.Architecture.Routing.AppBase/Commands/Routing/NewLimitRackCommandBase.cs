@@ -166,7 +166,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
 
-        cableRackWidth = ( typeOnes.Count > 0 ? ( 120 + typeOnes.Sum() ) * 0.6 : 0 ) + ( typeTwos.Count > 0 ? ( 60 + typeOnes.Sum() ) * 1.2 : 0 ) ;
+        cableRackWidth = ( typeOnes.Count > 0 ? ( 60 + typeOnes.Sum() ) * 1.2 : 0 ) + ( typeTwos.Count > 0 ? ( 120 + typeOnes.Sum() ) * 0.6 : 0 ) ;
 
         foreach ( var width in CableTrayWidthMapping ) {
           if (  cableRackWidth > width ) 
