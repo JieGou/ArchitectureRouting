@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 
@@ -15,16 +16,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
     public static List<Element> GetConduitRelated( Document doc, List<Element> elements )
     {
       var relatedConduits = new List<Element>() ;
-      var connectorIds = 
-        elements.Where( e => e is FamilyInstance && e.Category.GetBuiltInCategory() is BuiltInCategory.OST_ElectricalFixtures or BuiltInCategory.OST_ElectricalEquipment )
-        .Select( c => c.UniqueId ).ToList() ;
-      var conduits = elements.Where( e => e is Conduit ).ToList() ;
+      var connectorIds = elements
+        .Where( e => e is FamilyInstance && e.Category.GetBuiltInCategory() is BuiltInCategory.OST_ElectricalFixtures or BuiltInCategory.OST_ElectricalEquipment )
+        .Select( c => c.UniqueId ).ToHashSet() ;
+      var conduits = elements.Where( e => e is Conduit ) ;
       var allRouteNames = conduits.Where( c => {
         if ( c.GetRouteName() is not { } rName ) return false ;
         var rNameArray = rName.Split( '_' ) ;
         return rNameArray.Length == 2 ;
-      } ).Select( c => c.GetRouteName() )
-        .Distinct().ToList() ;
+      } ).Select( c => c.GetRouteName() ).Distinct() ;
       foreach ( var routeName in allRouteNames ) {
         var conduitsOfRoute = GetConduitsOfRoute( doc, connectorIds, routeName! ) ;
         relatedConduits.AddRange( conduitsOfRoute ) ;
@@ -33,16 +33,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       return relatedConduits ;
     }
 
-    private static List<Element> GetConduitsOfRoute( Document document, ICollection<string> connectorIds, string routeName )
+    private static IEnumerable<Element> GetConduitsOfRoute( Document document, ICollection<string> connectorIds, string routeName )
     {
-      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).Where( e => e.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
+      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).Where( e => e.Name != ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).EnumerateAll() ;
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
         .Where( c => {
         if ( c.GetRouteName() is not { } rName ) return false ;
         var rNameArray = rName.Split( '_' ) ;
         var strRouteName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
         return strRouteName == routeName ;
-      } ).ToList() ;
+      } ).EnumerateAll() ;
       string fromConnectorId = string.Empty ;
       string toConnectorId = string.Empty ;
       foreach ( var conduit in conduitsOfRoute ) {
@@ -67,7 +67,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       var endPointKey = endPoint.First().Key ;
       var elementId = endPointKey.GetElementUniqueId() ;
       if ( string.IsNullOrEmpty( elementId ) ) return null ;
-      var connector = allConnectors.FirstOrDefault( c => c.UniqueId == elementId ) ;
+      var connector = allConnectors.SingleOrDefault( c => c.UniqueId == elementId ) ;
       if ( connector == null || connector.IsTerminatePoint() || connector.IsPassPoint() ) return null ;
       return connector ;
     }
