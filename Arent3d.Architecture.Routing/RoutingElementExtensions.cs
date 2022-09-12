@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing
     {
       return "Routing.Revit.DummyConduit.ElbowTypeName".GetDocumentStringByKeyOrDefault( document, "M_電線管エルボ - 鉄鋼" ) ;
     }
-    private static string GetConduitTypeName( Document document )
+    public static string GetConduitTypeName( Document document )
     {
       return "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
     }
