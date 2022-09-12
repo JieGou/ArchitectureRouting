@@ -543,6 +543,9 @@
 
         <key>Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
         <string>印刷モード切替</string>
+
+        <key>Electrical.App.Commands.Initialization.DisplaySettingByGradeCommand</key>
+        <string>グレード変更時の表示設定</string>
     </dict>
 </plist>
 

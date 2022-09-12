@@ -38,11 +38,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
 
     private void DeleteBoundaryRack( Document document )
     {
-      var curveELements = document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
-      if ( ! curveELements.Any() )
+      var curveElements = document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
+      if ( ! curveElements.Any() )
         return ;
 
-      document.Delete( curveELements.Select( x => x.Id ).ToList() ) ;
+      document.Delete( curveElements.Select( x => x.Id ).ToList() ) ;
     }
 
     private void DeleteNotationAndRack( Document document )
