@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using System.Collections.Specialized ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -469,7 +470,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           document.Regenerate() ;
           FilteredElementCollector allElementsInView = new FilteredElementCollector( document, viewPlan.Id ) ;
           var elementsInView = allElementsInView.ToElements() ;
-          UpdateSizeElement( document, elementsInView, storageService, importDwgMappingModel.Scale ) ;
+          UpdateSizeElement( document, elementsInView, storageService, viewPlan ) ;
         }
 
         var levelName = importDwgMappingModel.FloorName ;
@@ -480,7 +481,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       updateScaleTrans.Commit() ;
     }
 
-    private void UpdateSizeElement( Document document, IList<Element> elementsInView, StorageService<DataStorage, BorderTextNoteModel> storageService, int viewScale )
+    private void UpdateSizeElement( Document document, IList<Element> elementsInView, StorageService<DataStorage, BorderTextNoteModel> storageService, ViewPlan viewPlan )
     {
       // Update size text note border
       var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 0 ].Trim() == textNote.Name ) ;
@@ -504,7 +505,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       // Update Y of ceedcode
-      var scale = ImportDwgMappingModel.GetMagnificationOfView( viewScale ) ;
+      var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
       var independentTags = elementsInView.Where( e => e is IndependentTag ).ToList() ;
       foreach ( var element in independentTags ) {
         var independentTag = (IndependentTag) element ;
@@ -521,7 +522,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       // Update Symbol Information
-      UpdateSymbolInformation(document, elementsInView, viewScale) ;
+      UpdateSymbolInformation(document, elementsInView, viewPlan.Scale) ;
+      
+      //Update Shaft Opening
+      var shaftOpeningStore = document.GetShaftOpeningStorable() ;
+      UpdateShaftOpeningInViewPlan( shaftOpeningStore, elementsInView, viewPlan ) ;
+    }
+
+    private static void UpdateShaftOpeningInViewPlan(ShaftOpeningStorable storable, IEnumerable<Element> elementsInView, ViewPlan viewPlan)
+    {
+      var openings = elementsInView.OfType<Opening>().EnumerateAll() ;
+      if(!openings.Any())
+        return;
+      
+      var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = CreateCylindricalShaftCommandBase.GetLineStyles( storable.Document ) ;
+
+      foreach ( var opening in openings ) {
+        var openingStore = storable.ShaftOpeningModels.SingleOrDefault( x => x.ShaftOpeningUniqueId == opening.UniqueId ) ;
+        if(openingStore is null)
+          continue;
+
+        openingStore.DetailUniqueIds.RemoveAll( x => opening.Document.GetElement( x ) is { } element && element.OwnerViewId == viewPlan.Id ) ;
+        var newDetailCurves = CreateCylindricalShaftCommandBase.CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape ) ;
+        openingStore.DetailUniqueIds.AddRange(newDetailCurves.Select(x => x));
+      }
+      
+      storable.Save();
     }
 
     private static void UpdateSymbolInformation(Document document, IEnumerable<Element> elementsInView, int viewScale)
