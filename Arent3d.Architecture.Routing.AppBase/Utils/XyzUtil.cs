@@ -1,4 +1,5 @@
-﻿using Autodesk.Revit.DB ;
+﻿using System ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Utils
 {
@@ -17,13 +18,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         return check > 0 ? "clockwise" : "counterclockwise" ;
       }
       
-      public static XYZ GetMiddlePoint( XYZ fromPoint, XYZ toPoint, XYZ direction )
-      {
-        if(direction.Y is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2 - 1.5 , ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
+      public static XYZ GetMiddlePoint( XYZ fromPoint, XYZ toPoint ) => new ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
       
-        if(direction.X is 1 or -1) return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2 + 1.5, fromPoint.Z ) ;
-      
-        return new XYZ( ( fromPoint.X + toPoint.X ) / 2, ( fromPoint.Y + toPoint.Y ) / 2, fromPoint.Z ) ;
-      }
+      public static double GetDistanceIn2D( XYZ fromPoint, XYZ toPoint ) => Math.Sqrt( Math.Pow( fromPoint.X - toPoint.X, 2 ) + Math.Pow( fromPoint.Y - toPoint.Y, 2 ) )  ;
     }
 }

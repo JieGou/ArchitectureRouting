@@ -30,25 +30,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       UiDocument = commandData.Application.ActiveUIDocument ;
 
       // get data of Cns Category from snoop DB
-      CnsSettingStorable cnsStorables = UiDocument.Document.GetCnsSettingStorable() ;
-      cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.None ;
-      var currentCnsSettingData = CnsSettingDialog.CopyCnsSetting( cnsStorables.CnsSettingData ) ;
-      CnsSettingViewModel viewModel = new CnsSettingViewModel( cnsStorables ) ;
+      var cnsStorable = UiDocument.Document.GetCnsSettingStorable() ;
+      cnsStorable.ElementType = CnsSettingStorable.UpdateItemType.None ;
+      var currentCnsSettingData = CnsSettingDialog.CopyCnsSetting( cnsStorable.CnsSettingData ) ;
+      var viewModel = new CnsSettingViewModel( UiDocument.Document, cnsStorable ) ;
       var dialog = new CnsSettingDialog( viewModel, UiDocument.Document ) ;
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
         var isConnectorsHaveConstructionItem = dialog.IsConnectorsHaveConstructionItemProperty() ;
         var isConduitsHaveConstructionItem = dialog.IsConduitsHaveConstructionItemProperty() ;
-        if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None ) {
+        if ( cnsStorable.ElementType != CnsSettingStorable.UpdateItemType.None ) {
           try {
-            if ( ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector && ! isConnectorsHaveConstructionItem ) || ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Conduit && ! isConduitsHaveConstructionItem ) ) {
+            if ( ( cnsStorable.ElementType == CnsSettingStorable.UpdateItemType.Connector && ! isConnectorsHaveConstructionItem ) || ( cnsStorable.ElementType == CnsSettingStorable.UpdateItemType.Conduit && ! isConduitsHaveConstructionItem ) ) {
               message = "Dialog.Electrical.SetElementProperty.NoConstructionItem".GetAppStringByKeyOrDefault( "The property Construction Item does not exist." ) ;
             }
             else {
               MessageBox.Show( "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( "Please select a range." ), "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
             }
 
-            switch ( cnsStorables.ElementType ) {
+            switch ( cnsStorable.ElementType ) {
               case CnsSettingStorable.UpdateItemType.Conduit :
               {
                 if ( ! isConduitsHaveConstructionItem ) break ;
@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 }
 
                 // set value to "Construction Item" property
-                var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
+                var categoryName = cnsStorable.CnsSettingData[ cnsStorable.SelectedIndex ].CategoryName ;
                 var listApplyConduit = ConduitUtil.GetConduitRelated(UiDocument.Document, conduitList) ;
                 using var transaction = new Transaction( UiDocument.Document ) ;
                 transaction.Start( "Set conduits property" ) ;
@@ -110,6 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 transaction.Start( "Set rack property" ) ;
 
                 SetConstructionItemForElements( rackList, categoryName ) ;
+                ConfirmUnsetCommandBase.ResetElementColor( rackList ) ;
 
                 transaction.Commit() ;
 
@@ -135,6 +136,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
                 listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(UiDocument.Document, elementList) );
                 SetConstructionItemForElements( listApplyElement, categoryName ) ;
+                ConfirmUnsetCommandBase.ResetElementColor( listApplyElement ) ;
                 
                 transaction.Commit() ;
  
@@ -151,7 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   break ;
                 }
 
-                var constructionItemList = new ObservableCollection<string>(cnsStorables.CnsSettingData.Select( x=>x.CategoryName ).ToList()) ;
+                var constructionItemList = new ObservableCollection<string>(cnsStorable.CnsSettingData.Select( x=>x.CategoryName ).ToList()) ;
                 var oldConstructionItemSelectedList = new List<CnsSettingApplyConstructionItem>() ;
                 var itemIndex = 0 ;
                 foreach ( var element in elementList ) {
@@ -174,7 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
  
                 //Add to CnsSetting Store if have new
                 foreach ( var newValue in dictMapping.Values.Where( newValue => ! constructionItemList.Contains( newValue ) ) ) {
-                  cnsStorables.CnsSettingData.Add( new CnsSettingModel( cnsStorables.CnsSettingData.Count + 1, newValue) );
+                  cnsStorable.CnsSettingData.Add( new CnsSettingModel( cnsStorable.CnsSettingData.Count + 1, newValue) );
                   constructionItemList.Add( newValue );
                 } 
                 break; 
@@ -197,23 +199,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         return UiDocument.Document.Transaction( "TransactionName.Commands.Routing.CnsSetting", _ =>
         {
-          DataProcessBeforeSave( cnsStorables ) ;
-          if ( ShouldSaveCnsList( UiDocument.Document, cnsStorables ) ) {
+          DataProcessBeforeSave( cnsStorable ) ;
+          if ( ShouldSaveCnsList( UiDocument.Document, cnsStorable ) ) {
             // save CNS setting list
             using var progress = ProgressBar.ShowWithNewThread( commandData.Application ) ;
             progress.Message = "Saving CNS Setting..." ;
             using ( progress.Reserve( 0.5 ) ) {
-              SaveCnsList( cnsStorables ) ;
+              SaveCnsList( cnsStorable ) ;
               dialog.UpdateConstructionsItem() ;
             }
           }
 
-          cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.None ;
+          cnsStorable.ElementType = CnsSettingStorable.UpdateItemType.None ;
           return Result.Succeeded ;
         } ) ;
       }
 
-      cnsStorables.CnsSettingData = currentCnsSettingData ;
+      cnsStorable.CnsSettingData = currentCnsSettingData ;
       return Result.Succeeded ;
     }
 

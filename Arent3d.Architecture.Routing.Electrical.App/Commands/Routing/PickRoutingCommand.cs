@@ -72,10 +72,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       List<(FamilyInstance, XYZ?)> pullBoxElements = new() ;
       var resultRoute = executeResultValue.ToList() ;
       var parentIndex = 1 ;
+      var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
+      var isWireEnteredShaft = false ;
+      var isPickedFromBottomToTop = fromPickResult.PickedConnector!.Origin.Z < toPickResult.PickedConnector!.Origin.Z ;
       Dictionary<string, List<string>> parentAndChildRoute = new() ;
       for ( int i = 0 ; i < 50 ; i++ ) {
-        var isPassedShaft = executeResultValue.SingleOrDefault( e => e.UniqueShaftElementUniqueId != null ) != null ;
-        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, executeResultValue, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
+        var segments = isPassedShaft ? PullBoxRouteManager.GetSegmentsWithPullBoxShaft( document, resultRoute, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute, ref isWireEnteredShaft, isPickedFromBottomToTop ) : PullBoxRouteManager.GetSegmentsWithPullBox( document, resultRoute, boards, pullBoxPositions, pullBoxElements, ref parentIndex, ref parentAndChildRoute ) ;
         if ( ! segments.Any() ) break ;
         using Transaction transaction = new( document ) ;
         transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
@@ -95,7 +97,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         transaction.Commit( failureOptions ) ;
-        if ( isPassedShaft ) break ;
+
+        if ( ! isPassedShaft ) continue ;
+        if ( isWireEnteredShaft ) break ;
       }
       
       #region Change dimension of pullbox and set new label
@@ -121,7 +125,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       #region Change Representative Route Name
 
-      if ( ! parentAndChildRoute.Any() ) return executeResultValue ;
+      if ( ! parentAndChildRoute.Any() ) return resultRoute ;
       using Transaction transactionChangeRepresentativeRouteName = new( document ) ;
       transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
       foreach ( var (parentRouteName, childRouteNames ) in parentAndChildRoute ) {
@@ -135,7 +139,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       #endregion
       
-      return executeResultValue ;
+      return resultRoute ;
     }
     
     private static bool IsRouteBetweenPowerConnectors( IEnumerable<Element> listConnectors, IReadOnlyCollection<RegistrationOfBoardDataModel> registrationOfBoardDataModels )

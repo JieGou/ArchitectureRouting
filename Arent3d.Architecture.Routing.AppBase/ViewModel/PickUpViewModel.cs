@@ -304,8 +304,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
       SetPickUpModels( pickUpModels, pickUpElements, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null, null, null, routeName ) ;
-      
-      var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+
+      var collector = new FilteredElementCollector( _document ) ;
+      var filter = new ElementMulticategoryFilter( BuiltInCategorySets.PickUpElements ) ;
+      var connectors = collector.WhereElementIsNotElementType().WherePasses( filter ).ToList() ;
       GetToConnectorsOfConduit( connectors, pickUpModels ) ;
       GetToConnectorsOfCables( connectors, pickUpModels ) ;
       GetDataFromSymbolInformation( pickUpModels ) ;
@@ -412,6 +414,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 }
                 else {
                   materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, null ) ;
+                  var value = pickUpElement.Connector.GetPropertyString(ElectricalRoutingElementParameter.Quantity);
+                  var qtt = string.IsNullOrEmpty( value ) ? 1 : int.Parse( value ) ;
+                  foreach ( var materialCode in materialCodes ) {
+                    materialCode.Quantity = $"{qtt}" ;
+                  }
                 }
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                   PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
@@ -930,9 +937,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var symbolInformation in symbolInformations ) {
         var floor = symbolInformation.Floor ;
         foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.SymbolUniqueId ) ) {
-          PickUpItemModel newPickUpModel = new( null, floor, DefaultConstructionItem, ProductType.Conduit.GetFieldName(), ceedDetail.Specification, null, null, ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, 
-            ceedDetail.ProductName, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Total.ToString( CultureInfo.InvariantCulture ), ceedDetail.Unit, ceedDetail.Supplement, null, null, null,
-            ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode, null, null, null,ceedDetail.Total.ToString( CultureInfo.InvariantCulture ) ) ;
+          PickUpItemModel newPickUpModel = new( null, floor, DefaultConstructionItem, ceedDetail.Unit == "m" ? ProductType.Conduit.GetFieldName() : ProductType.Connector.GetFieldName(), ceedDetail.Specification, null, null, ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, 
+            ceedDetail.ProductName, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Unit == "m" ? $"{ceedDetail.Total.MetersToRevitUnits()}" : $"{ceedDetail.Total}", ceedDetail.Unit, ceedDetail.Supplement, null, null, null,
+            ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode, null, null, null, $"{ceedDetail.QuantitySet}" ) ;
           var oldPickUpModel = pickUpModels.FirstOrDefault( x => x.Floor == newPickUpModel.Floor && x.ProductName == newPickUpModel.ProductName && x.ProductCode == newPickUpModel.ProductCode 
                                                                  && x.Specification == newPickUpModel.Specification && x.ConstructionItems == newPickUpModel.ConstructionItems && x.Construction == newPickUpModel.Construction ) ;
           if ( null != oldPickUpModel ) {
@@ -1229,7 +1236,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       public string MaterialCode { get ; }
       public string Name { get ; }
-      public string Quantity { get ; }
+      public string Quantity { get ; set ; }
 
       public MaterialCodeInfo( string materialCode, string name, string quantity )
       {

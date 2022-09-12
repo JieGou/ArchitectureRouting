@@ -123,6 +123,9 @@ namespace Arent3d.Architecture.Routing
     [Family( "Symbol Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
     SymbolContentTag,
     
+    [Family( "Symbol Content Equipment Tag", BuiltInCategory.OST_ElectricalEquipmentTags )]
+    SymbolContentEquipmentTag,
+    
     [Family( "Symbol Information Tag", BuiltInCategory.OST_GenericModelTags )]
     SymbolInformationTag
   }

@@ -679,20 +679,38 @@ namespace Arent3d.Architecture.Routing
       return ( From: fromList, To: toList ) ;
     }
 
-    public static IEnumerable<(MEPCurve, SubRoute)> CollectAllMultipliedRoutingElements( this Document document, int multiplicity )
+    public static Dictionary<string, List<MEPCurve>> CollectAllMultipliedRoutingElements( this Document document, int multiplicity )
+    {
+      return document.CollectAllMultipliedRoutingElements( document.GetAllElementsOfRoute<MEPCurve>(), multiplicity ) ;
+    }
+
+    public static Dictionary<string, List<MEPCurve>> CollectAllMultipliedRoutingElements( this Document document, IEnumerable<MEPCurve> mepCurves, int multiplicity )
     {
       if ( multiplicity < 2 ) throw new ArgumentOutOfRangeException( nameof( multiplicity ) ) ;
 
+      var routingElementsGroupByRouteName = new Dictionary<string, List<MEPCurve>>() ;
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
 
-      foreach ( var mepCurve in document.GetAllElementsOfRoute<MEPCurve>() ) {
-        if ( mepCurve.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
-        if ( mepCurve.GetRepresentativeSubRoute() != subRouteInfo ) continue ;
-        if ( routes.GetSubRoute( subRouteInfo ) is not { } subRoute ) continue ;
-        if ( subRoute.GetMultiplicity() < multiplicity ) continue ;
+      foreach ( var mepCurve in mepCurves ) {
+        if ( mepCurve?.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
+        if ( routes.GetSubRoute( subRouteInfo ) == null ) continue ;
+        if ( mepCurve is not Conduit conduit ) continue ;
 
-        yield return ( mepCurve, subRoute ) ;
+        var fromEndPoint = conduit.GetNearestEndPoints( true ).FirstOrDefault() ;
+        var toEndPoint = conduit.GetNearestEndPoints( false ).FirstOrDefault() ;
+        if ( fromEndPoint == null || toEndPoint == null ) continue ;
+
+        var key = fromEndPoint.Key.GetElementUniqueId() + "_" + toEndPoint.Key.GetElementUniqueId() ;
+
+        if ( routingElementsGroupByRouteName.ContainsKey( key ) )
+          routingElementsGroupByRouteName[ key ].Add( mepCurve ) ;
+        else
+          routingElementsGroupByRouteName.Add( key, new List<MEPCurve> { mepCurve } ) ;
       }
+
+      return routingElementsGroupByRouteName.Where( p =>
+        p.Value.Select( s => s.GetRouteName() ).Where( r => ! string.IsNullOrEmpty( r ) ).Distinct().Count() >= multiplicity )
+        .ToDictionary( p => p.Key, p => p.Value ) ;
     }
 
     #endregion

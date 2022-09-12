@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
             // get all route names
             var routeNames = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
-              .OfNotElementType().Where( filter ).OfType<Element>()
+              .OfNotElementType().Where( filter )
               .Select( x => x.GetRouteName() ).Distinct() ;
 
             // create cable rack for each route
@@ -81,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public static void SetParameter( FamilyInstance instance, string parameterName, double value )
+    private static void SetParameter( FamilyInstance instance, string parameterName, double value )
     {
       instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
     }
@@ -95,15 +95,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// Creat cable rack for route
     /// </summary>
     /// <param name="uiDocument"></param>
+    /// <param name="app"></param>
     /// <param name="routeName"></param>
-    private void CreateCableRackForRoute( UIDocument uiDocument, Application app, string? routeName, List<FamilyInstance> racks )
+    /// <param name="racks"></param>
+    private static void CreateCableRackForRoute( UIDocument uiDocument, Application app, string? routeName, List<FamilyInstance> racks )
     {
-      if ( routeName != null ) {
-        var document = uiDocument.Document ;
-        // get all elements in route
-        var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
-        CreateRackForConduit( uiDocument, app, allElementsInRoute, racks ) ;
-      }
+      if ( routeName == null ) return ;
+      
+      var document = uiDocument.Document ;
+      // get all elements in route
+      var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
+      CreateRackForConduit( uiDocument, app, allElementsInRoute, racks ) ;
     }
 
     /// <summary>
@@ -137,7 +139,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <param name="connectors"></param>
     /// <returns></returns>
-    public static Connector? GetFirstConnector( ConnectorSet connectors )
+    private static Connector? GetFirstConnector( ConnectorSet connectors )
     {
       foreach ( Connector connector in connectors ) {
         if ( 0 == connector.Id ) {
@@ -168,27 +170,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="location"></param>
     /// <param name="otherLocation"></param>
     /// <returns></returns>
-    public static bool IsSameLocation( Location location, Location otherLocation )
+    private static bool IsSameLocation( Location location, Location otherLocation )
     {
-      if ( location is LocationPoint ) {
-        if ( ! ( otherLocation is LocationPoint ) ) {
+      if ( location is LocationPoint locationPoint ) {
+        if ( otherLocation is not LocationPoint otherLocationPoint )
           return false ;
-        }
 
-        var locationPoint = ( location as LocationPoint )! ;
-        var otherLocationPoint = ( otherLocation as LocationPoint )! ;
         return locationPoint.Point.DistanceTo( otherLocationPoint.Point) <= MaxDistanceTolerance &&
                locationPoint.Rotation == otherLocationPoint.Rotation ;
       }
-      else if ( location is LocationCurve ) {
-        if ( ! ( otherLocation is LocationCurve ) ) {
+      
+      if ( location is LocationCurve locationCurve ) {
+        if ( otherLocation is not LocationCurve otherLocationCurve )
           return false ;
-        }
 
-        var locationCurve = ( location as LocationCurve )! ;
         var line = ( locationCurve.Curve as Line )! ;
 
-        var otherLocationCurve = ( otherLocation as LocationCurve )! ;
         var otherLine = ( otherLocationCurve.Curve as Line )! ;
 
         return line.Origin.IsAlmostEqualTo( otherLine.Origin, MaxDistanceTolerance ) &&
@@ -256,16 +253,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       // connect all connectors
-      foreach ( Connector connector in connectors ) {
-        if ( ! connector.IsConnected ) {
-          var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
-          if ( otherConnectors != null ) {
-            var connectTo = GetConnectorClosestTo( otherConnectors, connector.Origin, MaxDistanceTolerance ) ;
-            if ( connectTo != null ) {
-              connector.ConnectTo( connectTo ) ;
-            }
-          }
-        }
+      foreach ( var connector in connectors ) {
+        if ( connector.IsConnected ) continue ;
+        
+        var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
+        var toConnector = GetConnectorClosestTo( otherConnectors, connector.Origin, MaxDistanceTolerance ) ;
+        if ( toConnector != null )
+          connector.ConnectTo( toConnector ) ;
       }
     }
     
@@ -292,7 +286,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // set cable rack length
       SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
 
-      // set cable rack length
+      // set cable rack width
       if ( cableRackWidth > 0 )
         SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
           ( cableRackWidth * scaleRatio ).MillimetersToRevitUnits() ) ;
@@ -306,6 +300,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) && instance.HasParameter(  ElectricalRoutingElementParameter.FromSideConnectorId ) )
         instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
+
+      // set route name
+      SetRouteNameForRack( conduit, instance ) ;
 
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
@@ -342,7 +339,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       var length = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ).AsDouble() ;
       var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document, "継手外径" ) ).AsDouble() ;
-      var bendRadius = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) ).AsDouble() ;
 
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTrayFitting ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
 
@@ -350,7 +346,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
 
       // set cable tray Bend Radius
-      bendRadius = cableTrayDefaultBendRadius == 0 ? ( RatioBendRadius * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
+      var bendRadius = cableTrayDefaultBendRadius == 0 ? ( RatioBendRadius * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
       SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadius ) ; // TODO may be must change when FamilyType change
 
       // set cable rack length
@@ -365,6 +361,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) && instance.HasParameter(  ElectricalRoutingElementParameter.FromSideConnectorId ) )
         instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
+
+      // set route name
+      SetRouteNameForRack( conduit, instance ) ;
 
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {
@@ -383,7 +382,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return instance ;
     }
 
-    public static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )
+    private static void SetRouteNameForRack( Element conduit, FamilyInstance instance )
+    {
+      var routeName = conduit.GetRouteName() ;
+      if ( string.IsNullOrEmpty( routeName ) ) return ;
+      
+      var routeNameArray = routeName!.Split( '_' ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
+    }
+
+    private static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )
     {
       var isSameConnectors = true ;
       foreach ( var connector in connectors ) {
@@ -412,14 +421,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var rackNotationStorable = doc.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? doc.GetRackNotationStorable() ;
       RemoveNotationUnused( doc, rackNotationStorable ) ;
-      Dictionary<string, Dictionary<double, List<FamilyInstance>>> directionXRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
-      Dictionary<string, Dictionary<double, List<FamilyInstance>>> directionYRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
+      var directionXRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
+      var directionYRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
       foreach ( var rack in racks ) {
         var widthRack = Math.Round( rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble(), 4 ) ;
-        var fromConnectorId = GetFromConnectorId( doc, rack ) ;
+        var routeName = rack.GetPropertyString( RoutingParameter.RouteName ) ?? string.Empty ;
+        if ( string.IsNullOrEmpty( routeName ) ) continue ;
+        
         if ( rack.HandOrientation.X is 1.0 or -1.0 ) {
-          if ( directionXRacks.ContainsKey( fromConnectorId ) ) {
-            Dictionary<double, List<FamilyInstance>> xRacks = directionXRacks[ fromConnectorId ] ;
+          if ( directionXRacks.ContainsKey( routeName ) ) {
+            var xRacks = directionXRacks[ routeName ] ;
             if ( xRacks.ContainsKey( widthRack ))
               xRacks[ widthRack ].Add( rack );
             else {
@@ -427,13 +438,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
           }
           else {
-            Dictionary<double, List<FamilyInstance>> xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
-            directionXRacks.Add( fromConnectorId, xRacks ) ;
+            var xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
+            directionXRacks.Add( routeName, xRacks ) ;
           }
         }
         else if ( rack.HandOrientation.Y is 1.0 or -1.0 ) {
-          if ( directionYRacks.ContainsKey( fromConnectorId ) ) {
-            Dictionary<double, List<FamilyInstance>> yRacks = directionYRacks[ fromConnectorId ] ;
+          if ( directionYRacks.ContainsKey( routeName ) ) {
+            var yRacks = directionYRacks[ routeName ] ;
             if ( yRacks.ContainsKey( widthRack ))
               yRacks[ widthRack ].Add( rack );
             else {
@@ -441,8 +452,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
           }
           else {
-            Dictionary<double, List<FamilyInstance>> xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
-            directionYRacks.Add( fromConnectorId, xRacks ) ;
+            var xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
+            directionYRacks.Add( routeName, xRacks ) ;
           }
         }
       }
@@ -468,18 +479,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       rackNotationStorable.Save() ;
     }
 
-    private static string GetFromConnectorId(Document doc, Element rack )
-    {
-      var fromElementId = rack.ParametersMap.get_Item( "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( doc, "From-Side Connector Id" ) ).AsString() ;
-      if ( string.IsNullOrEmpty( fromElementId ) ) return string.Empty ;
-      var fromConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == fromElementId ) ;
-      if ( ! fromConnector!.IsTerminatePoint() && ! fromConnector!.IsPassPoint() ) return fromElementId ;
-      fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorId ) ;
-      fromElementId = fromConnectorId! ;
-
-      return fromElementId ;
-    }
-
     private static void CreateNotation( Document doc, RackNotationStorable rackNotationStorable, IReadOnlyCollection<FamilyInstance> racks, string fromConnectorId, bool isDirectionX, double scale )
     {
       const string xSymbol = " x " ;
@@ -492,10 +491,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( doc.ActiveView is ViewPlan viewPlan ) {
             var point = ( rack.Location as LocationPoint )!.Point ;
             var connectors = rack.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
-            point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y ), point.Z ) ;
             var notationDistance = widthCableTray.RevitUnitsToMillimeters() ;
+            if ( isDirectionX )
+              point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y + widthCableTray ), point.Z ) ;
+            else
+              point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X - widthCableTray ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y ), point.Z ) ;
             var notation = count > 1 ? string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ) + xSymbol + racks.Count : string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ) ;
-            var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc ) ;
+            var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;
             if ( null == textNoteType ) return ;
             TextNote textNote ;
 
@@ -524,10 +526,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, point ) ;
 
             (string? endLineUniqueId, int? endPoint) endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;
-            var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
+            var otherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
 
             foreach ( var item in racks ) {
-              var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( widthCableTray, 4 ), endLineLeader.endLineUniqueId, endLineLeader.endPoint, ortherLineId ) ;
+              var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( widthCableTray, 4 ), endLineLeader.endLineUniqueId, endLineLeader.endPoint, otherLineId ) ;
               rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
             }
           }
@@ -593,24 +595,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       rackNotationStorable.Save() ;
-    }
-
-    private static void CreateNewTextNoteType( Document doc, TextNote textNote )
-    {
-      //Create new text type
-      string strStyleName = "Rack Notation Type" ;
-
-      var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( strStyleName, tt.Name ) ) ;
-      if ( textNoteType == null ) {
-        // Create new Note type
-        Element ele = textNote.TextNoteType.Duplicate( strStyleName ) ;
-        textNoteType = ( ele as TextNoteType ) ! ;
-        textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( ( 1.0 / 32.0 ) * ( 1.0 / 12.0 ) ) ;
-        textNoteType.get_Parameter( BuiltInParameter.LEADER_ARROWHEAD ).Set( ElementId.InvalidElementId ) ;
-      }
-
-      // Change the text notes type to the new type
-      textNote.ChangeTypeId( textNoteType!.Id ) ;
     }
   }
 }
