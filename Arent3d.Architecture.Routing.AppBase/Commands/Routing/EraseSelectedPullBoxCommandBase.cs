@@ -205,9 +205,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( fromEndPointKey == null ) continue ;
           var branchEndPoint =
             new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
+          var toEndPoint = segment.ToEndPoint ;
+          
+          
+          if ( segment.ToEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) {
+            var routeNameArray = routeName.Split( '_' ) ;
+            var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+            var associatedRouteName = endPointsOfRouteSegmentsCrossPullBox.Keys.FirstOrDefault( k =>
+            {
+              var rNameArray = k.Split( '_' ) ;
+              var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+              return rName == mainRouteName ;
+            } ) ;
+            if ( ! string.IsNullOrEmpty( associatedRouteName ) && endPointsOfRouteSegmentsCrossPullBox.ContainsKey( associatedRouteName ) )
+              toEndPoint = endPointsOfRouteSegmentsCrossPullBox[associatedRouteName].ToEndPoint ;
+          }
           result.Add( ( routeName,
             new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint,
-              segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType,
+              toEndPoint!, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType,
               shaftElementUniqueId ) ) ) ;
         }
         else {
