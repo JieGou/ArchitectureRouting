@@ -58,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             familyInstanceConnectorPower.SetProperty(ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ?? string.Empty);
             familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
             
-            var deviceSymbolTagType = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+            var deviceSymbolTagType = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ElectricalFixtureContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
             IndependentTag.Create( uiDocument.Document, deviceSymbolTagType.Id, uiDocument.Document.ActiveView.Id, new Reference( familyInstanceConnectorPower ), false, TagOrientation.Horizontal, new XYZ(selectedPoint.X, selectedPoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * uiDocument.ActiveView.Scale, heightOfConnector) ) ;
           }
           

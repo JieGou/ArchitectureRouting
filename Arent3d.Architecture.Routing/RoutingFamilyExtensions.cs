@@ -117,11 +117,11 @@ namespace Arent3d.Architecture.Routing
     [Family( "Pull Box", BuiltInCategory.OST_ElectricalFixtures )]
     PullBox,
     
-    [Family( "Symbol Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
-    SymbolContentTag,
+    [Family( "Electrical Fixture Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
+    ElectricalFixtureContentTag,
     
-    [Family( "Symbol Content Equipment Tag", BuiltInCategory.OST_ElectricalEquipmentTags )]
-    SymbolContentEquipmentTag,
+    [Family( "Electrical Equipment Content Tag", BuiltInCategory.OST_ElectricalEquipmentTags )]
+    ElectricalEquipmentContentTag,
     
     [Family( "Symbol Information Tag", BuiltInCategory.OST_GenericModelTags )]
     SymbolInformationTag

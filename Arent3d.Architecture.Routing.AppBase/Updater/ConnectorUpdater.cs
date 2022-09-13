@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                 if(uiDocument.Selection.GetElementIds().Count == 0)
                     return;
                 
-                var tagTypes = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolContentTag ).ToList() ;
+                var tagTypes = document.GetFamilySymbols( ElectricalRoutingFamilyType.ElectricalFixtureContentTag ).ToList() ;
                 if(!tagTypes.Any())
                     return;
                 
@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                 if(!elements.Any())
                     return;
                     
-                var familyName = ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() ;
+                var familyName = ElectricalRoutingFamilyType.ElectricalFixtureContentTag.GetFamilyName() ;
                 var removeElements = new List<ElementId>() ;
                 foreach ( var element in elements.Where( element => element.HasParameter(ElectricalRoutingElementParameter.Quantity) ) ) {
                     var tag = element.GetTagsFromElement().FirstOrDefault( x =>
