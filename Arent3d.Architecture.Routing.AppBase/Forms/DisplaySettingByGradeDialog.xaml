@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         Name="DisplaySettingByGrade"
         mc:Ignorable="d"
-        Title="グレード変更時の表示設定" Height="300" Width="400"
+        Title="グレード変更時の表示設定" Height="270" Width="400"
         WindowStartupLocation="CenterScreen"
         VerticalAlignment="Center"
         d:DataContext="{d:DesignInstance {x:Type local:DesignDisplaySettingByGradeViewModel}, IsDesignTimeCreatable=True}">
@@ -22,10 +22,10 @@
                     <ColumnDefinition Width="120" />
                     <ColumnDefinition Width="200" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="グレード" FontWeight="Bold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="0" Text="グレード" FontSize="16" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="1" Padding="6" VerticalContentAlignment="Center"
                           ItemsSource="{Binding DataDisplaySettingByGradeModel}"
-                          SelectedValue="{Binding SelectedGradeItemModel}" DisplayMemberPath="GradeMode" />
+                          SelectedValue="{Binding SelectedGradeModel}" DisplayMemberPath="GradeMode" />
             </Grid>
         </StackPanel>
         <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center">
@@ -38,15 +38,15 @@
                 Width="320"
                 HorizontalAlignment="Left">
                 <StackPanel>
-                    <CheckBox HorizontalAlignment="Left" IsEnabled="{Binding SelectedGradeItemModel.Wiring.IsEnabled}"
-                              IsChecked="{Binding SelectedGradeItemModel.Wiring.IsVisible}"
+                    <CheckBox HorizontalAlignment="Left" IsEnabled="{Binding SelectedGradeModel.Wiring.IsEnabled}"
+                              IsChecked="{Binding SelectedGradeModel.Wiring.IsVisible}"
                               Content="配線（配線、配管、ラック、漏水帯など）" Margin="30 15 0 0" FontSize="13" />
                     <CheckBox HorizontalAlignment="Left"
-                              IsEnabled="{Binding SelectedGradeItemModel.DetailSymbol.IsEnabled}"
-                              IsChecked="{Binding SelectedGradeItemModel.DetailSymbol.IsVisible}" Content="明細記号"
+                              IsEnabled="{Binding SelectedGradeModel.Symbol.IsEnabled}"
+                              IsChecked="{Binding SelectedGradeModel.Symbol.IsVisible}" Content="明細記号"
                               Margin="30 10 0 0" FontSize="13" />
-                    <CheckBox HorizontalAlignment="Left" IsEnabled="{Binding SelectedGradeItemModel.PullBox.IsEnabled}"
-                              IsChecked="{Binding SelectedGradeItemModel.PullBox.IsVisible}" Content="プルボックス"
+                    <CheckBox HorizontalAlignment="Left" IsEnabled="{Binding SelectedGradeModel.PullBox.IsEnabled}"
+                              IsChecked="{Binding SelectedGradeModel.PullBox.IsVisible}" Content="プルボックス"
                               Margin="30 10 0 0" FontSize="13" />
                 </StackPanel>
             </GroupBox>

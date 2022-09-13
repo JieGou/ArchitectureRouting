@@ -3,79 +3,59 @@ using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  [Schema( "11A646C8-8AF3-4E6C-921E-9CAB42675875", nameof( DisplaySettingByGradeModel ) )]
+  [Schema( "EF7E901A-DEB4-4FD5-AB39-91FCB3D0AE38", nameof( DisplaySettingByGradeModel ) )]
   public class DisplaySettingByGradeModel : IDataModel
   {
     public DisplaySettingByGradeModel()
     {
-      DisplaySettingByGradeData = new List<DisplaySettingByGradeItemModel>() ;
-      GradeDisplayMode = string.Empty ;
-    }
-
-    public DisplaySettingByGradeModel( List<DisplaySettingByGradeItemModel>? displaySettingByGradeData, string? gradeDisplayMode )
-    {
-      DisplaySettingByGradeData = displaySettingByGradeData ?? new List<DisplaySettingByGradeItemModel>() ;
-      GradeDisplayMode = gradeDisplayMode ?? string.Empty ;
-    }
-
-    [Field( Documentation = "Display Setting By Grade Data" )]
-    public List<DisplaySettingByGradeItemModel> DisplaySettingByGradeData { get ; set ; }
-    
-    [Field( Documentation = "Grade Display Mode" )]
-    public string GradeDisplayMode { get ; set ; }
-  }
-
-  [Schema( "EF7E901A-DEB4-4FD5-AB39-91FCB3D0AE38", nameof( DisplaySettingByGradeItemModel ) )]
-  public class DisplaySettingByGradeItemModel : IDataModel
-  {
-    public DisplaySettingByGradeItemModel()
-    {
       GradeMode = string.Empty ;
-      Wiring = new DisplaySettingByGradeItemDetailsModel() ;
-      DetailSymbol = new DisplaySettingByGradeItemDetailsModel() ;
-      PullBox = new DisplaySettingByGradeItemDetailsModel() ;
+      Wiring = new DisplaySettingByGradeItemModel() ;
+      Symbol = new DisplaySettingByGradeItemModel() ;
+      PullBox = new DisplaySettingByGradeItemModel() ;
     }
 
-    public DisplaySettingByGradeItemModel( string? gradeMode, DisplaySettingByGradeItemDetailsModel? wiring,
-      DisplaySettingByGradeItemDetailsModel? detailSymbol, DisplaySettingByGradeItemDetailsModel? pullBox )
+    public DisplaySettingByGradeModel( string? gradeMode, DisplaySettingByGradeItemModel? wiring,
+      DisplaySettingByGradeItemModel? detailSymbol, DisplaySettingByGradeItemModel? pullBox )
     {
       GradeMode = gradeMode ?? string.Empty ;
-      Wiring = wiring ?? new DisplaySettingByGradeItemDetailsModel() ;
-      DetailSymbol = detailSymbol ?? new DisplaySettingByGradeItemDetailsModel() ;
-      PullBox = pullBox ?? new DisplaySettingByGradeItemDetailsModel() ;
+      Wiring = wiring ?? new DisplaySettingByGradeItemModel() ;
+      Symbol = detailSymbol ?? new DisplaySettingByGradeItemModel() ;
+      PullBox = pullBox ?? new DisplaySettingByGradeItemModel() ;
     }
 
     [Field( Documentation = "Grade Mode" )]
     public string GradeMode { get ; set ; }
 
     [Field( Documentation = "Wiring" )]
-    public DisplaySettingByGradeItemDetailsModel Wiring { get ; set ; }
+    public DisplaySettingByGradeItemModel Wiring { get ; set ; }
 
     [Field( Documentation = "Detail Symbol" )]
-    public DisplaySettingByGradeItemDetailsModel DetailSymbol { get ; set ; }
+    public DisplaySettingByGradeItemModel Symbol { get ; set ; }
 
     [Field( Documentation = "Pull Box" )]
-    public DisplaySettingByGradeItemDetailsModel PullBox { get ; set ; }
+    public DisplaySettingByGradeItemModel PullBox { get ; set ; }
+
+    public DisplaySettingByGradeModel Clone() => new ( GradeMode, Wiring, Symbol, PullBox ) ;
   }
 
-  [Schema( "7330D52B-EF2B-4D58-9E99-878F30C4858C", nameof( DisplaySettingByGradeItemDetailsModel ) )]
-  public class DisplaySettingByGradeItemDetailsModel : IDataModel
+  [Schema( "7330D52B-EF2B-4D58-9E99-878F30C4858C", nameof( DisplaySettingByGradeItemModel ) )]
+  public class DisplaySettingByGradeItemModel : IDataModel
   {
-    public DisplaySettingByGradeItemDetailsModel()
+    public DisplaySettingByGradeItemModel()
     {
       IsEnabled = false ;
       IsVisible = true ;
       HiddenElementIds = new List<string>() ;
     }
 
-    public DisplaySettingByGradeItemDetailsModel( bool? isEnabled, bool? isVisible, List<string>? hiddenElementIds = null )
+    public DisplaySettingByGradeItemModel( bool? isEnabled, bool? isVisible, List<string>? hiddenElementIds = null )
     {
       IsEnabled = isEnabled ?? false ;
       IsVisible = isVisible ?? true ;
       HiddenElementIds = hiddenElementIds ?? new List<string>() ;
     }
 
-    public DisplaySettingByGradeItemDetailsModel( bool? isEnabled, List<string>? hiddenElementIds = null )
+    public DisplaySettingByGradeItemModel( bool? isEnabled, List<string>? hiddenElementIds = null )
     {
       IsEnabled = isEnabled ?? false ;
       IsVisible = ! IsEnabled ;

@@ -100,7 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       trans.Commit() ;
 
-      RefreshView( document, view ) ;
+      document.RefreshActiveView() ;
 
       transactionGroup.Assimilate() ;
     }
@@ -223,18 +223,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return lineOnPlanes ;
-    }
-
-    public static void RefreshView( Document document, View view )
-    {
-      using var transaction = new Transaction( document ) ;
-      transaction.Start( "Enable Reveal Hidden" ) ;
-      document.ActiveView.EnableRevealHiddenMode() ;
-      transaction.Commit() ;
-
-      transaction.Start( "Disable Reveal Hidden" ) ;
-      document.ActiveView.DisableTemporaryViewMode( TemporaryViewMode.RevealHiddenElements ) ;
-      transaction.Commit() ;
     }
 
     public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )

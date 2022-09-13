@@ -10,7 +10,6 @@ using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Windows ;
@@ -25,19 +24,33 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private readonly Document _document ;
 
-    private List<DisplaySettingByGradeItemModel> _dataDisplaySettingByGradeModel ;
+    private List<DisplaySettingByGradeModel> _dataDisplaySettingByGradeModel ;
 
-    private DisplaySettingByGradeItemModel _selectedGradeItemModel ;
+    private DisplaySettingByGradeModel _selectedGradeModel ;
 
     public DisplaySettingByGradeViewModel( Document document )
     {
       _document = document ;
-      _selectedGradeItemModel = new DisplaySettingByGradeItemModel() ;
+      _dataDisplaySettingByGradeModel = new List<DisplaySettingByGradeModel>
+      {
+        new( GradeMode1Or2, new DisplaySettingByGradeItemModel( false ), 
+          new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ) ),
+        new( "3", new DisplaySettingByGradeItemModel( false ), 
+          new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ) ),
+        new( "4", new DisplaySettingByGradeItemModel( false ), 
+          new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true ) ),
+        new( "5", new DisplaySettingByGradeItemModel( false ), 
+          new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true ) ),
+        new( "6", new DisplaySettingByGradeItemModel( false ), 
+          new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true ) ),
+        new( "7", new DisplaySettingByGradeItemModel( true ), 
+          new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true ) )
+      } ;
 
       var dataStorage = document.FindOrCreateDataStorage<DisplaySettingByGradeModel>( false ) ;
       _displaySettingByGradeStorageService = new StorageService<DataStorage, DisplaySettingByGradeModel>( dataStorage ) ;
-      _dataDisplaySettingByGradeModel = _displaySettingByGradeStorageService.Data.DisplaySettingByGradeData ;
-      var gradeDisplayMode = _displaySettingByGradeStorageService.Data.GradeDisplayMode ;
+      
+      var gradeDisplayMode = _displaySettingByGradeStorageService.Data.GradeMode ;
       if ( string.IsNullOrEmpty( gradeDisplayMode ) ) {
         var defaultSettingStorable = _document.GetDefaultSettingStorable() ;
         gradeDisplayMode = defaultSettingStorable.GradeSettingData.GradeMode switch
@@ -46,39 +59,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           _ => defaultSettingStorable.GradeSettingData.GradeMode.ToString()
         } ;
       }
-
-      if ( ! _dataDisplaySettingByGradeModel.Any() ) {
-        _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( GradeMode1Or2,
-          new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( false ),
-          new DisplaySettingByGradeItemDetailsModel( false ) ) ) ;
-
-        _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "3",
-          new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( false ),
-          new DisplaySettingByGradeItemDetailsModel( false ) ) ) ;
-
-        _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "4",
-          new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( false ),
-          new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
-
-        _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "5",
-          new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( false ),
-          new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
-
-        _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "6",
-          new DisplaySettingByGradeItemDetailsModel( false ), new DisplaySettingByGradeItemDetailsModel( true ),
-          new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
-
-        _dataDisplaySettingByGradeModel.Add( new DisplaySettingByGradeItemModel( "7",
-          new DisplaySettingByGradeItemDetailsModel( true ), new DisplaySettingByGradeItemDetailsModel( true ),
-          new DisplaySettingByGradeItemDetailsModel( true ) ) ) ;
+      else {
+        var index = _dataDisplaySettingByGradeModel.FindIndex( d => d.GradeMode == gradeDisplayMode ) ;
+        if ( index != -1 )
+          _dataDisplaySettingByGradeModel[ index ] = _displaySettingByGradeStorageService.Data.Clone() ;
       }
-
+      
       // Set default value for grade selection
-      _selectedGradeItemModel = DataDisplaySettingByGradeModel.Find( t => t.GradeMode == gradeDisplayMode ) ??
-                                new DisplaySettingByGradeItemModel() ;
+      _selectedGradeModel = _dataDisplaySettingByGradeModel.Find( d => d.GradeMode == gradeDisplayMode ) ?? new DisplaySettingByGradeModel() ;
     }
 
-    public List<DisplaySettingByGradeItemModel> DataDisplaySettingByGradeModel
+    public List<DisplaySettingByGradeModel> DataDisplaySettingByGradeModel
     {
       get => _dataDisplaySettingByGradeModel ;
       set
@@ -88,12 +79,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public DisplaySettingByGradeItemModel SelectedGradeItemModel
+    public DisplaySettingByGradeModel SelectedGradeModel
     {
-      get => _selectedGradeItemModel ;
+      get => _selectedGradeModel ;
       set
       {
-        _selectedGradeItemModel = value ;
+        _selectedGradeModel = value ;
         OnPropertyChanged() ;
       }
     }
@@ -118,17 +109,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
       setupTransaction.Start() ;
       
-      SetupDisplayWiring( views, SelectedGradeItemModel.Wiring.IsVisible ) ;
-      SetupDisplayDetailSymbol( views, SelectedGradeItemModel.DetailSymbol.IsVisible ) ;
-      SetupDisplayPullBox( views, SelectedGradeItemModel.PullBox.IsVisible ) ;
+      SetupDisplayWiring( views, SelectedGradeModel.Wiring.IsVisible ) ;
+      SetupDisplayDetailSymbol( views, SelectedGradeModel.Symbol.IsVisible ) ;
+      SetupDisplayPullBox( views, SelectedGradeModel.PullBox.IsVisible ) ;
 
       setupTransaction.Commit() ;
       
+      _document.RefreshActiveView() ;
+      
       SaveDisplaySettingByGradeStorageService() ;
       
-      UpdateIsEnableButton( _document, SelectedGradeItemModel.DetailSymbol.IsVisible ) ;
+      UpdateIsEnableButton( _document, SelectedGradeModel.Symbol.IsVisible ) ;
 
       transactionGroup.Commit() ;
+
       window.DialogResult = true ;
       window.Close() ;
     }
@@ -233,14 +227,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
       if ( selectionTab == null ) return ;
 
-      var targetRibbonPanel = UIHelper.GetRibbonPanelFromName( "Electrical.App.Panels.Routing.Drawing".GetAppStringByKeyOrDefault( "Drawing" ), selectionTab ) ;
+      var targetRibbonPanel = UIHelper.GetRibbonPanelFromName( "Electrical.App.Panels.Routing.Table".GetAppStringByKeyOrDefault( "Table" ), selectionTab ) ;
       if ( targetRibbonPanel == null ) return ;
       
       foreach ( var ribbonItem in targetRibbonPanel.Source.Items ) {
         if ( ribbonItem is not RibbonSplitButton ribbonSplitButton ) continue ;
           
         foreach ( var rItem in ribbonSplitButton.Items ) {
-          if ( rItem is not RibbonButton ribbonButton || ribbonButton.Text != "Electrical.App.Commands.Initialization.CreateDetailSymbolCommand".GetDocumentStringByKeyOrDefault( document, "Create\nDetail Symbol" ) ) continue ;
+          if ( rItem is not RibbonButton ribbonButton || ribbonButton.Text != "Electrical.App.Commands.Initialization.CreateDetailTableCommand".GetDocumentStringByKeyOrDefault( document, "Create Detail Table" ) ) continue ;
 
           using var transaction = new Transaction( document, "Update IsEnabled Button" ) ;
           transaction.Start() ;
@@ -256,8 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       using Transaction transaction = new(_document, "Save Display Setting By Grade") ;
       transaction.Start() ;
-      _displaySettingByGradeStorageService.Data.DisplaySettingByGradeData = _dataDisplaySettingByGradeModel ;
-      _displaySettingByGradeStorageService.Data.GradeDisplayMode = _selectedGradeItemModel.GradeMode ;
+      _displaySettingByGradeStorageService.Data = _selectedGradeModel ;
       _displaySettingByGradeStorageService.SaveChange() ;
       transaction.Commit() ;
     }
