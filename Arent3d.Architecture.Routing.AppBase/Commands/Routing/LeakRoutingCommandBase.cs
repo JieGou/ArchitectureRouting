@@ -113,6 +113,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var mirrorMat = Transform.CreateReflection( plane ) ;
           var firstPoint = mirrorMat.OfPoint( fromPoint ) ;
           var thirdPoint = mirrorMat.OfPoint( secondPoint ) ;
+          
           // correspond to direction setting of rectangle mode
           if ( sv.IsRecModeClockWise != IsClockWise( firstPoint, secondPoint, thirdPoint ) )
             ( firstPoint, thirdPoint ) = ( thirdPoint, firstPoint ) ;
