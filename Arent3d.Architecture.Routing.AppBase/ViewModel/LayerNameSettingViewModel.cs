@@ -28,6 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly string _settingFilePath ;
 
     public ObservableCollection<Layer> Layers { get ; }
+    private List<Layer> RemovedLayers { get ; set ; }
     public List<AutoCadColorsManager.AutoCadColor> AutoCadColors { get ; }
 
     public string LayerNames { get; set ; }
@@ -42,6 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _oldLayerNames = new List<Layer>() ;
       AutoCadColors = AutoCadColorsManager.GetAutoCadColorDict() ;
       Layers = new ObservableCollection<Layer>() ;
+      RemovedLayers = new List<Layer>() ;
       LayerNames = string.Empty ;
       var layers = GetLayers( _settingFilePath ) ;
       if ( ! layers.Any() ) return ;
@@ -62,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         Layers.Add( layer ) ;
         _newLayerNames.Add( layer ) ;
-        _oldLayerNames.Add( new Layer( layer.LayerName, layer.FamilyName, layer.Index ) ) ;
+        _oldLayerNames.Add( new Layer( layer.LayerName, layer.FullFamilyName, layer.FamilyName, layer.FamilyType, layer.Index ) ) ;
       }
     }
 
@@ -86,7 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<ElementId> viewIds = new() { activeView.Id } ;
       // replace text
       var encoding = GetEncoding( _settingFilePath ) ;
-      ReplaceLayerNamesAndColors( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
+      ReplaceLayerColors( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
       
       // Delete layers
       DeleteLayers(LayerNames) ;
@@ -127,7 +129,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private static List<Layer> GetLayers( string filePath )
+    private List<Layer> GetLayers( string filePath )
     {
       const string exceptString = "Ifc" ;
       var layers = new List<Layer>() ;
@@ -144,7 +146,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             familyType = $" ({typeOfLayer})" ;
           }
 
-          layers.Add( new Layer( layerName, familyName + familyType, colorIndex ) ) ;
+          layers.Add( new Layer( layerName, familyName + familyType, familyName, typeOfLayer, colorIndex ) ) ;
         }
 
         reader.Close() ;
@@ -152,13 +154,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       var filterLayers = layers.Distinct()
         .Where( x => ! x.LayerName.Contains( exceptString ) && ! string.IsNullOrEmpty( x.LayerName ) )
-        .GroupBy( x => x.LayerName )
-        .Select( ng => new Layer 
-        { 
-          LayerName = ng.First().LayerName, 
-          FamilyName = string.Join( "\n", ng.Select( x => x.FamilyName ).ToArray() ), 
-          Index = ng.First().Index 
-        } )
+        .ToList() ;
+      
+      RemovedLayers = layers.Distinct()
+        .Where( x => string.IsNullOrEmpty( x.LayerName ) )
         .ToList() ;
 
       return filterLayers ;
@@ -181,16 +180,27 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return Encoding.ASCII ;
     }
 
-    private static void ReplaceLayerNamesAndColors( IReadOnlyList<Layer> oldLayerNames, IReadOnlyList<Layer> newLayerNames, string filePath, Encoding encoding )
+    private void ReplaceLayerColors( IReadOnlyList<Layer> oldLayerNames, IReadOnlyList<Layer> newLayerNames, string filePath, Encoding encoding )
     {
       try {
         var hasChange = false ;
         var content = File.ReadAllText( filePath ) ;
+        if ( RemovedLayers.Any() ) {
+          foreach ( var layer in RemovedLayers ) {
+            var oldValue = layer.FamilyName + ( string.IsNullOrEmpty( layer.FamilyType ) ? string.Empty : '\t' + layer.FamilyType ) ;
+            var endIndex = content.IndexOf( oldValue, StringComparison.Ordinal ) ;
+            if ( endIndex <= -1 ) continue ;
+            var length = content.Substring( endIndex ).IndexOf( '\n' ) ;
+            content = content.Substring( 0, endIndex ) + content.Substring( endIndex + length + 1 ) ;
+            hasChange = true ;
+          }
+        }
+        
         for ( var i = 0 ; i < newLayerNames.Count() ; i++ ) {
-          if ( oldLayerNames[ i ].LayerName == newLayerNames[ i ].LayerName && oldLayerNames[ i ].Index == newLayerNames[ i ].Index ) continue ;
+          if ( oldLayerNames[ i ].Index == newLayerNames[ i ].Index ) continue ;
           hasChange = true ;
-          var oldValue = oldLayerNames[ i ].LayerName + ( oldLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : "\t" + oldLayerNames[ i ].Index ) ;
-          var newValue = newLayerNames[ i ].LayerName + ( newLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : "\t" + newLayerNames[ i ].Index ) ;
+          var oldValue = string.Join( "\t", oldLayerNames[i].FamilyName, oldLayerNames[i].FamilyType, oldLayerNames[ i ].LayerName ) + ( oldLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : '\t' + oldLayerNames[ i ].Index ) ;
+          var newValue = string.Join( "\t", newLayerNames[i].FamilyName, newLayerNames[i].FamilyType, newLayerNames[ i ].LayerName ) + ( newLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : '\t' + newLayerNames[ i ].Index ) ;
           content = content.Replace( oldValue, newValue ) ;
         }
 
@@ -205,23 +215,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class Layer
   {
     public string LayerName { get ; set ; }
-
+    public string FullFamilyName { get ; set ; }
     public string FamilyName { get ; set ; }
+    public string FamilyType{ get ; set ; }
     public string Index { get ; set ; }
     public SolidColorBrush SolidColor { get ; set ; }
 
-    public Layer()
-    {
-      LayerName = string.Empty ;
-      FamilyName = string.Empty ;
-      Index = string.Empty ;
-      SolidColor = new SolidColorBrush() ;
-    }
-
-    public Layer( string layerName, string familyName, string colorIndex )
+    public Layer( string layerName, string fullFamilyName, string familyName, string familyType, string colorIndex )
     {
       LayerName = layerName ;
+      FullFamilyName = fullFamilyName ;
       FamilyName = familyName ;
+      FamilyType = familyType ;
       Index = colorIndex ;
       SolidColor = new SolidColorBrush() ;
     }

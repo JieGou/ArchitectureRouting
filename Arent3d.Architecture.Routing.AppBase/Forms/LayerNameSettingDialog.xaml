@@ -8,7 +8,7 @@
         x:Name="LayerNameDialog"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="LayerNameSettingDialog" Height="550" Width="700"
+        Title="レイヤー設定" Height="550" Width="600"
         d:DataContext="{d:DesignInstance {x:Type local:DesignExportDwgViewModel}, IsDesignTimeCreatable=True}">
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -40,7 +40,7 @@
             </DataGrid.CellStyle>
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="作図ファミリ" Binding="{Binding FamilyName}" CanUserSort="True" IsReadOnly="true" Width="400">
+                <DataGridTextColumn Header="作図ファミリ" Binding="{Binding FullFamilyName}" CanUserSort="True" IsReadOnly="true" Width="400">
                     <DataGridTextColumn.ElementStyle>
                         <Style>
                             <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
@@ -49,8 +49,7 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="画僧名" Binding="{Binding LayerName}" CanUserSort="True" IsReadOnly="False" Width="*" />
-                <DataGridTemplateColumn Header="色" Width="110" CanUserSort="False">
+                <DataGridTemplateColumn Header="色" Width="120" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" Height="25" Margin="10, 0" VerticalAlignment="Top" >
