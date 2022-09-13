@@ -14,7 +14,6 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Utility ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
@@ -56,7 +55,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var uiApp = commandData.Application ;
       var app = uiApp.Application ;
-      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var rackMaps = new List<RackMap>() ;
 
       try {
@@ -102,7 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             
               var representativeConduit = ( representativeMepCurve as Conduit )! ;
 
-              var cableRackWidth = CalcCableRackWidth( document, routingElementGroup, routes ) ;
+              var cableRackWidth = CalcCableRackWidth( document, routingElementGroup ) ;
 
               CreateCableRackForConduit( uiDocument, representativeConduit, cableRackWidth, racks, rackMaps ) ;
             }
@@ -135,95 +133,97 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingElementGroup, RouteCache routes )
+    private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingElementGroup)
     {
-      double cableRackWidth ;
+      double widthCable ;
       if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) ) {
-        cableRackWidth = _routeMaxWidthDictionary[ routingElementGroup.Key ] ;
+        widthCable = _routeMaxWidthDictionary[ routingElementGroup.Key ] ;
       }
       else {
-        var widthAndClassifications = new List<(double Diameter, string Classification)>() ;
-        var ceedCodeAndClassifications = new Dictionary<string, string>() ;
+        var diameterAndClassifications = new List<(double Diameter, string Classification)>() ;
+        var ceedCodeAndClassifications = new Dictionary<string, (string Classification, double Diameter)>() ;
         foreach ( var mepCurves in routingElementGroup.Value.GroupBy( s => s.GetRouteName() ) ) {
           var routeName = mepCurves.First().GetRouteName() ?? string.Empty ;
-          if ( string.IsNullOrEmpty( routeName ) ) 
-            continue;
-          
-          var classification = GetClassification( document, routeName, ceedCodeAndClassifications ) ;
-          var route = routes.FirstOrDefault( s => s.Key == routeName ) ;
-          widthAndClassifications.Add(((route.Value.UniqueDiameter?.RevitUnitsToMillimeters() ?? 0 ) + 10, classification));
+          if ( string.IsNullOrEmpty( routeName ) )
+            continue ;
+
+          var (classification, diameter) = GetClassificationAndDiameter( document, routeName, ceedCodeAndClassifications ) ;
+          if ( string.IsNullOrEmpty( classification ) )
+            continue ;
+
+          diameterAndClassifications.Add( ( diameter + 10, classification ) ) ;
         }
 
-        var typeOnes = new List<double>() ;
-        var typeTwos = new List<double>() ;
+        var powerCables = new List<double>() ;
+        var instrumentationCables = new List<double>() ;
 
-        foreach ( var widthAndClassification in widthAndClassifications ) {
-          if ( widthAndClassification.Classification == $"{CreateDetailTableCommandBase.SignalType.低電圧}" || widthAndClassification.Classification == $"{CreateDetailTableCommandBase.SignalType.動力}" ) {
-            typeOnes.Add(widthAndClassification.Diameter) ;
+        foreach ( var diameterAndClassification in diameterAndClassifications ) {
+          if ( diameterAndClassification.Classification == $"{CreateDetailTableCommandBase.SignalType.低電圧}" || diameterAndClassification.Classification == $"{CreateDetailTableCommandBase.SignalType.動力}" ) {
+            powerCables.Add( diameterAndClassification.Diameter ) ;
           }
           else {
-            typeTwos.Add(widthAndClassification.Diameter);
+            instrumentationCables.Add( diameterAndClassification.Diameter ) ;
           }
         }
 
-        cableRackWidth = ( typeOnes.Count > 0 ? ( 60 + typeOnes.Sum() ) * 1.2 : 0 ) + ( typeTwos.Count > 0 ? ( 120 + typeOnes.Sum() ) * 0.6 : 0 ) ;
+        widthCable = ( powerCables.Count > 0 ? ( 60 + powerCables.Sum() ) * 1.2 : 0 ) + ( instrumentationCables.Count > 0 ? ( 120 + instrumentationCables.Sum() ) * 0.6 : 0 ) ;
 
         foreach ( var width in CableTrayWidthMapping ) {
-          if (  cableRackWidth > width ) 
+          if ( widthCable > width )
             continue ;
-          
-          cableRackWidth = width ;
+
+          widthCable = width ;
           break ;
         }
 
-        _routeMaxWidthDictionary.Add( routingElementGroup.Key, cableRackWidth ) ;
+        _routeMaxWidthDictionary.Add( routingElementGroup.Key, widthCable ) ;
       }
 
-      return cableRackWidth ;
+      return widthCable ;
     }
 
     #region Methods
 
-    private static string GetClassification( Document document, string routeName, Dictionary<string, string> ceedCodeAndClassifications )
+    private static (string Classification, double Diameter) GetClassificationAndDiameter( Document document, string routeName, Dictionary<string, (string Classification, double Diameter)> ceedCodeAndClassifications )
     {
       var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, false ) ;
       if ( null == toConnector )
-        return string.Empty ;
-    
+        return ( string.Empty, 0d ) ;
+
       var ceedCode = toConnector.GetPropertyString( ElectricalRoutingElementParameter.CeedCode ) ?? string.Empty ;
       if ( string.IsNullOrEmpty( ceedCode ) )
-        return string.Empty ;
+        return ( string.Empty, 0d ) ;
 
       if ( ! ceedCodeAndClassifications.ContainsKey( ceedCode ) ) {
-        ceedCodeAndClassifications.Add(ceedCode, string.Empty);
+        ceedCodeAndClassifications.Add( ceedCode, ( string.Empty, 0d ) ) ;
       }
       else {
         return ceedCodeAndClassifications[ ceedCode ] ;
       }
-    
+
       var ceedStorage = document.GetCeedStorable() ;
       var ceedModel = ceedStorage.CeedModelData.FirstOrDefault( x => $"{x.CeedSetCode}:{x.GeneralDisplayDeviceSymbol}:{x.ModelNumber}" == ceedCode ) ;
       if ( null == ceedModel )
-        return string.Empty ;
+        return ( string.Empty, 0d ) ;
 
       var hasProperty = toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? value ) ;
-      if ( ! hasProperty || string.IsNullOrEmpty(value))
-        return string.Empty ;
+      if ( ! hasProperty || string.IsNullOrEmpty( value ) )
+        return ( string.Empty, 0d ) ;
 
       var isEcoMode = bool.Parse( value ) ;
-      
+
       var csvStorage = document.GetCsvStorable() ;
-      var parentPartModelNumber = ( isEcoMode ? csvStorage.HiroiSetCdMasterEcoModelData : csvStorage.HiroiSetCdMasterNormalModelData ).FirstOrDefault( x => x.SetCode == ceedCode.Split(':').First() )?.LengthParentPartModelNumber ;
+      var parentPartModelNumber = ( isEcoMode ? csvStorage.HiroiSetCdMasterEcoModelData : csvStorage.HiroiSetCdMasterNormalModelData ).FirstOrDefault( x => x.SetCode == ceedCode.Split( ':' ).First() )?.LengthParentPartModelNumber ;
       if ( string.IsNullOrEmpty( parentPartModelNumber ) )
-        return string.Empty ;
-      
+        return ( string.Empty, 0d ) ;
+
       var materialCode = ( isEcoMode ? csvStorage.HiroiSetMasterEcoModelData : csvStorage.HiroiSetMasterNormalModelData ).FirstOrDefault( x => x.ParentPartModelNumber == parentPartModelNumber )?.MaterialCode1 ;
       if ( string.IsNullOrEmpty( materialCode ) )
-        return string.Empty ;
+        return ( string.Empty, 0d ) ;
 
-      var wireIdentifier = PickUpViewModel.FormatRyakumeicd( csvStorage.HiroiMasterModelData.FirstOrDefault( x => x.Buzaicd == int.Parse(materialCode).ToString("D6") )?.Ryakumeicd ?? string.Empty ) ;
+      var wireIdentifier = PickUpViewModel.FormatRyakumeicd( csvStorage.HiroiMasterModelData.FirstOrDefault( x => x.Buzaicd == int.Parse( materialCode ).ToString( "D6" ) )?.Ryakumeicd ?? string.Empty ) ;
       if ( string.IsNullOrEmpty( wireIdentifier ) )
-        return string.Empty ;
+        return ( string.Empty, 0d ) ;
 
       var wiresAndCablesModelData = csvStorage.WiresAndCablesModelData.FirstOrDefault( x =>
       {
@@ -233,9 +233,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       } ) ;
 
       var classification = wiresAndCablesModelData?.Classification ?? string.Empty ;
-      ceedCodeAndClassifications[ ceedCode ] = classification ;
-      
-      return classification ;
+      var diameter = double.TryParse( wiresAndCablesModelData?.FinishedOuterDiameter, out var dia ) ? dia : 0d ;
+      ceedCodeAndClassifications[ ceedCode ] = ( classification, diameter ) ;
+
+      return ( classification, diameter ) ;
     }
     
     private static void StoreLimitRackModels( Document document,List<RackMap> rackMaps )
@@ -877,5 +878,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
     
     #endregion
+    
   }
 }
