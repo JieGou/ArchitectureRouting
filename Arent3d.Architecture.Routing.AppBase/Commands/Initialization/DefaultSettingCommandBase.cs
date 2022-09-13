@@ -1,7 +1,6 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
-using System.Collections.Specialized ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
@@ -101,9 +100,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public static IEnumerable<int> GradeFrom3To7Collection => new[] { 3, 4, 5, 6, 7 } ;
 
-    private List<ImportDwgMappingModel> GetFloorsDefault( Document doc )
+    private static List<ImportDwgMappingModel> GetFloorsDefault( Document doc )
     {
-      List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( doc ).OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>().Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+      var views = new List<ViewPlan>( new FilteredElementCollector( doc ).OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>().Where( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
       var importDwgMappingModels = new List<ImportDwgMappingModel>() ;
       foreach ( var view in views ) {
         var fileName = string.Empty ;
@@ -149,7 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
-        defaultSettingStorable.GradeSettingData.GradeMode = (int) gradeMode ;
+        defaultSettingStorable.GradeSettingData.GradeMode = gradeMode ;
         if ( importDwgMappingModels.Any() ) {
           UpdateImportDwgMappingModels( defaultSettingStorable, importDwgMappingModels, deletedFloorName ) ;
         }
@@ -173,8 +172,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       foreach ( var item in importDwgMappingModels ) {
         var oldImportDwgMappingModel = defaultSettingStorable.ImportDwgMappingData.SingleOrDefault( i => i.FloorName == item.FloorName ) ;
-        double value = 0.0 ;
-        double.TryParse( item.FloorHeightDisplay, out value ) ;
+        double.TryParse( item.FloorHeightDisplay, out var value ) ;
         if ( oldImportDwgMappingModel == null ) {
           defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, value ) ) ;
         }
@@ -191,8 +189,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void LoadDwgAndSetScale( ExternalCommandData commandData, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<FileComboboxItemType> fileItems )
     {
       try {
-        ListDictionary levelList = new ListDictionary() ;
-        List<string> nameLevelList = new List<string>() ;
+        var nameLevelList = new List<string>() ;
         if ( ! importDwgMappingModels.Any() ) return ;
         var completeImportDwgMappingModels = importDwgMappingModels.Where( x => ! string.IsNullOrEmpty( x.FloorName ) && ! string.IsNullOrEmpty( x.FileName ) ).ToList() ;
         if ( ! completeImportDwgMappingModels.Any() ) return ;
@@ -249,7 +246,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
 
           importDwgLevel.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
-          if ( isNewView ) doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out ElementId importElementId ) ;
+          if ( isNewView ) doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out _ ) ;
         }
 
         importTrans.Commit() ;
@@ -368,11 +365,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var deletedViews = document.GetAllElements<View>().Where( e => deletedFloorName.Any( x => x == e.Name ) && ViewType.FloorPlan == e.ViewType ).ToList() ;
         var deletedViewIds = deletedViews.Select( x => x.Id ).ToList() ;
         var deletedLevels = deletedViews.Select( x => x.GenLevel.Id ).ToList() ;
-        List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>().Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+        var views = new List<ViewPlan>( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>().Where( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
         IList<ElementId> categoryIds = new List<ElementId>() ;
         var importInstances = new FilteredElementCollector( document ).OfClass( typeof( ImportInstance ) ).Cast<ImportInstance>().Where( x => deletedLevels.Any( l => l == x.LevelId ) ) ;
         foreach ( var importInstance in importInstances ) {
-          ElementId catId = importInstance.Category.Id ;
+          var catId = importInstance.Category.Id ;
           if ( ! categoryIds.Contains( catId ) ) categoryIds.Add( catId ) ;
         }
 
@@ -450,7 +447,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private void UpdateScaleAndHeightPlanView( Document document, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels )
     {
-      List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( document ).OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>().Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+      List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( document ).OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>().Where( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
 
       var dataStorage = document.FindOrCreateDataStorage<BorderTextNoteModel>( true ) ;
       var storageService = new StorageService<DataStorage, BorderTextNoteModel>( dataStorage ) ;
@@ -529,51 +526,56 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       UpdateShaftOpeningInViewPlan( shaftOpeningStore, elementsInView, viewPlan ) ;
     }
 
-    private static void UpdateShaftOpeningInViewPlan(ShaftOpeningStorable storable, IEnumerable<Element> elementsInView, ViewPlan viewPlan)
+    private static void UpdateShaftOpeningInViewPlan( ShaftOpeningStorable storable, IEnumerable<Element> elementsInView, ViewPlan viewPlan )
     {
       var openings = elementsInView.OfType<Opening>().EnumerateAll() ;
-      if(!openings.Any())
-        return;
-      
+      if ( ! openings.Any() )
+        return ;
+
       var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = CreateCylindricalShaftCommandBase.GetLineStyles( storable.Document ) ;
 
       foreach ( var opening in openings ) {
         var openingStore = storable.ShaftOpeningModels.SingleOrDefault( x => x.ShaftOpeningUniqueId == opening.UniqueId ) ;
-        if(openingStore is null)
-          continue;
+        if ( openingStore is null )
+          continue ;
 
+        var oldDetailCurveUniqueIds = openingStore.DetailUniqueIds.Where( x => opening.Document.GetElement( x ) is { } element && element.OwnerViewId == viewPlan.Id ) ;
+        var detailCurveIds = oldDetailCurveUniqueIds.Select( x => opening.Document.GetElement( x ) ).OfType<Element>().Select( x => x.Id ).ToList() ;
+        opening.Document.Delete( detailCurveIds ) ;
+        
         openingStore.DetailUniqueIds.RemoveAll( x => opening.Document.GetElement( x ) is { } element && element.OwnerViewId == viewPlan.Id ) ;
         var newDetailCurves = CreateCylindricalShaftCommandBase.CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape ) ;
-        openingStore.DetailUniqueIds.AddRange(newDetailCurves.Select(x => x));
+        openingStore.DetailUniqueIds.AddRange( newDetailCurves.Select( x => x ) ) ;
       }
-      
-      storable.Save();
+
+      storable.Save() ;
     }
 
-    private static void UpdateSymbolInformation(Document document, IEnumerable<Element> elementsInView, int viewScale)
+    private static void UpdateSymbolInformation( Document document, IEnumerable<Element> elementsInView, int viewScale )
     {
-      var symbolInstances = elementsInView.OfType<FamilyInstance>()
-        .Where( x => x.Symbol.FamilyName == ElectricalRoutingFamilyType.SymbolStar.GetFamilyName() || x.Symbol.FamilyName == ElectricalRoutingFamilyType.SymbolCircle.GetFamilyName() )
-        .EnumerateAll();
-      if(!symbolInstances.Any()) 
-        return;
-      
+      var symbolInstances = elementsInView.OfType<FamilyInstance>().Where( x => x.Symbol.FamilyName == ElectricalRoutingFamilyType.SymbolStar.GetFamilyName() || x.Symbol.FamilyName == ElectricalRoutingFamilyType.SymbolCircle.GetFamilyName() )
+        .EnumerateAll() ;
+      if ( ! symbolInstances.Any() )
+        return ;
+
       var symbolInformationModels = document.GetSymbolInformationStorable().AllSymbolInformationModelData ;
-      var ratio = ImportDwgMappingModel.SetRatio( viewScale ) ;
-      
+      var ratio = viewScale / 100d ;
+
       foreach ( var symbolInstance in symbolInstances ) {
-        if(symbolInformationModels.SingleOrDefault( x => x.SymbolUniqueId == symbolInstance.UniqueId ) is not { } symbolInformationModel)
-          continue;
+        if ( symbolInformationModels.SingleOrDefault( x => x.SymbolUniqueId == symbolInstance.UniqueId ) is not { } symbolInformationModel )
+          continue ;
+
+        if ( document.GetElement( symbolInformationModel.TagUniqueId ) is not IndependentTag independentTag )
+          continue ;
         
-        if(document.GetElement(symbolInformationModel.TagUniqueId) is not IndependentTag independentTag)
-          continue;
-        
+        var height = symbolInformationModel.Height * ratio ;
+
         if ( symbolInstance.LookupParameter( SymbolInformationCommandBase.ParameterName ) is { } parameter ) {
-          parameter.Set( parameter.AsDouble() * ratio ) ;
-          document.Regenerate();
+          parameter.Set( height.MillimetersToRevitUnits() / 2 ) ;
+          document.Regenerate() ;
         }
-        
-        SymbolInformationCommandBase.MoveTag(symbolInstance, independentTag, (SymbolCoordinate) Enum.Parse(typeof(SymbolCoordinate), symbolInformationModel.SymbolCoordinate));
+
+        SymbolInformationCommandBase.MoveTag( symbolInstance, independentTag, (SymbolCoordinate) Enum.Parse( typeof( SymbolCoordinate ), symbolInformationModel.SymbolCoordinate ) ) ;
       }
     }
 

@@ -115,12 +115,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       var transformTranslation = Transform.CreateTranslation( XYZ.BasisZ * ( viewPlan.GenLevel.Elevation - arc.Center.Z ) ) ;
 
       IEnumerable<Curve> curvesBody ;
-      if ( viewPlans.IndexOf( viewPlan ) == 0 ) {
+      if ( viewPlans.FindIndex( x => x.Id == viewPlan.Id ) == 0 ) {
         CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, styleForSymbol )
           .ForEach(x => detailUniqueIds.Add(x.UniqueId));
         curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 0 ].CreateTransformed( transformTranslation ) } ) ;
       }
-      else if ( viewPlans.IndexOf( viewPlan ) == viewPlans.Count - 1 ) {
+      else if ( viewPlans.FindIndex( x => x.Id == viewPlan.Id ) == viewPlans.Count - 1 ) {
         CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, styleForSymbol )
           .ForEach(x => detailUniqueIds.Add(x.UniqueId));
         curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 1 ].CreateTransformed( transformTranslation ) } ) ;
