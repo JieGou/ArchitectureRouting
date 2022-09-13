@@ -39,10 +39,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
-    protected bool IsClockWise( XYZ p1, XYZ p2, XYZ p3 )
+    private static bool IsClockWise( XYZ p1, XYZ p2, XYZ p3 )
     {
-      var v12 = p2 - p1  ;
-      var v13 = p3 - p1  ;
+      var v12 = p2 - p1 ;
+      var v13 = p3 - p1 ;
       return v12.CrossProduct( v13 ).Z < 0 ;
     }
     protected override OperationResult<LeakState> OperateUI( ExternalCommandData commandData, ElementSet elements )
@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         var routingExecutor = GetRoutingExecutor() ;
 
-        var sv = new LeakRouteDialog(GetAddInType() == AddInType.Electrical) ;
+        var sv = new LeakRouteDialog( GetAddInType() == AddInType.Electrical ) ;
         sv.ShowDialog() ;
         if ( true != sv.DialogResult ) return OperationResult<LeakState>.Cancelled ;
 
@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           XYZ prevPoint = fromPickResult.GetOrigin() ;
           
           // modeless dialog to determine OK・Cancel action
-          ModelessOkCancelDialog dlg = new ModelessOkCancelDialog() ;
+          var dlg = new ModelessOkCancelDialog() ;
           dlg.AlignToView(uiApp.ActiveUIDocument.GetActiveUIView());
           dlg.Show();
           dlg.FocusRevit();
@@ -113,14 +113,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var mirrorMat = Transform.CreateReflection( plane ) ;
           var firstPoint = mirrorMat.OfPoint( fromPoint ) ;
           var thirdPoint = mirrorMat.OfPoint( secondPoint ) ;
-
-
           // correspond to direction setting of rectangle mode
-          bool isClockWiseRouting = sv.IsRecModeClockWise ;
-          bool isClockWise = IsClockWise( firstPoint, secondPoint, thirdPoint ) ;
-          if ( isClockWiseRouting != isClockWise )
+          if ( sv.IsRecModeClockWise != IsClockWise( firstPoint, secondPoint, thirdPoint ) )
             ( firstPoint, thirdPoint ) = ( thirdPoint, firstPoint ) ;
-          
           var vThirdToLastOnPlan = new XYZ( fromPoint.X - thirdPoint.X, fromPoint.Y - thirdPoint.Y, 0 ).Normalize() ;
           var lastPoint = fromPoint - vThirdToLastOnPlan * fromConnectorWidth ;
           pickPoints = new List<XYZ>() { firstPoint, secondPoint, thirdPoint, lastPoint } ;
