@@ -1,16 +1,15 @@
-﻿using System.Collections.Generic ;
-using Arent3d.Architecture.Routing.Storages.Attributes ;
+﻿using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  [Schema( "EF7E901A-DEB4-4FD5-AB39-91FCB3D0AE38", nameof( DisplaySettingByGradeModel ) )]
+  [Schema( "407C6820-A094-426D-B54F-F7E5FF6841A7", nameof( DisplaySettingByGradeModel ) )]
   public class DisplaySettingByGradeModel : IDataModel
   {
     public DisplaySettingByGradeModel()
     {
       GradeMode = string.Empty ;
       Wiring = new DisplaySettingByGradeItemModel() ;
-      Symbol = new DisplaySettingByGradeItemModel() ;
+      DetailSymbol = new DisplaySettingByGradeItemModel() ;
       PullBox = new DisplaySettingByGradeItemModel() ;
     }
 
@@ -19,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     {
       GradeMode = gradeMode ?? string.Empty ;
       Wiring = wiring ?? new DisplaySettingByGradeItemModel() ;
-      Symbol = detailSymbol ?? new DisplaySettingByGradeItemModel() ;
+      DetailSymbol = detailSymbol ?? new DisplaySettingByGradeItemModel() ;
       PullBox = pullBox ?? new DisplaySettingByGradeItemModel() ;
     }
 
@@ -30,36 +29,34 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     public DisplaySettingByGradeItemModel Wiring { get ; set ; }
 
     [Field( Documentation = "Detail Symbol" )]
-    public DisplaySettingByGradeItemModel Symbol { get ; set ; }
+    public DisplaySettingByGradeItemModel DetailSymbol { get ; set ; }
 
     [Field( Documentation = "Pull Box" )]
     public DisplaySettingByGradeItemModel PullBox { get ; set ; }
 
-    public DisplaySettingByGradeModel Clone() => new ( GradeMode, Wiring, Symbol, PullBox ) ;
+    public DisplaySettingByGradeModel Clone() => new ( GradeMode, new DisplaySettingByGradeItemModel( Wiring.IsEnabled, Wiring.IsVisible ), 
+      new DisplaySettingByGradeItemModel( DetailSymbol.IsEnabled, DetailSymbol.IsVisible ), new DisplaySettingByGradeItemModel( PullBox.IsEnabled, PullBox.IsVisible ) ) ;
   }
 
-  [Schema( "7330D52B-EF2B-4D58-9E99-878F30C4858C", nameof( DisplaySettingByGradeItemModel ) )]
+  [Schema( "3D28724A-D093-47F8-AF6A-A7510C6C1667", nameof( DisplaySettingByGradeItemModel ) )]
   public class DisplaySettingByGradeItemModel : IDataModel
   {
     public DisplaySettingByGradeItemModel()
     {
       IsEnabled = false ;
       IsVisible = true ;
-      HiddenElementIds = new List<string>() ;
     }
 
-    public DisplaySettingByGradeItemModel( bool? isEnabled, bool? isVisible, List<string>? hiddenElementIds = null )
+    public DisplaySettingByGradeItemModel( bool? isEnabled, bool? isVisible )
     {
       IsEnabled = isEnabled ?? false ;
       IsVisible = isVisible ?? true ;
-      HiddenElementIds = hiddenElementIds ?? new List<string>() ;
     }
 
-    public DisplaySettingByGradeItemModel( bool? isEnabled, List<string>? hiddenElementIds = null )
+    public DisplaySettingByGradeItemModel( bool? isEnabled )
     {
       IsEnabled = isEnabled ?? false ;
       IsVisible = ! IsEnabled ;
-      HiddenElementIds = hiddenElementIds ?? new List<string>() ;
     }
 
     [Field( Documentation = "IsEnabled" )]
@@ -67,8 +64,5 @@ namespace Arent3d.Architecture.Routing.Storages.Models
 
     [Field( Documentation = "IsVisible" )]
     public bool IsVisible { get ; set ; }
-
-    [Field( Documentation = "Hidden Element Ids" )]
-    public List<string> HiddenElementIds { get ; set ; }
   }
 }

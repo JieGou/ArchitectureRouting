@@ -42,8 +42,8 @@
                               IsChecked="{Binding SelectedGradeModel.Wiring.IsVisible}"
                               Content="配線（配線、配管、ラック、漏水帯など）" Margin="30 15 0 0" FontSize="13" />
                     <CheckBox HorizontalAlignment="Left"
-                              IsEnabled="{Binding SelectedGradeModel.Symbol.IsEnabled}"
-                              IsChecked="{Binding SelectedGradeModel.Symbol.IsVisible}" Content="明細記号"
+                              IsEnabled="{Binding SelectedGradeModel.DetailSymbol.IsEnabled}"
+                              IsChecked="{Binding SelectedGradeModel.DetailSymbol.IsVisible}" Content="明細記号"
                               Margin="30 10 0 0" FontSize="13" />
                     <CheckBox HorizontalAlignment="Left" IsEnabled="{Binding SelectedGradeModel.PullBox.IsEnabled}"
                               IsChecked="{Binding SelectedGradeModel.PullBox.IsVisible}" Content="プルボックス"

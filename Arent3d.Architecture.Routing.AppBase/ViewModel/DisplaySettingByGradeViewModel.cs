@@ -33,29 +33,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _document = document ;
       _dataDisplaySettingByGradeModel = new List<DisplaySettingByGradeModel>
       {
-        new( GradeMode1Or2, new DisplaySettingByGradeItemModel( false ), 
-          new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ) ),
-        new( "3", new DisplaySettingByGradeItemModel( false ), 
-          new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ) ),
-        new( "4", new DisplaySettingByGradeItemModel( false ), 
-          new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true ) ),
-        new( "5", new DisplaySettingByGradeItemModel( false ), 
-          new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true ) ),
-        new( "6", new DisplaySettingByGradeItemModel( false ), 
-          new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true ) ),
-        new( "7", new DisplaySettingByGradeItemModel( true ), 
-          new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true ) )
+        new(GradeMode1Or2, new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false )),
+        new("3", new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false )),
+        new("4", new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true )),
+        new("5", new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true )),
+        new("6", new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true )),
+        new("7", new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true ))
       } ;
 
       var dataStorage = document.FindOrCreateDataStorage<DisplaySettingByGradeModel>( false ) ;
       _displaySettingByGradeStorageService = new StorageService<DataStorage, DisplaySettingByGradeModel>( dataStorage ) ;
-      
+
       var gradeDisplayMode = _displaySettingByGradeStorageService.Data.GradeMode ;
       if ( string.IsNullOrEmpty( gradeDisplayMode ) ) {
         var defaultSettingStorable = _document.GetDefaultSettingStorable() ;
         gradeDisplayMode = defaultSettingStorable.GradeSettingData.GradeMode switch
         {
-          1 or 2 => "1~2",
+          1 or 2 => GradeMode1Or2,
           _ => defaultSettingStorable.GradeSettingData.GradeMode.ToString()
         } ;
       }
@@ -64,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( index != -1 )
           _dataDisplaySettingByGradeModel[ index ] = _displaySettingByGradeStorageService.Data.Clone() ;
       }
-      
+
       // Set default value for grade selection
       _selectedGradeModel = _dataDisplaySettingByGradeModel.Find( d => d.GradeMode == gradeDisplayMode ) ?? new DisplaySettingByGradeModel() ;
     }
@@ -103,23 +97,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       using var transactionGroup = new TransactionGroup( _document, "Setup Display Setting By Grade" ) ;
       transactionGroup.Start() ;
 
-      var views = _document.GetAllElements<View>()
-        .Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
-      
+      var views = _document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
+
       using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
       setupTransaction.Start() ;
-      
+
       SetupDisplayWiring( views, SelectedGradeModel.Wiring.IsVisible ) ;
-      SetupDisplayDetailSymbol( views, SelectedGradeModel.Symbol.IsVisible ) ;
+      SetupDisplayDetailSymbol( views, SelectedGradeModel.DetailSymbol.IsVisible ) ;
       SetupDisplayPullBox( views, SelectedGradeModel.PullBox.IsVisible ) ;
 
       setupTransaction.Commit() ;
-      
+
       _document.RefreshActiveView() ;
-      
+
       SaveDisplaySettingByGradeStorageService() ;
-      
-      UpdateIsEnableButton( _document, SelectedGradeModel.Symbol.IsVisible ) ;
+
+      UpdateIsEnableButton( _document, SelectedGradeModel.DetailSymbol.IsVisible ) ;
 
       transactionGroup.Commit() ;
 
@@ -130,16 +123,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void SetupDisplayWiring( List<View> views, bool isVisible )
     {
       // Electrical routing elements (conduits and cable trays)
-      var hiddenOrUnhiddenElements = _document.GetAllElements<Element>()
-        .OfCategory( BuiltInCategorySets.ElectricalRoutingElements ).ToList() ;
+      var hiddenOrUnhiddenElements = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ElectricalRoutingElements ).ToList() ;
 
       // Pass points
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>()
-        .OfCategory( BuiltInCategorySets.PassPoints ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PassPoints ) ) ;
 
       // Notation and rack
-      var rackNotationStorable = _document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ??
-                                 _document.GetRackNotationStorable() ;
+      var rackNotationStorable = _document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? _document.GetRackNotationStorable() ;
       foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData ) {
         if ( _document.GetElement( rackNotationModel.RackId ) is { } rack )
           hiddenOrUnhiddenElements.Add( rack ) ;
@@ -148,23 +138,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           hiddenOrUnhiddenElements.Add( textNote ) ;
 
         if ( _document.GetElement( rackNotationModel.EndLineLeaderId ) is { } endLine )
-          hiddenOrUnhiddenElements.Add( endLine) ;
+          hiddenOrUnhiddenElements.Add( endLine ) ;
 
         foreach ( var otherLineId in rackNotationModel.OtherLineIds )
           if ( _document.GetElement( otherLineId ) is { } otherLine )
-            hiddenOrUnhiddenElements.Add( otherLine) ;
+            hiddenOrUnhiddenElements.Add( otherLine ) ;
       }
 
       // Boundary rack
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>()
-        .Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ) ) ;
 
       // Leak
       var leakageSymbolNames = new HashSet<string> { "LeakageZoneCloth", "LeakageZoneColoring", "LeakageZonePvc" } ;
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<FamilyInstance>()
-        .Where( x => leakageSymbolNames.Contains( x.Symbol.Family.Name ) ) ) ;
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>()
-        .Where( x => x.LineStyle.Name == "LeakageZone" ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<FamilyInstance>().Where( x => leakageSymbolNames.Contains( x.Symbol.Family.Name ) ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == "LeakageZone" ) ) ;
 
       HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
@@ -176,7 +163,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       foreach ( var view in views ) {
         if ( view is not ViewPlan ) continue ;
-          
+
         var storageService = new StorageService<Level, DetailSymbolModel>( view.GenLevel ) ;
         foreach ( var detailSymbolItemModel in storageService.Data.DetailSymbolData.Where( detailSymbolItemModel => detailSymbolItemModel != null ) ) {
           hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( t => detailSymbolItemModel.LineUniqueIds.Split( ',' ).Contains( t.UniqueId ) ) ) ;
@@ -186,22 +173,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
-    
+
     private void SetupDisplayPullBox( List<View> views, bool isVisible )
     {
       var hiddenOrUnhiddenElements = new List<Element>() ;
-      
+
       // Pull boxes
       hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) ) ;
-      
+
       // Text notes
-      var labelOfPullBoxIds = _document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( p => p.Data.PullBoxInfoData )
-        .Select( p => p.TextNoteUniqueId ) ;
+      var labelOfPullBoxIds = _document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( p => p.Data.PullBoxInfoData ).Select( p => p.TextNoteUniqueId ) ;
       hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( t => labelOfPullBoxIds.Contains( t.UniqueId ) ) ) ;
-      
+
       HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
-    
+
     private static void HideOrUnhideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
     {
       views.ForEach( v => HideOrUnhideElements( v, isVisible, hiddenOrUnhiddenElements ) ) ;
@@ -229,10 +215,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       var targetRibbonPanel = UIHelper.GetRibbonPanelFromName( "Electrical.App.Panels.Routing.Table".GetAppStringByKeyOrDefault( "Table" ), selectionTab ) ;
       if ( targetRibbonPanel == null ) return ;
-      
+
       foreach ( var ribbonItem in targetRibbonPanel.Source.Items ) {
         if ( ribbonItem is not RibbonSplitButton ribbonSplitButton ) continue ;
-          
+
         foreach ( var rItem in ribbonSplitButton.Items ) {
           if ( rItem is not RibbonButton ribbonButton || ribbonButton.Text != "Electrical.App.Commands.Initialization.CreateDetailTableCommand".GetDocumentStringByKeyOrDefault( document, "Create Detail Table" ) ) continue ;
 
@@ -240,7 +226,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           transaction.Start() ;
           rItem.IsEnabled = isEnable ;
           transaction.Commit() ;
-          
+
           return ;
         }
       }
