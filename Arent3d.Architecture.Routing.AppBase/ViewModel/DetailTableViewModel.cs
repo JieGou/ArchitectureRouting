@@ -6,6 +6,7 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
@@ -18,6 +19,8 @@ using DataGrid = System.Windows.Controls.DataGrid ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
+using Arent3d.Architecture.Routing.Utils ;
+using Arent3d.Revit ;
 using MoreLinq ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 using TextBox = System.Windows.Controls.TextBox ;
@@ -315,7 +318,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ! _selectedDetailTableItemRows.Any() || ! _selectedDetailTableItemRowsSummary.Any() ) return ;
       var selectedDetailTableRow = _selectedDetailTableItemRows.Last() ;
       var selectedDetailTableRowSummary = _selectedDetailTableItemRowsSummary.Last() ;
-      AddDetailTableRow(  selectedDetailTableRow, selectedDetailTableRowSummary ) ;
+      AddDetailTableRow( _document,  selectedDetailTableRow, selectedDetailTableRowSummary ) ;
       UpdateDataGridAndRemoveSelectedRow() ;
     }
     
@@ -1102,9 +1105,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return new ObservableCollection<DetailTableItemModel>() ;
     }
 
-    private void AddDetailTableRow(DetailTableItemModel selectDetailTableItemRow, DetailTableItemModel selectDetailTableItemRowSummary )
+    private void AddDetailTableRow(Document document, DetailTableItemModel selectDetailTableItemRow, DetailTableItemModel selectDetailTableItemRowSummary )
     {
       var newDetailTableItemModels = new List<DetailTableItemModel>() ;
+      
+      var routeName = RouteUtil.GetMainRouteName(selectDetailTableItemRow.RouteName);
+      var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, false ) ;
+      var quantity = toConnector?.GetPropertyInt(ElectricalRoutingElementParameter.Quantity).ToString() ?? selectDetailTableItemRow.NumberOfPlumbing;
       
       var newDetailTableItemRow = new DetailTableItemModel( selectDetailTableItemRow.DetailSymbol, selectDetailTableItemRow.DetailSymbolUniqueId, 
         selectDetailTableItemRow.FromConnectorUniqueId, selectDetailTableItemRow.ToConnectorUniqueId, selectDetailTableItemRow.RouteName )
@@ -1114,11 +1121,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         PlumbingItemTypes = selectDetailTableItemRow.PlumbingItemTypes,
         PlumbingSize = selectDetailTableItemRow.PlumbingSize, 
         PlumbingSizes = selectDetailTableItemRow.PlumbingSizes,
-        NumberOfPlumbing = selectDetailTableItemRow.NumberOfPlumbing,
+        NumberOfPlumbing = quantity,
         ConstructionClassification = selectDetailTableItemRow.ConstructionClassification,
         SignalType = selectDetailTableItemRow.SignalType,
         ConstructionItems = selectDetailTableItemRow.ConstructionItems,
         PlumbingItems = selectDetailTableItemRow.PlumbingItems,
+        WireBook = quantity,
         Remark = selectDetailTableItemRow.Remark
       } ;
 

@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.Utils
         public static string GetMainRouteName( string? routeName )
         {
             if ( string.IsNullOrEmpty( routeName ) )
-                throw new ArgumentNullException( nameof( routeName ) ) ;
+                return string.Empty ;
 
             var array = routeName!.Split( SignJoinRouteName ) ;
             if ( array.Length < 2 )
