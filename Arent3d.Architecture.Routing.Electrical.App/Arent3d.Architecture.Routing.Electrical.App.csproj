@@ -106,182 +106,534 @@
         <None Remove="resources\split_schedule_32x32.png" />
         <None Remove="resources\folder_16x16.png" />
         <Resource Include="resources\icon_folder_16x16.png" />
-        <Resource Include="resources\Images\ConnectorOneSide1.png" />
-        <Resource Include="resources\Images\ConnectorOneSide10.png" />
-        <Resource Include="resources\Images\ConnectorOneSide11.png" />
-        <Resource Include="resources\Images\ConnectorOneSide12.png" />
-        <Resource Include="resources\Images\ConnectorOneSide13.png" />
-        <Resource Include="resources\Images\ConnectorOneSide14.png" />
-        <Resource Include="resources\Images\ConnectorOneSide15.png" />
-        <Resource Include="resources\Images\ConnectorOneSide16.png" />
-        <Resource Include="resources\Images\ConnectorOneSide17.png" />
-        <Resource Include="resources\Images\ConnectorOneSide19.png" />
-        <Resource Include="resources\Images\ConnectorOneSide2.png" />
-        <Resource Include="resources\Images\ConnectorOneSide20.png" />
-        <Resource Include="resources\Images\ConnectorOneSide21.png" />
-        <Resource Include="resources\Images\ConnectorOneSide22.png" />
-        <Resource Include="resources\Images\ConnectorOneSide23.png" />
-        <Resource Include="resources\Images\ConnectorOneSide24.png" />
-        <Resource Include="resources\Images\ConnectorOneSide25.png" />
-        <Resource Include="resources\Images\ConnectorOneSide26.png" />
-        <Resource Include="resources\Images\ConnectorOneSide27.png" />
-        <Resource Include="resources\Images\ConnectorOneSide28.png" />
-        <Resource Include="resources\Images\ConnectorOneSide29.png" />
-        <Resource Include="resources\Images\ConnectorOneSide30.png" />
-        <Resource Include="resources\Images\ConnectorOneSide31.png" />
-        <Resource Include="resources\Images\ConnectorOneSide32.png" />
-        <Resource Include="resources\Images\ConnectorOneSide33.png" />
-        <Resource Include="resources\Images\ConnectorOneSide34.png" />
-        <Resource Include="resources\Images\ConnectorOneSide35.png" />
-        <Resource Include="resources\Images\ConnectorOneSide36.png" />
-        <Resource Include="resources\Images\ConnectorOneSide37.png" />
-        <Resource Include="resources\Images\ConnectorOneSide5.png" />
-        <Resource Include="resources\Images\ConnectorOneSide6.png" />
-        <Resource Include="resources\Images\ConnectorOneSide7.png" />
-        <Resource Include="resources\Images\ConnectorOneSide8.png" />
-        <Resource Include="resources\Images\ConnectorOneSide9.png" />
-        <Resource Include="resources\2D Symbol DWG\1.dwg" />
-        <Resource Include="resources\2D Symbol DWG\2.dwg" />
-        <Resource Include="resources\2D Symbol DWG\3.dwg" />
-        <Resource Include="resources\2D Symbol DWG\4.dwg" />
-        <Resource Include="resources\2D Symbol DWG\5.dwg" />
-        <Resource Include="resources\2D Symbol DWG\6.dwg" />
-        <Resource Include="resources\2D Symbol DWG\7.dwg" />
-        <Resource Include="resources\2D Symbol DWG\8.dwg" />
-        <Resource Include="resources\2D Symbol DWG\9.dwg" />
-        <Resource Include="resources\2D Symbol DWG\10.dwg" />
-        <Resource Include="resources\2D Symbol DWG\11.dwg" />
-        <Resource Include="resources\2D Symbol DWG\12.dwg" />
-        <Resource Include="resources\2D Symbol DWG\13.dwg" />
-        <Resource Include="resources\2D Symbol DWG\14.dwg" />
-        <Resource Include="resources\2D Symbol DWG\15.dwg" />
-        <Resource Include="resources\2D Symbol DWG\16.dwg" />
-        <Resource Include="resources\2D Symbol DWG\17.dwg" />
-        <Resource Include="resources\2D Symbol DWG\18.dwg" />
-        <Resource Include="resources\2D Symbol DWG\19.dwg" />
-        <Resource Include="resources\2D Symbol DWG\20.dwg" />
-        <Resource Include="resources\2D Symbol DWG\21.dwg" />
-        <Resource Include="resources\2D Symbol DWG\22.dwg" />
-        <Resource Include="resources\2D Symbol DWG\23.dwg" />
-        <Resource Include="resources\2D Symbol DWG\24.dwg" />
-        <Resource Include="resources\2D Symbol DWG\25.dwg" />
-        <Resource Include="resources\2D Symbol DWG\26.dwg" />
-        <Resource Include="resources\2D Symbol DWG\27.dwg" />
-        <Resource Include="resources\2D Symbol DWG\28.dwg" />
-        <Resource Include="resources\2D Symbol DWG\29.dwg" />
-        <Resource Include="resources\2D Symbol DWG\30.dwg" />
-        <Resource Include="resources\2D Symbol DWG\31.dwg" />
-        <Resource Include="resources\2D Symbol DWG\32.dwg" />
-        <Resource Include="resources\2D Symbol DWG\33.dwg" />
-        <Resource Include="resources\2D Symbol DWG\34.dwg" />
-        <Resource Include="resources\2D Symbol DWG\35.dwg" />
-        <Resource Include="resources\2D Symbol DWG\36.dwg" />
-        <Resource Include="resources\2D Symbol DWG\37.dwg" />
-        <Resource Include="resources\2D Symbol DWG\38.dwg" />
-        <Resource Include="resources\2D Symbol DWG\39.dwg" />
-        <Resource Include="resources\2D Symbol DWG\40.dwg" />
-        <Resource Include="resources\2D Symbol DWG\41.dwg" />
-        <Resource Include="resources\2D Symbol DWG\42.dwg" />
-        <Resource Include="resources\2D Symbol DWG\43.dwg" />
-        <Resource Include="resources\2D Symbol DWG\44.dwg" />
-        <Resource Include="resources\2D Symbol DWG\45.dwg" />
-        <Resource Include="resources\2D Symbol DWG\46.dwg" />
-        <Resource Include="resources\2D Symbol DWG\47.dwg" />
-        <Resource Include="resources\2D Symbol DWG\48.dwg" />
-        <Resource Include="resources\2D Symbol DWG\49.dwg" />
-        <Resource Include="resources\2D Symbol DWG\50.dwg" />
-        <Resource Include="resources\2D Symbol DWG\51.dwg" />
-        <Resource Include="resources\2D Symbol DWG\52.dwg" />
-        <Resource Include="resources\2D Symbol DWG\53.dwg" />
-        <Resource Include="resources\2D Symbol DWG\54.dwg" />
-        <Resource Include="resources\2D Symbol DWG\55.dwg" />
-        <Resource Include="resources\2D Symbol DWG\56.dwg" />
-        <Resource Include="resources\2D Symbol DWG\57.dwg" />
-        <Resource Include="resources\2D Symbol DWG\58.dwg" />
-        <Resource Include="resources\2D Symbol DWG\59.dwg" />
-        <Resource Include="resources\2D Symbol DWG\60.dwg" />
-        <Resource Include="resources\2D Symbol DWG\61.dwg" />
-        <Resource Include="resources\2D Symbol DWG\62.dwg" />
-        <Resource Include="resources\2D Symbol DWG\63.dwg" />
-        <Resource Include="resources\2D Symbol DWG\64.dwg" />
-        <Resource Include="resources\2D Symbol DWG\65.dwg" />
-        <Resource Include="resources\2D Symbol DWG\66.dwg" />
-        <Resource Include="resources\2D Symbol DWG\67.dwg" />
-        <Resource Include="resources\2D Symbol DWG\68.dwg" />
-        <Resource Include="resources\2D Symbol DWG\69.dwg" />
-        <Resource Include="resources\2D Symbol DWG\70.dwg" />
-        <Resource Include="resources\2D Symbol DWG\71.dwg" />
-        <Resource Include="resources\2D Symbol DWG\72.dwg" />
-        <Resource Include="resources\2D Symbol DWG\73.dwg" />
-        <Resource Include="resources\2D Symbol DWG\74.dwg" />
-        <Resource Include="resources\2D Symbol DWG\75.dwg" />
-        <Resource Include="resources\2D Symbol DWG\76.dwg" />
-        <Resource Include="resources\2D Symbol DWG\77.dwg" />
-        <Resource Include="resources\2D Symbol DWG\78.dwg" />
-        <Resource Include="resources\2D Symbol DWG\79.dwg" />
-        <Resource Include="resources\2D Symbol DWG\80.dwg" />
-        <Resource Include="resources\2D Symbol DWG\81.dwg" />
-        <Resource Include="resources\2D Symbol DWG\82.dwg" />
-        <Resource Include="resources\2D Symbol DWG\83.dwg" />
-        <Resource Include="resources\2D Symbol DWG\84.dwg" />
-        <Resource Include="resources\2D Symbol DWG\85.dwg" />
-        <Resource Include="resources\2D Symbol DWG\86.dwg" />
-        <Resource Include="resources\2D Symbol DWG\87.dwg" />
-        <Resource Include="resources\2D Symbol DWG\88.dwg" />
-        <Resource Include="resources\2D Symbol DWG\89.dwg" />
-        <Resource Include="resources\2D Symbol DWG\90.dwg" />
-        <Resource Include="resources\2D Symbol DWG\91.dwg" />
-        <Resource Include="resources\2D Symbol DWG\92.dwg" />
-        <Resource Include="resources\2D Symbol DWG\93.dwg" />
-        <Resource Include="resources\2D Symbol DWG\94.dwg" />
-        <Resource Include="resources\2D Symbol DWG\95.dwg" />
-        <Resource Include="resources\2D Symbol DWG\96.dwg" />
-        <Resource Include="resources\2D Symbol DWG\97.dwg" />
-        <Resource Include="resources\2D Symbol DWG\98.dwg" />
-        <Resource Include="resources\2D Symbol DWG\99.dwg" />
-        <Resource Include="resources\2D Symbol DWG\100.dwg" />
-        <Resource Include="resources\2D Symbol DWG\101.dwg" />
-        <Resource Include="resources\2D Symbol DWG\102.dwg" />
-        <Resource Include="resources\2D Symbol DWG\103.dwg" />
-        <Resource Include="resources\2D Symbol DWG\104.dwg" />
-        <Resource Include="resources\2D Symbol DWG\105.dwg" />
-        <Resource Include="resources\2D Symbol DWG\106.dwg" />
-        <Resource Include="resources\2D Symbol DWG\107.dwg" />
-        <Resource Include="resources\2D Symbol DWG\108.dwg" />
-        <Resource Include="resources\2D Symbol DWG\109.dwg" />
-        <Resource Include="resources\2D Symbol DWG\110.dwg" />
-        <Resource Include="resources\2D Symbol DWG\111.dwg" />
-        <Resource Include="resources\2D Symbol DWG\112.dwg" />
-        <Resource Include="resources\2D Symbol DWG\113.dwg" />
-        <Resource Include="resources\2D Symbol DWG\114.dwg" />
-        <Resource Include="resources\2D Symbol DWG\115.dwg" />
-        <Resource Include="resources\2D Symbol DWG\116.dwg" />
-        <Resource Include="resources\2D Symbol DWG\117.dwg" />
-        <Resource Include="resources\2D Symbol DWG\118.dwg" />
-        <Resource Include="resources\2D Symbol DWG\119.dwg" />
-        <Resource Include="resources\2D Symbol DWG\120.dwg" />
-        <Resource Include="resources\2D Symbol DWG\121.dwg" />
-        <Resource Include="resources\2D Symbol DWG\122.dwg" />
-        <Resource Include="resources\2D Symbol DWG\123.dwg" />
-        <Resource Include="resources\2D Symbol DWG\124.dwg" />
-        <Resource Include="resources\2D Symbol DWG\125.dwg" />
-        <Resource Include="resources\2D Symbol DWG\126.dwg" />
-        <Resource Include="resources\2D Symbol DWG\127.dwg" />
-        <Resource Include="resources\2D Symbol DWG\128.dwg" />
-        <Resource Include="resources\2D Symbol DWG\129.dwg" />
-        <Resource Include="resources\2D Symbol DWG\130.dwg" />
-        <Resource Include="resources\2D Symbol DWG\131.dwg" />
-        <Resource Include="resources\2D Symbol DWG\132.dwg" />
-        <Resource Include="resources\2D Symbol DWG\133.dwg" />
-        <Resource Include="resources\2D Symbol DWG\134.dwg" />
-        <Resource Include="resources\2D Symbol DWG\135.dwg" />
-        <Resource Include="resources\2D Symbol DWG\136.dwg" />
-        <Resource Include="resources\2D Symbol DWG\137.dwg" />
-        <Resource Include="resources\2D Symbol DWG\138.dwg" />
-        <Resource Include="resources\2D Symbol DWG\139.dwg" />
-        <Resource Include="resources\2D Symbol DWG\140.dwg" />
-        <Resource Include="resources\2D Symbol DWG\141.dwg" />
-        <Resource Include="resources\2D Symbol DWG\142.dwg" />
+        <None Include="resources\Images\ConnectorOneSide1.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide10.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide11.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide12.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide13.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide14.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide15.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide16.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide17.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide19.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide2.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide20.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide21.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide22.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide23.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide24.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide25.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide26.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide27.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide28.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide29.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide30.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide31.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide32.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide33.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide34.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide35.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide36.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide37.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide5.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide6.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide7.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide8.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\Images\ConnectorOneSide9.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\1.dwg">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\2.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\3.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\4.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\5.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\6.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\7.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\8.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\9.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\10.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\11.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\12.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\13.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\14.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\15.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\16.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\17.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\18.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\19.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\20.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\21.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\22.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\23.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\24.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\25.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\26.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\27.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\28.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\29.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\30.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\31.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\32.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\33.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\34.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\35.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\36.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\37.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\38.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\39.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\40.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\41.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\42.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\43.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\44.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\45.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\46.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\47.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\48.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\49.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\50.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\51.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\52.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\53.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\54.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\55.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\56.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\57.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\58.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\59.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\60.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\61.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\62.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\63.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\64.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\65.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\66.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\67.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\68.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\69.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\70.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\71.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\72.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\73.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\74.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\75.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\76.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\77.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\78.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\79.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\80.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\81.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\82.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\83.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\84.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\85.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\86.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\87.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\88.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\89.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\90.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\91.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\92.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\93.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\94.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\95.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\96.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\97.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\98.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\99.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\100.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\101.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\102.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\103.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\104.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\105.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\106.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\107.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\108.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\109.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\110.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\111.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\112.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\113.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\114.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\115.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\116.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\117.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\118.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\119.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\120.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\121.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\122.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\123.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\124.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\125.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\126.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\127.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\128.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\129.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\130.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\131.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\132.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\133.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\134.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\135.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\136.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\137.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\138.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\139.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\140.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\141.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="resources\2D Symbol DWG\142.dwg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
