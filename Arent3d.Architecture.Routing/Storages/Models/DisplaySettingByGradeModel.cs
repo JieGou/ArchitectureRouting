@@ -13,8 +13,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       PullBox = new DisplaySettingByGradeItemModel() ;
     }
 
-    public DisplaySettingByGradeModel( string? gradeMode, DisplaySettingByGradeItemModel? wiring,
-      DisplaySettingByGradeItemModel? detailSymbol, DisplaySettingByGradeItemModel? pullBox )
+    public DisplaySettingByGradeModel( string? gradeMode, DisplaySettingByGradeItemModel? wiring, DisplaySettingByGradeItemModel? detailSymbol, DisplaySettingByGradeItemModel? pullBox )
     {
       GradeMode = gradeMode ?? string.Empty ;
       Wiring = wiring ?? new DisplaySettingByGradeItemModel() ;
