@@ -531,7 +531,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var newDetailTableItems = new List<DetailTableItemModel>() ;
       foreach ( var detailTableItemModel in detailTableItemModels ) {
-        // const int plumbingCount = 1 ;
         var oldDetailTableItems = detailTableData.Where( d => GetKeyRouting(d) == GetKeyRouting( detailTableItemModel ) && d.RouteName == detailTableItemModel.RouteName ).ToList() ;
         if ( ! oldDetailTableItems.Any() ) {
           if ( isFromCreateDetailTable && ! string.IsNullOrEmpty( detailTableItemModel.PlumbingType ) ) plumbingType = detailTableItemModel.PlumbingType ;
@@ -544,7 +543,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ?? conduitsModels.Last() ;
 
           detailTableItemModel.PlumbingType = plumbing.PipingType ;
-          // detailTableItemModel.NumberOfPlumbing = plumbingCount.ToString() ;
           detailTableItemModel.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( detailTableItemModel, false ) ;
           detailTableItemModel.IsParentRoute = true ;
           detailTableItemModel.IsReadOnly = false ;
@@ -556,7 +554,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         else {
           var oldDetailTableRow = oldDetailTableItems.First() ;
           detailTableItemModel.PlumbingType = oldDetailTableRow.PlumbingType ;
-          // detailTableItemModel.NumberOfPlumbing = oldDetailTableRow.NumberOfPlumbing ;
           detailTableItemModel.PlumbingIdentityInfo = oldDetailTableRow.PlumbingIdentityInfo ;
           detailTableItemModel.IsParentRoute = oldDetailTableRow.IsParentRoute ;
           detailTableItemModel.IsReadOnly = oldDetailTableRow.IsReadOnly ;
