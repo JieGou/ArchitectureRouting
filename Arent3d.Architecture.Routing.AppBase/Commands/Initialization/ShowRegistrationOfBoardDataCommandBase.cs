@@ -48,20 +48,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
             familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
             familyInstanceFromToPower.SetProperty(ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ?? string.Empty);
-            var elevationParameter = elementFromToPower.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ) ;
-            elevationParameter?.Set( 0.0 ) ;
+            elementFromToPower.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM )?.Set( 0.0 ) ;
           }
 
-          if ( elementConnectorPower is FamilyInstance familyInstanceConnectorPower ) {
-            familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
-            familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
-            familyInstanceConnectorPower.SetProperty(ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ?? string.Empty);
-            familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
-            
-            var deviceSymbolTagType = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ElectricalFixtureContentTag ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-            IndependentTag.Create( uiDocument.Document, deviceSymbolTagType.Id, uiDocument.Document.ActiveView.Id, new Reference( familyInstanceConnectorPower ), false, TagOrientation.Horizontal, new XYZ(selectedPoint.X, selectedPoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * uiDocument.ActiveView.Scale, heightOfConnector) ) ;
-          }
+          if ( elementConnectorPower is not FamilyInstance familyInstanceConnectorPower ) 
+            return Result.Succeeded ;
           
+          familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
+          familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
+          familyInstanceConnectorPower.SetProperty(ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ?? string.Empty);
+          familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
+          familyInstanceConnectorPower.SetProperty(ElectricalRoutingElementParameter.Quantity, 1);
+            
+          var familyTag = familyInstanceConnectorPower.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.ElectricalFixtureContentTag : ElectricalRoutingFamilyType.ElectricalEquipmentContentTag ;
+          var tagType = uiDocument.Document.GetFamilySymbols( familyTag ).FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ?? throw new InvalidOperationException() ;
+          IndependentTag.Create( uiDocument.Document, tagType.Id, uiDocument.Document.ActiveView.Id, new Reference( familyInstanceConnectorPower ), false, TagOrientation.Horizontal, new XYZ(selectedPoint.X, selectedPoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * uiDocument.ActiveView.Scale, heightOfConnector) ) ;
+
           return Result.Succeeded ;
         } ) ;
 

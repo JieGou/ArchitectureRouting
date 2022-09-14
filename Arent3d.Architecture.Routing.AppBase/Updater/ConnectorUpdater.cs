@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -25,18 +26,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                 var uiDocument = new UIDocument( document ) ;
                 if(uiDocument.Selection.GetElementIds().Count == 0)
                     return;
-                
-                var tagTypes = document.GetFamilySymbols( ElectricalRoutingFamilyType.ElectricalFixtureContentTag ).ToList() ;
-                if(!tagTypes.Any())
-                    return;
-                
-                var hideQuantityType = tagTypes.FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ;
-                if(null == hideQuantityType)
-                    return;
-                
-                var showQuantityType = tagTypes.FirstOrDefault( x => x.LookupParameter( "Is Show Quantity" ).AsInteger() == 1 ) ;
-                if(null == showQuantityType)
-                    return;
 
                 var elementIdSelecteds = uiDocument.Selection.GetElementIds() ;
                 if ( updaterData.GetModifiedElementIds().Count == 0 ) 
@@ -50,31 +39,44 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                 if(!elements.Any())
                     return;
                     
-                var familyName = ElectricalRoutingFamilyType.ElectricalFixtureContentTag.GetFamilyName() ;
-                var removeElements = new List<ElementId>() ;
                 foreach ( var element in elements.Where( element => element.HasParameter(ElectricalRoutingElementParameter.Quantity) ) ) {
-                    var tag = element.GetTagsFromElement().FirstOrDefault( x =>
+                    var tagFamily = element.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.ElectricalFixtureContentTag : ElectricalRoutingFamilyType.ElectricalEquipmentContentTag ;
+                    
+                    var familyTagName = tagFamily.GetFamilyName() ;
+                    var tag = element.GetIndependentTagsFromElement().FirstOrDefault( x =>
                     {
                         if ( document.GetElement( x.GetTypeId() ) is not FamilySymbol type )
                             return false ;
 
-                        return type.FamilyName == familyName ;
+                        return type.FamilyName == familyTagName ;
                     }) ;
                     if(null == tag)
                         continue;
                     
-                    var quantity = element.GetPropertyString( ElectricalRoutingElementParameter.Quantity ) ;
-                    if ( int.TryParse( quantity, out var value ) && value >= 0) {
-                        tag.ChangeTypeId( showQuantityType.Id ) ;
+                    var tagTypes = document.GetFamilySymbols( tagFamily ).EnumerateAll() ;
+                    var showQuantityTagType = tagTypes.FirstOrDefault( x => x.LookupParameter( "Is Show Quantity" ).AsInteger() == 1 ) ;
+                    if(null == showQuantityTagType)
+                        continue;
+                    
+                    var hideQuantityTagType = tagTypes.FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ;
+                    if(null == hideQuantityTagType)
+                        return;
+                    
+                    if ( element.TryGetProperty( ElectricalRoutingElementParameter.Quantity, out int quantity ) && quantity >= 0) {
+                        switch ( quantity ) {
+                            case 1 :
+                                tag.ChangeTypeId( hideQuantityTagType.Id ) ;
+                                break;
+                            default :
+                                tag.ChangeTypeId( showQuantityTagType.Id ) ;
+                                break;
+                        }
                     }
                     else {
-                        element.SetProperty( ElectricalRoutingElementParameter.Quantity, string.Empty );
-                        tag.ChangeTypeId( hideQuantityType.Id ) ;
+                        element.SetProperty( ElectricalRoutingElementParameter.Quantity, 1 );
+                        tag.ChangeTypeId( hideQuantityTagType.Id ) ;
                     }
                 }
-
-                if ( removeElements.Any() )
-                    document.Delete( removeElements ) ;
 
                 uiDocument.Selection.SetElementIds(new List<ElementId>());
             }

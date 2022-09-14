@@ -131,14 +131,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
           if ( ! string.IsNullOrEmpty( deviceSymbol ) ) familyInstance.SetProperty( ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ) ;
-          familyInstance.SetProperty(ElectricalRoutingElementParameter.Quantity, string.Empty);
+          familyInstance.SetProperty(ElectricalRoutingElementParameter.Quantity, 1);
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
         if ( ! string.IsNullOrEmpty( deviceSymbol ) ) {
-          var symbolContentTag = element.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.ElectricalFixtureContentTag : ElectricalRoutingFamilyType.ElectricalEquipmentContentTag ;
-          var deviceSymbolTagType = doc.GetFamilySymbols( symbolContentTag ).FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ?? throw new InvalidOperationException() ;
-          IndependentTag.Create( doc, deviceSymbolTagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ( point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z ) ) ;
+          var familyTag = element.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.ElectricalFixtureContentTag : ElectricalRoutingFamilyType.ElectricalEquipmentContentTag ;
+          var tagType = doc.GetFamilySymbols( familyTag ).FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ?? throw new InvalidOperationException() ;
+          IndependentTag.Create( doc, tagType.Id, doc.ActiveView.Id, new Reference( element ), false, TagOrientation.Horizontal, new XYZ( point.X, point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * doc.ActiveView.Scale, point.Z ) ) ;
         }
 
         var connectorUpdater = new ConnectorUpdater( doc.Application.ActiveAddInId ) ;

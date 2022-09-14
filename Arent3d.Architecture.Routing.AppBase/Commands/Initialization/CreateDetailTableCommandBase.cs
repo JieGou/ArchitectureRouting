@@ -837,8 +837,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var element = pickedObjects.FirstOrDefault( p => p.UniqueId == detailSymbolItemModel.ConduitUniqueId ) ;
       var routeName = RouteUtil.GetMainRouteName(element?.GetRouteName());
       var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName, false ) ;
-      var value = toConnector?.GetPropertyString(ElectricalRoutingElementParameter.Quantity);
-      var quantity = string.IsNullOrEmpty( value ) ? 1 : int.Parse( value ) ;
+      var quantity = toConnector?.GetPropertyInt(ElectricalRoutingElementParameter.Quantity) ?? 1;
       var floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
       var constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
       var isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
