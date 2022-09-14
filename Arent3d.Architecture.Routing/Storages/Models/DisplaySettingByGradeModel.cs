@@ -34,8 +34,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     [Field( Documentation = "Pull Box" )]
     public DisplaySettingByGradeItemModel PullBox { get ; set ; }
 
-    public DisplaySettingByGradeModel Clone() => new ( GradeMode, new DisplaySettingByGradeItemModel( Wiring.IsEnabled, Wiring.IsVisible ), 
-      new DisplaySettingByGradeItemModel( DetailSymbol.IsEnabled, DetailSymbol.IsVisible ), new DisplaySettingByGradeItemModel( PullBox.IsEnabled, PullBox.IsVisible ) ) ;
+    public DisplaySettingByGradeModel Clone() => new ( GradeMode, new DisplaySettingByGradeItemModel( Wiring.IsEnabled, Wiring.IsVisible ), new DisplaySettingByGradeItemModel( DetailSymbol.IsEnabled, DetailSymbol.IsVisible ), new DisplaySettingByGradeItemModel( PullBox.IsEnabled, PullBox.IsVisible ) ) ;
   }
 
   [Schema( "3D28724A-D093-47F8-AF6A-A7510C6C1667", nameof( DisplaySettingByGradeItemModel ) )]
