@@ -2,7 +2,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.StorableConverter ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using InvalidOperationException = Autodesk.Revit.Exceptions.InvalidOperationException ;
@@ -72,19 +71,6 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new OffsetSettingStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get register symbol settings data from snoop DB.
-    /// </summary>
-    public static RegisterSymbolStorable GetRegisterSymbolStorable( this Document document )
-    {
-      try {
-        return RegisterSymbolStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( RegisterSymbolStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new RegisterSymbolStorable( document ) ;
       }
     }
 

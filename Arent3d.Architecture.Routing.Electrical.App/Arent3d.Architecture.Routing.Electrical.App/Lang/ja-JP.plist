@@ -452,6 +452,8 @@
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
         <string>M_電線管エルボ - 鉄鋼</string>
+        <key>Routing.Revit.DummyConduit.Radius50ElbowTypeName</key>
+        <string>M_電線管エルボ - 鉄鋼 - 曲げ半径50mm - Arent</string>
         <key>Routing.Revit.DummyConduit.ConduitTypeName</key>
         <string>Arent電線</string>
 

@@ -133,8 +133,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 transaction.Start( "Set element property" ) ;
                 
                 var listApplyElement = new List<Element>() ;
-                listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
-                listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(UiDocument.Document, elementList) );
+                listApplyElement.AddRange( elementList.Where( x => x.Category.GetBuiltInCategory() is not ( BuiltInCategory.OST_Conduit or BuiltInCategory.OST_ConduitFitting ) ) ) ;
+                listApplyElement.AddRange( ConduitUtil.GetConduitRelated( UiDocument.Document, elementList ) ) ;
                 SetConstructionItemForElements( listApplyElement, categoryName ) ;
                 ConfirmUnsetCommandBase.ResetElementColor( listApplyElement ) ;
                 
@@ -226,8 +226,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       transaction.Start( "Set Parameter Value" ) ;
 
       var listApplyElement = new List<Element>() ;
-      listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
-      listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(document, elementList) );
+      listApplyElement.AddRange( elementList.Where( x => x.Category.GetBuiltInCategory() is not ( BuiltInCategory.OST_Conduit or BuiltInCategory.OST_ConduitFitting ) ) ) ;
+      listApplyElement.AddRange( ConduitUtil.GetConduitRelated( document, elementList ) ) ;
       foreach ( var element in listApplyElement ) {
         element.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? oldConstructionItem ) ;
         oldConstructionItem ??= string.Empty ;
