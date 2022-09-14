@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         Name="DisplaySettingByGrade"
         mc:Ignorable="d"
-        Title="グレード変更時の表示設定" Height="270" Width="400"
+        Title="グレード変更時の表示設定" Height="280" Width="370"
         WindowStartupLocation="CenterScreen"
         VerticalAlignment="Center"
         d:DataContext="{d:DesignInstance {x:Type local:DesignDisplaySettingByGradeViewModel}, IsDesignTimeCreatable=True}">
@@ -47,12 +47,12 @@
                               Margin="30 10 0 0" FontSize="13" />
                     <CheckBox HorizontalAlignment="Left" IsEnabled="{Binding SelectedGradeModel.PullBox.IsEnabled}"
                               IsChecked="{Binding SelectedGradeModel.PullBox.IsVisible}" Content="プルボックス"
-                              Margin="30 10 0 0" FontSize="13" />
+                              Margin="30 10 0 15" FontSize="13" />
                 </StackPanel>
             </GroupBox>
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0 10 40 0" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0 10 20 0" HorizontalAlignment="Right">
             <Button
                 Content="OK"
                 Command="{Binding ExecuteCommand}"
