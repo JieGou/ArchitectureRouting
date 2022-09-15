@@ -555,7 +555,7 @@
         <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
         <string>Pick Up&#xA;Number Setting</string>
 
-        <key>Electrical.App.Commands.Initialization.DisplaySettingByGradeCommand</key>
-        <string>Display Setting&#xA;By Grade</string>
+        <key>Electrical.App.Commands.Initialization.DisplaySettingCommand</key>
+        <string>Display Setting</string>
     </dict>
 </plist>

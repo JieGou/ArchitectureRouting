@@ -10,75 +10,35 @@ using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Windows ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
-  public class DisplaySettingByGradeViewModel : NotifyPropertyChanged
+  public class DisplaySettingViewModel : NotifyPropertyChanged
   {
-    private const string GradeMode1Or2 = "1~2" ;
-
-    private readonly StorageService<DataStorage, DisplaySettingByGradeModel> _displaySettingByGradeStorageService ;
+    private readonly StorageService<DataStorage, DisplaySettingModel> _displaySettingByGradeStorageService ;
 
     private readonly Document _document ;
 
-    private List<DisplaySettingByGradeModel> _dataDisplaySettingByGradeModel ;
+    private DisplaySettingModel _dataDisplaySettingModel ;
 
-    private DisplaySettingByGradeModel _selectedGradeModel ;
-
-    public DisplaySettingByGradeViewModel( Document document )
+    public DisplaySettingViewModel( Document document )
     {
       _document = document ;
-      _dataDisplaySettingByGradeModel = new List<DisplaySettingByGradeModel>
-      {
-        new(GradeMode1Or2, new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false )),
-        new("3", new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false )),
-        new("4", new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true )),
-        new("5", new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true )),
-        new("6", new DisplaySettingByGradeItemModel( false ), new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true )),
-        new("7", new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true ), new DisplaySettingByGradeItemModel( true ))
-      } ;
-
-      var dataStorage = document.FindOrCreateDataStorage<DisplaySettingByGradeModel>( false ) ;
-      _displaySettingByGradeStorageService = new StorageService<DataStorage, DisplaySettingByGradeModel>( dataStorage ) ;
-
-      var gradeDisplayMode = _displaySettingByGradeStorageService.Data.GradeMode ;
-      if ( string.IsNullOrEmpty( gradeDisplayMode ) ) {
-        var defaultSettingStorable = _document.GetDefaultSettingStorable() ;
-        gradeDisplayMode = defaultSettingStorable.GradeSettingData.GradeMode switch
-        {
-          1 or 2 => GradeMode1Or2,
-          _ => defaultSettingStorable.GradeSettingData.GradeMode.ToString()
-        } ;
-      }
-      else {
-        var index = _dataDisplaySettingByGradeModel.FindIndex( d => d.GradeMode == gradeDisplayMode ) ;
-        if ( index != -1 )
-          _dataDisplaySettingByGradeModel[ index ] = _displaySettingByGradeStorageService.Data.Clone() ;
-      }
-
-      // Set default value for grade selection
-      _selectedGradeModel = _dataDisplaySettingByGradeModel.Find( d => d.GradeMode == gradeDisplayMode ) ?? new DisplaySettingByGradeModel() ;
+      var dataStorage = document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+      _displaySettingByGradeStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+      _dataDisplaySettingModel = _displaySettingByGradeStorageService.Data.Clone() ;
     }
 
-    public List<DisplaySettingByGradeModel> DataDisplaySettingByGradeModel
+    public DisplaySettingModel DataDisplaySettingModel
     {
-      get => _dataDisplaySettingByGradeModel ;
+      get => _dataDisplaySettingModel ;
       set
       {
-        _dataDisplaySettingByGradeModel = value ;
-        OnPropertyChanged() ;
-      }
-    }
-
-    public DisplaySettingByGradeModel SelectedGradeModel
-    {
-      get => _selectedGradeModel ;
-      set
-      {
-        _selectedGradeModel = value ;
+        _dataDisplaySettingModel = value ;
         OnPropertyChanged() ;
       }
     }
@@ -102,9 +62,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
       setupTransaction.Start() ;
 
-      SetupDisplayWiring( views, SelectedGradeModel.Wiring.IsVisible ) ;
-      SetupDisplayDetailSymbol( views, SelectedGradeModel.DetailSymbol.IsVisible ) ;
-      SetupDisplayPullBox( views, SelectedGradeModel.PullBox.IsVisible ) ;
+      SetupDisplayWiring( views, _dataDisplaySettingModel.IsWiringVisible ) ;
+      SetupDisplayDetailSymbol( views, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
+      SetupDisplayPullBox( views, _dataDisplaySettingModel.IsPullBoxVisible ) ;
+      SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
 
       setupTransaction.Commit() ;
 
@@ -112,7 +73,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       SaveDisplaySettingByGradeStorageService() ;
 
-      UpdateIsEnableButton( _document, SelectedGradeModel.DetailSymbol.IsVisible ) ;
+      UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
 
       transactionGroup.Commit() ;
 
@@ -188,6 +149,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
+    private void SetupDisplaySchedule( List<View> views, bool isVisible )
+    {
+      // Schedules
+      var hiddenOrUnhiddenElements = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ScheduleGraphics ).Where( sg => views.Any( lv => lv.Id == sg.OwnerViewId ) ).EnumerateAll() ;
+      HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+    }
+
+
     private static void HideOrUnhideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
     {
       views.ForEach( v => HideOrUnhideElements( v, isVisible, hiddenOrUnhiddenElements ) ) ;
@@ -236,7 +205,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       using Transaction transaction = new(_document, "Save Display Setting By Grade") ;
       transaction.Start() ;
-      _displaySettingByGradeStorageService.Data = _selectedGradeModel ;
+      _displaySettingByGradeStorageService.Data = _dataDisplaySettingModel ;
       _displaySettingByGradeStorageService.SaveChange() ;
       transaction.Commit() ;
     }

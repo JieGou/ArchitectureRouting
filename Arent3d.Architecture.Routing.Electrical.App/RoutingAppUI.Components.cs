@@ -109,8 +109,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
-          [Button( typeof( DisplaySettingByGradeCommand ), OnlyInitialized = true )]
-          private static class DisplaySettingByGradeButton
+          [Button( typeof( DisplaySettingCommand ), OnlyInitialized = true )]
+          private static class DisplaySettingButton
           {
           }
         }

@@ -5,14 +5,14 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public abstract class DisplaySettingByGradeCommandBase : IExternalCommand
+  public abstract class DisplaySettingCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
 
-      var viewModel = new DisplaySettingByGradeViewModel( document ) ;
-      var dialog = new DisplaySettingByGradeDialog( viewModel ) ;
+      var viewModel = new DisplaySettingViewModel( document ) ;
+      var dialog = new DisplaySettingDialog( viewModel ) ;
 
       dialog.ShowDialog() ;
       return dialog.DialogResult == false ? Result.Cancelled : Result.Succeeded ;
