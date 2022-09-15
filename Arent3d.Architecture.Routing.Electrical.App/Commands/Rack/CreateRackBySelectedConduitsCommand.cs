@@ -115,13 +115,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       document.ResolveOverlapCases( racksAndFittings ) ;
 
       // create boundary detail lines
-      var rackMap = CreateRackMap( uiResult.Value.RouteName, racksAndFittings ) ;
-      NewLimitRackCommandBase.DrawRackBoundaryLines( document, new[] { rackMap }, true ) ;
-      
-      // create annotations for racks
+      // var rackMap = CreateRackMap( uiResult.Value.RouteName, racksAndFittings ) ;
+      // NewLimitRackCommandBase.DrawRackBoundaryLines( document, new[] { rackMap }, true ) ;
+      //
+      // // create annotations for racks
       NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racksAndFittings ) ;
+      
+      foreach ( var item in racksAndFittings ) {
+        item.SetProperty( "ラックの倍率", document.ActiveView.Scale / 100 ) ;
+        item.HideConnectedEdgesOfRack();
+      }
 
-        createRackTransaction.Commit() ;
+      createRackTransaction.Commit() ;
       return Result.Succeeded ;
     }
 

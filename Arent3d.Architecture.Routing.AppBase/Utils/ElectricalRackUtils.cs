@@ -293,5 +293,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       deletedRacks.ForEach( r => racks.Remove( r ) ) ;
       document.Delete( idsToRemove ) ;
     }
+
+    public static void HideConnectedEdgesOfRack( this FamilyInstance rack )
+    {
+      if ( ! rack.IsRack() || Get2Connector( rack ) is not { Connector1: { } startConnector, Connector2: { } endConnector } )
+        return ;
+
+      var tf = rack.GetTransform() ;
+      if ( startConnector.Origin.DistanceTo( tf.Origin ) > endConnector.Origin.DistanceTo( tf.Origin ) )
+        ( startConnector, endConnector ) = ( endConnector, startConnector ) ;
+
+      rack.SetProperty( "起点の表示" , ! startConnector.IsConnected );
+      rack.SetProperty( "終点の表示" , ! endConnector.IsConnected );
+    }
   }
 }
