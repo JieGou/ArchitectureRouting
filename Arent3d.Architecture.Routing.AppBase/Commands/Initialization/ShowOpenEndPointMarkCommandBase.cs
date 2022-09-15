@@ -66,6 +66,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                    throw new InvalidOperationException() ;
       foreach ( var connector in missingConnectors )
         GenerateOpenEndPointMark( document, symbol, connector ) ;
+      
+      var openEndPointMarkInstanceIds = GetExistedOpenEndPointMarkInstanceIds( document ) ;
+      HideOpenEndPointMarksIn3DView( document, openEndPointMarkInstanceIds ) ;
     }
 
     private static void GenerateOpenEndPointMark( Document document, FamilySymbol symbol, Connector connector )
@@ -75,7 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       symbol.Instantiate( new XYZ( connector.Origin.X, connector.Origin.Y, height ), level,
         StructuralType.NonStructural ) ;
     }
-
+    
     private static bool IsMissingConnector( IEnumerable<Element> allConnectors, Element conduit, bool isFrom )
     {
       var endPoint = conduit.GetNearestEndPoints( isFrom ).FirstOrDefault() ;
@@ -98,6 +101,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var openEndPointMarkInstanceIds = GetExistedOpenEndPointMarkInstanceIds( document ) ;
       if ( openEndPointMarkInstanceIds.Count > 0 )
         document.Delete( openEndPointMarkInstanceIds ) ;
+    }
+    
+    private static void HideOpenEndPointMarksIn3DView( Document document, ICollection<ElementId> conduitIds )
+    { 
+      var views = document.GetAllElements<View>().Where( v => v is View3D ) ;
+      foreach ( var view in views ) {
+        view.HideElements( conduitIds ) ;
+      }
     }
   }
 }
