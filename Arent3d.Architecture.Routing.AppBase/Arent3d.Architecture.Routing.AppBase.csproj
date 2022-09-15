@@ -119,6 +119,8 @@
     <Resource Include="resources\icon_cancel.ico" />
     <None Remove="resources\icon_ok.ico" />
     <Resource Include="resources\icon_ok.ico" />
+    <Resource Include="resources\img_counter_clockwise.png" />
+    <Resource Include="resources\img_clockwise.png" />
   </ItemGroup>
 
 </Project>

@@ -39,6 +39,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
+    private static bool IsClockWise( XYZ p1, XYZ p2, XYZ p3 )
+    {
+      var v12 = p2 - p1 ;
+      var v13 = p3 - p1 ;
+      return v12.CrossProduct( v13 ).Z < 0 ;
+    }
     protected override OperationResult<LeakState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       UIApplication uiApp = commandData.Application ;
@@ -47,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         var routingExecutor = GetRoutingExecutor() ;
 
-        var sv = new LeakRouteDialog() ;
+        var sv = new LeakRouteDialog( GetAddInType() == AddInType.Electrical ) ;
         sv.ShowDialog() ;
         if ( true != sv.DialogResult ) return OperationResult<LeakState>.Cancelled ;
 
@@ -66,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           XYZ prevPoint = fromPickResult.GetOrigin() ;
           
           // modeless dialog to determine OK・Cancel action
-          ModelessOkCancelDialog dlg = new ModelessOkCancelDialog() ;
+          var dlg = new ModelessOkCancelDialog() ;
           dlg.AlignToView(uiApp.ActiveUIDocument.GetActiveUIView());
           dlg.Show();
           dlg.FocusRevit();
@@ -100,15 +106,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else {
           var isHasParameterWidth = fromConnector.HasParameter( "W" ) ;
           var fromConnectorWidth = ( isHasParameterWidth ? fromConnector.ParametersMap.get_Item( "W" ).AsDouble() : DefaultWidthJBoxConnector ) * 1.5 ;
-          if ( ! DrawingPreviewRectangleWhenLeakingInRectangleMode( uiApp, fromPoint, out var secondPoint ) ) return OperationResult<LeakState>.Cancelled ;
+          if ( ! DrawingPreviewRectangleWhenLeakingInRectangleMode( uiApp, fromPoint, out var secondPoint ) || secondPoint == null ) return OperationResult<LeakState>.Cancelled ;
           var mpt = ( fromPoint + secondPoint ) * 0.5 ;
           var currView = document.ActiveView ;
           var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
           var mirrorMat = Transform.CreateReflection( plane ) ;
           var firstPoint = mirrorMat.OfPoint( fromPoint ) ;
           var thirdPoint = mirrorMat.OfPoint( secondPoint ) ;
-          var lastPoint = fromPoint.Y > secondPoint?.Y ? new XYZ( fromPoint.X, fromPoint.Y - fromConnectorWidth, fromPoint.Z ) : new XYZ( fromPoint.X, fromPoint.Y + fromConnectorWidth, fromPoint.Z ) ;
-          pickPoints = new List<XYZ>() { firstPoint, secondPoint!, thirdPoint, lastPoint } ;
+          
+          // correspond to direction setting of rectangle mode
+          if ( sv.IsRecModeClockWise != IsClockWise( firstPoint, secondPoint, thirdPoint ) )
+            ( firstPoint, thirdPoint ) = ( thirdPoint, firstPoint ) ;
+          var vThirdToLastOnPlan = new XYZ( fromPoint.X - thirdPoint.X, fromPoint.Y - thirdPoint.Y, 0 ).Normalize() ;
+          var lastPoint = fromPoint - vThirdToLastOnPlan * fromConnectorWidth ;
+          pickPoints = new List<XYZ>() { firstPoint, secondPoint, thirdPoint, lastPoint } ;
         }
 
         var count = pickPoints.Count() ;
