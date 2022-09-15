@@ -399,7 +399,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     {
       const string folderName = "2D Symbol DWG" ;
       string directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
-      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
+      var resourcesPath = Path.Combine( directory, "resources" ) ;
       var fileName = dwgNumber + ".dwg" ;
       return Path.Combine( resourcesPath, folderName, fileName ) ;
     }
