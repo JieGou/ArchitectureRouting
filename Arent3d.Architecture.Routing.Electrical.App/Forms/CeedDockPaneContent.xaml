@@ -8,7 +8,7 @@
              xmlns:model="clr-namespace:Arent3d.Architecture.Routing.AppBase.Model;assembly=Arent3d.Architecture.Routing.AppBase"
              xmlns:local="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
              mc:Ignorable="d" x:Name="WdCeedCodeView"
-             Height="800" Width="1200" MinHeight="200" MinWidth="900"
+             Height="800" Width="1120" MinHeight="200" MinWidth="900"
              d:DataContext="{d:DesignInstance {x:Type local:DesignCeedDockPaneContentViewModel}, IsDesignTimeCreatable=True}">
     <UserControl.Resources>
         <cvt:BooleanVisibilityConverter x:Key="BooleanVisibilityConverter"/>
@@ -207,7 +207,7 @@
 
         <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal" Margin="10, 0">
             <DataGrid x:Name="DtGrid" ItemsSource="{Binding CeedModels}" 
-                      CanUserAddRows="False" AutoGenerateColumns="False" Width="650"
+                      CanUserAddRows="False" AutoGenerateColumns="False" Width="730"
                       MouseLeftButtonUp="DtGrid_OnMouseLeftButtonUp">
                 <DataGrid.Resources>
                     <Style TargetType="{x:Type TextBox}">
@@ -334,7 +334,7 @@
  
                 </DataGrid.Columns>
             </DataGrid>
-            <StackPanel DockPanel.Dock="Left" Margin="20, 0, 10, 0" Width="260" >
+            <StackPanel DockPanel.Dock="Left" Margin="20, 0, 10, 0" Width="180" >
                 <Label Content="プレビュー" FontWeight="Bold" />
                 <ListView ItemsSource="{Binding PreviewList}" Height="648"
                           ScrollViewer.HorizontalScrollBarVisibility="Hidden" 
