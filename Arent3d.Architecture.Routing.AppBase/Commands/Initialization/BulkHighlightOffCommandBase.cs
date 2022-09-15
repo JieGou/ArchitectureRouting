@@ -36,8 +36,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           highlightOffElements.AddRange( textNotesHighlightOff );
           
           // highlight construction item elements
-          var highLightElementHasConstructionItems = GetHighLightElementsHasConstructionItems( document ) ;
-          highlightOffElements.AddRange( highLightElementHasConstructionItems ) ;
+          var elementsWithHighLightedConstructionItems = GetElementsWithHighLightedConstructionItem( document ) ;
+          highlightOffElements.AddRange( elementsWithHighLightedConstructionItems ) ;
           
           ResetElementColor( document, highlightOffElements ) ;
           
@@ -73,15 +73,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private IEnumerable<Element> GetHighLightElementsHasConstructionItems( Document document )
+    private IEnumerable<Element> GetElementsWithHighLightedConstructionItem( Document document )
     {
       var cnsStorable = document.GetCnsSettingStorable() ;
-      var highLightedCnsSettingModel = cnsStorable.CnsSettingData.Where( c => c.IsHighLighted ).ToList() ;
-      var highLightedConstructionItems = highLightedCnsSettingModel.Select( c => c.CategoryName ).ToHashSet() ;
+      var highLightedCnsSettingModels = cnsStorable.CnsSettingData.Where( c => c.IsHighLighted ).ToList() ;
+      if ( ! highLightedCnsSettingModels.Any() ) return new List<Element>() ;
+      var highLightedConstructionItems = highLightedCnsSettingModels.Select( c => c.CategoryName ).ToHashSet() ;
       var elementsWithHighLightedConstructionItems = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems )
         .Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && ! string.IsNullOrEmpty( constructionItem ) && highLightedConstructionItems.Contains( constructionItem! ) ) ;
 
-      foreach ( var cnsSettingModel in highLightedCnsSettingModel ) {
+      foreach ( var cnsSettingModel in highLightedCnsSettingModels ) {
         cnsSettingModel.IsHighLighted = false ;
       }
       
