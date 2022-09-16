@@ -270,12 +270,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     public static List<AutoCadColor> GetAutoCadColorDict()
     {
-      var autoCadColors = new List<AutoCadColor>() ;
+      var autoCadColors = new List<AutoCadColor> { new( NoColor, new SolidColorBrush() ) } ;
       foreach ( var (index, color) in AutoCadColorDict ) {
         autoCadColors.Add( new AutoCadColor( index.ToString(), new SolidColorBrush( color ) ) ) ;
       }
 
-      autoCadColors.Add( new AutoCadColor( NoColor, new SolidColorBrush() ) ) ;
       return autoCadColors ;
     }
 
