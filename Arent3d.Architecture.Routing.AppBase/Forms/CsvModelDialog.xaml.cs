@@ -8,6 +8,7 @@ using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -119,6 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var ceedStorable = _document.GetCeedStorable() ;
         var storageService = new StorageService<Level, CeedUserModel>( ( (ViewPlan) _document.ActiveView ).GenLevel ) ;
         if ( _ceedModelData.Any() ) {
+          DrawCanvasManager.SetBase64FloorPlanImages ( _document, _ceedModelData ) ;
           var previousCeedModels = ceedStorable.CeedModelData ;
           CeedViewModel.CheckChangeColor( _ceedModelData, previousCeedModels ) ;
           ceedStorable.CeedModelData = _ceedModelData ;

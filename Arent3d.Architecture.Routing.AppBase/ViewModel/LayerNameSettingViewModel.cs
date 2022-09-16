@@ -96,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       transaction.Start( "Override Element Graphic" ) ;
       var overrideGraphic = new OverrideGraphicSettings() ;
       overrideGraphic.SetProjectionLineColor( new Color( 255, 255, 255 ) ) ;
-      var curveElements = _document.GetAllInstances<CurveElement>(_document.ActiveView).Where(x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForSymbol).ToList() ;
+      var curveElements = _document.GetAllInstances<CurveElement>(_document.ActiveView).Where(x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForSymbolName).ToList() ;
       curveElements.ForEach(x => _document.ActiveView.SetElementOverrides(x.Id, overrideGraphic));
       transaction.Commit() ;
       

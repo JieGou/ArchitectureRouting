@@ -18,6 +18,7 @@ using Autodesk.Revit.UI ;
 using System ;
 using System.Data ;
 using System.Globalization ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
@@ -444,6 +445,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var level = document.ActiveView?.GenLevel ?? new FilteredElementCollector(document).OfClass(typeof(Level)).OfType<Level>().OrderBy(x => x.Elevation).First();
         var storageService = new StorageService<Level, CeedUserModel>( level ) ;
         if ( _ceedModelData.Any() ) {
+          DrawCanvasManager.SetBase64FloorPlanImages ( document, _ceedModelData ) ;
           var previousCeedModels = ceedStorable.CeedModelData ;
           CeedViewModel.CheckChangeColor( _ceedModelData, previousCeedModels ) ;
           ceedStorable.CeedModelData = _ceedModelData ;
