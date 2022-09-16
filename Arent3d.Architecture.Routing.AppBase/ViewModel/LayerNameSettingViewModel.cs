@@ -68,10 +68,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private string GetSettingPath()
+    private string GetSettingPath( bool isOriginFile = true )
     {
       string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "resources" )  ;
-      var layerSettingsFileName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile".GetDocumentStringByKeyOrDefault( _document, "Arent-export-layers.txt" ) ;
+      var layerSettingsFileName = isOriginFile 
+        ? "Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile".GetDocumentStringByKeyOrDefault( _document, "Arent-export-layers.txt" )
+        : "Electrical.App.Commands.Initialization.ExportDWGCommand.ModifyArentExportLayersFile".GetDocumentStringByKeyOrDefault( _document, "Modify-Arent-export-layers.txt" ) ;
       var filePath = Path.Combine( resourcesPath, layerSettingsFileName ) ;
 
       return filePath ;
@@ -84,15 +86,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
       var filePath = Path.GetDirectoryName( saveFileDialog.FileName ) ;
       var fileName = Path.GetFileName( saveFileDialog.FileName ) ;
-      DWGExportOptions options = new() { LayerMapping = _settingFilePath } ;
-      List<ElementId> viewIds = new() { activeView.Id } ;
       // replace text
       var encoding = GetEncoding( _settingFilePath ) ;
-      ReplaceLayerColors( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
+      var settingFilePath = ReplaceLayerNamesAndColors( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
       
-      // Delete layers
-      DeleteLayers(LayerNames) ;
-
+      DWGExportOptions options = new() { LayerMapping = settingFilePath } ;
+      List<ElementId> viewIds = new() { activeView.Id } ;
       using var transaction = new Transaction( _document ) ;
       transaction.Start( "Override Element Graphic" ) ;
       var overrideGraphic = new OverrideGraphicSettings() ;
@@ -113,54 +112,66 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       window.DialogResult = true ;
       window.Close() ;
     }
-    
-    private void DeleteLayers( string stringListLayer )
-    {
-      var listLayer = stringListLayer.Split( ',' ).Select( p => p.Trim() ).ToList() ;
-      var categories = _document.Settings.Categories.Cast<Category>().ToList() ;
-      
-      foreach ( var category in categories ) {
-        List<Category> layers = category.SubCategories.Cast<Category>().Where( x=>listLayer.Contains( x.Name  )).ToList() ;
-        if ( layers.Any() ) {
-          foreach ( var layer in layers ) {
-            _document.Delete( layer.Id ) ;
-          }
-        }
-      }
-    }
 
     private List<Layer> GetLayers( string filePath )
     {
       const string exceptString = "Ifc" ;
-      var layers = new List<Layer>() ;
-      using ( var reader = File.OpenText( filePath ) ) {
-        while ( reader.ReadLine() is { } line ) {
-          if ( line[ 0 ] == '#' ) continue ;
-          var words = line.Split( '\t' ) ;
-          var familyName = words[ 0 ] ;
-          var typeOfLayer = words[ 1 ] ;
-          var layerName = words[ 2 ] ;
-          var colorIndex = words.Length > 3 ? words[ 3 ] : string.Empty ;
-          var familyType = "" ;
-          if ( typeOfLayer != "" ) {
-            familyType = $" ({typeOfLayer})" ;
-          }
+      var layers = GetLayersFromFile( filePath ) ;
+      var modifyFilePath = GetSettingPath( false ) ;
+      var modifyLayers = GetLayersFromFile( modifyFilePath ) ;
 
-          layers.Add( new Layer( layerName, familyName + familyType, familyName, typeOfLayer, colorIndex ) ) ;
-        }
-
-        reader.Close() ;
-      }
-
-      var filterLayers = layers.Distinct()
-        .Where( x => ! x.LayerName.Contains( exceptString ) && ! string.IsNullOrEmpty( x.LayerName ) )
-        .ToList() ;
-      
       RemovedLayers = layers.Distinct()
         .Where( x => string.IsNullOrEmpty( x.LayerName ) )
         .ToList() ;
 
+      var filterLayers = layers.Distinct()
+        .Where( x => ! x.LayerName.Contains( exceptString ) && ! string.IsNullOrEmpty( x.LayerName ) )
+        .OrderBy( x => x.LayerName )
+        .ToList() ;
+
+      if ( ! modifyLayers.Any() ) return filterLayers ;
+
+      var modifyFilterLayers = modifyLayers.Distinct()
+        .Where( x => ! x.LayerName.Contains( exceptString ) )
+        .ToList() ;
+      
+      foreach ( var layer in filterLayers ) {
+        var modifyLayer = modifyFilterLayers.SingleOrDefault( l => l.FamilyName + l.FamilyType == layer.FamilyName + layer.FamilyType ) ;
+        if ( modifyLayer == null ) {
+          layer.LayerName = string.Empty ;
+          layer.Index = AutoCadColorsManager.NoColor ;
+        }
+        else {
+          layer.LayerName = modifyLayer.LayerName ;
+          layer.Index = modifyLayer.Index ;
+        }
+      }
+
       return filterLayers ;
+    }
+
+    private List<Layer> GetLayersFromFile( string filePath )
+    {
+      var layers = new List<Layer>() ;
+      if ( ! File.Exists( filePath ) ) return layers ;
+      using var reader = File.OpenText( filePath ) ;
+      while ( reader.ReadLine() is { } line ) {
+        if ( line[ 0 ] == '#' ) continue ;
+        var words = line.Split( '\t' ) ;
+        var familyName = words[ 0 ] ;
+        var typeOfLayer = words[ 1 ] ;
+        var layerName = words[ 2 ] ;
+        var colorIndex = words.Length > 3 ? words[ 3 ] : string.Empty ;
+        var familyType = "" ;
+        if ( typeOfLayer != "" ) {
+          familyType = $" ({typeOfLayer})" ;
+        }
+
+        layers.Add( new Layer( layerName, familyName + familyType, familyName, typeOfLayer, colorIndex ) ) ;
+      }
+
+      reader.Close() ;
+      return layers ;
     }
 
     private static Encoding GetEncoding( string filename )
@@ -180,35 +191,49 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return Encoding.ASCII ;
     }
 
-    private void ReplaceLayerColors( IReadOnlyList<Layer> oldLayerNames, IReadOnlyList<Layer> newLayerNames, string filePath, Encoding encoding )
+    private string ReplaceLayerNamesAndColors( IReadOnlyList<Layer> oldLayerNames, IReadOnlyList<Layer> newLayerNames, string filePath, Encoding encoding )
     {
+      var modifyFilePath = GetSettingPath( false ) ;
       try {
-        var hasChange = false ;
         var content = File.ReadAllText( filePath ) ;
         if ( RemovedLayers.Any() ) {
           foreach ( var layer in RemovedLayers ) {
             var oldValue = layer.FamilyName + ( string.IsNullOrEmpty( layer.FamilyType ) ? string.Empty : '\t' + layer.FamilyType ) ;
-            var endIndex = content.IndexOf( oldValue, StringComparison.Ordinal ) ;
-            if ( endIndex <= -1 ) continue ;
-            var length = content.Substring( endIndex ).IndexOf( '\n' ) ;
-            content = content.Substring( 0, endIndex ) + content.Substring( endIndex + length + 1 ) ;
-            hasChange = true ;
+            var index = content.IndexOf( oldValue, StringComparison.Ordinal ) ;
+            if ( index < 0 ) continue ;
+            var length = content.Substring( index ).IndexOf( '\n' ) ;
+            content = content.Substring( 0, index ) + content.Substring( index + length + 1 ) ;
           }
         }
         
         for ( var i = 0 ; i < newLayerNames.Count() ; i++ ) {
-          if ( oldLayerNames[ i ].Index == newLayerNames[ i ].Index ) continue ;
-          hasChange = true ;
-          var oldValue = string.Join( "\t", oldLayerNames[i].FamilyName, oldLayerNames[i].FamilyType, oldLayerNames[ i ].LayerName ) + ( oldLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : '\t' + oldLayerNames[ i ].Index ) ;
-          var newValue = string.Join( "\t", newLayerNames[i].FamilyName, newLayerNames[i].FamilyType, newLayerNames[ i ].LayerName ) + ( newLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : '\t' + newLayerNames[ i ].Index ) ;
-          content = content.Replace( oldValue, newValue ) ;
+          var oldValue = oldLayerNames[ i ].FamilyName + ( string.IsNullOrEmpty( oldLayerNames[ i ].FamilyType ) ? string.Empty : '\t' + oldLayerNames[ i ].FamilyType ) ;
+          var index = content.IndexOf( oldValue, StringComparison.Ordinal ) ;
+          if ( index < 0 ) continue ;
+          var length = content.Substring( index ).IndexOf( '\n' ) ;
+          if ( string.IsNullOrEmpty( newLayerNames[ i ].LayerName ) ) {
+            content = content.Substring( 0, index ) + content.Substring( index + length + 1 ) ;
+          }
+          else {
+            oldValue = content.Substring( index, length - 1 ) ;
+            var newValue = string.Join( "\t", newLayerNames[i].FamilyName, newLayerNames[i].FamilyType, newLayerNames[ i ].LayerName ) + ( newLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : '\t' + newLayerNames[ i ].Index ) ;
+            content = content.Replace( oldValue, newValue ) ;
+          }
         }
 
-        if ( hasChange ) File.WriteAllText( filePath, content, encoding ) ;
+        if ( ! File.Exists( modifyFilePath ) ) {
+          using var fileStream = File.Create( modifyFilePath ) ;
+          fileStream.Close() ;
+        }
+
+        File.WriteAllText( modifyFilePath, content, encoding ) ;
       }
       catch ( Exception e ) {
         MessageBox.Show( e.Message, "Error" ) ;
+        return filePath ;
       }
+
+      return modifyFilePath ;
     }
   }
 
