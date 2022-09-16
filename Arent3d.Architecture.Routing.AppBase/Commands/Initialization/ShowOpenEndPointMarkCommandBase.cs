@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
@@ -40,7 +41,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var missingConnectors = new List<Connector>() ;
       var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
-        .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
+        .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().ToList() ;
+
+      var conduitsFitting = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_ConduitFitting ).AsEnumerable().ToList() ;
+      
+      conduits.AddRange( conduitsFitting );
+      
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       foreach ( var conduit in conduits ) {
         var connectors = conduit.GetConnectors().ToList() ;
@@ -73,7 +79,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void GenerateOpenEndPointMark( Document document, FamilySymbol symbol, Connector connector )
     {
-      var level = ( connector.Owner as Conduit )!.ReferenceLevel ;
+      var level = connector.Owner is Conduit conduit ? conduit.ReferenceLevel : document.GetAllElements<Level>().FirstOrDefault( l => l.Id == ( connector.Owner as FamilyInstance )!.GetLevelId() ) ;
+      if ( level == null ) return ;
       var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
       symbol.Instantiate( new XYZ( connector.Origin.X, connector.Origin.Y, height ), level,
         StructuralType.NonStructural ) ;
@@ -84,6 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var endPoint = conduit.GetNearestEndPoints( isFrom ).FirstOrDefault() ;
       var endPointKey = endPoint?.Key ;
       if ( endPointKey == null ) return true ;
+
       var fromElementUniqueId = endPointKey.GetElementUniqueId() ;
       return ! string.IsNullOrEmpty( fromElementUniqueId ) &&
              allConnectors.All( c => c.UniqueId != fromElementUniqueId ) ;
