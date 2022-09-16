@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
     protected override ExecutionResult Execute( SymbolContentTagCommandParameter param, Document document, TransactionWrapper transaction )
     {
       if ( ! string.IsNullOrEmpty( param.DeviceSymbol ) ) {
-        var symbolContentTag = param.Element.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.SymbolContentTag : ElectricalRoutingFamilyType.SymbolContentEquipmentTag ;
+        var symbolContentTag = param.Element.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.ElectricalFixtureContentTag : ElectricalRoutingFamilyType.ElectricalEquipmentContentTag ;
         var deviceSymbolTagType = document.GetFamilySymbols( symbolContentTag ).FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ;
         if ( deviceSymbolTagType == null ) return ExecutionResult.Succeeded ;
         IndependentTag.Create( document, deviceSymbolTagType.Id, document.ActiveView.Id, new Reference( param.Element ), false, TagOrientation.Horizontal, new XYZ( param.Point.X, param.Point.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * document.ActiveView.Scale, param.Point.Z ) ) ;
