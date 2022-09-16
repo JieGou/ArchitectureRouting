@@ -1106,7 +1106,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         familyInstance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
         familyInstance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
         if ( ! string.IsNullOrEmpty( deviceSymbol ) ) familyInstance.SetProperty( ElectricalRoutingElementParameter.SymbolContent, deviceSymbol ) ;
-        familyInstance.SetProperty( ElectricalRoutingElementParameter.Quantity, string.Empty ) ;
+        familyInstance.SetProperty( ElectricalRoutingElementParameter.Quantity, 1 ) ;
         familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
       }
 

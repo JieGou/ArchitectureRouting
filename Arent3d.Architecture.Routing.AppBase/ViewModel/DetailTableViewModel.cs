@@ -173,10 +173,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Loaded()
     {
-      if ( DetailTableData.Instance.FirstLoaded ) 
+      if ( DetailTableData.Instance.FirstLoaded )
         return ;
-      
-      DtGrid.SelectAll();
+
+      var routeName = RouteUtil.GetMainRouteName( PickInfo?.Element?.GetRouteName() ) ;
+      var toConnector = ConduitUtil.GetConnectorOfRoute( _document, routeName, false ) ;
+      var quantity = toConnector?.GetPropertyInt( ElectricalRoutingElementParameter.Quantity ) ?? 0 ;
+      if ( quantity > 1 )
+        return ;
+
+      DtGrid.SelectAll() ;
       PlumbingSummaryMixConstructionItems() ;
       DetailTableData.Instance.FirstLoaded = true ;
     }
