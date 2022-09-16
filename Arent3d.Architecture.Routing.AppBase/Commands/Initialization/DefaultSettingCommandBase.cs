@@ -29,12 +29,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private const string ArentDummyViewName = "Arent Dummy" ;
     public const string TextNoteTypeNames = "ARENT_2.5MM_SIMPLE-BORDER, ARENT_2.5MM_DOUBLE-BORDER" ;
 
+    private string _activeViewName = string.Empty ;
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
         var uiDocument = commandData.Application.ActiveUIDocument ;
         var document = uiDocument.Document ;
-        var activeViewName = document.ActiveView.Name ;
+        _activeViewName = document.ActiveView.Name ;
         // Get data of default setting from snoop DB
         DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
         SetupPrintStorable setupPrintStorable = document.GetSetupPrintStorable() ;
@@ -62,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         else
           UpdateImportDwgMappingModels( defaultSettingStorable, listFloorsDefault, new List<string>() ) ;
 
-        var viewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, activeViewName ) ;
+        var viewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, _activeViewName ) ;
         var dialog = new DefaultSettingDialog( viewModel ) ;
         dialog.ShowDialog() ;
         {
@@ -86,6 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
           LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
+          
           return Result.Succeeded ;
         }
       }
@@ -338,9 +341,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         #endregion
 
-        if ( view3dAll != null ) {
-          uiDocument.RequestViewChange( view3dAll ) ;
-        }
+        if ( view3dAll == null ) 
+          return ;
+        
+        var activeView = doc.GetAllInstances<View>( x => x.Name == _activeViewName ).SingleOrDefault() ;
+        uiDocument.ActiveView = activeView ?? view3dAll ;
       }
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
@@ -394,9 +399,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           if ( ! deletedViewIds.Any() ) return ;
           if ( viewsTemp.Any() ) {
-            var pCurrView = uiDocument.ActiveView ;
-            uiDocument.RequestViewChange( pCurrView ) ;
-            uiDocument.ActiveView = viewsTemp[ 0 ] ;
+            var activeView = document.GetAllInstances<View>( x => x.Name == _activeViewName ).SingleOrDefault() ;
+            uiDocument.ActiveView = activeView ?? viewsTemp[ 0 ] ;
           }
         }
 
