@@ -18,6 +18,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -34,6 +35,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const int DefaultDisplayItem = 100 ;
 
     private bool _isInChangeLoop ;
+
+    private readonly UIDocument _uiDocument ;
 
     private readonly Document _document ;
 
@@ -161,7 +164,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void ShowCeedCodeDialog()
     {
       try {
-        var ceedViewModel = new CeedViewModel( _document ) ;
+        var ceedViewModel = new CeedViewModel( _uiDocument, _document, null ) ;
         var dlgCeedModel = new CeedModelDialog( ceedViewModel ) ;
 
         if ( dlgCeedModel.ShowDialog() == false ) return ;
@@ -317,8 +320,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #endregion
 
-    public SymbolInformationViewModel( Document document, SymbolInformationModel? symbolInformationModel)
+    public SymbolInformationViewModel( UIDocument uiDocument, Document document, SymbolInformationModel? symbolInformationModel)
     {
+      _uiDocument = uiDocument ;
       _document = document ;
       SymbolInformation = symbolInformationModel ?? new SymbolInformationModel() ;
       var ceedDetailModelData = _document.GetCeedDetailStorable().AllCeedDetailModelData ;
