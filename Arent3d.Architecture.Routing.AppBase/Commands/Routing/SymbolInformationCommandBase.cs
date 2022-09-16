@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private FamilySymbol? _symbolCircleType ;
     
     private const int LineWeight = 4 ;
-    private const string ParameterName = "Symbol Height" ;
+    public const string ParameterName = "Symbol Height" ;
     
     private static double Offset => 1d.MillimetersToRevitUnits() ;
     
@@ -191,7 +191,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       tag.Document.Regenerate();
     }
 
-    private static void MoveTag( FamilyInstance symbolInstance, IndependentTag tag, SymbolCoordinate symbolCoordinate )
+    public static void MoveTag( FamilyInstance symbolInstance, IndependentTag tag, SymbolCoordinate symbolCoordinate )
     {
       var symbolBox = symbolInstance.get_BoundingBox( null ) ;
       var symbolLocation = ( (LocationPoint) symbolInstance.Location ).Point ;
