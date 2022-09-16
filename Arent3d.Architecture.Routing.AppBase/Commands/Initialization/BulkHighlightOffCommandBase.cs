@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -33,6 +34,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var textNotesHighlightOff =
             PullBoxRouteManager.GetTextNotesOfPullBox( document, true ) ;
           highlightOffElements.AddRange( textNotesHighlightOff );
+          
+          // highlight construction item elements
+          var elementsWithHighLightedConstructionItems = GetElementsWithHighLightedConstructionItem( document ) ;
+          highlightOffElements.AddRange( elementsWithHighLightedConstructionItems ) ;
           
           ResetElementColor( document, highlightOffElements ) ;
           
@@ -66,6 +71,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       foreach ( var element in elements ) {
         document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
       }
+    }
+
+    private IEnumerable<Element> GetElementsWithHighLightedConstructionItem( Document document )
+    {
+      var cnsStorable = document.GetCnsSettingStorable() ;
+      var highLightedCnsSettingModels = cnsStorable.CnsSettingData.Where( c => c.IsHighLighted ).ToList() ;
+      if ( ! highLightedCnsSettingModels.Any() ) return new List<Element>() ;
+      var highLightedConstructionItems = highLightedCnsSettingModels.Select( c => c.CategoryName ).ToHashSet() ;
+      var elementsWithHighLightedConstructionItems = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems )
+        .Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && ! string.IsNullOrEmpty( constructionItem ) && highLightedConstructionItems.Contains( constructionItem! ) ) ;
+
+      foreach ( var cnsSettingModel in highLightedCnsSettingModels ) {
+        cnsSettingModel.IsHighLighted = false ;
+      }
+      
+      cnsStorable.Save() ;
+
+      return elementsWithHighLightedConstructionItems ;
     }
   }
 }

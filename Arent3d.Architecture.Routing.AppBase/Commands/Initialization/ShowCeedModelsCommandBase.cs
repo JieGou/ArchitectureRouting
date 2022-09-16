@@ -27,8 +27,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
       const string grade3FieldName = "グレード3" ;
-      
-      var doc = commandData.Application.ActiveUIDocument.Document ;
+
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var doc = uiDocument.Document ;
       if ( doc.ActiveView is not ViewPlan ) {
         TaskDialog.Show( "Arent", "This view is not the view plan!" ) ;
         return Result.Cancelled ;
@@ -37,16 +38,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var defaultConstructionItem = doc.GetDefaultConstructionItem() ;
       
-      var viewModel = new CeedViewModel( doc ) ;
+      var viewModel = new CeedViewModel( uiDocument, doc, null ) ;
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
       
       dlgCeedModel.ShowDialog() ;
-      if ( viewModel.DwgImportIds.Any() ) {
-        using Transaction transaction = new( doc, "Remove dwg file" ) ;
-        transaction.Start() ;
-        doc.Delete( viewModel.DwgImportIds ) ;
-        transaction.Commit() ;
-      }
 
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) 
         return Result.Cancelled ;

@@ -1,15 +1,21 @@
 ﻿using System ;
 using System.Collections.Generic ;
+using System.Drawing ;
+using System.Drawing.Imaging ;
 using System.IO ;
 using System.Linq ;
 using System.Reflection ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Media ;
+using System.Windows.Media.Imaging ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
+using Brushes = System.Windows.Media.Brushes ;
 using Point = System.Windows.Point ;
 using Polyline = System.Windows.Shapes.Polyline ;
+using Size = System.Windows.Size ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
@@ -18,7 +24,75 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const string MallCondition = "モール" ;
     private const string MoSymbol = " (モ)" ;
 
-    public static Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol, string condition )
+    public static void SetBase64FloorPlanImages ( Document document, IEnumerable<CeedModel> ceedModels )
+    {
+      List<CanvasChildInfo> canvasChildInfos = new() ;
+      List<ElementId> dwgImportIds = new() ;
+      var view = document.ActiveView ;
+      DWGImportOptions dwgImportOptions = new()
+      {
+        ColorMode = ImportColorMode.BlackAndWhite,
+        Unit = ImportUnit.Millimeter,
+        OrientToView = true,
+        Placement = ImportPlacement.Origin,
+        ThisViewOnly = false
+      } ;
+
+      foreach ( var ceedModel in ceedModels ) {
+        var lines = new List<Line>() ;
+        var arcs = new List<Arc>() ;
+        var polyLines = new List<PolyLine>() ;
+        var points = new List<Autodesk.Revit.DB.Point>() ;
+        var dwgNumber = ceedModel.DwgNumber ;
+        try {
+          if ( string.IsNullOrEmpty( ceedModel.DwgNumber ) ) {
+            if ( string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ) continue ;
+            var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.FloorPlanSymbol, ceedModel.Condition ) ;
+            ceedModel.Base64FloorPlanImages = GetImageDataFromCanvas( canvas ) ;
+          }
+          else {
+            var canvasChildInfo = canvasChildInfos.SingleOrDefault( c => c.DwgNumber == ceedModel.DwgNumber ) ;
+            if ( canvasChildInfo == null ) {
+              var filePath = Get2DSymbolDwgPath( dwgNumber ) ;
+              using Transaction t = new( document, "Import dwg file" ) ;
+              t.Start() ;
+              document.Import( filePath, dwgImportOptions, view, out var elementId ) ;
+              t.Commit() ;
+
+              if ( elementId == null ) continue ;
+              dwgImportIds.Add( elementId ) ;
+              if ( document.GetElement( elementId ) is ImportInstance dwg ) {
+                Options opt = new() ;
+                foreach ( GeometryObject geoObj in dwg.get_Geometry( opt ) ) {
+                  if ( geoObj is not GeometryInstance inst ) continue ;
+                  LoadGeometryFromGeometryObject( inst.SymbolGeometry, lines, arcs, polyLines, points ) ;
+                }
+              }
+              
+              canvasChildInfos.Add( new CanvasChildInfo( ceedModel.DwgNumber, polyLines, lines, arcs ) ) ;
+            }
+            else {
+              polyLines = canvasChildInfo.PolyLines ;
+              lines = canvasChildInfo.Lines ;
+              arcs = canvasChildInfo.Arcs ;
+            }
+            
+            var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty, ceedModel.Condition ) ;
+            ceedModel.Base64FloorPlanImages = GetImageDataFromCanvas( canvas ) ;
+          }
+        }
+        catch {
+          // ignored
+        }
+      }
+      
+      using Transaction tRemove = new( document, "Remove dwg file" ) ;
+      tRemove.Start() ;
+      document.Delete( dwgImportIds ) ;
+      tRemove.Commit() ;
+    }
+
+    private static Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol, string condition )
     {
       const double scale = 15 ;
       const double defaultOffset = 20 ;
@@ -284,7 +358,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    public static void LoadGeometryFromGeometryObject( GeometryElement geometryElement, ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, ICollection<Autodesk.Revit.DB.Point> points )
+    private static void LoadGeometryFromGeometryObject( GeometryElement geometryElement, ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, ICollection<Autodesk.Revit.DB.Point> points )
     {
       try {
         foreach ( GeometryObject geoObj in geometryElement ) {
@@ -321,13 +395,57 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    public static string Get2DSymbolDwgPath( string dwgNumber )
+    private static string Get2DSymbolDwgPath( string dwgNumber )
     {
       const string folderName = "2D Symbol DWG" ;
       string directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
-      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
+      var resourcesPath = Path.Combine( directory, "resources" ) ;
       var fileName = dwgNumber + ".dwg" ;
       return Path.Combine( resourcesPath, folderName, fileName ) ;
+    }
+    
+    private static string GetImageDataFromCanvas( Canvas canvas )
+    {
+      var size = new Size( canvas.Width, canvas.Height ) ;
+      canvas.Measure( size ) ;
+      canvas.Arrange( new Rect( size ) ) ;
+
+      var renderBitmap = new RenderTargetBitmap( (int) size.Width, (int) size.Height, 96d, 96d, PixelFormats.Pbgra32 ) ;
+      renderBitmap.Render( canvas ) ;
+      var bitmapFrame = BitmapFrame.Create( renderBitmap ) ;
+      using MemoryStream outStream = new() ;
+      BitmapEncoder enc = new BmpBitmapEncoder() ;
+
+      enc.Frames.Add( bitmapFrame ) ;
+      enc.Save( outStream ) ;
+      var bitmap = new Bitmap( outStream ) ;
+      var base64FloorPlanImages = ConvertBitmapToBase64( bitmap ) ;
+      return base64FloorPlanImages ;
+    }
+
+    private static string ConvertBitmapToBase64( Bitmap bmp )
+    {
+      var ms = new MemoryStream() ;
+      bmp.Save( ms, ImageFormat.Bmp ) ;
+      var byteImage = ms.ToArray() ;
+      var result = Convert.ToBase64String( byteImage ) ;
+      return result ;
+    }
+
+    private class CanvasChildInfo
+    {
+      public string DwgNumber { get ; }
+      public List<PolyLine> PolyLines { get ; }
+      public List<Line> Lines { get ; }
+      public List<Arc> Arcs { get ; }
+
+      public CanvasChildInfo( string dwgNumber, List<PolyLine> polyLines, List<Line> lines, List<Arc> arcs )
+      {
+        DwgNumber = dwgNumber ;
+        PolyLines = polyLines ;
+        Lines = lines ;
+        Arcs = arcs ;
+      }
     }
   }
 }
