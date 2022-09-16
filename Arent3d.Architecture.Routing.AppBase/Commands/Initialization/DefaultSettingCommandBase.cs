@@ -88,6 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
           LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
+          UpdateCeedDockPaneDataContext( uiDocument ) ;
           
           return Result.Succeeded ;
         }
@@ -335,6 +336,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           pvr.SetOffset( PlanViewPlane.CutPlane, 3950.0 / 304.8 ) ;
           pvr.SetOffset( PlanViewPlane.BottomClipPlane, 0.0 ) ;
           view.SetViewRange( pvr ) ;
+          
+          view.ViewTemplateId = new ElementId( -1 );
         }
 
         setViewRangeTransaction.Commit() ;
@@ -625,5 +628,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         storageService.SaveChange();
       }
     }
+    
+    protected virtual void UpdateCeedDockPaneDataContext( UIDocument uiDocument ) {}
   }
 }
