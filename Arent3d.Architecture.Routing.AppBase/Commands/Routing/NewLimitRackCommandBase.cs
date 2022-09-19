@@ -133,7 +133,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingElementGroup)
+    private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingElementGroup )
     {
       double widthCable ;
       if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) ) {
@@ -142,17 +142,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       else {
         var classificationDatas = new List<ClassificationData>() ;
         var oldClassificationDatas = new Dictionary<string, List<ClassificationData>>() ;
-        
+
         foreach ( var mepCurves in routingElementGroup.Value.GroupBy( s => s.GetRouteName() ) ) {
           var routeName = mepCurves.First().GetRouteName() ?? string.Empty ;
           if ( string.IsNullOrEmpty( routeName ) )
             continue ;
 
           var cds = GetClassificationDatas( document, routeName, oldClassificationDatas ) ;
-          if ( !cds.Any() )
+          if ( ! cds.Any() )
             continue ;
 
-          classificationDatas.AddRange(cds) ;
+          classificationDatas.AddRange( cds ) ;
         }
 
         var powerCables = new List<double>() ;
@@ -167,7 +167,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
 
-        widthCable = ( powerCables.Count > 0 ? ( 60 + powerCables.Sum() ) * 1.2 : 0 ) + ( instrumentationCables.Count > 0 ? ( 120 + instrumentationCables.Sum() ) * 0.6 : 0 ) ;
+        widthCable = ( powerCables.Count > 0 ? ( 60 + powerCables.Sum( x => x + 10 ) ) * 1.2 : 0 ) + ( instrumentationCables.Count > 0 ? ( 120 + instrumentationCables.Sum( x => x + 10 ) ) * 0.6 : 0 ) ;
 
         foreach ( var width in CableTrayWidthMapping ) {
           if ( widthCable > width )
@@ -272,7 +272,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new ClassificationData
       {
         Classification = classification!, 
-        Diameter = diameter + 10
+        Diameter = diameter
       } ;
     }
     
