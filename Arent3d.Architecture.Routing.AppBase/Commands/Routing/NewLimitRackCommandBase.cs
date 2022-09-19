@@ -227,13 +227,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if(classificationDataOne is not null)
         classificationDatas.Add(classificationDataOne);
       
-      var classificationDataTwo = GetClassificationData( csvStorage, hiroiSetMasterModel?.MaterialCode2 ) ;
-      if(classificationDataTwo is not null)
-        classificationDatas.Add(classificationDataTwo);
-      
       var classificationDataThree = GetClassificationData( csvStorage, hiroiSetMasterModel?.MaterialCode3 ) ;
       if(classificationDataThree is not null)
         classificationDatas.Add(classificationDataThree);
+      
+      var classificationDataFive = GetClassificationData( csvStorage, hiroiSetMasterModel?.MaterialCode5 ) ;
+      if(classificationDataFive is not null)
+        classificationDatas.Add(classificationDataFive);
+      
+      var classificationDataSeven = GetClassificationData( csvStorage, hiroiSetMasterModel?.MaterialCode7 ) ;
+      if(classificationDataSeven is not null)
+        classificationDatas.Add(classificationDataSeven);
       
       if(classificationDatas.Count == 0)
         return classificationDatas ;
