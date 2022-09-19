@@ -82,15 +82,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var routeSegmentsWithName = routesRelatedPullBox.ToSegmentsWithName().ToList() ;
         var endPointsOfBranchRouteSegments = GetEndpointsOfBranchRouteSegmentsCrossPullBox( routeSegmentsWithName, elementPullBox ) ;
 
-        foreach ( var (routeName, segment) in routeSegmentsWithName ) {
-          if ( endPointsOfBranchRouteSegments.ContainsKey( routeName ) && routeRecords.All( x => x.RouteName != routeName ) ) {
-            routeRecords.Add( ( routeName,
-              new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType,
-                endPointsOfBranchRouteSegments[ routeName ].FromEndPoint!,
-                endPointsOfBranchRouteSegments[ routeName ].ToEndPoint!, diameter, isRoutingOnPipeSpace,
-                fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
-          }
-        }
+        foreach ( var (routeName, segment) in routeSegmentsWithName )
+          if ( endPointsOfBranchRouteSegments.ContainsKey( routeName ) && routeRecords.All( x => x.RouteName != routeName ) )
+            routeRecords.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, endPointsOfBranchRouteSegments[ routeName ].FromEndPoint!, endPointsOfBranchRouteSegments[ routeName ].ToEndPoint!, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
       }
 
       #endregion
@@ -282,8 +276,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             endPointsOfBranchRouteSegments.Add( familyRouteName, ( null, segment.ToEndPoint ) ) ;
         }
 
-      return endPointsOfBranchRouteSegments.Where( e => e.Value.FromEndPoint != null && e.Value.ToEndPoint != null )
-        .ToDictionary( e => e.Key, e => e.Value ) ;
+      return endPointsOfBranchRouteSegments.Where( e => e.Value.FromEndPoint != null && e.Value.ToEndPoint != null ).ToDictionary( e => e.Key, e => e.Value ) ;
     }
 
     private static RouteSegment GetFirstRouteSegment( IEnumerable<RouteSegment> routeSegments )

@@ -122,16 +122,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
     {
       #region Change dimension of pullbox and set new label
-      
+
       CsvStorable? csvStorable = null ;
       List<ConduitsModel>? conduitsModelData = null ;
-      List<HiroiMasterModel>? hiroiMasterModels = null;
+      List<HiroiMasterModel>? hiroiMasterModels = null ;
       if ( result.IsAutoCalculatePullBoxSize ) {
         csvStorable = document.GetCsvStorable() ;
         conduitsModelData = csvStorable.ConduitsModelData ;
         hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       }
-      
+
       var level = document.ActiveView.GenLevel ;
       StorageService<Level, DetailSymbolModel>? storageDetailSymbolService = null ;
       StorageService<Level, PullBoxInfoModel>? storagePullBoxInfoServiceByLevel = null ;
@@ -139,9 +139,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
         storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       }
-      
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
-        conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
+
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
 
       #endregion
       

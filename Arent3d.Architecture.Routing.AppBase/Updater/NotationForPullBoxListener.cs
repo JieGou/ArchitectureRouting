@@ -29,9 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       var categoryFilter = new ElementCategoryFilter( BuiltInCategory.OST_ElectricalFixtures ) ;
       if ( document == null ) return categoryFilter ;
 
-      var sharedParameterElement = new FilteredElementCollector( document ).OfClass( typeof( SharedParameterElement ) )
-        .OfType<SharedParameterElement>()
-        .Single( x => x.Name == ElectricalRoutingElementParameter.ConnectorType.GetFamilyName() ) ;
+      var sharedParameterElement = new FilteredElementCollector( document ).OfClass( typeof( SharedParameterElement ) ).OfType<SharedParameterElement>().Single( x => x.Name == ElectricalRoutingElementParameter.ConnectorType.GetFamilyName() ) ;
       var parameterFilter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateEqualsRule( sharedParameterElement.Id, ConnectorFamilyType.PullBox.GetFamilyName(), true ) ) ;
       return new LogicalAndFilter( categoryFilter, parameterFilter ) ;
     }
@@ -58,19 +56,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
 
           var positionOfTextNoteForPullBox = positionOfPullBox != null ? new XYZ( positionOfPullBox.X + 0.4 * baseLengthOfLine, positionOfPullBox.Y + 0.7 * baseLengthOfLine, positionOfPullBox.Z ) : null ;
           if ( positionOfTextNoteForPullBox == null ) continue ;
-          
-          var textNoteOfPullBoxUniqueId = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData
-            .SingleOrDefault( t => t.PullBoxUniqueId == pullBox.UniqueId )?.TextNoteUniqueId ;
+
+          var textNoteOfPullBoxUniqueId = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.SingleOrDefault( t => t.PullBoxUniqueId == pullBox.UniqueId )?.TextNoteUniqueId ;
           if ( string.IsNullOrEmpty( textNoteOfPullBoxUniqueId ) ) continue ;
 
-          var textNoteOfPullBox = document.GetAllElements<TextNote>()
-            .FirstOrDefault( t => textNoteOfPullBoxUniqueId == t.UniqueId ) ;
+          var textNoteOfPullBox = document.GetAllElements<TextNote>().FirstOrDefault( t => textNoteOfPullBoxUniqueId == t.UniqueId ) ;
           if ( textNoteOfPullBox != null )
             textNoteOfPullBox.Coord = positionOfTextNoteForPullBox ;
-          selectionElementIds.Add( modifiedElementId ) ;        
+          selectionElementIds.Add( modifiedElementId ) ;
           selectionElementIds.Add( textNoteOfPullBox!.Id ) ;
-
         }
+
         uiDocument.Selection.SetElementIds( selectionElementIds ) ;
       }
       catch ( Exception exception ) {

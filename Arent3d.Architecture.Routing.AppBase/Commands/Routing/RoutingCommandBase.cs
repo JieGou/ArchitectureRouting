@@ -196,7 +196,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
     {
     }
-    
+
     protected virtual void BeforeRouteGenerated( Document document, TUIResult result )
     {
     }
