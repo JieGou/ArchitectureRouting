@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private static readonly double MaxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
+    private static readonly double MaxDistanceTolerance = 20d.MillimetersToRevitUnits() ;
     private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
     private const double RatioBendRadius = 3.45 ;
     private const string Notation = "CR (W:{0})" ;
@@ -38,34 +38,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
-      UIApplication uiApp = commandData.Application ;
-      Application app = uiApp.Application ;
       try {
-        var result = document.Transaction(
-          "TransactionName.Commands.Rack.CreateCableRackFroAllRoute".GetAppStringByKeyOrDefault(
-            "Create Cable Rack For All Route" ), _ =>
+        var result = uiDocument.Document.Transaction( "TransactionName.Commands.Rack.CreateCableRackFroAllRoute".GetAppStringByKeyOrDefault( "Create Cable Rack For All Route" ), _ =>
           {
-            var parameterName = document.GetParameterName( RoutingParameter.RouteName ) ;
-            if ( null == parameterName ) return Result.Failed ;
+            var parameterName = uiDocument.Document.GetParameterName( RoutingParameter.RouteName ) ;
+            if ( null == parameterName ) 
+              return Result.Failed ;
 
-            var filter =
-              new ElementParameterFilter(
-                ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
+            var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-            // get all route names
-            var routeNames = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
-              .OfNotElementType().Where( filter )
-              .Select( x => x.GetRouteName() ).Distinct() ;
+            // Get all route names
+            var routeNames = uiDocument.Document.GetAllElements<Element>()
+              .OfCategory( BuiltInCategorySets.Conduits )
+              .OfNotElementType()
+              .Where( filter )
+              .Select( x => x.GetRouteName() )
+              .Distinct() ;
 
-            // create cable rack for each route
+            // Create cable rack for each route
             var racks = new List<FamilyInstance>() ;
             foreach ( var routeName in routeNames ) {
-              CreateCableRackForRoute( uiDocument, app, routeName, racks ) ;
+              CreateCableRackForRoute( uiDocument, routeName, racks ) ;
             }
             
-            // insert notation for racks
-            CreateNotationForRack( document, app, racks ) ;
+            // Insert notation for racks
+            CreateNotationForRack( uiDocument.Document, racks ) ;
 
             return Result.Succeeded ;
           } ) ;
@@ -98,14 +95,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="app"></param>
     /// <param name="routeName"></param>
     /// <param name="racks"></param>
-    private static void CreateCableRackForRoute( UIDocument uiDocument, Application app, string? routeName, List<FamilyInstance> racks )
+    private static void CreateCableRackForRoute( UIDocument uiDocument, string? routeName, List<FamilyInstance> racks )
     {
       if ( routeName == null ) return ;
       
       var document = uiDocument.Document ;
       // get all elements in route
       var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
-      CreateRackForConduit( uiDocument, app, allElementsInRoute, racks ) ;
+      CreateRackForConduit( uiDocument, allElementsInRoute, racks ) ;
     }
 
     /// <summary>
@@ -195,7 +192,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return location == otherLocation ;
     }
 
-    public static void CreateRackForConduit( UIDocument uiDocument, Application app, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
+    public static void CreateRackForConduit( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
     {
       var document = uiDocument.Document ;
       var connectors = new List<Connector>() ;
@@ -283,29 +280,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if (false == symbol.IsActive) symbol.Activate();
       var instance = document.Create.NewFamilyInstance(new XYZ(firstConnector.Origin.X, firstConnector.Origin.Y, line.Origin.Z), symbol, null, StructuralType.NonStructural);
 
-      // set cable rack length
-      SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
+      // Set cable rack length
+      instance.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) )?.Set( length ) ; // TODO may be must change when FamilyType change
 
-      // set cable rack width
+      // Set cable rack width
       if ( cableRackWidth > 0 )
-        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
-          ( cableRackWidth * scaleRatio ).MillimetersToRevitUnits() ) ;
+        instance.LookupParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) )?.Set( ( cableRackWidth * scaleRatio ).MillimetersToRevitUnits() ) ;
 
-      // set cable rack comments
-      SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
+      // Set cable rack comments
+      instance.LookupParameter( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ) )?.Set( cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
-      // set To-Side Connector Id
+      // Set To-Side Connector Id
       var (fromConnectorId, toConnectorId) = GetFromAndToConnectorUniqueId( conduit ) ;
       if ( ! string.IsNullOrEmpty( toConnectorId ) && instance.HasParameter(  ElectricalRoutingElementParameter.ToSideConnectorId ) )
         instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) && instance.HasParameter(  ElectricalRoutingElementParameter.FromSideConnectorId ) )
         instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
 
-      // set route name
+      // Set route name
       SetRouteNameForRack( conduit, instance ) ;
 
       // set cable tray direction
-      if ( 1.0 == line.Direction.Y ) {
+      if ( Math.Abs( 1.0 - line.Direction.Y ) < GeometryHelper.Tolerance ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ), Math.PI / 2 ) ;
       }
       else if ( -1.0 == line.Direction.Y ) {
@@ -417,14 +413,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( fromConnectorId, toConnectorId ) ;
     }
 
-    public static void CreateNotationForRack(Document doc, Application app, IEnumerable<FamilyInstance> racks )
+    public static void CreateNotationForRack(Document document, IEnumerable<FamilyInstance> racks )
     {
-      var rackNotationStorable = doc.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? doc.GetRackNotationStorable() ;
-      RemoveNotationUnused( doc, rackNotationStorable ) ;
+      var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? document.GetRackNotationStorable() ;
+      RemoveNotationUnused( document, rackNotationStorable ) ;
       var directionXRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
       var directionYRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
       foreach ( var rack in racks ) {
-        var widthRack = Math.Round( rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble(), 4 ) ;
+        var widthRack = Math.Round( rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble(), 4 ) ;
         var routeName = rack.GetPropertyString( RoutingParameter.RouteName ) ?? string.Empty ;
         if ( string.IsNullOrEmpty( routeName ) ) continue ;
         
@@ -458,12 +454,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
+      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       
       if ( directionXRacks.Any() ) {
         foreach ( var (key, value) in directionXRacks ) {
           foreach ( var xRack in value ) {
-            CreateNotation( doc, rackNotationStorable, xRack.Value, key, true, defaultSymbolMagnification ) ;
+            CreateNotation( document, rackNotationStorable, xRack.Value, key, true, defaultSymbolMagnification ) ;
           }
         }
       }
@@ -471,7 +467,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( directionYRacks.Any() ) {
         foreach ( var (key, value) in directionYRacks ) {
           foreach ( var yRack in value ) {
-            CreateNotation( doc, rackNotationStorable, yRack.Value, key, false, defaultSymbolMagnification ) ;
+            CreateNotation( document, rackNotationStorable, yRack.Value, key, false, defaultSymbolMagnification ) ;
           }
         }
       }

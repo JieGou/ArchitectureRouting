@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
   {
     public static ISelectionFilter Instance => new LimitRackReferenceSelectionFilter() ;
 
-    public bool AllowElement( Element element ) => IsCableTrayOrCableTrayFitting( element ) || IsLimitRackBoundaryCurve(element);
+    public bool AllowElement( Element element ) => IsCableTrayOrCableTrayFitting( element ) ;
 
     public bool AllowReference( Reference reference, XYZ position ) => false ;
 
@@ -21,12 +21,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
       var paramName = "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( element.Document, "Rack Type" ) ;
       var comment = element.GetParameter( paramName )?.AsString() ;
       return !string.IsNullOrEmpty( comment ) &&  comment == NewRackCommandBase.RackTypes[ 1 ] ;
-    }
-
-    private static bool IsLimitRackBoundaryCurve(Element element)
-    {
-      if ( element is not CurveElement { LineStyle: GraphicsStyle detailLimitLintStyle } ) return false ;
-      return detailLimitLintStyle.GraphicsStyleCategory.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ;
     }
   }
 }

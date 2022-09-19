@@ -10,7 +10,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   public class NewLimitRackSelectionRangeCommand : NewLimitRackCommandBase
   {
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
-    protected override bool IsCircle => false ;
     protected override bool IsSelectionRange => true ;
   }
 }

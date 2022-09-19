@@ -640,5 +640,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       //   doc.Regenerate() ;
       // }
     }
+    
+    public static bool IsVertical( this Conduit conduit )
+    {
+      if ( conduit?.Location is not LocationCurve { Curve: Line line } )
+        throw new Exception( "The required location is line!" ) ;
+        
+      return Math.Abs( Math.Abs( line.Direction.DotProduct( XYZ.BasisZ ) ) - 1 ) < GeometryUtil.Tolerance ;
+    }
   }
 }

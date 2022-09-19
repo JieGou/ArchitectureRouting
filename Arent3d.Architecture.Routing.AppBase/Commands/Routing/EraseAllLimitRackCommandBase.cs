@@ -10,22 +10,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class EraseAllLimitRackCommandBase : EraseLimitRackCommandBase
   {
-    protected override (IReadOnlyCollection<string> limitRackIds,IReadOnlyCollection<LimitRackModel> limitRackModels) GetLimitRackIds( UIDocument ui, Document doc, LimitRackStorable limitRackStorable )
+    protected override IEnumerable<string> GetLimitRackUniqueIds( UIDocument uiDocument, Document document )
     {
-      var allLimitRack = GetAllLimitRackInstances( doc ) ;
+      var allLimitRack = GetAllLimitRackInstances( document ) ;
       var allLimitRackIds = allLimitRack.Select( x => x.UniqueId ).EnumerateAll() ;
-      return (allLimitRackIds,limitRackStorable.LimitRackModels.EnumerateAll()) ;
-    }
-
-    protected override IEnumerable<string> GetBoundaryCableTrays( Document doc, IReadOnlyCollection<LimitRackModel> limitRackModels )
-    {
-      var boundaryCableTraysIds = new FilteredElementCollector( doc )
-        .OfClass( typeof( CurveElement ) )
-        .OfType<CurveElement>()
-        .Where( x => null != x.LineStyle && ( x.LineStyle as GraphicsStyle )!.GraphicsStyleCategory.Name == BoundaryCableTrayLineStyleName )
-        .Select( x => x.UniqueId )
-        .ToList() ;
-      return boundaryCableTraysIds ;
+      return allLimitRackIds ;
     }
   }
 }
