@@ -152,7 +152,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( !cds.Any() )
             continue ;
 
-          cds.ForEach( x => x.Diameter += 10 ) ;
           classificationDatas.AddRange(cds) ;
         }
 
@@ -273,7 +272,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new ClassificationData
       {
         Classification = classification!, 
-        Diameter = diameter
+        Diameter = diameter + 10
       } ;
     }
     
