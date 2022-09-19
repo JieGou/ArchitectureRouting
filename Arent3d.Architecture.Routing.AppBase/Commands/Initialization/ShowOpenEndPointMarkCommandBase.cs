@@ -5,7 +5,6 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
@@ -111,11 +110,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         document.Delete( openEndPointMarkInstanceIds ) ;
     }
     
-    private static void HideOpenEndPointMarksIn3DView( Document document, ICollection<ElementId> conduitIds )
+    private static void HideOpenEndPointMarksIn3DView( Document document, ICollection<ElementId> elementIds )
     { 
       var views = document.GetAllElements<View>().Where( v => v is View3D ) ;
       foreach ( var view in views ) {
-        view.HideElements( conduitIds ) ;
+        view.HideElements( elementIds ) ;
       }
     }
   }
