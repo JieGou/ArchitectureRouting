@@ -17,6 +17,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       t.Start() ;
       var defaultIsEcoModeValue = document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
       foreach ( var route in routes ) {
+        if ( ! route.SubRoutes.Any() ) continue ;
+        
         var subRoute = route.SubRoutes.Last() ;
         var segment = subRoute.Segments.FirstOrDefault() ;
         if ( segment == null ) continue ;
