@@ -12,11 +12,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
+        UpdateCeedDockPaneDataContext( commandData.Application.ActiveUIDocument ) ;
         return Result.Succeeded ;
       }
       else {
         return Result.Cancelled ;
       }
     }
+    
+    protected virtual void UpdateCeedDockPaneDataContext( UIDocument uiDocument ) {}
   }
 }

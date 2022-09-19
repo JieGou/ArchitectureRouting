@@ -127,7 +127,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       #region Change Representative Route Name
 
-      if ( ! parentAndChildRoute.Any() ) return executeResultValue ;
+      if ( ! parentAndChildRoute.Any() ) return resultRoute ;
       using Transaction transactionChangeRepresentativeRouteName = new( document ) ;
       transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
       foreach ( var (parentRouteName, childRouteNames ) in parentAndChildRoute ) {
@@ -141,7 +141,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       #endregion
       
-      return executeResultValue ;
+      return resultRoute ;
     }
     
     private static bool IsRouteBetweenPowerConnectors( IEnumerable<Element> listConnectors, IReadOnlyCollection<RegistrationOfBoardDataModel> registrationOfBoardDataModels )

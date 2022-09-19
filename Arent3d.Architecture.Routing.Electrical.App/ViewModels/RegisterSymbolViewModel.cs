@@ -16,6 +16,8 @@ using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -31,7 +33,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   public class RegisterSymbolViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly RegisterSymbolStorable _registerSymbolStorable ;
+    private readonly StorageService<Level, RegisterSymbolModel> _storageService ;
     private readonly SetupPrintStorable _setupPrintStorable ;
     private readonly bool _isExistBrowseFolderPath ;
     private readonly bool _isExistFolderSelectedPath ;
@@ -56,7 +58,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if ( null != _folders )
           return _folders ;
 
-        var folderModel = GetFolderModel( _registerSymbolStorable.BrowseFolderPath ) ;
+        var folderModel = GetFolderModel( _storageService.Data.BrowseFolderPath ) ;
         var folderModelList = new List<FolderModel>() ;
         if ( null != folderModel ) folderModelList.Add( folderModel ) ;
         _folders = new ObservableCollection<FolderModel>( folderModelList ) ;
@@ -109,10 +111,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public RegisterSymbolViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _registerSymbolStorable = _uiDocument.Document.GetRegisterSymbolStorable() ;
+      _storageService = new StorageService<Level, RegisterSymbolModel>(((ViewPlan)uiDocument.ActiveView).GenLevel) ;
       _setupPrintStorable = _uiDocument.Document.GetSetupPrintStorable() ;
-      _isExistBrowseFolderPath = Directory.Exists( _registerSymbolStorable.BrowseFolderPath ) ;
-      _isExistFolderSelectedPath = Directory.Exists( _registerSymbolStorable.FolderSelectedPath ) ;
+      _isExistBrowseFolderPath = Directory.Exists( _storageService.Data.BrowseFolderPath ) ;
+      _isExistFolderSelectedPath = Directory.Exists( _storageService.Data.FolderSelectedPath ) ;
     }
 
     #region Commands
@@ -131,11 +133,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             folderBrowserDialog.Reset() ;
             folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer ;
             folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
-            folderBrowserDialog.SelectedPath = string.IsNullOrEmpty(_registerSymbolStorable.BrowseFolderPath) ? readFileTxtIncludePath(path) : _registerSymbolStorable.BrowseFolderPath ;
+            folderBrowserDialog.SelectedPath = string.IsNullOrEmpty(_storageService.Data.BrowseFolderPath) ? ReadFileTxtIncludePath(path) : _storageService.Data.BrowseFolderPath ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
-              _registerSymbolStorable.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
-              writeFileTxtIncludePath(path, folderBrowserDialog.SelectedPath ) ;
-              var folderModel = GetFolderModel( _registerSymbolStorable.BrowseFolderPath ) ;
+              _storageService.Data.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
+              WriteFileTxtIncludePath(path, folderBrowserDialog.SelectedPath ) ;
+              var folderModel = GetFolderModel( _storageService.Data.BrowseFolderPath ) ;
               var folderModelList = new List<FolderModel>() ;
               if ( null != folderModel ) {
                 SetFolderByOldSelectedFolder( folderModel ) ;
@@ -286,13 +288,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if ( ! _isExistFolderSelectedPath )
         return ( false, false ) ;
 
-      if ( directoryInfo.FullName.Length > _registerSymbolStorable.FolderSelectedPath.Length || ! _registerSymbolStorable.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
+      if ( directoryInfo.FullName.Length > _storageService.Data.FolderSelectedPath.Length || ! _storageService.Data.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
         return ( false, false ) ;
 
-      return directoryInfo.FullName.Length < _registerSymbolStorable.FolderSelectedPath.Length ? ( true, false ) : ( true, true ) ;
+      return directoryInfo.FullName.Length < _storageService.Data.FolderSelectedPath.Length ? ( true, false ) : ( true, true ) ;
     }
 
-    private FolderModel? FindSelectedFolder( IEnumerable<FolderModel> folders )
+    private static FolderModel? FindSelectedFolder( IEnumerable<FolderModel> folders )
     {
       foreach ( var folder in folders ) {
         if ( folder.IsSelected )
@@ -333,8 +335,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     {
       using var transaction = new Transaction( _uiDocument.Document ) ;
       transaction.Start( "Save Setting Data" ) ;
-      _registerSymbolStorable.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
-      _registerSymbolStorable.Save() ;
+      _storageService.Data.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
+      _storageService.SaveChange();
       transaction.Commit() ;
     }
 
@@ -511,7 +513,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       return electricalFixtureFamilySymbol ;
     }
 
-    private string? GetFamilyPath(Assembly assembly, string familyName )
+    private static string? GetFamilyPath(Assembly assembly, string familyName )
     {
       var resourceFullName = assembly.GetManifestResourceNames().FirstOrDefault(element => element.EndsWith(familyName));
       if ( string.IsNullOrEmpty( resourceFullName ) )
@@ -530,7 +532,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       return pathFamily ;
     }
     
-    private Solid CreateCubeSolid()
+    private static Solid CreateCubeSolid()
     {
       var halfLength = 100d.MillimetersToRevitUnits() * 0.5;
       var lineOne = Line.CreateBound(XYZ.BasisX * halfLength + XYZ.BasisY.Negate() * halfLength, XYZ.BasisX * halfLength + XYZ.BasisY * halfLength);
@@ -541,38 +543,36 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       return GeometryCreationUtilities.CreateExtrusionGeometry(new List<CurveLoop>() { curveLoop }, XYZ.BasisZ.Negate(), halfLength * 2);
     }
 
-    private PlanarFace GetPlanarFaceTop(Element freeFormElement)
+    private static PlanarFace GetPlanarFaceTop(Element freeFormElement)
     {
       var option = new Options { ComputeReferences = true };
       return freeFormElement.get_Geometry(option).OfType<Solid>().Select(x => x.Faces.OfType<PlanarFace>()).SelectMany(x => x).MaxBy(x => x.Origin.Z)!;
     }
 
-    private void writeFileTxtIncludePath(string path, string content)
+    private static void WriteFileTxtIncludePath(string path, string content)
     {
       File.WriteAllText( path, content, Encoding.UTF8 ) ;
     }
 
-    private string readFileTxtIncludePath(string path)
+    private static string ReadFileTxtIncludePath(string path)
     {
-      string pathOpenedFolder ;
-      using ( var reader = File.OpenText( path ) ) {
-        pathOpenedFolder = reader.ReadLine()??string.Empty ;
-        reader.Close() ;
-      }
+      using var reader = File.OpenText( path ) ;
+      var pathOpenedFolder = reader.ReadLine() ?? string.Empty ;
+      reader.Close() ;
 
       return pathOpenedFolder ;
     }
     
-    private string GetSettingPath(Document document)
+    private static string GetSettingPath(Document document)
     {
-      string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "resources" )  ;
+      var resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "resources" )  ;
       var layerSettingsFileName = "Electrical.App.Commands.Initialization.RegisterSymbolFolderPath".GetDocumentStringByKeyOrDefault( document, "RegisterSymbolFolderPath.txt" ) ;
       var filePath = Path.Combine( resourcesPath, layerSettingsFileName ) ;
 
       return filePath ;
     }
-
-
+    
     #endregion
+    
   }
 }

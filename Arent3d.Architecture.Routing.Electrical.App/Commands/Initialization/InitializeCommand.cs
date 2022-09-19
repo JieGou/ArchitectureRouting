@@ -1,12 +1,16 @@
+using System.Linq ;
 using Arent3d.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using MoreLinq ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
@@ -54,28 +58,32 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
     private static void LoadDefaultElectricalDb( Document document )
     {
+      var uiDocument = new UIDocument( document ) ;
       var activeViewName = document.ActiveView.Name ;
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
       var setupPrintStorable = document.GetSetupPrintStorable() ;
       var scale = setupPrintStorable.Scale ;
-      var defaultSettingViewModel = new DefaultSettingViewModel( new UIDocument( document ), defaultSettingStorable,
-        scale, activeViewName ) ;
+      var defaultSettingViewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, activeViewName ) ;
       defaultSettingViewModel.LoadDefaultDb() ;
+      RoutingAppUI.CeedModelDockPanelProvider?.CustomInitiator( uiDocument, document ) ;
     }
     
     private static void LoadDefaultRegisterSymbols( Document document )
     {
       var path = AssetManager.GetFolderCompressionFilePath( AssetManager.AssetPath, DefaultRegisterSymbolCompressionFileName ) ;
       if ( path == null ) return ;
-      
-      var registerSymbolStorable = document.GetRegisterSymbolStorable() ;
-      
-      using var transaction = new Transaction( document ) ;
-      transaction.Start( "Save Symbol Data" ) ;
-      registerSymbolStorable.FolderSelectedPath = path ;
-      registerSymbolStorable.BrowseFolderPath = path ;
-      registerSymbolStorable.Save() ;
-      transaction.Commit() ;
+
+      var level = document.ActiveView?.GenLevel ?? document.GetAllInstances<Level>().OrderBy( x => x.Elevation ).First() ;
+      var registerSymbolStorable = new StorageService<Level,RegisterSymbolModel>( level )
+      {
+        Data =
+        {
+          FolderSelectedPath = path,
+          BrowseFolderPath = path
+        }
+      } ;
+
+      registerSymbolStorable.SaveChange() ;
     }
   }
 }
