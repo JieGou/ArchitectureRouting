@@ -115,7 +115,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       using var createRackTransaction = new Transaction( document, "手動でラックを作成する" ) ;
       createRackTransaction.Start() ;
       // create racks along with conduits
-      var racksAndFittings = document.CreateRacksAlignToConduits( linkedConduits, uiResult.Value.RackWidth, specialLengthList ) ;
+      var racksAndFittings = document.CreateRacksAlignToConduits( linkedConduits, uiResult.Value.RackWidth, "Normal Rack", specialLengthList ) ;
 
       // resolve overlapped cases
       var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ) ;
