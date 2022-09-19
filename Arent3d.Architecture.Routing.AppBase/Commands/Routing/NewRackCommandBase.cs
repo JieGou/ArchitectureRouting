@@ -356,7 +356,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var lengthRack = ( endParam - startParam ) * length ;
       var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document, "Outside Diameter" ) ).AsDouble() ;
 
-      var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTray ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
+      var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTray ).FirstOrDefault( rackType => rackType.Name == "汎用") ?? throw new InvalidOperationException() ; // TODO may change in the future
 
       // Create cable tray
       if ( false == symbol.IsActive ) symbol.Activate() ;

@@ -1,7 +1,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
@@ -23,6 +22,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateRackBySelectedConduitsCommand : IExternalCommand
   {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="RouteName"></param>
+    /// <param name="FirstSelectedConduit"></param>
+    /// <param name="SecondSelectedConduit"></param>
+    /// <param name="StartPoint"></param>
+    /// <param name="EndPoint"></param>
+    /// <param name="RackWidth">Must be in Revit API unit</param>
     private record SelectState( string RouteName, MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint, double RackWidth ) ;
 
     private OperationResult<SelectState> OperateUI( ExternalCommandData commandData )
@@ -67,8 +75,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         if ( dialog.ShowDialog() is false )
           return OperationResult<SelectState>.Cancelled ;
 
-        // WARNING: width is currently in mm unit !!!
-        var rackWidth = dialog.SelectedWidthInMillimeter() ;
+        var rackWidth = dialog.SelectedWidthInMillimeter().MillimetersToRevitUnits() ;
 
         return new OperationResult<SelectState>( new SelectState( routeName, firstSelectedConduit, secondSelectedConduit, firstSelectedPoint, secondSelectedPoint, rackWidth ) ) ;
       }
@@ -107,41 +114,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       // start generate new racks
       using var createRackTransaction = new Transaction( document, "手動でラックを作成する" ) ;
       createRackTransaction.Start() ;
-      var racksAndFittings = new List<FamilyInstance>() ;
       // create racks along with conduits
-      NewRackCommandBase.CreateRacksForConduits( uiDocument, linkedConduits, racksAndFittings, uiResult.Value.RackWidth, specialLengthList ) ;
+      var racksAndFittings = document.CreateRacksAlignToConduits( linkedConduits, uiResult.Value.RackWidth, specialLengthList ) ;
 
       // resolve overlapped cases
-      document.ResolveOverlapCases( racksAndFittings ) ;
-
-      // create boundary detail lines
-      // var rackMap = CreateRackMap( uiResult.Value.RouteName, racksAndFittings ) ;
-      // NewLimitRackCommandBase.DrawRackBoundaryLines( document, new[] { rackMap }, true ) ;
+      var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ) ;
       //
-      // // create annotations for racks
-      NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, racksAndFittings ) ;
-      
-      foreach ( var item in racksAndFittings ) {
-        item.SetProperty( "ラックの倍率", document.ActiveView.Scale / 100 ) ;
-        item.HideConnectedEdgesOfRack();
-      }
+      // create annotations for racks
+      NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, modifiedRackLists.OfType<FamilyInstance>() ) ;
+
 
       createRackTransaction.Commit() ;
       return Result.Succeeded ;
-    }
-
-    private static RackMap CreateRackMap( string routeName, List<FamilyInstance> racksAndFittings )
-    {
-      var map = new RackMap( routeName ) ;
-      foreach ( var item in racksAndFittings ) {
-        if ( item.IsRack() )
-          map.CableTrays.Add( item ) ;
-        else
-          map.CableTrayFittings.Add( item ) ;
-        map.RackIds.Add( item.UniqueId ) ;
-      }
-
-      return map ;
     }
   }
 }
