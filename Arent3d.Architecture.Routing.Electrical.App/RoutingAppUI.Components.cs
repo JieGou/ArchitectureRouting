@@ -190,8 +190,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
 
-          [Button( typeof( ShowCeedModelsCommand ), OnlyInitialized = true )]
-          private static class ShowCeedModelsCommandButton
+          [Button( typeof( ShowCeedModelDockablePaneCommand ), OnlyInitialized = true )]
+          private static class ShowCeedModelDockablePaneCommandButton
           {
           }
 

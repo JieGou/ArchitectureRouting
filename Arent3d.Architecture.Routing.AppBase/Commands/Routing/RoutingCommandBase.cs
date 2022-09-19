@@ -38,6 +38,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected sealed override ExecutionResult Execute( Document document, TransactionWrapper transaction, TUIResult result )
     {
+      BeforeRouteGenerated( document, result ) ;
+      
       var executor = GetRoutingExecutor() ;
 
       var executionResult = GenerateRoutes( document, executor, result ) ;
@@ -91,6 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private OperationResult<IReadOnlyCollection<Route>> GenerateRoutes( Document document, RoutingExecutor executor, TUIResult state )
     {
+      using var progress = ShowProgressBar( "Routing...", false ) ;
       return document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
       {
         using var _ = FromToTreeManager.SuppressUpdate() ;
@@ -98,8 +101,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         SetupFailureHandlingOptions( transaction, executor ) ;
 
         try {
-          using var progress = ShowProgressBar( "Routing...", false ) ;
-
           var segments = GetRouteSegments( document, state ) ;
           return executor.Run( segments, progress ) ;
         }
@@ -193,6 +194,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
     
     protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
+    {
+    }
+
+    protected virtual void BeforeRouteGenerated( Document document, TUIResult result )
     {
     }
     

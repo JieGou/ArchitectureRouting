@@ -127,7 +127,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         CurveTypes = GetCompatibleCurveTypes( document, classificationInfo.GetCurveTypeClass() ) ;
       }
       else {
-        CurveTypes = document.GetAllElements<ConduitType>().OrderBy( c => c.Name ).OfType<MEPCurveType>().ToList() ;
+        var arentConduitName = RoutingElementExtensions.GetConduitTypeName( document ) ;
+        CurveTypes = document.GetAllElements<ConduitType>().Where( c => c.Name == arentConduitName ).OfType<MEPCurveType>().ToList() ;
         StandardTypes = document.GetStandardTypes().ToList() ;
         Shafts = document.GetAllElements<Opening>().ToList() ;
       }
