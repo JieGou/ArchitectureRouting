@@ -13,6 +13,7 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using Color = Autodesk.Revit.DB.Color ;
@@ -94,10 +95,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<ElementId> viewIds = new() { activeView.Id } ;
       using var transaction = new Transaction( _document ) ;
       transaction.Start( "Override Element Graphic" ) ;
-      var overrideGraphic = new OverrideGraphicSettings() ;
-      overrideGraphic.SetProjectionLineColor( new Color( 255, 255, 255 ) ) ;
-      var curveElements = _document.GetAllInstances<CurveElement>(_document.ActiveView).Where(x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForSymbolName).ToList() ;
-      curveElements.ForEach(x => _document.ActiveView.SetElementOverrides(x.Id, overrideGraphic));
+      var curveElements = SetCurveElementOverrides() ;
+      var elementsOverrideGraphic = SetElementOverrides() ;
       transaction.Commit() ;
       
       // export dwg
@@ -105,12 +104,88 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       transaction.Start( "Reset Element Graphic" ) ;
       var defaultGraphic = new OverrideGraphicSettings() ;
-      curveElements.ForEach(x => _document.ActiveView.SetElementOverrides(x.Id, defaultGraphic));
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, defaultGraphic ) ) ;
+      elementsOverrideGraphic.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, defaultGraphic ) ) ;
       transaction.Commit() ;
 
       // close window
       window.DialogResult = true ;
       window.Close() ;
+    }
+
+    private List<CurveElement> SetCurveElementOverrides()
+    {
+      var elementsOverrideGraphic = new List<CurveElement>() ;
+      var overrideGraphic = new OverrideGraphicSettings() ;
+      
+      var subCategoryForSymbolColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == CreateCylindricalShaftCommandBase.SubCategoryForSymbolName )?.Index ?? AutoCadColorsManager.NoColor ;
+      var color = GetElementColor( subCategoryForSymbolColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      var curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForSymbolName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+      
+      var subCategoryForCylindricalShaftColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == CreateCylindricalShaftCommandBase.SubCategoryForCylindricalShaftName )?.Index ?? AutoCadColorsManager.NoColor ;
+      color = GetElementColor( subCategoryForCylindricalShaftColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForCylindricalShaftName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+      
+      var subCategoryForDirectionCylindricalShaftColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == CreateCylindricalShaftCommandBase.SubCategoryForDirectionCylindricalShaftName )?.Index ?? AutoCadColorsManager.NoColor ;
+      color = GetElementColor( subCategoryForDirectionCylindricalShaftColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForDirectionCylindricalShaftName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+      
+      var boundaryCableTrayColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName )?.Index ?? AutoCadColorsManager.NoColor ;
+      color = GetElementColor( boundaryCableTrayColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+
+      return elementsOverrideGraphic ;
+    }
+    
+    private List<Element> SetElementOverrides()
+    {
+      var elementsOverrideGraphic = new List<Element>() ;
+      var electricalEquipmentTagsFamilyName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalEquipmentTags".GetDocumentStringByKeyOrDefault( _document, "Electrical Equipment Tags" ) ;
+      var electricalFixtureTagsFamilyName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalFixtureTags".GetDocumentStringByKeyOrDefault( _document, "Electrical Fixture Tags" ) ;
+      var electricalEquipmentTagsColorIndex = _newLayerNames.SingleOrDefault( l => l.FamilyName == electricalEquipmentTagsFamilyName )?.Index ?? AutoCadColorsManager.NoColor ;
+      var electricalFixtureTagsColorIndex = _newLayerNames.SingleOrDefault( l => l.FamilyName == electricalFixtureTagsFamilyName )?.Index ?? AutoCadColorsManager.NoColor ;
+      var symbolContentTags = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtureTags ).ToList() ;
+      var symbolContentEquipmentTags = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalEquipmentTags ).ToList() ;
+
+      var overrideGraphic = new OverrideGraphicSettings() ;
+      var color = GetElementColor( electricalEquipmentTagsColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      symbolContentEquipmentTags.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( symbolContentEquipmentTags ) ;
+      
+      color = GetElementColor( electricalFixtureTagsColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      symbolContentTags.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( symbolContentTags ) ;
+
+      return elementsOverrideGraphic ;
+    }
+
+    private Color GetElementColor( string colorIndex )
+    {
+      switch ( colorIndex ) {
+        case "0":
+          return new Color( 255, 255, 255 ) ;
+        case "7":
+        case AutoCadColorsManager.NoColor:
+          return new Color( 0, 0, 0 ) ;
+        default:
+          var index = int.Parse( colorIndex ) ;
+          var color = AutoCadColorsManager.AutoCadColorDict[ index ] ;
+          return new Color( color.R, color.G, color.B ) ;
+      }
     }
 
     private List<Layer> GetLayers( string filePath )

@@ -8,7 +8,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   {
     public const string NoColor = "No Color" ;
 
-    private static readonly Dictionary<int, Color> AutoCadColorDict = new()
+    public static readonly Dictionary<int, Color> AutoCadColorDict = new()
     {
       { 0, Color.FromRgb( 0, 0, 0 ) },
       { 1, Color.FromRgb( 255, 0, 0 ) },
