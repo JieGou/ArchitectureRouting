@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var allowedTiltedPiping = CheckAllowedTiltedPiping( pickRoute.GetAllConnectors().ToList() ) ;
       var parentAndChildRoute = new Dictionary<string, List<string>>() ;
       foreach ( var route in routeInTheSamePosition ) {
-        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox!, pickState.HeightConnector,
+        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox, pickState.HeightConnector,
           pickState.HeightWire, pickState.RouteDirection, pickState.IsCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex,
           ref parentAndChildRoute, pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) );
       }

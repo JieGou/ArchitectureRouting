@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
-using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
@@ -24,18 +23,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      Reference? pickedPullBox ;
+      Reference pickedPullBox ;
 
       try {
         pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, new PullPoxPickFilter() ) ;
       }
       catch ( OperationCanceledException ) {
         return OperationResult<PickState>.Cancelled ;
-      }
-
-      if ( pickedPullBox == null ) {
-        MessageBox.Show( @"Please select pull box elements" ) ;
-        return OperationResult<PickState>.Failed ;
       }
 
       var elementPullBox = document.GetElement( pickedPullBox.ElementId ) ;
@@ -65,16 +59,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var routeRecords = GetRelatedBranchSegments( routesRelatedPullBoxWithMultiConnectors.Where( x => x.RouteSegments.Count() > 1 ).ToList() ).ToList() ;
 
-      var diameter = routesRelatedPullBoxWithMultiConnectors.First().UniqueDiameter ;
-      var classificationInfo = routesRelatedPullBoxWithMultiConnectors.First().GetSystemClassificationInfo() ;
-      var systemType = routesRelatedPullBoxWithMultiConnectors.First().GetMEPSystemType() ;
-      var curveType = routesRelatedPullBoxWithMultiConnectors.First().UniqueCurveType ;
+      var defaultRouteRelatedPullBoxWithMultiConnector = routesRelatedPullBoxWithMultiConnectors.First() ;
+      var diameter = defaultRouteRelatedPullBoxWithMultiConnector.UniqueDiameter ;
+      var classificationInfo = defaultRouteRelatedPullBoxWithMultiConnector.GetSystemClassificationInfo() ;
+      var systemType = defaultRouteRelatedPullBoxWithMultiConnector.GetMEPSystemType() ;
+      var curveType = defaultRouteRelatedPullBoxWithMultiConnector.UniqueCurveType ;
       var radius = diameter * 0.5 ;
-      var isRoutingOnPipeSpace = routesRelatedPullBoxWithMultiConnectors.First().UniqueIsRoutingOnPipeSpace ?? false ;
-      var avoidType = routesRelatedPullBoxWithMultiConnectors.First().UniqueAvoidType ?? AvoidType.Whichever ;
-      var shaftElementUniqueId = routesRelatedPullBoxWithMultiConnectors.First().UniqueShaftElementUniqueId ;
-      var fromFixedHeight = routesRelatedPullBoxWithMultiConnectors.First().UniqueFromFixedHeight ;
-      var toFixedHeight = routesRelatedPullBoxWithMultiConnectors.First().UniqueToFixedHeight ;
+      var isRoutingOnPipeSpace = defaultRouteRelatedPullBoxWithMultiConnector.UniqueIsRoutingOnPipeSpace ?? false ;
+      var avoidType = defaultRouteRelatedPullBoxWithMultiConnector.UniqueAvoidType ?? AvoidType.Whichever ;
+      var shaftElementUniqueId = defaultRouteRelatedPullBoxWithMultiConnector.UniqueShaftElementUniqueId ;
+      var fromFixedHeight = defaultRouteRelatedPullBoxWithMultiConnector.UniqueFromFixedHeight ;
+      var toFixedHeight = defaultRouteRelatedPullBoxWithMultiConnector.UniqueToFixedHeight ;
 
       #region Special case: Pull box at the end of branch route
 
@@ -95,39 +90,74 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // Remove old route
       result.AddRange( GetSelectedRouteSegments( document, routesRelatedPullBox ) ) ;
 
-      var endPointsOfRouteSegmentsCrossPullBox = new Dictionary<string, (IEndPoint? FromEndPoint, IEndPoint? ToEndPoint)>() ;
-      foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
-        var routeSegments = route.RouteSegments ;
+      GetNewRouteSegmentsAfterDeletingPullBox( document, routesRelatedPullBoxWithMultiConnectors, elementPullBox, classificationInfo, systemType, curveType, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId, routeNameDictionary, result, routeRecords, radius ) ;
+      DropOldRoutesRelatedToPullBox( document, routesRelatedPullBox, result ) ;
+      DeletePullBoxAndNotation( document, elementPullBox ) ;
 
-        foreach ( var routeSegment in routeSegments ) {
-          if ( routeSegment.FromEndPoint.Key.GetElementUniqueId() != elementPullBox.UniqueId ) continue ;
+      return result ;
+    }
 
-          if ( endPointsOfRouteSegmentsCrossPullBox.ContainsKey( route.Name ) )
-            endPointsOfRouteSegmentsCrossPullBox[ route.Name ] = ( endPointsOfRouteSegmentsCrossPullBox[ route.Name ].FromEndPoint, routeSegment.ToEndPoint ) ;
-          else
-            endPointsOfRouteSegmentsCrossPullBox.Add( route.Name, ( null, routeSegment.ToEndPoint ) ) ;
+    private static void GetNewRouteSegmentsAfterDeletingPullBox( Document document, List<Route> routesRelatedPullBoxWithMultiConnectors, Element elementPullBox, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeight, FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId, Dictionary<string, string> routeNameDictionary, List<(string RouteName, RouteSegment Segment)> result, List<(string RouteName, RouteSegment Segment)> routeRecords, double? radius )
+    {
+      var endPointsOfRouteSegmentsCrossPullBox = GetEndPointsOfRouteSegmentsCrossPullBox( routesRelatedPullBoxWithMultiConnectors, elementPullBox ) ;
+      var routeSegmentsGroup = GetMainRouteSegments( routesRelatedPullBoxWithMultiConnectors, elementPullBox, classificationInfo, systemType, curveType, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId, endPointsOfRouteSegmentsCrossPullBox ) ;
+
+      // Remove main route from routeNameDictionary (unnecessary renaming representative route name)
+      var filteredRoutes = new List<string>() ;
+      foreach ( var (routeName, _) in routeNameDictionary )
+        if ( ! routeSegmentsGroup.ContainsKey( routeName ) )
+          filteredRoutes.Add( routeName ) ;
+      filteredRoutes.ForEach( f => routeNameDictionary.Remove( f ) ) ;
+
+      // Add main routes
+      foreach ( var routeSegmentGroup in routeSegmentsGroup ) {
+        // Rename route name for pass point 
+        RenameRoutePassPoint( document, routeSegmentGroup.Key, routeSegmentGroup.Value ) ;
+
+        // Add main route
+        var firstRouteSegment = GetFirstRouteSegment( routeSegmentGroup.Value ) ;
+        result.Add( ( routeSegmentGroup.Key, firstRouteSegment ) ) ; // Add first segment
+
+        // Add next segments
+        while ( true ) {
+          var nextSegment = GetNextRouteSegment( result.Last().Segment.ToEndPoint, routeSegmentGroup.Value ) ;
+          if ( nextSegment == null ) break ;
+          result.Add( ( routeSegmentGroup.Key, nextSegment ) ) ;
         }
       }
 
-      foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
-        var routeSegments = route.RouteSegments ;
+      // Add branch routes
+      foreach ( var (routeName, segment) in routeRecords ) {
+        var passPointEndPointUniqueId = segment.FromEndPoint.Key.GetElementUniqueId() ;
+        if ( segment.FromEndPoint.DisplayTypeName == PassPointBranchEndPoint.Type ) {
+          var fromEndPointKey = GetFromEndPointKey( document, result, passPointEndPointUniqueId ) ;
+          if ( fromEndPointKey == null ) continue ;
+          var branchEndPoint = new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
+          var toEndPoint = segment.ToEndPoint ;
 
-        foreach ( var routeSegment in routeSegments ) {
-          if ( routeSegment.ToEndPoint.Key.GetElementUniqueId() != elementPullBox.UniqueId ) continue ;
+          if ( segment.ToEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) {
+            var routeNameArray = routeName.Split( '_' ) ;
+            var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+            var associatedRouteName = endPointsOfRouteSegmentsCrossPullBox.Keys.FirstOrDefault( k =>
+            {
+              var rNameArray = k.Split( '_' ) ;
+              var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+              return rName == mainRouteName ;
+            } ) ;
+            if ( ! string.IsNullOrEmpty( associatedRouteName ) && endPointsOfRouteSegmentsCrossPullBox.ContainsKey( associatedRouteName ) )
+              toEndPoint = endPointsOfRouteSegmentsCrossPullBox[ associatedRouteName ].ToEndPoint ;
+          }
 
-          var routeNameArray = route.Name.Split( '_' ) ;
-          var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-          var endPointsOfRouteSegmentCrossPullBox = endPointsOfRouteSegmentsCrossPullBox.FirstOrDefault( e =>
-          {
-            var rNameArray = e.Key.Split( '_' ) ;
-            var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
-            return routeName == rName ;
-          } ) ;
-          if ( ! string.IsNullOrEmpty( endPointsOfRouteSegmentCrossPullBox.Key ) )
-            endPointsOfRouteSegmentsCrossPullBox[ endPointsOfRouteSegmentCrossPullBox.Key ] = ( routeSegment.FromEndPoint, endPointsOfRouteSegmentsCrossPullBox[ endPointsOfRouteSegmentCrossPullBox.Key ].ToEndPoint ) ;
+          result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, toEndPoint!, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+        }
+        else {
+          result.Add( ( routeName, segment ) ) ;
         }
       }
+    }
 
+    private static Dictionary<string, List<RouteSegment>> GetMainRouteSegments( List<Route> routesRelatedPullBoxWithMultiConnectors, Element elementPullBox, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeight, FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId, Dictionary<string, (IEndPoint? FromEndPoint, IEndPoint? ToEndPoint)> endPointsOfRouteSegmentsCrossPullBox )
+    {
       var routeSegmentsGroup = new Dictionary<string, List<RouteSegment>>() ;
       foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
         var routeSegments = route.RouteSegments ;
@@ -169,69 +199,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      var filteredRoutes = new List<string>() ;
-      foreach ( var (routeName, _) in routeNameDictionary )
-        if ( ! routeSegmentsGroup.ContainsKey( routeName ) )
-          filteredRoutes.Add( routeName ) ;
-      filteredRoutes.ForEach( f => routeNameDictionary.Remove( f ) ) ;
+      return routeSegmentsGroup ;
+    }
 
-      foreach ( var routeSegmentGroup in routeSegmentsGroup ) {
-        // Rename route name for pass point 
-        RenameRoutePassPoint( document, routeSegmentGroup.Key, routeSegmentGroup.Value ) ;
+    private static Dictionary<string, (IEndPoint? FromEndPoint, IEndPoint? ToEndPoint)> GetEndPointsOfRouteSegmentsCrossPullBox( List<Route> routesRelatedPullBoxWithMultiConnectors, Element elementPullBox )
+    {
+      var endPointsOfRouteSegmentsCrossPullBox = new Dictionary<string, (IEndPoint? FromEndPoint, IEndPoint? ToEndPoint)>() ;
+      foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
+        var routeSegments = route.RouteSegments ;
 
-        // Add main route
-        var firstRouteSegment = GetFirstRouteSegment( routeSegmentGroup.Value ) ;
-        result.Add( ( routeSegmentGroup.Key, firstRouteSegment ) ) ; // Add first segment
+        foreach ( var routeSegment in routeSegments ) {
+          if ( routeSegment.FromEndPoint.Key.GetElementUniqueId() != elementPullBox.UniqueId ) continue ;
 
-        // Add next segments
-        while ( true ) {
-          var nextSegment = GetNextRouteSegment( result.Last().Segment.ToEndPoint, routeSegmentGroup.Value ) ;
-          if ( nextSegment == null ) break ;
-          result.Add( ( routeSegmentGroup.Key, nextSegment ) ) ;
+          if ( endPointsOfRouteSegmentsCrossPullBox.ContainsKey( route.Name ) )
+            endPointsOfRouteSegmentsCrossPullBox[ route.Name ] = ( endPointsOfRouteSegmentsCrossPullBox[ route.Name ].FromEndPoint, routeSegment.ToEndPoint ) ;
+          else
+            endPointsOfRouteSegmentsCrossPullBox.Add( route.Name, ( null, routeSegment.ToEndPoint ) ) ;
         }
       }
 
-      // Add branch route
-      foreach ( var (routeName, segment) in routeRecords ) {
-        var passPointEndPointUniqueId = segment.FromEndPoint.Key.GetElementUniqueId() ;
-        if ( segment.FromEndPoint.DisplayTypeName == PassPointBranchEndPoint.Type ) {
-          var fromEndPointKey = GetFromEndPointKey( document, result, passPointEndPointUniqueId ) ;
-          if ( fromEndPointKey == null ) continue ;
-          var branchEndPoint =
-            new PassPointBranchEndPoint( document, passPointEndPointUniqueId, radius, fromEndPointKey ) ;
-          var toEndPoint = segment.ToEndPoint ;
-          
-          
-          if ( segment.ToEndPoint.Key.GetElementUniqueId() == elementPullBox.UniqueId ) {
-            var routeNameArray = routeName.Split( '_' ) ;
-            var mainRouteName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-            var associatedRouteName = endPointsOfRouteSegmentsCrossPullBox.Keys.FirstOrDefault( k =>
-            {
-              var rNameArray = k.Split( '_' ) ;
-              var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
-              return rName == mainRouteName ;
-            } ) ;
-            if ( ! string.IsNullOrEmpty( associatedRouteName ) && endPointsOfRouteSegmentsCrossPullBox.ContainsKey( associatedRouteName ) )
-              toEndPoint = endPointsOfRouteSegmentsCrossPullBox[associatedRouteName].ToEndPoint ;
-          }
-          result.Add( ( routeName,
-            new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint,
-              toEndPoint!, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType,
-              shaftElementUniqueId ) ) ) ;
-        }
-        else {
-          result.Add( ( routeName, segment ) ) ;
+      foreach ( var route in routesRelatedPullBoxWithMultiConnectors ) {
+        var routeSegments = route.RouteSegments ;
+
+        foreach ( var routeSegment in routeSegments ) {
+          if ( routeSegment.ToEndPoint.Key.GetElementUniqueId() != elementPullBox.UniqueId ) continue ;
+
+          var routeNameArray = route.Name.Split( '_' ) ;
+          var routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+          var endPointsOfRouteSegmentCrossPullBox = endPointsOfRouteSegmentsCrossPullBox.FirstOrDefault( e =>
+          {
+            var rNameArray = e.Key.Split( '_' ) ;
+            var rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
+            return routeName == rName ;
+          } ) ;
+          if ( ! string.IsNullOrEmpty( endPointsOfRouteSegmentCrossPullBox.Key ) )
+            endPointsOfRouteSegmentsCrossPullBox[ endPointsOfRouteSegmentCrossPullBox.Key ] = ( routeSegment.FromEndPoint, endPointsOfRouteSegmentsCrossPullBox[ endPointsOfRouteSegmentCrossPullBox.Key ].ToEndPoint ) ;
         }
       }
-      
-      // Drop routes in RouteCache
+
+      return endPointsOfRouteSegmentsCrossPullBox ;
+    }
+
+    private static void DropOldRoutesRelatedToPullBox( Document document, IEnumerable<Route> routesRelatedPullBox, IReadOnlyCollection<(string RouteName, RouteSegment Segment)> result )
+    {
+      // Drop old routes in RouteCache
       var selectedRoutes = Route.CollectAllDescendantBranches( routesRelatedPullBox ) ;
-      var droppedRoutes = selectedRoutes.Where( r => result.All( t => t.RouteName != r.RouteName ) )
-        .Select( r => r.RouteName ) ;
+      var droppedRoutes = selectedRoutes.Where( r => result.All( t => t.RouteName != r.RouteName ) ).Select( r => r.RouteName ) ;
       var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
       routeCache.Drop( droppedRoutes ) ;
-      
+    }
 
+    private static void DeletePullBoxAndNotation( Document document, Element elementPullBox )
+    {
       //Delete label of pull box
       var level = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).SingleOrDefault( l => l.Id == elementPullBox.LevelId ) ;
       if ( level != null ) {
@@ -247,8 +266,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       //Delete pull box
       document.Delete( elementPullBox.Id ) ;
-
-      return result ;
     }
 
     private static Dictionary<string, (IEndPoint? FromEndPoint, IEndPoint? ToEndPoint)> GetEndpointsOfBranchRouteSegmentsCrossPullBox( List<(string RouteName, RouteSegment Segment)> routeSegmentsWithName, Element elementPullBox )
