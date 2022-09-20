@@ -534,6 +534,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return false ;
     }
 
+    private static double RackWidthOnPlanView( int nScale )
+    {
+      var symbolRatio = Model.ImportDwgMappingModel.SetRatio( nScale ) ;
+      return ( symbolRatio * 600 * 2 / 3 ).MillimetersToRevitUnits() ;
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -562,7 +568,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       var rackType = GetGenericRackSymbol( doc ) ;
       var elbowType = GetElbowSymbol( doc ) ;
-      var scaleFactor = doc.ActiveView.Scale * 1.0 / 100 ;
+      
       var r0 = 20d.MillimetersToRevitUnits() ;
       var l0 = 25d.MillimetersToRevitUnits() ;
 
@@ -572,9 +578,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
           break ;
         }
 
-        var fourPoints = ReArrangeToConnect( simplifiedMarkerMap[ i ].RackMarker, simplifiedMarkerMap[ i + 1 ].RackMarker, scaleFactor, r0, l0 ) ;
-        simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, simplifiedMarkerMap[ i ].RackMarker.Item3 ), i ) ;
-        simplifiedMarkerMap[ i + 1 ] = ( ( fourPoints.Item3, fourPoints.Item4, simplifiedMarkerMap[ i ].RackMarker.Item3 ), i + 1 ) ;
+        var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
+        var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
+        var scaleFactor = RackWidthOnPlanView(doc.ActiveView.Scale) / thisMarker.Item3 ;
+        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, scaleFactor, r0, l0 ) ;
+        simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, thisMarker.Item3 ), i ) ;
+        simplifiedMarkerMap[ i + 1 ] = ( ( fourPoints.Item3, fourPoints.Item4, nextMarker.Item3 ), i + 1 ) ;
       }
 
       FamilyInstance? currentElbow = null ;
@@ -585,7 +594,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var conduit = conduits[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
         // create rack
         var rackWidth = rackMarker.Item3 ;
-
+        var scaleFactor = RackWidthOnPlanView(doc.ActiveView.Scale) / rackWidth ;
         var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, conduit, rackClassification ) ;
 
         if ( CreateRack( doc, creationParam ) is not { } rack )
