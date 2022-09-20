@@ -247,7 +247,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var detailSymbolModel = conduits.Any() ? detailSymbolItemModels.FirstOrDefault( x => x.ConduitUniqueId.Equals( conduits.First().UniqueId ) ) : null;
       var plumbingType = null != detailSymbolModel ? detailSymbolModel.PlumbingType : DefaultPlumbingType ;
-      if ( detailTableItemModels.Any() ) {
+      if ( detailTableItemModels.Any()) {
         SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableItemModels, plumbingType, isFromCreateDetailTable && ! isReferenceDetailTableModels ) ;
       }
 
@@ -538,7 +538,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if(!conduitsModels.Any())
             continue;
 
-          var wireBook = int.TryParse( detailTableItemModel.WireBook, out var value ) ? value : 1 ;
+          var wireBook = int.TryParse( detailTableItemModel.WireBook, out var value ) && !detailTableItemModel.IsMultipleConnector ? value : 1 ;
           var currentPlumbingCrossSectionalArea = detailTableItemModel.WireCrossSectionalArea / Percentage * wireBook;
           var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ?? conduitsModels.Last() ;
 
@@ -946,6 +946,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           new List<DetailTableItemModel.ComboboxItemType>(), 
           new List<DetailTableItemModel.ComboboxItemType>(), 
           plumbingItemTypes ) ;
+        if ( quantity > 1 )
+          detailTableItemModel.IsMultipleConnector = true ;
         detailTableItemModels.Add( detailTableItemModel ) ;
       }
       
