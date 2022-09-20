@@ -22,9 +22,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       InitializeComponent() ;
     }
     
-    public void CustomInitiator( UIDocument uiDocument, Document document )
+    public void CustomInitiator( UIDocument uiDocument )
     {
-      var viewModel = new CeedViewModel( uiDocument, document, new CeedPostCommandExecutor() ) ;
+      var viewModel = new CeedViewModel( uiDocument, new CeedPostCommandExecutor() ) ;
       CeedModels = new CeedDockPaneContent( viewModel ) ;
       DataContext = viewModel ;
     }

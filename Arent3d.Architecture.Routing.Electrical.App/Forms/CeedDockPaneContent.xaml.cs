@@ -105,7 +105,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
   // ReSharper disable once ClassNeverInstantiated.Global
   public class DesignCeedDockPaneContentViewModel : CeedViewModel
   {
-    public DesignCeedDockPaneContentViewModel() : base( default!, default!, default! )
+    public DesignCeedDockPaneContentViewModel() : base( default!, default! )
     {
     }
   }
