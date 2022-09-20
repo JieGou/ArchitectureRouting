@@ -588,7 +588,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var rackType = GetGenericRackSymbol( doc ) ;
       var elbowType = GetElbowSymbol( doc ) ;
 
-      var r0 = 20d.MillimetersToRevitUnits() ;
+      var r0 = 50d.MillimetersToRevitUnits() ;
       var l0 = 25d.MillimetersToRevitUnits() ;
 
 
