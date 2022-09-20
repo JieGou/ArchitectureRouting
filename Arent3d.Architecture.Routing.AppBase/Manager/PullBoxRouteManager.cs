@@ -353,19 +353,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeightFirst, avoidType, shaftElementUniqueId, allowedTiltedPiping || segment.AllowedTiltedPiping ) ) ) ;
             result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeightSecond, avoidType, shaftElementUniqueId, allowedTiltedPiping || segment.AllowedTiltedPiping ) ) ) ;
             var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && ( e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() || e.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ) ).ToList() ;
-            if ( pullBoxes.Any( p => p.UniqueId == segment.ToEndPoint.Key.GetElementUniqueId() ) ) {
+            var iterativeSegment = segment ;
+            var allRouteSegments = routes.SelectMany( r => r.Value.RouteSegments ).ToList() ;
+            while ( pullBoxes.Any( p => p.UniqueId == iterativeSegment.ToEndPoint.Key.GetElementUniqueId() ) ) {
               // Increase index in duplicated case
-              name = IndexRouteName( routes, name, ref index ) ;
-              var allRouteSegments = routes.SelectMany( r => r.Value.RouteSegments ).ToList() ;
-              var firstRouteSegment = allRouteSegments.Single( rs => rs.FromEndPoint.Key.GetElementUniqueId() == segment.ToEndPoint.Key.GetElementUniqueId() ) ;
-              result.Add( ( name, firstRouteSegment ) ) ;
-              while ( pullBoxes.Any( p => p.UniqueId == firstRouteSegment.ToEndPoint.Key.GetElementUniqueId() ) ) {
-                // Increase index in duplicated case
-                name = IndexRouteName( routes, name, ref index ) ;
-                var nextRouteSegment = allRouteSegments.Single( rs => rs.FromEndPoint.Key.GetElementUniqueId() == firstRouteSegment.ToEndPoint.Key.GetElementUniqueId() ) ;
-                result.Add( ( name, nextRouteSegment ) ) ;
-                firstRouteSegment = nextRouteSegment ;
+              var (newName, oldRoute) = GetOldRouteAndNewName( routes, name, index ) ;
+              name = oldRoute?.Name ?? newName ;
+              while ( result.Any( rs => rs.RouteName == name ) ) name += "_" + index ;
+              var firstRouteSegment = allRouteSegments.Single( rs => rs.FromEndPoint.Key.GetElementUniqueId() == iterativeSegment.ToEndPoint.Key.GetElementUniqueId() ) ;
+              if ( routes.FirstOrDefault( rs => rs.Value.RouteSegments.Any( rs2 => rs2.FromEndPoint.Key == firstRouteSegment.FromEndPoint.Key && rs2.ToEndPoint.Key == firstRouteSegment.ToEndPoint.Key ) ) is { } duplicatedRoute ) {
+                if ( result.All( rs => rs.RouteName != duplicatedRoute .Value.Name) ) {
+                  name = duplicatedRoute.Value.Name ;
+                }
               }
+
+              result.Add( ( name, firstRouteSegment ) ) ;
+              iterativeSegment = firstRouteSegment ;
             }
           }
           else {
@@ -499,6 +502,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       return temporaryRouteName ;
+    }
+
+    private static (string, Route?) GetOldRouteAndNewName( RouteCache routes, string routeName, int index )
+    {
+      var temporaryRouteName = routeName + "_" + index ;
+      Route? route = null ;
+      while ( routes.ContainsKey( temporaryRouteName ) ) {
+        route ??= routes[ temporaryRouteName ] ;
+        temporaryRouteName = routeName + "_" + ++index ;
+      }
+
+      return ( temporaryRouteName, route ) ;
     }
 
     private static EndPointKey? GetFromEndPointKey( Document document, List<(string RouteName, RouteSegment Segment)> segments, string passPointEndPointUniqueId )
