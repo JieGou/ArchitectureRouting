@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 {
   public static class CableRackUtils
   {
-    
+    public const char SignJoinRouteName = '_' ;
     private record RackCreationParam( XYZ StartPoint, XYZ EndPoint, double Width, double ScaleFactor, Level? Level = null, FamilySymbol? RackType = null ) ;
 
     private record ElbowCreationParam( XYZ InsertPoint, double Angle, double Width, double Radius, double AdditionalLength, double ScaleFactor, Level? Level = null, FamilySymbol? ElbowType = null ) ;
@@ -647,6 +647,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         throw new Exception( "The required location is line!" ) ;
         
       return Math.Abs( Math.Abs( line.Direction.DotProduct( XYZ.BasisZ ) ) - 1 ) < GeometryUtil.Tolerance ;
+    }
+    
+    public static string GetMainRouteName( string? routeName )
+    {
+      if ( string.IsNullOrEmpty( routeName ) )
+        throw new ArgumentNullException( nameof( routeName ) ) ;
+
+      var array = routeName!.Split( SignJoinRouteName ) ;
+      if ( array.Length < 2 )
+        throw new FormatException( nameof( routeName ) ) ;
+
+      return string.Join( $"{SignJoinRouteName}", array[ 0 ], array[ 1 ] ) ;
     }
   }
 }

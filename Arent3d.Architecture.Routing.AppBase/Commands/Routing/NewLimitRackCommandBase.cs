@@ -6,28 +6,29 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
-using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit.UI ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Utility ;
-using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class NewLimitRackCommandBase : IExternalCommand
   {
-    
     #region Constants & Variables
 
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private static readonly double MaxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
+    private static readonly double MaxDistanceTolerance = 20d.MillimetersToRevitUnits() ;
+
     private const int MinNumberOfMultiplicity = 5 ;
-    private static readonly double MinLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
-    private static readonly double CableTrayDefaultBendRadius = ( 16.0 ).MillimetersToRevitUnits() ;
+    private static readonly double CableTrayDefaultBendRadius = 16d.MillimetersToRevitUnits() ;
     public static readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
     private readonly Dictionary<ElementId, List<Connector>> _elbowsToCreate = new() ;
     private readonly Dictionary<string, double> _routeLengthCache = new() ;
@@ -52,18 +53,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var result = uiDocument.Document.Transaction( TransactionName, _ =>
         {
           Dictionary<string, List<MEPCurve>> routingElementGroups ;
-          
+
           if ( IsSelectionRange ) {
             List<Element> pickedObjects ;
-            
+
             try {
               pickedObjects = uiDocument.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
             }
-            catch ( OperationCanceledException ) {
+            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
               return Result.Cancelled ;
             }
-            
-            if ( ! pickedObjects.Any() ) 
+
+            if ( ! pickedObjects.Any() )
               return Result.Cancelled ;
 
             var pickedMepCurves = new List<MEPCurve>() ;
@@ -76,188 +77,184 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           else {
             routingElementGroups = uiDocument.Document.CollectAllMultipliedRoutingElements( MinNumberOfMultiplicity ) ;
           }
+          
+          
 
-          var representativeMepCurves = routingElementGroups.SelectMany( s => s.Value ).Where( p =>
-          {
-            if ( p.GetSubRouteInfo() is not { } subRouteInfo ) return false;
-            return p.GetRepresentativeSubRoute() == subRouteInfo ;
-          } ).OfType<Conduit>().EnumerateAll() ;
+          foreach ( var routingElementGroup in routingElementGroups ) {
+            
+            
+            var representativeMepCurves = routingElementGroup.Value.Where( p =>
+            {
+              if ( p.GetSubRouteInfo() is not { } subRouteInfo ) return false ;
+              return p.GetRepresentativeSubRoute() == subRouteInfo ;
+            } ).OfType<Conduit>().EnumerateAll() ;
+            
+            uiDocument.Selection.SetElementIds(representativeMepCurves.Select(x => x.Id).ToList());
+            break ;
+          }
 
-          var horizontalConduits = representativeMepCurves.Where( x => !x.IsVertical() && (x.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH)?.AsDouble() ?? 0) > MinLengthConduit ) ;
-          var verticalConduits = representativeMepCurves.Where( x => x.IsVertical() && ( x.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH )?.AsDouble() ?? 0 ) > MinLengthConduit ) ;
-          var rackss =  uiDocument.Document.CreateRacksAlignToConduits( horizontalConduits, 400d.MillimetersToRevitUnits() ).OfType<FamilyInstance>() ;
-         
-          //Insert Notation
-          NewRackCommandBase.CreateNotationForRack( uiDocument.Document, rackss ) ;
+          // var horizontalConduits = representativeMepCurves.Where( x => ! x.IsVertical() && ( x.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH )?.AsDouble() ?? 0 ) > MinLengthConduit ) ;
+          // var verticalConduits = representativeMepCurves.Where( x => x.IsVertical() && ( x.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH )?.AsDouble() ?? 0 ) > MinLengthConduit ) ;
+          //
+          // var rackss = uiDocument.Document.CreateRacksAlignToConduits( horizontalConduits, 400d.MillimetersToRevitUnits() ).OfType<FamilyInstance>() ;
+          //
+          // NewRackCommandBase.CreateNotationForRack( uiDocument.Document, rackss ) ;
 
           return Result.Succeeded ;
         } ) ;
 
         return result ;
       }
-      catch ( OperationCanceledException ) {
-        return Result.Cancelled ;
-      }
       catch ( Exception e ) {
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
     }
-    
-    #region Methods
 
-    private static void UpdateRouteNameAndRacksCaches( ICollection<RackMap> rackMaps, Element rack, Element routeElement, bool isAddToCableTray = true )
+
+    private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingGroup )
     {
-      /*
-       *  We need to caches rack instance by routeName because if the new rack instance is not direction with x or y,
-       * then we can't map detail curve and rack side by side
-       */
-      var routeName = routeElement.GetRouteName()! ;
-
-      if ( string.IsNullOrEmpty( routeName ) ) return ;
-
-      var rackMap = rackMaps.FirstOrDefault( rm => rm.RouteName == routeName ) ;
-
-      if ( rackMap is null ) {
-        // Add new rack to cable tray collection
-        var newRackMap = new RackMap( routeName ) ;
-        newRackMap.RackIds.Add( rack.UniqueId ) ;
-        if ( isAddToCableTray ) {
-          newRackMap.CableTrays.Add( rack ) ;
-        }
-        // Add new rack to cable tray fitting collection
-        else {
-          newRackMap.CableTrayFittings.Add( rack ) ;
-        }
-        rackMaps.Add( newRackMap );
+      double widthCable ;
+      if ( _routeMaxWidthDictionary.ContainsKey( routingGroup.Key ) ) {
+        widthCable = _routeMaxWidthDictionary[ routingGroup.Key ] ;
       }
       else {
-        // Add new rack to cable tray collection
-        if ( isAddToCableTray ) {
-          rackMap.CableTrays.Add( rack ) ;
+        var classificationDatas = new List<ClassificationData>() ;
+        var oldClassificationDatas = new Dictionary<string, List<ClassificationData>>() ;
+
+        foreach ( var conduits in routingGroup.Value.GroupBy( s => s.GetRouteName() ) ) {
+          var routeName = conduits.First().GetRouteName() ?? string.Empty ;
+          if ( string.IsNullOrEmpty( routeName ) )
+            continue ;
+
+          var cds = GetClassificationDatas( document, routeName, oldClassificationDatas ) ;
+          if ( ! cds.Any() )
+            continue ;
+
+          classificationDatas.AddRange( cds ) ;
         }
-        // Add new rack to cable tray fitting collection
-        else {
-          rackMap.CableTrayFittings.Add( rack ) ;
-        }
 
-        rackMap.RackIds.Add( rack.UniqueId ) ;
-      }
-    }
+        var powerCables = new List<double>() ;
+        var instrumentationCables = new List<double>() ;
 
-    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth, List<FamilyInstance> racks, ICollection<RackMap> rackMaps )
-    {
-      var document = uiDocument.Document ;
-
-      using var transaction = new SubTransaction( document ) ;
-      try {
-        transaction.Start() ;
-        var location = ( conduit.Location as LocationCurve )! ;
-        var line = ( location.Curve as Line )! ;
-
-        var instance = NewRackCommandBase.CreateRackForStraightConduit( uiDocument, conduit, cableRackWidth ) ;
-
-          // check cable tray exists
-          if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
-            transaction.RollBack() ;
-            return ;
+        foreach ( var classificationData in classificationDatas ) {
+          if ( classificationData.Classification == $"{CreateDetailTableCommandBase.SignalType.低電圧}" || classificationData.Classification == $"{CreateDetailTableCommandBase.SignalType.動力}" ) {
+            powerCables.Add( classificationData.Diameter ) ;
           }
-          
-          UpdateRouteNameAndRacksCaches( rackMaps, instance,conduit ) ;
-
-        racks.Add( instance ) ;
-
-        if ( Math.Abs( 1.0 - Math.Abs(line.Direction.Z) ) > GeometryHelper.Tolerance ) {
-          var elbows = conduit.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd().Select( c => c.Owner ).OfType<FamilyInstance>() ;
-          foreach ( var elbow in elbows ) {
-            if ( _elbowsToCreate.ContainsKey( elbow.Id ) ) {
-              _elbowsToCreate[ elbow.Id ].Add( NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(), ( elbow.Location as LocationPoint )!.Point )! ) ;
-            }
-            else {
-              _elbowsToCreate.Add( elbow.Id, new List<Connector>() { NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(), ( elbow.Location as LocationPoint )!.Point )! } ) ;
-            }
+          else {
+            instrumentationCables.Add( classificationData.Diameter ) ;
           }
         }
 
-        transaction.Commit() ;
+        widthCable = ( powerCables.Count > 0 ? ( 60 + powerCables.Sum( x => x + 10 ) ) * 1.2 : 0 ) + ( instrumentationCables.Count > 0 ? ( 120 + instrumentationCables.Sum( x => x + 10 ) ) * 0.6 : 0 ) ;
+
+        foreach ( var width in CableTrayWidthMapping ) {
+          if ( widthCable > width )
+            continue ;
+
+          widthCable = width ;
+          break ;
+        }
+
+        _routeMaxWidthDictionary.Add( routingGroup.Key, widthCable ) ;
       }
-      catch {
-        transaction.RollBack() ;
-      }
+
+      return widthCable ;
     }
-    
-    private static void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors, List<FamilyInstance> racks, ICollection<RackMap> rackMaps )
+
+    #region Methods
+
+    private static List<ClassificationData> GetClassificationDatas( Document document, string routeName, Dictionary<string, List<ClassificationData>> oldClassificationDatas )
     {
-      var document = uiDocument.Document ;
-      using var transaction = new SubTransaction( document ) ;
-      try {
-        transaction.Start() ;
-        var conduit = document.GetElementById<FamilyInstance>( elementId )! ;
+      var classificationDatas = new List<ClassificationData>() ;
 
-        if ( conduit.FacingOrientation.Z is 1.0 or -1.0 || conduit.HandOrientation.Z is -1.0 or 1.0 ) {
-          return ;
-        }
+      var toConnector = ConduitUtil.GetConnectorOfRoute( document, routeName, false ) ;
+      if ( null == toConnector )
+        return classificationDatas ;
 
-        var location = ( conduit.Location as LocationPoint )! ;
-        var instance = NewRackCommandBase.CreateRackForFittingConduit( uiDocument, conduit, location, CableTrayDefaultBendRadius ) ;
+      var ceedCode = toConnector.GetPropertyString( ElectricalRoutingElementParameter.CeedCode ) ?? string.Empty ;
+      if ( string.IsNullOrEmpty( ceedCode ) )
+        return classificationDatas ;
 
-        // check cable tray exists
-        if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
-          transaction.RollBack() ;
-          return ;
-        }
-
-        var firstCableRack = connectors.First().Owner ;
-        // get cable rack width
-        var firstCableRackWidth = firstCableRack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ; // TODO may be must change when FamilyType change
-
-        var secondCableRack = connectors.Last().Owner ;
-        // get cable rack width
-        var secondCableRackWidth = secondCableRack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ; // TODO may be must change when FamilyType change
-
-        // set cable rack length
-        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), firstCableRackWidth >= secondCableRackWidth ? firstCableRackWidth : secondCableRackWidth ) ; // TODO may be must change when FamilyType change
-
-        foreach ( var connector in instance.GetConnectors() ) {
-          var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
-          var connectTo = NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin, MaxDistanceTolerance ) ;
-          if ( connectTo != null ) connector.ConnectTo( connectTo ) ;
-        }
-
-        UpdateRouteNameAndRacksCaches( rackMaps, instance, conduit, false ) ;
-
-        racks.Add( instance ) ;
-
-        transaction.Commit() ;
+      if ( ! oldClassificationDatas.ContainsKey( ceedCode ) ) {
+        oldClassificationDatas.Add( ceedCode, new ClassificationData() ) ;
       }
-      catch {
-        transaction.RollBack() ;
+      else {
+        return oldClassificationDatas[ ceedCode ] ;
       }
+
+      var ceedStorage = document.GetCeedStorable() ;
+      var ceedModel = ceedStorage.CeedModelData.FirstOrDefault( x => $"{x.CeedSetCode}:{x.GeneralDisplayDeviceSymbol}:{x.ModelNumber}" == ceedCode ) ;
+      if ( null == ceedModel )
+        return classificationDatas ;
+
+      var hasProperty = toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? value ) ;
+      if ( ! hasProperty || string.IsNullOrEmpty( value ) )
+        return classificationDatas ;
+
+      var isEcoMode = bool.Parse( value ) ;
+
+      var csvStorage = document.GetCsvStorable() ;
+      var parentPartModelNumber = ( isEcoMode ? csvStorage.HiroiSetCdMasterEcoModelData : csvStorage.HiroiSetCdMasterNormalModelData ).FirstOrDefault( x => x.SetCode == ceedCode.Split( ':' ).First() )?.LengthParentPartModelNumber ;
+      if ( string.IsNullOrEmpty( parentPartModelNumber ) )
+        return classificationDatas ;
+
+      var hiroiSetMasterModel = ( isEcoMode ? csvStorage.HiroiSetMasterEcoModelData : csvStorage.HiroiSetMasterNormalModelData ).FirstOrDefault( x => x.ParentPartModelNumber == parentPartModelNumber ) ;
+
+      var classificationDataOne = GetClassificationData( csvStorage, hiroiSetMasterModel?.MaterialCode1 ) ;
+      if ( classificationDataOne is not null )
+        classificationDatas.Add( classificationDataOne ) ;
+
+      var classificationDataThree = GetClassificationData( csvStorage, hiroiSetMasterModel?.MaterialCode3 ) ;
+      if ( classificationDataThree is not null )
+        classificationDatas.Add( classificationDataThree ) ;
+
+      var classificationDataFive = GetClassificationData( csvStorage, hiroiSetMasterModel?.MaterialCode5 ) ;
+      if ( classificationDataFive is not null )
+        classificationDatas.Add( classificationDataFive ) ;
+
+      var classificationDataSeven = GetClassificationData( csvStorage, hiroiSetMasterModel?.MaterialCode7 ) ;
+      if ( classificationDataSeven is not null )
+        classificationDatas.Add( classificationDataSeven ) ;
+
+      if ( classificationDatas.Count == 0 )
+        return classificationDatas ;
+
+      oldClassificationDatas[ ceedCode ] = classificationDatas ;
+
+      return classificationDatas ;
     }
-    
-    private double GetLengthOfRoute( string routeName, IEnumerable<MEPCurve> elements, Document document )
-    {
-      var routeNameArray = routeName.Split( '_' ) ;
-      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      if ( _routeLengthCache.ContainsKey( routeName ) ) {
-        return _routeLengthCache[ routeName ] ;
-      }
 
-      var routeLength = elements.Where( x =>
+    private static ClassificationData? GetClassificationData( CsvStorable csvStorable, string? materialCode )
+    {
+      if ( ! int.TryParse( materialCode, out var value ) )
+        return null ;
+
+      var wireIdentifier = PickUpViewModel.FormatRyakumeicd( csvStorable.HiroiMasterModelData.FirstOrDefault( x => x.Buzaicd == value.ToString( "D6" ) )?.Ryakumeicd ?? string.Empty ) ;
+      if ( string.IsNullOrEmpty( wireIdentifier ) )
+        return null ;
+
+      var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData.FirstOrDefault( x =>
       {
-        var rName = x.GetRouteName() ?? string.Empty ;
-        if ( string.IsNullOrEmpty( rName ) ) return false ;
-        var rNameArray = rName.Split( '_' ) ;
-        rName = string.Join( "_", rNameArray.First(), rNameArray.ElementAt( 1 ) ) ;
-        return rName == routeName ;
-      } ).Sum( x => ( x as Conduit )!.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ) ;
+        var numberOfHeartsOrLogarithm = int.TryParse( x.NumberOfHeartsOrLogarithm, out var result ) && result > 0 ? x.NumberOfHeartsOrLogarithm : string.Empty ;
+        var wireId = $"{x.WireType}{x.DiameterOrNominal}{( ! string.IsNullOrEmpty( numberOfHeartsOrLogarithm ) ? $"x{numberOfHeartsOrLogarithm}{x.COrP}" : string.Empty )}" ;
+        return wireId == wireIdentifier ;
+      } ) ;
 
-      _routeLengthCache.Add( routeName, routeLength ) ;
+      var classification = wiresAndCablesModelData?.Classification ;
+      if ( string.IsNullOrEmpty( classification ) )
+        return null ;
 
-      return routeLength ;
+      return double.TryParse( wiresAndCablesModelData?.FinishedOuterDiameter, out var diameter ) ? new ClassificationData { Classification = classification!, Diameter = diameter } : null ;
     }
-    
+
     #endregion
-    
+
+    private class ClassificationData
+    {
+      public string Classification { get ; init ; } = string.Empty ;
+
+      public double Diameter { get ; init ; }
+    }
   }
 }

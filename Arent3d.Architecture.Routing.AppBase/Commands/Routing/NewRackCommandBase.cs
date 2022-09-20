@@ -13,13 +13,11 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Utility ;
-using Autodesk.Revit.ApplicationServices ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using Transform = Autodesk.Revit.DB.Transform ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
   public abstract class NewRackCommandBase : IExternalCommand
   {
     /// <summary>
@@ -87,14 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
     }
-
-    /// <summary>
-    /// Creat cable rack for route
-    /// </summary>
-    /// <param name="uiDocument"></param>
-    /// <param name="app"></param>
-    /// <param name="routeName"></param>
-    /// <param name="racks"></param>
+    
     private static void CreateCableRackForRoute( UIDocument uiDocument, string? routeName, List<FamilyInstance> racks )
     {
       if ( routeName == null ) return ;
@@ -104,15 +95,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
       CreateRackForConduit( uiDocument, allElementsInRoute, racks ) ;
     }
-
-    /// <summary>
-    /// Return the connector in the set
-    /// closest to the given point.
-    /// </summary>
-    /// <param name="connectors"></param>
-    /// <param name="point"></param>
-    /// <param name="maxDistance"></param>
-    /// <returns></returns>
+    
     public static Connector? GetConnectorClosestTo( List<Connector> connectors, XYZ point,
       double maxDistance = double.MaxValue )
     {
