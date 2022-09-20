@@ -33,9 +33,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
           .ToList() ;
 
+        using var transaction = new Transaction( document, "Change pull box dimension" ) ;
+        transaction.Start() ;
         foreach ( var pullBoxElement in pullBoxElements )
           PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBoxElement, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
             conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, null, Convert.ToBoolean( pullBoxElement.ParametersMap.get_Item( PullBoxRouteManager.IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
+        transaction.Commit() ;
         MessageBox.Show( ChangePullBoxDimensionSuccesfully ) ;
         return Result.Succeeded ;
       }

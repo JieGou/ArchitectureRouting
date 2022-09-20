@@ -98,8 +98,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         if ( ! isPassedShaft ) continue ;
         if ( isWireEnteredShaft ) break ;
       }
-      
+      using var changeDimensionTransaction = new Transaction( document, "Change pull box dimension" ) ;
+      changeDimensionTransaction.Start() ;
       PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBoxElements ) ;
+      changeDimensionTransaction.Commit() ;
 
       #region Change Representative Route Name
 

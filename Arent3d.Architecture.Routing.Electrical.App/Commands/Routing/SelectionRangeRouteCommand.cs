@@ -93,8 +93,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
         transaction.Commit( failureOptions ) ;
       }
-
+      
+      using var changeDimensionTransaction = new Transaction( document, "Change pull box dimension" ) ;
+      changeDimensionTransaction.Start() ;
       PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBoxElements ) ;
+      changeDimensionTransaction.Commit() ;
 
       #region Change Representative Route Name
 
