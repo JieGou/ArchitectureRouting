@@ -49,13 +49,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     protected virtual bool Setup( Document document )
     {
-      try {
-        return document.SetupRoutingFamiliesAndParameters() ;
-      }
-      catch ( Exception e ) {
-        Console.WriteLine( e ) ;
-        throw ;
-      }
+      return document.SetupRoutingFamiliesAndParameters() ;
     }
   }
 }

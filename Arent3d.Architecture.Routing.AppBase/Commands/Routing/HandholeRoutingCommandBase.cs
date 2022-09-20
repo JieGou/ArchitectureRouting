@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const string HandholeName = "ハンドホール" ;
     private const string NoFamily = "There is no handhole family in this project" ;
     private const string Error = "Error" ;
-    public const string DefaultHandholeLabel = "HH" ;
+    private const string DefaultHandholeLabel = "HH" ;
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
     protected virtual ConnectorFamilyType? ConnectorType => null ;
     protected abstract AddInType GetAddInType() ;
