@@ -45,15 +45,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     public UIDocument UiDocument { get ; }
     private readonly Document _document ;
-    private List<CeedModel> _ceedModels ;
+    private readonly List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
     private readonly CeedStorable _ceedStorable ;
     private readonly StorageService<Level, CeedUserModel> _storageService ;
     private readonly DefaultSettingStorable _defaultSettingStorable ;
     private readonly IElectricalPostCommandExecutorBase? _postCommandExecutor ;
-    private List<string> _ceedModelNumberOfPreviewCategories ;
+    private readonly List<string> _ceedModelNumberOfPreviewCategories ;
 
-    public IReadOnlyCollection<CeedModel> OriginCeedModels => new ReadOnlyCollection<CeedModel>( _ceedModels );
+    public IEnumerable<CeedModel> OriginCeedModels => new ReadOnlyCollection<CeedModel>( _ceedModels );
 
     public ObservableCollection<CeedModel> CeedModels { get ; set ; }
 
@@ -297,10 +297,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public CeedViewModel( UIDocument uiDocument, Document document, IElectricalPostCommandExecutorBase? postCommandExecutor )
+    public CeedViewModel( UIDocument uiDocument, IElectricalPostCommandExecutorBase? postCommandExecutor )
     {
       UiDocument = uiDocument ;
-      _document = document ;
+      _document = UiDocument.Document ;
       _defaultSettingStorable = _document.GetDefaultSettingStorable() ;
       _postCommandExecutor = postCommandExecutor ;
       CeedModels = new ObservableCollection<CeedModel>() ;
@@ -453,7 +453,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( category.CeedCodeNumbers.Any() ) {
           var isExistModelNumberOfCategory = false ;
           foreach ( var ceedCodeNumber in category.CeedCodeNumbers ) {
-            var isExistModelNumber = ceedModelNumbers.FirstOrDefault( c => ceedModelNumbers.Contains( ceedCodeNumber.Name ) ) != null ;
+            var isExistModelNumber = ceedModelNumbers.FirstOrDefault( _ => ceedModelNumbers.Contains( ceedCodeNumber.Name ) ) != null ;
             ceedCodeNumber.IsExistModelNumber = isExistModelNumber ;
             if ( isExistModelNumber ) {
               isExistModelNumberOfCategory = isExistModelNumber ;

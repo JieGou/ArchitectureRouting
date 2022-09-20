@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( uiDocument.Document ) ;
       var defaultConstructionItem = uiDocument.Document.GetDefaultConstructionItem() ;
       
-      var viewModel = new CeedViewModel( uiDocument.Document ) ;
+      var viewModel = new CeedViewModel( uiDocument, null ) ;
       var dialog = new CeedModelDialog( viewModel ) ;
       
       dialog.ShowDialog() ;
