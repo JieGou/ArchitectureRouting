@@ -386,7 +386,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     {
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       var baseLengthOfLine = scale / 100d ;
-      var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
+      var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( CeedViewModel.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
       var fontSize = .01 ;
       if ( deviceSymbolTextNoteType != null )
         fontSize = deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).AsDouble() ;

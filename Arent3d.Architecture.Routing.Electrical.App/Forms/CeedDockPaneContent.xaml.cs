@@ -97,7 +97,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       var dpId = new DockablePaneId( RoutingAppUI.PaneId ) ;
       if ( ! DockablePane.PaneIsRegistered( dpId ) ) return ;
       ViewModel.ResetData() ;
-      DockablePane dockPane = ViewModel.UiDocument.Application.GetDockablePane( dpId ) ;
+      DockablePane dockPane = ViewModel.UIDocument.Application.GetDockablePane( dpId ) ;
       dockPane.Hide() ;
     }
   }
