@@ -585,7 +585,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var conduit = conduits[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
         // create rack
         var rackWidth = rackMarker.Item3 ;
-        var elbowRadius = ( scaleFactor - 1 ) * rackWidth / 2 + r0 ;
 
         var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, conduit, rackClassification ) ;
 
@@ -608,6 +607,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var elbowDirection = rotateClockWise ? rackMarker.Item2 - rackMarker.Item1 : nextMarker.Item1 - nextMarker.Item2 ;
         var elbowRotateAngle = XYZ.BasisX.AngleOnPlaneTo( elbowDirection, XYZ.BasisZ ) ;
 
+        rackWidth = Math.Max( rackMarker.Item3, nextMarker.Item3 ) ;
+        var elbowRadius = ( scaleFactor - 1 ) * rackWidth / 2 + r0 ;
         var elbowCreationParam = new ElbowCreationParam( elbowInsertPoint, elbowRotateAngle, rackWidth, elbowRadius, l0, scaleFactor, null, elbowType, conduit, rackClassification ) ;
         if ( CreateElbow( doc, elbowCreationParam ) is not { } elbow )
           continue ;
