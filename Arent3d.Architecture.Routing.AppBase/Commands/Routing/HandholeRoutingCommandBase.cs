@@ -12,11 +12,12 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Utility ;
+using static Arent3d.Architecture.Routing.AppBase.Commands.Routing.PullBoxRoutingCommandBase ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class HandholeRoutingCommandBase : RoutingCommandBase<HandholeRoutingCommandBase.PickState>
+  public abstract class HandholeRoutingCommandBase : RoutingCommandBase<PickState>
   {
     private const string DefaultBuzaicdForGradeModeThanThree = "032025" ;
     private const string HandholeName = "ハンドホール" ;
@@ -91,7 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
       var result = new List<( string RouteName, RouteSegment Segment )>() ;
-      if ( pickState.Handhole == null ) return result ;
+      if ( pickState.PullBox == null ) return result ;
 
       var pickRoute = pickState.PickInfo.SubRoute.Route ;
       var routes = document.CollectRoutes( GetAddInType() ) ;
@@ -103,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var allowedTiltedPiping = CheckAllowedTiltedPiping( pickRoute.GetAllConnectors().ToList() ) ;
       var parentAndChildRoute = new Dictionary<string, List<string>>() ;
       foreach ( var route in routeInTheSamePosition ) {
-        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.Handhole, pickState.HeightConnector, pickState.HeightWire, pickState.RouteDirection, pickState.IsCreateHandholeWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute,
+        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox, pickState.HeightConnector, pickState.HeightWire, pickState.RouteDirection, pickState.IsCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute,
           pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) ) ;
       }
 
@@ -131,7 +132,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       using var transaction = new Transaction( document, "Create Handhole" ) ;
       transaction.Start() ;
-      result.Handhole = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, result.HandholePosition.X, result.HandholePosition.Y, result.HeightConnector, level, result.PickInfo.Route.Name ) ;
+      result.PullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, result.PullBoxPosition.X, result.PullBoxPosition.Y, result.HeightConnector, level, result.PickInfo.Route.Name ) ;
       transaction.Commit() ;
     }
 
@@ -142,7 +143,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       CsvStorable? csvStorable = null ;
       List<ConduitsModel>? conduitsModelData = null ;
       List<HiroiMasterModel>? hiroiMasterModels = null ;
-      if ( result.IsAutoCalculateHandholeSize ) {
+      if ( result.IsAutoCalculatePullBoxSize ) {
         csvStorable = document.GetCsvStorable() ;
         conduitsModelData = csvStorable.ConduitsModelData ;
         hiroiMasterModels = csvStorable.HiroiMasterModelData ;
@@ -156,8 +157,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         storageHandholeInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       }
 
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.Handhole!, csvStorable, storageDetailSymbolService, storageHandholeInfoServiceByLevel, conduitsModelData, hiroiMasterModels, DefaultHandholeLabel, result.PositionLabel, result.IsAutoCalculateHandholeSize,
-        result.SelectedHandhole?.ConvertToPullBoxModel() ) ;
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.PullBox!, csvStorable, storageDetailSymbolService, storageHandholeInfoServiceByLevel, conduitsModelData, hiroiMasterModels, DefaultHandholeLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
 
       #endregion
 
@@ -178,41 +178,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       #endregion
 
       return executeResultValue ;
-    }
-
-    public class PickState
-    {
-      public PointOnRoutePicker.PickInfo PickInfo { get ; set ; }
-      public FamilyInstance? Handhole { get ; set ; }
-      public XYZ HandholePosition { get ; set ; }
-      public double HeightConnector { get ; set ; }
-      public double HeightWire { get ; set ; }
-      public XYZ RouteDirection { get ; set ; }
-      public bool IsCreateHandholeWithoutSettingHeight { get ; set ; }
-      public bool IsAutoCalculateHandholeSize { get ; set ; }
-      public XYZ? PositionLabel { get ; set ; }
-      public HandholeModel? SelectedHandhole { get ; set ; }
-      public XYZ? FromDirection { get ; set ; }
-      public XYZ? ToDirection { get ; set ; }
-      public Dictionary<string, List<string>> ParentAndChildRoute { get ; set ; }
-
-      public PickState( PointOnRoutePicker.PickInfo pickInfo, FamilyInstance? handhole, XYZ handholePosition, double heightConnector, double heightWire, XYZ routeDirection, bool isCreateHandholeWithoutSettingHeight, bool isAutoCalculateHandholeSize, XYZ? positionLabel, HandholeModel? selectedHandhole,
-        XYZ? fromDirection, XYZ? toDirection, Dictionary<string, List<string>> parentAndChildRoute )
-      {
-        PickInfo = pickInfo ;
-        Handhole = handhole ;
-        HandholePosition = handholePosition ;
-        HeightConnector = heightConnector ;
-        HeightWire = heightWire ;
-        RouteDirection = routeDirection ;
-        IsCreateHandholeWithoutSettingHeight = isCreateHandholeWithoutSettingHeight ;
-        IsAutoCalculateHandholeSize = isAutoCalculateHandholeSize ;
-        PositionLabel = positionLabel ;
-        SelectedHandhole = selectedHandhole ;
-        FromDirection = fromDirection ;
-        ToDirection = toDirection ;
-        ParentAndChildRoute = parentAndChildRoute ;
-      }
     }
   }
 }
