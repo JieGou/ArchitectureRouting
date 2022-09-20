@@ -121,10 +121,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Base64InstrumentationImageString = string.Join( "||", tempImage ) ;
     }
     
-    public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string dwgNumber, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType,
-      bool? isAdded, bool? isEditFloorPlan, bool? isEditInstrumentation, bool? isEditCondition, bool? isUsingCode )
+    public CeedModel( string legendDisplay, string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string dwgNumber, 
+      string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType, bool? isAdded, bool? isEditFloorPlan, bool? isEditInstrumentation, bool? isEditCondition, bool? isUsingCode )
     {
-      const string dummySymbol = "Dummy" ;
       LegendDisplay = legendDisplay ;
       CeedModelNumber = ceedModelNumber ;
       CeedSetCode = ceedSetCode ;
@@ -145,20 +144,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsEditInstrumentation = isEditInstrumentation ?? false ;
       IsEditCondition = isEditCondition ?? false ;
       IsUsingCode = isUsingCode ?? false ;
-      if ( floorPlanSymbol != dummySymbol ) {
-        var temporaryFloorPlanImage = new BitmapImage() ;
-        if ( FloorPlanImages == null && ! string.IsNullOrEmpty( Base64FloorPlanImages ) ) {
-          temporaryFloorPlanImage = BitmapToImageSource( Base64StringToBitmap( Base64FloorPlanImages ) ) ;
-        }
-
-        FloorPlanImages = temporaryFloorPlanImage ;
-      }
       if ( InstrumentationImages != null || string.IsNullOrEmpty( Base64InstrumentationImageString ) ) return ;
       var listBimapImage = ( from image in Base64InstrumentationImageString.Split( new string[] { "||" }, StringSplitOptions.None ) select Base64StringToBitmap( image ) into bmpFromString select BitmapToImageSource( bmpFromString ) ).ToList() ;
       InstrumentationImages = listBimapImage ;
     }
 
-    private static BitmapImage? BitmapToImageSource( Bitmap? bitmap )
+    public static BitmapImage? BitmapToImageSource( Bitmap? bitmap )
     {
       using ( var memory = new MemoryStream() ) {
         if ( bitmap != null ) bitmap.Save( memory, System.Drawing.Imaging.ImageFormat.Bmp ) ;
@@ -254,7 +245,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
     }
 
-    private static Bitmap Base64StringToBitmap( string base64String )
+    public static Bitmap Base64StringToBitmap( string base64String )
     {
       Byte[] bitmapData = Convert.FromBase64String( FixBase64ForImage( base64String ) ) ;
       System.IO.MemoryStream streamBitmap = new System.IO.MemoryStream( bitmapData ) ;

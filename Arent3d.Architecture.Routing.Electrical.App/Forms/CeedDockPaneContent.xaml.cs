@@ -1,27 +1,28 @@
-using System.Windows ;
+﻿using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Autodesk.Revit.UI ;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs ;
 using MessageBox = System.Windows.MessageBox ;
-using Style = System.Windows.Style ;
-using Visibility = System.Windows.Visibility ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Forms
+namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
-  public partial class CeedModelDialog : Window
+  public partial class CeedDockPaneContent : UserControl
   {
     private CeedViewModel ViewModel => (CeedViewModel) DataContext ;
 
-    public CeedModelDialog( CeedViewModel viewModel )
+    public CeedDockPaneContent( CeedViewModel viewModel )
     {
       InitializeComponent() ;
       DataContext = viewModel ;
       BtnReplaceSymbol.IsEnabled = false ;
-      Style rowStyle = new( typeof( DataGridRow ) ) ;
-      rowStyle.Setters.Add( new EventSetter( PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
-      DtGrid.RowStyle = rowStyle ;
+    }
+
+    public CeedDockPaneContent()
+    {
+      InitializeComponent() ;
     }
 
     private void CmbKeyDown( object sender, KeyEventArgs e )
@@ -53,18 +54,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CbShowDiff.IsChecked = false ;
     }
 
-    private void Row_MouseLeftButtonUp( object sender, MouseButtonEventArgs e )
+    private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
     {
-      BtnReplaceSymbol.IsEnabled = false ;
-      if ( ( (DataGridRow) sender ).DataContext is not CeedModel ) {
-        MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
-        return ;
-      }
+      ViewModel.ReplaceSymbol( DtGrid, BtnReplaceSymbol ) ;
+    }
 
-      var selectedCeedModel = ( ( (DataGridRow) sender ).DataContext as CeedModel ) ! ;
-      ViewModel.SelectedCeedModel = selectedCeedModel ;
-      BtnReplaceSymbol.IsEnabled = true ;
-      ViewModel.ShowPreviewList( selectedCeedModel ) ;
+    private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
+    {
+      ViewModel.ReplaceMultipleSymbols( DtGrid ) ;
     }
 
     private void PreviewListMouseDoubleClick( object sender, MouseButtonEventArgs e )
@@ -77,26 +74,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
       ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
       ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
-      ViewModel.UpdateCeedStorableAndStorageServiceData() ;
-      DialogResult = true ;
-      Close() ;
+      ViewModel.CreateConnector() ;
     }
 
-    private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
+    private void DtGrid_OnMouseLeftButtonUp( object sender, MouseButtonEventArgs e )
     {
-      ViewModel.ReplaceSymbol( DtGrid, BtnReplaceSymbol ) ;
+      BtnReplaceSymbol.IsEnabled = false ;
+      if ( sender is not DataGrid dataGrid ) return ;
+      if ( dataGrid.SelectedItem == null ) return ;
+      if ( dataGrid.SelectedItem is not CeedModel ceedModel ) {
+        MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
+        return ;
+      }
+
+      ViewModel.SelectedCeedModel = ceedModel ;
+      BtnReplaceSymbol.IsEnabled = true ;
+      ViewModel.ShowPreviewList( ceedModel ) ;
     }
 
-    private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
+    private void ButtonOk_OnClick( object sender, RoutedEventArgs e )
     {
-      ViewModel.ReplaceMultipleSymbols( DtGrid ) ;
+      var dpId = new DockablePaneId( RoutingAppUI.PaneId ) ;
+      if ( ! DockablePane.PaneIsRegistered( dpId ) ) return ;
+      ViewModel.ResetData() ;
+      DockablePane dockPane = ViewModel.UiDocument.Application.GetDockablePane( dpId ) ;
+      dockPane.Hide() ;
     }
   }
 
   // ReSharper disable once ClassNeverInstantiated.Global
-  public class DesignCeedViewModel : CeedViewModel
+  public class DesignCeedDockPaneContentViewModel : CeedViewModel
   {
-    public DesignCeedViewModel() : base( default!, default!, default! )
+    public DesignCeedDockPaneContentViewModel() : base( default!, default!, default! )
     {
     }
   }

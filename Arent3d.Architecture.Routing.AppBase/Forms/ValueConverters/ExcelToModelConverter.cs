@@ -376,7 +376,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
         if ( symbolModelNumber.Count == symbolsNotHaveModelNumber.Count ) {
           for ( var i = 0 ; i < symbolsNotHaveModelNumber.Count ; i++ ) {
-            AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, symbolsNotHaveModelNumber[ i ], symbolModelNumber[ i ], floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+            var generalDisplayDeviceSymbol = symbolsNotHaveModelNumber[ i ].Normalize( NormalizationForm.FormKC ) ;
+            AddCeedModel( ceedModelData, legendDisplay, ceedModelNumber, ceedSetCode, generalDisplayDeviceSymbol, symbolModelNumber[ i ], floorPlanSymbol, instrumentationSymbol, ceedName, dwgNumber, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
           }
         }
         else {
