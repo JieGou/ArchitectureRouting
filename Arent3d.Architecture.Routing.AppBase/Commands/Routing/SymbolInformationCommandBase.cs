@@ -11,6 +11,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using MoreLinq ;
+using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -21,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private FamilySymbol? _symbolCircleType ;
     
     private const int LineWeight = 4 ;
-    private const string ParameterName = "Symbol Height" ;
+    public const string ParameterName = "Symbol Height" ;
     
     private static double Offset => 1d.MillimetersToRevitUnits() ;
     
@@ -63,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
 
-        var viewModel = new SymbolInformationViewModel( uiDocument.Document, symbolModel ) ;
+        var viewModel = new SymbolInformationViewModel( uiDocument, uiDocument.Document, symbolModel ) ;
         var dialog = new SymbolInformationDialog( viewModel ) ;
 
         if ( dialog.ShowDialog() != true || null == point ) 
@@ -130,8 +131,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         document.Regenerate();
       }
 
+      var viewScale = document.ActiveView.Scale ;
+      var scale = ImportDwgMappingModel.GetMagnificationOfView( viewScale ) / 100d ;
       if ( symbolInstance.LookupParameter( ParameterName ) is { } parameter && Math.Abs( parameter.AsDouble() - viewModel.SymbolInformation.Height.MillimetersToRevitUnits() / 2 ) > GeometryHelper.Tolerance ) {
-        parameter.Set( viewModel.SymbolInformation.Height.MillimetersToRevitUnits() / 2 ) ;
+        parameter.Set( viewModel.SymbolInformation.Height.MillimetersToRevitUnits() / 2 * scale ) ;
         document.Regenerate();
       }
 
@@ -191,7 +194,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       tag.Document.Regenerate();
     }
 
-    private static void MoveTag( FamilyInstance symbolInstance, IndependentTag tag, SymbolCoordinate symbolCoordinate )
+    public static void MoveTag( FamilyInstance symbolInstance, IndependentTag tag, SymbolCoordinate symbolCoordinate )
     {
       var symbolBox = symbolInstance.get_BoundingBox( null ) ;
       var symbolLocation = ( (LocationPoint) symbolInstance.Location ).Point ;

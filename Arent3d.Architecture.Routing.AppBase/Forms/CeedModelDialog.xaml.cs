@@ -12,7 +12,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class CeedModelDialog : Window
   {
-    private const string Message = "Can't create connector with this ceed code " ;
     private CeedViewModel ViewModel => (CeedViewModel) DataContext ;
 
     public CeedModelDialog( CeedViewModel viewModel )
@@ -23,7 +22,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Style rowStyle = new( typeof( DataGridRow ) ) ;
       rowStyle.Setters.Add( new EventSetter( PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
-      ViewModel.DtGrid = DtGrid ;
     }
 
     private void CmbKeyDown( object sender, KeyEventArgs e )
@@ -35,12 +33,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void ShowCeedModelNumberColumn_Checked( object sender, RoutedEventArgs e )
     {
-      ViewModel.ShowCeedModelNumberColumn( LbCeedModelNumbers, CmbCeedModelNumbers ) ;
+      ViewModel.ShowCeedModelNumberColumn( DtGrid, LbCeedModelNumbers, CmbCeedModelNumbers ) ;
     }
 
     private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
     {
-      ViewModel.UnShowCeedModelNumberColumn( LbCeedModelNumbers, CmbCeedModelNumbers ) ;
+      ViewModel.UnShowCeedModelNumberColumn( DtGrid, LbCeedModelNumbers, CmbCeedModelNumbers ) ;
     }
 
     private void ShowOnlyUsingCode_Checked( object sender, RoutedEventArgs e )
@@ -79,7 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.SelectedCeedCode = selectedItem.CeedSetCode ;
       ViewModel.SelectedModelNum = selectedItem.ModelNumber ;
       ViewModel.SelectedFloorPlanType = selectedItem.FloorPlanType ;
-      ViewModel.Save() ;
+      ViewModel.UpdateCeedStorableAndStorageServiceData() ;
       DialogResult = true ;
       Close() ;
     }
@@ -98,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   // ReSharper disable once ClassNeverInstantiated.Global
   public class DesignCeedViewModel : CeedViewModel
   {
-    public DesignCeedViewModel() : base( default! )
+    public DesignCeedViewModel() : base( default!, default!, default! )
     {
     }
   }

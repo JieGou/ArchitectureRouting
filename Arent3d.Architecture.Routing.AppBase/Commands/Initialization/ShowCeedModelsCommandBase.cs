@@ -46,12 +46,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var dialog = new CeedModelDialog( viewModel ) ;
       
       dialog.ShowDialog() ;
-      if ( viewModel.DwgImportIds.Any() ) {
-        using Transaction transaction = new( uiDocument.Document, "Remove dwg file" ) ;
-        transaction.Start() ;
-        uiDocument.Document.Delete( viewModel.DwgImportIds ) ;
-        transaction.Commit() ;
-      }
 
       if ( ! ( dialog.DialogResult ?? false ) ) 
         return Result.Cancelled ;

@@ -388,7 +388,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       string fileName = "ConnectorOneSide37.png" ;
       string directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
-      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
+      var resourcesPath = Path.Combine( directory, "resources" ) ;
       foreach ( var item in (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) ) {
         if ( floorPlanType != item.GetFieldName() ) continue ;
         fileName = item.GetFieldName() + ".png" ;

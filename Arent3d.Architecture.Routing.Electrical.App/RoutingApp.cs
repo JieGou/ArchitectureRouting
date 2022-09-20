@@ -4,7 +4,6 @@ using System.Reflection ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
-using Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -70,6 +69,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     {
       yield return new RoutingUpdateListener( FromToTreeManager ) ;
       yield return new NotationForRackListener() ;
+      yield return new NotationForPullBoxListener() ;
     }
   }
 }

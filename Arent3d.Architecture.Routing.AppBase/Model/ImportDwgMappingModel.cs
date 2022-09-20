@@ -186,11 +186,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     public static double GetDefaultSymbolMagnification( Document document )
     {
       var activeViewScale = document.ActiveView.Scale ;
-      var defaultSymbolMagnification = activeViewScale * SetRatio( activeViewScale ) ;
+      var defaultSymbolMagnification = activeViewScale * GetDefaultSymbolRatio( activeViewScale ) ;
       return defaultSymbolMagnification ;
     }
     
-    private static double SetRatio( int scale )
+    public static double GetMagnificationOfView( int viewScale )
+    {
+      var defaultSymbolMagnification = viewScale * GetDefaultSymbolRatio( viewScale ) ;
+      return defaultSymbolMagnification ;
+    }
+    
+    private static double GetDefaultSymbolRatio( int scale )
     {
       return scale switch
       {
