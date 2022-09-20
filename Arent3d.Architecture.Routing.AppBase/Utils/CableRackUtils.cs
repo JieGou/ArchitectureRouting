@@ -536,7 +536,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     private static double RackWidthOnPlanView( int nScale )
     {
-      var symbolRatio = Model.ImportDwgMappingModel.SetRatio( nScale ) ;
+      var symbolRatio = Model.ImportDwgMappingModel.GetDefaultSymbolRatio( nScale ) ;
       return ( symbolRatio * 600 * 2 / 3 ).MillimetersToRevitUnits() ;
     }
 
