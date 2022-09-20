@@ -4,16 +4,12 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storages ;
-using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -98,27 +94,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         transaction.Commit( failureOptions ) ;
       }
 
-      #region Change dimension of pullbox and set new label
-      
-      var csvStorable = document.GetCsvStorable() ;
-      var conduitsModelData = csvStorable.ConduitsModelData ;
-      var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
-      var scale = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
-      var baseLengthOfLine = scale / 100d ;
-      var level = document.ActiveView.GenLevel ;
-      if ( level != null ) {
-        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
-        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
-      
-        foreach ( var pullBoxElement in pullBoxElements ) {
-          var (pullBox, position) = pullBoxElement ;
-          var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
-          PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
-            conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
-        }
-      }
-
-      #endregion
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBoxElements ) ;
 
       #region Change Representative Route Name
 
