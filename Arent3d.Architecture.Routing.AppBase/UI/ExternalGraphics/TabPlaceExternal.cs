@@ -88,10 +88,17 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             const double tolerance = 0.0001 ;
             if ( direction.X < 0 )
                 direction = direction.Negate() ;
+            
             if ( IsAboveLine( direction, firstPoint, placePoint ) ) {
                 var angle = direction.AngleTo( XYZ.BasisY ) ;
-                if ( angle < tolerance || Math.Abs( angle - 0.5 * Math.PI ) < tolerance || Math.Abs( angle - Math.PI ) < tolerance )
+                if ( Math.Abs( angle - 0.5 * Math.PI ) < tolerance )
                     return 0 ;
+
+                if ( angle < tolerance || Math.Abs( angle - Math.PI ) < tolerance ) {
+                    if ( placePoint.X <= firstPoint.X )
+                        return 0 ;
+                    return Math.PI ;
+                }
 
                 if ( angle < 0.5 * Math.PI )
                     angle = 0.5 * Math.PI - angle ;
@@ -102,8 +109,15 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             }
             else {
                 var angle = direction.AngleTo( XYZ.BasisX.Negate() ) ;
-                if ( angle < tolerance || Math.Abs( angle - 0.5 * Math.PI ) < tolerance )
+                if ( angle < tolerance )
                     return 0 ;
+
+                if ( Math.Abs( angle - 0.5 * Math.PI ) < tolerance )
+                {
+                    if ( placePoint.X <= firstPoint.X )
+                        return 0 ;
+                    return Math.PI ;
+                }
 
                 if ( angle < 0.5 * Math.PI )
                     angle = Math.PI - angle ;
