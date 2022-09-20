@@ -1,5 +1,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Linq.Expressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
@@ -101,29 +102,30 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       // calculate lengths of first and last rack
       var specialLengthList = new List<(Element Conduit, double StartParam, double EndParam)>() ;
       if ( firstSelectedConduit.Id != secondSelectedConduit.Id ) {
-        var firstParams = firstSelectedConduit.CalculateParam( uiResult.Value.StartPoint, linkedConduits.ElementAt( 1 ) ) ;
-        var lastParams = secondSelectedConduit.CalculateParam( uiResult.Value.EndPoint, linkedConduits.ElementAt( linkedConduits.Count - 2 ) ) ;
+        var firstParams = firstSelectedConduit.CalculatePositionOfRackOnConduit( uiResult.Value.StartPoint, linkedConduits.ElementAt( 1 ) ) ;
+        var lastParams = secondSelectedConduit.CalculatePositionOfRackOnConduit( uiResult.Value.EndPoint, linkedConduits.ElementAt( linkedConduits.Count - 2 ) ) ;
         specialLengthList.Add( ( firstSelectedConduit, firstParams.StartParam, firstParams.EndParam ) ) ;
         specialLengthList.Add( ( secondSelectedConduit, lastParams.StartParam, lastParams.EndParam ) ) ;
       }
       else {
-        var firstParams = firstSelectedConduit.CalculateParam( uiResult.Value.StartPoint, uiResult.Value.EndPoint ) ;
+        var firstParams = firstSelectedConduit.CalculatePositionOfRackOnConduit( uiResult.Value.StartPoint, uiResult.Value.EndPoint ) ;
         specialLengthList.Add( ( firstSelectedConduit, firstParams.StartParam, firstParams.EndParam ) ) ;
       }
 
       // start generate new racks
       using var createRackTransaction = new Transaction( document, "手動でラックを作成する" ) ;
       createRackTransaction.Start() ;
+      
       // create racks along with conduits
-      var racksAndFittings = document.CreateRacksAlignToConduits( linkedConduits, uiResult.Value.RackWidth, "Normal Rack", specialLengthList ) ;
+      var conduitWidthMap = linkedConduits.Select( conduit => ( conduit, uiResult.Value.RackWidth ) ) ;
+      var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", specialLengthList ) ;
 
       // resolve overlapped cases
       var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ) ;
-      //
+
       // create annotations for racks
       NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, modifiedRackLists.OfType<FamilyInstance>() ) ;
-
-
+      
       createRackTransaction.Commit() ;
       return Result.Succeeded ;
     }
