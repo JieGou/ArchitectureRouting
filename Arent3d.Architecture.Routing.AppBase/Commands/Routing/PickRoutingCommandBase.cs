@@ -13,7 +13,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
+using Autodesk.Revit.Exceptions ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
