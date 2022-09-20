@@ -25,8 +25,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-
       Reference pickedPullBox ;
+
       try {
         pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, GetFilter() ) ;
       }
