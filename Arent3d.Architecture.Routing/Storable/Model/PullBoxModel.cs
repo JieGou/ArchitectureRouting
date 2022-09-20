@@ -4,6 +4,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class PullBoxModel
   {
+    public virtual string DefaultPullBoxLabel => "PB" ;
     private const string NumberPattern = @"\d+" ;
     private const string StringPattern = @"[^0-9 ]" ;
     public string Buzaicd { get ; }

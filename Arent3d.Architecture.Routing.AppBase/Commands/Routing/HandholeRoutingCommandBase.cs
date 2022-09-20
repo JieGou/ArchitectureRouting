@@ -7,27 +7,17 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Architecture.Routing.Storages ;
-using Arent3d.Architecture.Routing.Storages.Models ;
-using Arent3d.Utility ;
-using static Arent3d.Architecture.Routing.AppBase.Commands.Routing.PullBoxRoutingCommandBase ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class HandholeRoutingCommandBase : RoutingCommandBase<PickState>
+  public abstract class HandholeRoutingCommandBase : PullBoxRoutingCommandBase
   {
     private const string DefaultBuzaicdForGradeModeThanThree = "032025" ;
     private const string HandholeName = "ハンドホール" ;
     private const string NoFamily = "There is no handhole family in this project" ;
     private const string Error = "Error" ;
-    private const string DefaultHandholeLabel = "HH" ;
-    protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
-    protected virtual ConnectorFamilyType? ConnectorType => null ;
-    protected abstract AddInType GetAddInType() ;
-    protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
@@ -87,97 +77,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var allHandholeHiroiMasterModel = csvStorable.HiroiMasterModelData.Where( hr => hr.Hinmei.Contains( HandholeName ) ) ;
       var handholeModels = allHandholeHiroiMasterModel.Select( hiroiMasterModel => new HandholeModel( hiroiMasterModel ) ).ToList() ;
       return handholeModels.OrderBy( pb => pb.SuffixCategoryName ).ThenBy( pb => pb.PrefixCategoryName ).ThenBy( pb => pb.Width ).ThenBy( pb => pb.Height ).ToList() ;
-    }
-
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
-    {
-      var result = new List<( string RouteName, RouteSegment Segment )>() ;
-      if ( pickState.PullBox == null ) return result ;
-
-      var pickRoute = pickState.PickInfo.SubRoute.Route ;
-      var routes = document.CollectRoutes( GetAddInType() ) ;
-      var routeInTheSamePosition = PullBoxRouteManager.GetParentRoutesInTheSamePosition( document, routes.ToList(), pickRoute, pickState.PickInfo.Element ) ;
-      var systemType = pickRoute.GetMEPSystemType() ;
-      var curveType = pickRoute.UniqueCurveType ;
-      var nameBase = GetNameBase( systemType, curveType! ) ;
-      var parentIndex = 1 ;
-      var allowedTiltedPiping = CheckAllowedTiltedPiping( pickRoute.GetAllConnectors().ToList() ) ;
-      var parentAndChildRoute = new Dictionary<string, List<string>>() ;
-      foreach ( var route in routeInTheSamePosition ) {
-        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox, pickState.HeightConnector, pickState.HeightWire, pickState.RouteDirection, pickState.IsCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute,
-          pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) ) ;
-      }
-
-      pickState.ParentAndChildRoute = parentAndChildRoute ;
-      return result ;
-    }
-
-    private bool CheckAllowedTiltedPiping( ICollection<Connector> connectors )
-    {
-      if ( ! connectors.Any() ) return false ;
-      foreach ( var connector in connectors ) {
-        var (x, y, z) = ( connector.Owner as FamilyInstance )!.FacingOrientation ;
-        if ( x is not (1 or -1) && y is not (1 or -1) && z is not (1 or -1) ) {
-          return true ;
-        }
-      }
-
-      return false ;
-    }
-
-    protected override void BeforeRouteGenerated( Document document, PickState result )
-    {
-      base.BeforeRouteGenerated( document, result ) ;
-      var level = ( document.GetElement( result.PickInfo.Element.GetLevelId() ) as Level ) ! ;
-
-      using var transaction = new Transaction( document, "Create Handhole" ) ;
-      transaction.Start() ;
-      result.PullBox = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, result.PullBoxPosition.X, result.PullBoxPosition.Y, result.HeightConnector, level, result.PickInfo.Route.Name ) ;
-      transaction.Commit() ;
-    }
-
-    protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
-    {
-      #region Change dimension of handhole and set new label
-
-      CsvStorable? csvStorable = null ;
-      List<ConduitsModel>? conduitsModelData = null ;
-      List<HiroiMasterModel>? hiroiMasterModels = null ;
-      if ( result.IsAutoCalculatePullBoxSize ) {
-        csvStorable = document.GetCsvStorable() ;
-        conduitsModelData = csvStorable.ConduitsModelData ;
-        hiroiMasterModels = csvStorable.HiroiMasterModelData ;
-      }
-
-      var level = document.ActiveView.GenLevel ;
-      StorageService<Level, DetailSymbolModel>? storageDetailSymbolService = null ;
-      StorageService<Level, PullBoxInfoModel>? storageHandholeInfoServiceByLevel = null ;
-      if ( level != null ) {
-        storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
-        storageHandholeInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
-      }
-
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.PullBox!, csvStorable, storageDetailSymbolService, storageHandholeInfoServiceByLevel, conduitsModelData, hiroiMasterModels, DefaultHandholeLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
-
-      #endregion
-
-      #region Change Representative Route Name
-
-      if ( ! result.ParentAndChildRoute.Any() ) return executeResultValue ;
-      using Transaction transactionChangeRepresentativeRouteName = new(document) ;
-      transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
-      foreach ( var (parentRouteName, childRouteNames) in result.ParentAndChildRoute ) {
-        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => childRouteNames.Contains( c.GetRouteName()! ) ).ToList() ;
-        foreach ( var conduit in conduits ) {
-          conduit.TrySetProperty( RoutingParameter.RepresentativeRouteName, parentRouteName ) ;
-        }
-      }
-
-      transactionChangeRepresentativeRouteName.Commit() ;
-
-      #endregion
-
-      return executeResultValue ;
     }
   }
 }

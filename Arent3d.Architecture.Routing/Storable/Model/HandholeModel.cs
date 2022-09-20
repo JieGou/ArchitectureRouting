@@ -2,6 +2,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class HandholeModel : PullBoxModel
   {
+    public override string DefaultPullBoxLabel => "HH" ;
+
     public HandholeModel( HiroiMasterModel hiroiMasterModel ) : base( hiroiMasterModel )
     {
     }
