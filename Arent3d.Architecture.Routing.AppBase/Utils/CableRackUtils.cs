@@ -119,10 +119,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     {
       var (startConnector, endConnector) = Get2ConnectorsOfConduit( mepCurve ) ;
       if ( startConnector is null || endConnector is null )
-        return  ( 0.0, 1.0 ) ;
+        return ( 0.0, 1.0 ) ;
 
       if ( mepCurve.Location is not LocationCurve { Curve: Line line } )
-        return  ( 0.0, 1.0 ) ;
+        return ( 0.0, 1.0 ) ;
 
       // arrange connect so that vector connector 1 to connect 2 is same way as curve's direction
       if ( line.Direction.IsAlmostEqualTo( ( endConnector.Origin - startConnector.Origin ).Normalize() ) == false )
@@ -262,7 +262,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var otherRacks = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting ).Where( r => ! ids.Contains( r.Id ) && r.RackWidth().Equals( rackWidth ) ).ToList() ;
 
       if ( ! otherRacks.Any() )
-        return Array.Empty<Element>() ;
+        return rackList ;
       var deletedRacks = new List<Element>() ;
       var idsToRemove = new List<ElementId>() ;
       foreach ( var thisRack in rackList ) {
@@ -458,6 +458,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return markPoints ;
     }
 
+    private static double RealElbowRadius( double elbowWidth, double elbowMinRadius, double scaleFactor )
+    {
+      return scaleFactor > 1 ? ( scaleFactor - 1 ) * elbowWidth / 2 + elbowMinRadius : elbowMinRadius ;
+    }
+
     private static (XYZ, XYZ, XYZ, XYZ) ReArrangeToConnect( (XYZ, XYZ, double) marker1, (XYZ, XYZ, double) marker2, double scaleRate, double elbowAnnotationRadius, double elbowAdditionLength )
     {
       var markPoints = ReArrange( ( marker1.Item1, marker1.Item2 ), ( marker2.Item1, marker2.Item2 ) ) ;
@@ -482,7 +487,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
         var res1 = resultArray.get_Item( 0 ) ;
         var intersectedPoint = res1.XYZPoint ;
-        var realElbowRadius = ( scaleRate - 1 ) * width / 2 + elbowAnnotationRadius ;
+        var realElbowRadius = RealElbowRadius( width, elbowAnnotationRadius, scaleRate ) ;
         var distanceFromIntersect = realElbowRadius + width / 2 + elbowAdditionLength ;
 
         markPoints.P12 = intersectedPoint + ( markPoints.P11 - markPoints.P12 ).Normalize() * distanceFromIntersect ;
@@ -534,6 +539,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return false ;
     }
 
+    private static FamilyInstance? CreateElbowBetweenRackMarkers( Document document, (XYZ, XYZ, double) thisMarker, (XYZ, XYZ, double) nextMarker, double elbowMinRadius, double paddingLength, FamilySymbol? elbowType, Element? referenceElement, string rackClassification )
+    {
+      var rotateClockWise = ( thisMarker.Item2 - thisMarker.Item1 ).CrossProduct( nextMarker.Item1 - thisMarker.Item2 ).Z > 0 ;
+      var elbowInsertPoint = rotateClockWise ? thisMarker.Item2 : nextMarker.Item1 ;
+      var elbowDirection = rotateClockWise ? thisMarker.Item2 - thisMarker.Item1 : nextMarker.Item1 - nextMarker.Item2 ;
+      var elbowRotateAngle = XYZ.BasisX.AngleOnPlaneTo( elbowDirection, XYZ.BasisZ ) ;
+
+      var rackWidth = Math.Max( thisMarker.Item3, nextMarker.Item3 ) ;
+      var scaleFactor = RackWidthOnPlanView( document.ActiveView.Scale ) / rackWidth ;
+      var elbowRadius = RealElbowRadius( rackWidth, elbowMinRadius, scaleFactor ) ;
+      var elbowCreationParam = new ElbowCreationParam( elbowInsertPoint, elbowRotateAngle, rackWidth, elbowRadius, paddingLength, scaleFactor, null, elbowType, referenceElement, rackClassification ) ;
+      return CreateElbow( document, elbowCreationParam ) ;
+    }
+
     private static double RackWidthOnPlanView( int nScale )
     {
       var symbolRatio = Model.ImportDwgMappingModel.GetDefaultSymbolRatio( nScale ) ;
@@ -568,7 +587,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       var rackType = GetGenericRackSymbol( doc ) ;
       var elbowType = GetElbowSymbol( doc ) ;
-      
+
       var r0 = 20d.MillimetersToRevitUnits() ;
       var l0 = 25d.MillimetersToRevitUnits() ;
 
@@ -580,7 +599,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
         var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
-        var scaleFactor = RackWidthOnPlanView(doc.ActiveView.Scale) / thisMarker.Item3 ;
+        var scaleFactor = RackWidthOnPlanView( doc.ActiveView.Scale ) / thisMarker.Item3 ;
         var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, scaleFactor, r0, l0 ) ;
         simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, thisMarker.Item3 ), i ) ;
         simplifiedMarkerMap[ i + 1 ] = ( ( fourPoints.Item3, fourPoints.Item4, nextMarker.Item3 ), i + 1 ) ;
@@ -594,7 +613,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var conduit = conduits[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
         // create rack
         var rackWidth = rackMarker.Item3 ;
-        var scaleFactor = RackWidthOnPlanView(doc.ActiveView.Scale) / rackWidth ;
+        var scaleFactor = RackWidthOnPlanView( doc.ActiveView.Scale ) / rackWidth ;
         var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, conduit, rackClassification ) ;
 
         if ( CreateRack( doc, creationParam ) is not { } rack )
@@ -611,15 +630,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         if ( i == simplifiedMarkerMap.Count - 1 )
           continue ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
-        var rotateClockWise = ( rackMarker.Item2 - rackMarker.Item1 ).CrossProduct( nextMarker.Item1 - rackMarker.Item2 ).Z > 0 ;
-        var elbowInsertPoint = rotateClockWise ? rackMarker.Item2 : nextMarker.Item1 ;
-        var elbowDirection = rotateClockWise ? rackMarker.Item2 - rackMarker.Item1 : nextMarker.Item1 - nextMarker.Item2 ;
-        var elbowRotateAngle = XYZ.BasisX.AngleOnPlaneTo( elbowDirection, XYZ.BasisZ ) ;
 
-        rackWidth = Math.Max( rackMarker.Item3, nextMarker.Item3 ) ;
-        var elbowRadius = ( scaleFactor - 1 ) * rackWidth / 2 + r0 ;
-        var elbowCreationParam = new ElbowCreationParam( elbowInsertPoint, elbowRotateAngle, rackWidth, elbowRadius, l0, scaleFactor, null, elbowType, conduit, rackClassification ) ;
-        if ( CreateElbow( doc, elbowCreationParam ) is not { } elbow )
+        var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, r0, l0, elbowType, conduit, rackClassification ) ;
+        if ( elbow is null )
           continue ;
 
         // connect rack to new elbow
