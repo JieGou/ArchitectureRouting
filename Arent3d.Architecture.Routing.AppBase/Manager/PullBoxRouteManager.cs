@@ -123,7 +123,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
                 name = IndexRouteName( routes, routeName, ref index ) ;
                 result.AddRange( from branchSegment in beforeSegments select ( routeName, branchSegment ) ) ;
                 result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeightSecond, avoidType, shaftElementUniqueId, allowedTiltedPiping || segment.AllowedTiltedPiping ) ) ) ;
-                var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).EnumerateAll() ;
+                var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && ( e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() || e.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ) ).EnumerateAll() ;
                 if ( pullBoxes.Any( p => p.UniqueId == segment.ToEndPoint.Key.GetElementUniqueId() ) )
                   result.AddRange( GetRouteSegmentsForBranchRoutesContainingPullBoxes( document, routeName, segment, name, routes, mainRouteName, pullBoxes, ref index ) ) ;
 
@@ -352,7 +352,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             name = routeName + "_" + index ;
             result.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeightFirst, avoidType, shaftElementUniqueId, allowedTiltedPiping || segment.AllowedTiltedPiping ) ) ) ;
             result.Add( ( name, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, pullBoxToEndPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeightSecond, avoidType, shaftElementUniqueId, allowedTiltedPiping || segment.AllowedTiltedPiping ) ) ) ;
-            var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
+            var pullBoxes = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e is FamilyInstance && ( e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() || e.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ) ).ToList() ;
             if ( pullBoxes.Any( p => p.UniqueId == segment.ToEndPoint.Key.GetElementUniqueId() ) ) {
               // Increase index in duplicated case
               name = IndexRouteName( routes, name, ref index ) ;

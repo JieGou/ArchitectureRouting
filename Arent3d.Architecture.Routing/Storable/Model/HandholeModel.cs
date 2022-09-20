@@ -6,6 +6,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
   {
     private const string NumberPattern = @"\d+" ;
     private const string StringPattern = @"[^0-9 ]" ;
+    private readonly HiroiMasterModel _hiroiMasterModel ;
     public string Buzaicd { get ; }
     public string Kikaku { get ; }
     public string? SuffixCategoryName { get ; private set ; }
@@ -14,7 +15,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public int Height { get ; private set ; }
     public int Depth { get ; private set ; }
     public string? Name { get ; private set ; }
-    private readonly HiroiMasterModel _hiroiMasterModel ;
 
     public HandholeModel( HiroiMasterModel hiroiMasterModel )
     {

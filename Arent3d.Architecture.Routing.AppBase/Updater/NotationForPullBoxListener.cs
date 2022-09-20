@@ -30,8 +30,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       if ( document == null ) return categoryFilter ;
 
       var sharedParameterElement = new FilteredElementCollector( document ).OfClass( typeof( SharedParameterElement ) ).OfType<SharedParameterElement>().Single( x => x.Name == ElectricalRoutingElementParameter.ConnectorType.GetFamilyName() ) ;
-      var parameterFilter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateEqualsRule( sharedParameterElement.Id, ConnectorFamilyType.PullBox.GetFamilyName(), true ) ) ;
-      return new LogicalAndFilter( categoryFilter, parameterFilter ) ;
+      var pullBoxParameterFilter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateEqualsRule( sharedParameterElement.Id, ConnectorFamilyType.PullBox.GetFamilyName(), true ) ) ;
+      var handholeParameterFilter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateEqualsRule( sharedParameterElement.Id, ConnectorFamilyType.Handhole.GetFamilyName(), true ) ) ;
+      return new LogicalAndFilter( categoryFilter, new LogicalOrFilter( pullBoxParameterFilter, handholeParameterFilter ) ) ;
     }
 
     public void Execute( UpdaterData data )

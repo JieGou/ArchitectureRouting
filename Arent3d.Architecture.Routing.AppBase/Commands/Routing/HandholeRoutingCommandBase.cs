@@ -11,7 +11,6 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
@@ -19,13 +18,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class HandholeRoutingCommandBase : RoutingCommandBase<HandholeRoutingCommandBase.PickState>
   {
-    public record PickState( PointOnRoutePicker.PickInfo PickInfo, FamilyInstance Handhole, double HeightConnector, double HeightWire, XYZ RouteDirection, bool IsCreateHandholeWithoutSettingHeight, bool IsAutoCalculateHandholeSize,
-      XYZ? PositionLabel, HandholeModel? SelectedHandhole, XYZ? FromDirection, XYZ? ToDirection, Dictionary<string, List<string>> ParentAndChildRoute ) ;
-
     private const string DefaultBuzaicdForGradeModeThanThree = "032025" ;
     private const string HandholeName = "ハンドホール" ;
     private const string NoFamily = "There is no handhole family in this project" ;
     private const string Error = "Error" ;
+    public const string DefaultHandholeLabel = "HH" ;
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
     protected virtual ConnectorFamilyType? ConnectorType => null ;
     protected abstract AddInType GetAddInType() ;
@@ -41,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return OperationResult<PickState>.Cancelled ;
       }
 
-      PointOnRoutePicker.PickInfo? pickInfo ;
+      PointOnRoutePicker.PickInfo pickInfo ;
       try {
         pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
       }
@@ -53,44 +50,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       XYZ? fromDirection = null ;
       XYZ? toDirection = null ;
       if ( pickInfo.Element is FamilyInstance conduitFitting ) {
-        var pullBoxInfo = PullBoxRouteManager.GetPullBoxInfo( document, pickInfo.Route.RouteName, conduitFitting ) ;
-        ( originX, originY, originZ ) = pullBoxInfo.Position ;
-        fromDirection = pullBoxInfo.FromDirection ;
-        toDirection = pullBoxInfo.ToDirection ;
+        var handholeInfo = PullBoxRouteManager.GetPullBoxInfo( document, pickInfo.Route.RouteName, conduitFitting ) ;
+        ( originX, originY, originZ ) = handholeInfo.Position ;
+        fromDirection = handholeInfo.FromDirection ;
+        toDirection = handholeInfo.ToDirection ;
       }
 
       var level = ( document.GetElement( pickInfo.Element.GetLevelId() ) as Level ) ! ;
       var heightConnector = originZ - level.Elevation ;
       var heightWire = originZ - level.Elevation ;
 
-      using Transaction transaction = new(document, "Create Handhole") ;
-      transaction.Start() ;
-      var handhole = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, originX, originY, heightConnector, level, pickInfo.Route.Name ) ;
-      transaction.Commit() ;
-
-      XYZ? position ;
+      XYZ? positionLabel ;
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var baseLengthOfLine = scale / 100d ;
-      if ( pickInfo.Element is FamilyInstance { FacingOrientation: { } } ) {
-        position = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      }
-      else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 ) {
-        position = new XYZ( originX, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      }
-      else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 ) {
-        position = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      }
-      else {
-        position = new XYZ( originX, originY, heightConnector ) ;
-      }
+      if ( pickInfo.Element is FamilyInstance { FacingOrientation: { } } )
+        positionLabel = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
+      else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 )
+        positionLabel = new XYZ( originX, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
+      else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 )
+        positionLabel = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
+      else
+        positionLabel = new XYZ( originX, originY, heightConnector ) ;
 
       HandholeModel? handholeModel = null ;
       if ( GetHandholeModels( document ) is { Count: > 0 } handholeModels ) {
         handholeModel = handholeModels.FirstOrDefault( model => model.Buzaicd == DefaultBuzaicdForGradeModeThanThree ) ?? handholeModels.First() ;
       }
 
-      return new OperationResult<PickState>(
-        new PickState( pickInfo, handhole, heightConnector, heightWire, pickInfo.RouteDirection, true, true, position, handholeModel, fromDirection, toDirection, new Dictionary<string, List<string>>() ) ) ;
+      return new OperationResult<PickState>( new PickState( pickInfo, null, new XYZ( originX, originY, originZ ), heightConnector, heightWire, pickInfo.RouteDirection, true, true, positionLabel, handholeModel, fromDirection, toDirection, new Dictionary<string, List<string>>() ) ) ;
     }
 
     private List<HandholeModel> GetHandholeModels( Document document )
@@ -103,16 +90,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (pickInfo, pullBox, heightConnector, heightWire, routeDirection, isCreateHandholeWithoutSettingHeight, _, _, _, fromDirection, toDirection, parentAndChildRoute) = pickState ;
-      var route = pickInfo.SubRoute.Route ;
-      var systemType = route.GetMEPSystemType() ;
-      var curveType = route.UniqueCurveType ;
+      var result = new List<( string RouteName, RouteSegment Segment )>() ;
+      if ( pickState.Handhole == null ) return result ;
+
+      var pickRoute = pickState.PickInfo.SubRoute.Route ;
+      var routes = document.CollectRoutes( GetAddInType() ) ;
+      var routeInTheSamePosition = PullBoxRouteManager.GetParentRoutesInTheSamePosition( document, routes.ToList(), pickRoute, pickState.PickInfo.Element ) ;
+      var systemType = pickRoute.GetMEPSystemType() ;
+      var curveType = pickRoute.UniqueCurveType ;
       var nameBase = GetNameBase( systemType, curveType! ) ;
       var parentIndex = 1 ;
-      var allowedTiltedPiping = CheckAllowedTiltedPiping( route.GetAllConnectors().ToList() ) ;
-      var result = PullBoxRouteManager.GetRouteSegments( document, route, pickInfo.Element, pullBox, heightConnector, heightWire, routeDirection, isCreateHandholeWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute,
-        fromDirection, toDirection, null, false, allowedTiltedPiping ) ;
+      var allowedTiltedPiping = CheckAllowedTiltedPiping( pickRoute.GetAllConnectors().ToList() ) ;
+      var parentAndChildRoute = new Dictionary<string, List<string>>() ;
+      foreach ( var route in routeInTheSamePosition ) {
+        result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.Handhole, pickState.HeightConnector, pickState.HeightWire, pickState.RouteDirection, pickState.IsCreateHandholeWithoutSettingHeight, nameBase, ref parentIndex, ref parentAndChildRoute,
+          pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) ) ;
+      }
 
+      pickState.ParentAndChildRoute = parentAndChildRoute ;
       return result ;
     }
 
@@ -129,39 +124,49 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return false ;
     }
 
+    protected override void BeforeRouteGenerated( Document document, PickState result )
+    {
+      base.BeforeRouteGenerated( document, result ) ;
+      var level = ( document.GetElement( result.PickInfo.Element.GetLevelId() ) as Level ) ! ;
+
+      using var transaction = new Transaction( document, "Create Handhole" ) ;
+      transaction.Start() ;
+      result.Handhole = PullBoxRouteManager.GenerateConnector( document, ElectricalRoutingFamilyType, ConnectorType, result.HandholePosition.X, result.HandholePosition.Y, result.HeightConnector, level, result.PickInfo.Route.Name ) ;
+      transaction.Commit() ;
+    }
+
     protected override IReadOnlyCollection<Route> CreatePullBoxAfterRouteGenerated( Document document, RoutingExecutor executor, IReadOnlyCollection<Route> executeResultValue, PickState result )
     {
-      var (_, handhole, _, _, _, _, isAutoCalculateHandholeSize, positionLabel, selectedHandhole, _, _, parentAndChildRoute) = result ;
-
-      #region Change dimension of pullbox and set new label
+      #region Change dimension of handhole and set new label
 
       CsvStorable? csvStorable = null ;
       List<ConduitsModel>? conduitsModelData = null ;
       List<HiroiMasterModel>? hiroiMasterModels = null ;
-      const string defaultHandholeLabel = "HH" ;
-      if ( isAutoCalculateHandholeSize ) {
+      if ( result.IsAutoCalculateHandholeSize ) {
         csvStorable = document.GetCsvStorable() ;
         conduitsModelData = csvStorable.ConduitsModelData ;
         hiroiMasterModels = csvStorable.HiroiMasterModelData ;
       }
 
       var level = document.ActiveView.GenLevel ;
+      StorageService<Level, DetailSymbolModel>? storageDetailSymbolService = null ;
+      StorageService<Level, PullBoxInfoModel>? storageHandholeInfoServiceByLevel = null ;
       if ( level != null ) {
-        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
-        var storageHandholeInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
-
-        PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, handhole, csvStorable, storageDetailSymbolService, storageHandholeInfoServiceByLevel, conduitsModelData, hiroiMasterModels, defaultHandholeLabel, positionLabel,
-          isAutoCalculateHandholeSize, selectedHandhole?.ConvertToPullBoxModel() ) ;
+        storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
+        storageHandholeInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       }
+
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.Handhole!, csvStorable, storageDetailSymbolService, storageHandholeInfoServiceByLevel, conduitsModelData, hiroiMasterModels, DefaultHandholeLabel, result.PositionLabel, result.IsAutoCalculateHandholeSize,
+        result.SelectedHandhole?.ConvertToPullBoxModel() ) ;
 
       #endregion
 
       #region Change Representative Route Name
 
-      if ( ! parentAndChildRoute.Any() ) return executeResultValue ;
+      if ( ! result.ParentAndChildRoute.Any() ) return executeResultValue ;
       using Transaction transactionChangeRepresentativeRouteName = new(document) ;
       transactionChangeRepresentativeRouteName.Start( "Change Representative Route Name" ) ;
-      foreach ( var (parentRouteName, childRouteNames) in parentAndChildRoute ) {
+      foreach ( var (parentRouteName, childRouteNames) in result.ParentAndChildRoute ) {
         var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => childRouteNames.Contains( c.GetRouteName()! ) ).ToList() ;
         foreach ( var conduit in conduits ) {
           conduit.TrySetProperty( RoutingParameter.RepresentativeRouteName, parentRouteName ) ;
@@ -175,19 +180,39 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return executeResultValue ;
     }
 
-    public static IReadOnlyCollection<Route> ExecuteReRoute( Document document, RoutingExecutor executor, IProgressData progress, IReadOnlyCollection<Route> executeResultValue )
+    public class PickState
     {
-      var segmentsReroute = Route.GetAllRelatedBranches( executeResultValue ).ToSegmentsWithName().ToList() ;
-      using Transaction transaction = new(document) ;
-      transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
-      var failureOptions = transaction.GetFailureHandlingOptions() ;
-      failureOptions.SetFailuresPreprocessor( new PullBoxRouteManager.FailurePreprocessor() ) ;
-      transaction.SetFailureHandlingOptions( failureOptions ) ;
-      var result = executor.Run( segmentsReroute, progress ) ;
-      executeResultValue = result.Value ;
+      public PointOnRoutePicker.PickInfo PickInfo { get ; set ; }
+      public FamilyInstance? Handhole { get ; set ; }
+      public XYZ HandholePosition { get ; set ; }
+      public double HeightConnector { get ; set ; }
+      public double HeightWire { get ; set ; }
+      public XYZ RouteDirection { get ; set ; }
+      public bool IsCreateHandholeWithoutSettingHeight { get ; set ; }
+      public bool IsAutoCalculateHandholeSize { get ; set ; }
+      public XYZ? PositionLabel { get ; set ; }
+      public HandholeModel? SelectedHandhole { get ; set ; }
+      public XYZ? FromDirection { get ; set ; }
+      public XYZ? ToDirection { get ; set ; }
+      public Dictionary<string, List<string>> ParentAndChildRoute { get ; set ; }
 
-      transaction.Commit( failureOptions ) ;
-      return executeResultValue ;
+      public PickState( PointOnRoutePicker.PickInfo pickInfo, FamilyInstance? handhole, XYZ handholePosition, double heightConnector, double heightWire, XYZ routeDirection, bool isCreateHandholeWithoutSettingHeight, bool isAutoCalculateHandholeSize, XYZ? positionLabel, HandholeModel? selectedHandhole,
+        XYZ? fromDirection, XYZ? toDirection, Dictionary<string, List<string>> parentAndChildRoute )
+      {
+        PickInfo = pickInfo ;
+        Handhole = handhole ;
+        HandholePosition = handholePosition ;
+        HeightConnector = heightConnector ;
+        HeightWire = heightWire ;
+        RouteDirection = routeDirection ;
+        IsCreateHandholeWithoutSettingHeight = isCreateHandholeWithoutSettingHeight ;
+        IsAutoCalculateHandholeSize = isAutoCalculateHandholeSize ;
+        PositionLabel = positionLabel ;
+        SelectedHandhole = selectedHandhole ;
+        FromDirection = fromDirection ;
+        ToDirection = toDirection ;
+        ParentAndChildRoute = parentAndChildRoute ;
+      }
     }
   }
 }
