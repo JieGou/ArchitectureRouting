@@ -345,6 +345,9 @@
         <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
         <string>拾い番号設定</string>
 
+        <key>TransactionName.Commands.Initialization.DisplaySetting</key>
+        <string>表示項目設定</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>自動ルーティング初期化エラー</string>

@@ -26,12 +26,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     private static Dictionary<string, string>? _wireSymbolOptions ;
 
-    public static Dictionary<string, string> WireSymbolOptions => _wireSymbolOptions ??= new Dictionary<string, string>
-    {
-      { "漏水帯（布）", "LeakageZoneCloth" }, 
-      { "漏水帯（発色）", "LeakageZoneColoring" }, 
-      { "漏水帯（塩ビ）", "LeakageZonePvc" }
-    } ;
+    public static Dictionary<string, string> WireSymbolOptions => _wireSymbolOptions ??= ChangeWireTypeCommand.WireSymbolOptions ;
 
     private ObservableCollection<string>? _typeNames ;
 

@@ -24,16 +24,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class DisplaySettingViewModel : NotifyPropertyChanged
   {
-    private const string LeakageZoneClothSymBolName = "LeakageZoneCloth" ;
-    private const string LeakageZoneColoringClothSymBolName = "LeakageZoneColoring" ;
-    private const string LeakageZonePvcSymBolName = "LeakageZonePvc" ;
-    private const string LeakageZoneLineStyleName = "LeakageZone" ;
-
     private readonly StorageService<DataStorage, DisplaySettingModel> _displaySettingByGradeStorageService ;
 
     private readonly Document _document ;
-    private readonly HashSet<string> _leakageSymbolNames = new() { LeakageZoneClothSymBolName, LeakageZonePvcSymBolName, LeakageZoneColoringClothSymBolName } ;
-
     private DisplaySettingModel _dataDisplaySettingModel ;
 
     public DisplaySettingViewModel( Document document )
@@ -66,7 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void Execute( Window window )
     {
       try {
-        var result = _document.TransactionGroup( "TransactionName.Commands.Initialization.PickUpFigureCreation".GetAppStringByKeyOrDefault( "Pick Up Figure Creation" ), _ =>
+        var result = _document.TransactionGroup( "TransactionName.Commands.Initialization.DisplaySetting".GetAppStringByKeyOrDefault( "Display Setting" ), _ =>
         {
           var views = _document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
 
@@ -85,7 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           SaveDisplaySettingByGradeStorageService() ;
 
           UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
-        
+
           return Result.Succeeded ;
         } ) ;
 
@@ -95,6 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CommandUtils.DebugAlertException( e ) ;
         window.DialogResult = false ;
       }
+
       window.Close() ;
     }
 
@@ -127,8 +121,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ) ) ;
 
       // Leak
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<FamilyInstance>().Where( x => _leakageSymbolNames.Contains( x.Symbol.Family.Name ) ) ) ;
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == LeakageZoneLineStyleName ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<FamilyInstance>().Where( x => ChangeWireTypeCommand.WireSymbolOptions.Values.Contains( x.Symbol.Family.Name ) ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == ChangeWireTypeCommand.SubcategoryName ) ) ;
 
       HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
