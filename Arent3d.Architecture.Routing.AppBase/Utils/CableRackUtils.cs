@@ -449,11 +449,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var distances = new List<double>() { d11, d12, d21, d22 } ;
       var minDistance = distances.Min() ;
       ( XYZ P11, XYZ P12, XYZ P21, XYZ P22 ) markPoints ;
-      if ( minDistance == d11 )
+      if ( Math.Abs( minDistance - d11 ) < GeometryUtil.Tolerance )
         markPoints = ( pair1.Item2, pair1.Item1, pair2.Item1, pair2.Item2 ) ;
-      else if ( minDistance == d12 )
+      else if ( Math.Abs( minDistance - d12 ) < GeometryUtil.Tolerance )
         markPoints = ( pair1.Item2, pair1.Item1, pair2.Item2, pair2.Item1 ) ;
-      else if ( minDistance == d21 )
+      else if ( Math.Abs( minDistance - d21 ) < GeometryUtil.Tolerance )
         markPoints = ( pair1.Item1, pair1.Item2, pair2.Item1, pair2.Item2 ) ;
       else
         markPoints = ( pair1.Item1, pair1.Item2, pair2.Item2, pair2.Item1 ) ;
@@ -559,27 +559,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var symbolRatio = Model.ImportDwgMappingModel.GetDefaultSymbolRatio( nScale ) ;
       return ( symbolRatio * 600 * 2 / 3 ).MillimetersToRevitUnits() ;
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="conduitWidthMap">width ust be in Revit API unit</param>
-    /// <returns></returns>
-    public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this Document doc, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", IEnumerable<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
+    
+    public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this Document doc, IEnumerable<(Element Element, double Width)> conduitWidthMap, string rackClassification = "Normal Rack", 
+      IList<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
     {
       // read conduit markers
       var racksAndElbows = new List<Element>() ;
       var conduits = new List<Element>() ;
       var conduitMarkers = new List<(XYZ StartPoint, XYZ EndPoint, double Width)>() ;
       foreach ( var item in conduitWidthMap ) {
-        if ( item.Item1 is not Conduit conduit )
+        if ( item.Element is not Conduit conduit )
           continue ;
         var (startParam, endParam) = ( 0.0, 1.0 ) ;
         if ( specialLengthList?.FirstOrDefault( x => x.Conduit.Id.Equals( conduit.Id ) ) is { Conduit: Conduit } specialLengthItem )
           ( startParam, endParam ) = ( specialLengthItem.StartParam, specialLengthItem.EndParam ) ;
 
         var (startPoint, endPoint) = GetEndPoints( conduit, startParam, endParam ) ;
-        conduitMarkers.Add( ( startPoint, endPoint, item.Item2 ) ) ;
+        conduitMarkers.Add( ( startPoint, endPoint, item.Width ) ) ;
         conduits.Add( conduit ) ;
       }
 
@@ -628,7 +624,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         // Connect to current elbow:
         TryConnectRackItems( rack, currentElbow ) ;
 
-        // create rack elbow
+        // Create rack elbow
         if ( i == simplifiedMarkerMap.Count - 1 )
           continue ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
@@ -637,7 +633,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         if ( elbow is null )
           continue ;
 
-        // connect rack to new elbow
+        // Connect rack to new elbow
         TryConnectRackItems( rack, elbow ) ;
         racksAndElbows.Add( elbow ) ;
         currentElbow = elbow ;
@@ -648,7 +644,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     
     public static bool IsVertical( this Conduit conduit )
     {
-      if ( conduit?.Location is not LocationCurve { Curve: Line line } )
+      if ( conduit.Location is not LocationCurve { Curve: Line line } )
         throw new Exception( "The required location is line!" ) ;
         
       return Math.Abs( Math.Abs( line.Direction.DotProduct( XYZ.BasisZ ) ) - 1 ) < GeometryUtil.Tolerance ;

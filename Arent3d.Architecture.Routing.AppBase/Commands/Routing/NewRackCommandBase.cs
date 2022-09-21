@@ -20,10 +20,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class NewRackCommandBase : IExternalCommand
   {
-    /// <summary>
-    /// Max Distance Tolerance when find Connector Closest
-    /// </summary>
-    private static readonly double MaxDistanceTolerance = 20d.MillimetersToRevitUnits() ;
+
+    private static readonly double MaxDistanceTolerance = 20d.MillimetersToRevitUnits() ; // Max Distance Tolerance when find Connector Closest
     private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
     private const double RatioBendRadius = 3.45 ;
     private const string Notation = "CR (W:{0})" ;
@@ -76,80 +74,53 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void SetParameter( FamilyInstance instance, string parameterName, double value )
-    {
-      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
-    }
-    
-    private static void SetParameter( FamilyInstance instance, string parameterName, string value )
-    {
-      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
-    }
-    
     private static void CreateCableRackForRoute( UIDocument uiDocument, string? routeName, List<FamilyInstance> racks )
     {
-      if ( routeName == null ) return ;
+      if ( routeName == null ) 
+        return ;
       
       var document = uiDocument.Document ;
-      // get all elements in route
+      // Get all elements in route
       var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
       CreateRackForConduit( uiDocument, allElementsInRoute, racks ) ;
     }
     
-    public static Connector? GetConnectorClosestTo( List<Connector> connectors, XYZ point,
-      double maxDistance = double.MaxValue )
+    public static Connector? GetConnectorClosestTo( List<Connector> connectors, XYZ point, double maxDistance = double.MaxValue )
     {
-      double minDistance = double.MaxValue ;
+      var minDistance = double.MaxValue ;
       Connector? targetConnector = null ;
 
-      foreach ( Connector connector in connectors ) {
-        double distance = connector.Origin.DistanceTo( point ) ;
+      foreach ( var connector in connectors ) {
+        var distance = connector.Origin.DistanceTo( point ) ;
 
-        if ( distance < minDistance && distance <= maxDistance ) {
-          targetConnector = connector ;
-          minDistance = distance ;
-        }
+        if ( ! ( distance < minDistance ) || ! ( distance <= maxDistance ) ) 
+          continue ;
+        
+        targetConnector = connector ;
+        minDistance = distance ;
       }
 
       return targetConnector ;
     }
-
-    /// <summary>
-    /// Return the first connector.
-    /// </summary>
-    /// <param name="connectors"></param>
-    /// <returns></returns>
+    
     private static Connector? GetFirstConnector( ConnectorSet connectors )
     {
       foreach ( Connector connector in connectors ) {
-        if ( 0 == connector.Id ) {
+        if ( 0 == connector.Id ) 
           return connector ;
-        }
       }
 
       return null ;
     }
-
-    /// <summary>
-    /// Check cable tray exists (same place)
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="familyInstance"></param>
-    /// <returns></returns>
+    
     public static bool ExistsCableTray( Document document, FamilyInstance familyInstance )
     {
       return document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.CableTrays ).OfNotElementType()
         .Any( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
                      x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) &&
-                     IsSameConnectors( x.GetConnectors(), familyInstance.GetConnectors() )) ;
+                     IsSameConnectors( x.GetConnectors(), familyInstance.GetConnectors().ToList() )) ;
     }
-
-    /// <summary>
-    /// compare 2 locations
-    /// </summary>
-    /// <param name="location"></param>
-    /// <param name="otherLocation"></param>
-    /// <returns></returns>
+    
     private static bool IsSameLocation( Location location, Location otherLocation )
     {
       if ( location is LocationPoint locationPoint ) {
@@ -157,22 +128,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           return false ;
 
         return locationPoint.Point.DistanceTo( otherLocationPoint.Point) <= MaxDistanceTolerance &&
-               locationPoint.Rotation == otherLocationPoint.Rotation ;
+               Math.Abs( locationPoint.Rotation - otherLocationPoint.Rotation ) < GeometryHelper.Tolerance ;
       }
+
+      if ( location is not LocationCurve locationCurve ) 
+        return location == otherLocation ;
       
-      if ( location is LocationCurve locationCurve ) {
-        if ( otherLocation is not LocationCurve otherLocationCurve )
-          return false ;
+      if ( otherLocation is not LocationCurve otherLocationCurve )
+        return false ;
 
-        var line = ( locationCurve.Curve as Line )! ;
+      var line = ( locationCurve.Curve as Line )! ;
 
-        var otherLine = ( otherLocationCurve.Curve as Line )! ;
+      var otherLine = ( otherLocationCurve.Curve as Line )! ;
 
-        return line.Origin.IsAlmostEqualTo( otherLine.Origin, MaxDistanceTolerance ) &&
-               line.Direction == otherLine.Direction && line.Length == otherLine.Length ;
-      }
-
-      return location == otherLocation ;
+      return line.Origin.IsAlmostEqualTo( otherLine.Origin, MaxDistanceTolerance ) &&
+             line.Direction == otherLine.Direction && Math.Abs( line.Length - otherLine.Length ) < GeometryHelper.Tolerance ;
     }
 
     public static void CreateRackForConduit( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
@@ -205,7 +175,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var conduit = ( element as FamilyInstance )! ;
 
             // Ignore the case of vertical conduits in the oz direction
-            if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z) {
+            if ( conduit.FacingOrientation.Z is 1.0 or -1.0 || conduit.HandOrientation.Z is -1.0 or 1.0) {
               continue ;
             }
 
@@ -287,20 +257,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( Math.Abs( 1.0 - line.Direction.Y ) < GeometryHelper.Tolerance ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ), Math.PI / 2 ) ;
       }
-      else if ( -1.0 == line.Direction.Y ) {
+      else if ( Math.Abs( -1.0 - line.Direction.Y ) < GeometryHelper.Tolerance ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ), Math.PI / 2 ) ;
       }
-      else if ( -1.0 == line.Direction.X ) {
+      else if ( Math.Abs( -1.0 - line.Direction.X ) < GeometryHelper.Tolerance ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ), Math.PI ) ;
       }
-      else if ( 1.0 == line.Direction.Z ) {
+      else if ( Math.Abs( 1.0 - line.Direction.Z ) < GeometryHelper.Tolerance ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y - 1, firstConnector.Origin.Z ) ), Math.PI / 2 ) ;
       }
-      else if ( -1.0 == line.Direction.Z ) {
+      else if ( Math.Abs( -1.0 - line.Direction.Z ) < GeometryHelper.Tolerance ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y + 1, firstConnector.Origin.Z ) ), Math.PI / 2 ) ;
       }
       
-      if ( 1.0 == line.Direction.Z || -1.0 == line.Direction.Z ) {
+      if ( line.Direction.Z is 1.0 or -1.0 ) {
         // move cable rack to right of conduit
         instance.Location.Move( new XYZ( 0, diameter, 0 ) ) ;
       }
@@ -326,13 +296,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // set cable tray Bend Radius
       var bendRadius = cableTrayDefaultBendRadius == 0 ? ( RatioBendRadius * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
-      SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadius ) ; // TODO may be must change when FamilyType change
+      instance.LookupParameter( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) )?.Set(bendRadius) ; // TODO may be must change when FamilyType change
 
       // set cable rack length
-      SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
+      instance.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) )?.Set( length ) ; // TODO may be must change when FamilyType change
 
       // set cable rack comments
-      SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableTrayDefaultBendRadius == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
+      instance.LookupParameter( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ) )?.Set( cableTrayDefaultBendRadius == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
       // set To-Side Connector Id
       var (fromConnectorId, toConnectorId) = GetFromAndToConnectorUniqueId( conduit ) ;
@@ -345,13 +315,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       SetRouteNameForRack( conduit, instance ) ;
 
       // set cable tray fitting direction
-      if ( 1.0 == conduit.FacingOrientation.X ) {
+      if ( Math.Abs( 1.0 - conduit.FacingOrientation.X ) < GeometryHelper.Tolerance ) {
         instance.Location.Rotate( Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), new XYZ( location.Point.X, location.Point.Y, location.Point.Z - 1 ) ), Math.PI / 2 ) ;
       }
-      else if ( -1.0 == conduit.FacingOrientation.X ) {
+      else if ( Math.Abs( -1.0 - conduit.FacingOrientation.X ) < GeometryHelper.Tolerance ) {
         instance.Location.Rotate( Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), new XYZ( location.Point.X , location.Point.Y, location.Point.Z + 1 ) ), Math.PI / 2 ) ;
       }
-      else if ( -1.0 == conduit.FacingOrientation.Y ) {
+      else if ( Math.Abs( -1.0 - conduit.FacingOrientation.Y ) < GeometryHelper.Tolerance ) {
         instance.Location.Rotate( Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), new XYZ( location.Point.X, location.Point.Y, location.Point.Z + 1 ) ), Math.PI ) ;
       }
       
@@ -371,9 +341,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
     }
 
-    private static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )
+    private static bool IsSameConnectors( IEnumerable<Connector> connectors, IList<Connector> otherConnectors )
     {
-      var isSameConnectors = true ;
+      const bool isSameConnectors = true ;
       foreach ( var connector in connectors ) {
         if ( ! otherConnectors.Any( x => x.Origin.IsAlmostEqualTo( connector.Origin ) ) ) {
           return false ;

@@ -8,7 +8,6 @@ using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -21,29 +20,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class NewLimitRackCommandBase : IExternalCommand
   {
     #region Constants & Variables
-
-    /// <summary>
-    /// Max Distance Tolerance when find Connector Closest
-    /// </summary>
-    private static readonly double MaxDistanceTolerance = 20d.MillimetersToRevitUnits() ;
-
     private const int MinNumberOfMultiplicity = 5 ;
-    private static readonly double CableTrayDefaultBendRadius = 16d.MillimetersToRevitUnits() ;
     public static readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
-    private readonly Dictionary<ElementId, List<Connector>> _elbowsToCreate = new() ;
-    private readonly Dictionary<string, double> _routeLengthCache = new() ;
     private readonly Dictionary<string, double> _routeMaxWidthDictionary = new() ;
     private const string TransactionKey = "TransactionName.Commands.Rack.CreateLimitCableRack" ;
     private static readonly string TransactionName = TransactionKey.GetAppStringByKeyOrDefault( "Create Limit Cable" ) ;
     private static readonly double MinLengthConduit = 50d.MillimetersToRevitUnits() ;
-
     #endregion
 
     #region Properties
-
     protected abstract AddInType GetAddInType() ;
     protected abstract bool IsSelectionRange { get ; }
-
     #endregion
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
@@ -52,7 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         var result = uiDocument.Document.Transaction( TransactionName, _ =>
         {
-          Dictionary<string, List<MEPCurve>> routingElementGroups ;
+          Dictionary<string, List<MEPCurve>> routingElements ;
 
           if ( IsSelectionRange ) {
             List<Element> pickedObjects ;
@@ -72,33 +59,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               if ( pickedObject is MEPCurve mepCurve )
                 pickedMepCurves.Add( mepCurve ) ;
 
-            routingElementGroups = uiDocument.Document.CollectAllMultipliedRoutingElements( pickedMepCurves, MinNumberOfMultiplicity ) ;
+            routingElements = uiDocument.Document.CollectAllMultipliedRoutingElements( pickedMepCurves, MinNumberOfMultiplicity ) ;
           }
           else {
-            routingElementGroups = uiDocument.Document.CollectAllMultipliedRoutingElements( MinNumberOfMultiplicity ) ;
-          }
-          
-          
-
-          foreach ( var routingElementGroup in routingElementGroups ) {
-            
-            
-            var representativeMepCurves = routingElementGroup.Value.Where( p =>
-            {
-              if ( p.GetSubRouteInfo() is not { } subRouteInfo ) return false ;
-              return p.GetRepresentativeSubRoute() == subRouteInfo ;
-            } ).OfType<Conduit>().EnumerateAll() ;
-            
-            uiDocument.Selection.SetElementIds(representativeMepCurves.Select(x => x.Id).ToList());
-            break ;
+            routingElements = uiDocument.Document.CollectAllMultipliedRoutingElements( MinNumberOfMultiplicity ) ;
           }
 
-          // var horizontalConduits = representativeMepCurves.Where( x => ! x.IsVertical() && ( x.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH )?.AsDouble() ?? 0 ) > MinLengthConduit ) ;
-          // var verticalConduits = representativeMepCurves.Where( x => x.IsVertical() && ( x.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH )?.AsDouble() ?? 0 ) > MinLengthConduit ) ;
-          //
-          // var rackss = uiDocument.Document.CreateRacksAlignToConduits( horizontalConduits, 400d.MillimetersToRevitUnits() ).OfType<FamilyInstance>() ;
-          //
-          // NewRackCommandBase.CreateNotationForRack( uiDocument.Document, rackss ) ;
+          var groupRoutingElements = routingElements.GroupBy( x => CableRackUtils.GetMainRouteName( x.Value[ 0 ].GetRouteName() ) ).ToDictionary( x => x.Key, x => x.ToList() ) ;
+          foreach ( var groupRoutingElement in groupRoutingElements ) {
+            var horizontalRackMaps = new List<(Element Element, double Width)>() ;
+            var verticalRackMaps = new List<(Element Element, double Width)>() ;
+            
+            foreach ( var groupRouting in groupRoutingElement.Value ) {
+              var width = CalcCableRackWidth( uiDocument.Document, groupRouting ).MillimetersToRevitUnits() ;
+
+              foreach ( var conduit in groupRouting.Value.OfType<Conduit>() ) {
+                if(Math.Abs(conduit.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH).AsDouble() - MinLengthConduit.MillimetersToRevitUnits()) < GeometryHelper.Tolerance)
+                  continue;
+                
+                if ( conduit.GetSubRouteInfo() is not { } subRouteInfo )
+                  continue ;
+
+                if ( conduit.GetRepresentativeSubRoute() != subRouteInfo )
+                  continue ;
+
+                if ( conduit.IsVertical() )
+                  verticalRackMaps.Add( ( conduit, width ) ) ;
+                else
+                  horizontalRackMaps.Add( ( conduit, width ) ) ;
+              }
+            }
+
+            var racks = uiDocument.Document.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack" ) ;
+            NewRackCommandBase.CreateNotationForRack( uiDocument.Document, racks.OfType<FamilyInstance>() ) ;
+          }
 
           return Result.Succeeded ;
         } ) ;
@@ -111,19 +105,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-
-    private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingGroup )
+    private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingElementGroup )
     {
       double widthCable ;
-      if ( _routeMaxWidthDictionary.ContainsKey( routingGroup.Key ) ) {
-        widthCable = _routeMaxWidthDictionary[ routingGroup.Key ] ;
+      if ( _routeMaxWidthDictionary.ContainsKey( routingElementGroup.Key ) ) {
+        widthCable = _routeMaxWidthDictionary[ routingElementGroup.Key ] ;
       }
       else {
         var classificationDatas = new List<ClassificationData>() ;
         var oldClassificationDatas = new Dictionary<string, List<ClassificationData>>() ;
 
-        foreach ( var conduits in routingGroup.Value.GroupBy( s => s.GetRouteName() ) ) {
-          var routeName = conduits.First().GetRouteName() ?? string.Empty ;
+        foreach ( var mepCurves in routingElementGroup.Value.GroupBy( s => s.GetRouteName() ) ) {
+          var routeName = mepCurves.First().GetRouteName() ?? string.Empty ;
           if ( string.IsNullOrEmpty( routeName ) )
             continue ;
 
@@ -156,7 +149,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           break ;
         }
 
-        _routeMaxWidthDictionary.Add( routingGroup.Key, widthCable ) ;
+        _routeMaxWidthDictionary.Add( routingElementGroup.Key, widthCable ) ;
       }
 
       return widthCable ;
@@ -245,7 +238,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( string.IsNullOrEmpty( classification ) )
         return null ;
 
-      return double.TryParse( wiresAndCablesModelData?.FinishedOuterDiameter, out var diameter ) ? new ClassificationData { Classification = classification!, Diameter = diameter } : null ;
+      return double.TryParse( wiresAndCablesModelData?.FinishedOuterDiameter, out var diameter ) ? new ClassificationData { Classification = classification!, Diameter = diameter } : null;
     }
 
     #endregion
