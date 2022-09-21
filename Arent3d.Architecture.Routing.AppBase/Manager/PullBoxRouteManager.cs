@@ -1132,8 +1132,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       if ( storagePullBoxInfoServiceByLevel != null ) {
         textLabel = GetPullBoxTextBox( depth, height, defaultLabel ) ;
-        if ( positionLabel != null )
-          CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+        if ( positionLabel != null ) {
+          var autoSize = selectedPullBoxModel is HandholeModel || isAutoCalculatePullBoxSize ;
+          CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, autoSize ) ;
+        }
         else if ( storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.All( pullBoxInfoItemModel => pullBoxInfoItemModel.PullBoxUniqueId != pullBox.UniqueId ) ) {
             var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
             var baseLengthOfLine = scale / 100d ;
