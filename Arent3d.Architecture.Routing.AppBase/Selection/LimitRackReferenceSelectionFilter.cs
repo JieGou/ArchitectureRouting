@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
       if ( builtInCategory != BuiltInCategory.OST_CableTrayFitting ) return false ;
       var paramName = "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( element.Document, "Rack Type" ) ;
       var comment = element.GetParameter( paramName )?.AsString() ;
-      return !string.IsNullOrEmpty( comment ) &&  comment == NewRackCommandBase.RackTypes[ 1 ] ;
+      return !string.IsNullOrEmpty( comment ) &&  comment == RackCommandBase.RackTypes[ 1 ] ;
     }
   }
 }

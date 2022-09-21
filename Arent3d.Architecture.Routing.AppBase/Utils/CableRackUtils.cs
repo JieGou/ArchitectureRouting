@@ -377,7 +377,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       if ( creationParam.ReferenceElement is { } refElement ) {
         // set To-Side Connector Id
-        var (fromConnectorId, toConnectorId) = NewRackCommandBase.GetFromAndToConnectorUniqueId( refElement ) ;
+        var (fromConnectorId, toConnectorId) = RackCommandBase.GetFromAndToConnectorUniqueId( refElement ) ;
         if ( ! string.IsNullOrEmpty( toConnectorId ) )
           instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
         if ( ! string.IsNullOrEmpty( fromConnectorId ) )
@@ -417,7 +417,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       if ( creationParam.ReferenceElement is { } refElement ) {
         // set To-Side Connector Id
-        var (fromConnectorId, toConnectorId) = NewRackCommandBase.GetFromAndToConnectorUniqueId( refElement ) ;
+        var (fromConnectorId, toConnectorId) = RackCommandBase.GetFromAndToConnectorUniqueId( refElement ) ;
         if ( ! string.IsNullOrEmpty( toConnectorId ) )
           instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
         if ( ! string.IsNullOrEmpty( fromConnectorId ) )
@@ -694,7 +694,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         cableTrayInstance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), rackClassification ) ;
         cableTrayInstance.CopyRouteName( conduitMap.Conduit ) ;
 
-        var (fromConnectorId, toConnectorId) = NewRackCommandBase.GetFromAndToConnectorUniqueId( conduitMap.Conduit ) ;
+        var (fromConnectorId, toConnectorId) = RackCommandBase.GetFromAndToConnectorUniqueId( conduitMap.Conduit ) ;
         if ( ! string.IsNullOrEmpty( toConnectorId ) )
           cableTrayInstance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
         if ( ! string.IsNullOrEmpty( fromConnectorId ) )

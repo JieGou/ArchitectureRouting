@@ -104,13 +104,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       foreach ( var cableTray in cableTrays ) {
         var comment = cableTray.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ) ).AsString() ;
-        if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
+        if ( comment == RackCommandBase.RackTypes[ 1 ] )
           yield return cableTray ;
       }
 
       foreach ( var cableTrayFitting in cableTrayFittings ) {
         var comment = cableTrayFitting.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ) ).AsString() ;
-        if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
+        if ( comment == RackCommandBase.RackTypes[ 1 ] )
           yield return cableTrayFitting ;
       }
     }

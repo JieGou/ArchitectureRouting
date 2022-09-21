@@ -57,10 +57,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             foreach ( var connector in connectors ) {
               allElementsInRoute.Add( connector.Owner );
             }
-            NewRackCommandBase.CreateRackForConduit( uiDocument, allElementsInRoute, racks );
+            RackCommandBase.CreateRackForConduit( uiDocument, allElementsInRoute, racks );
             
             // insert notation for racks
-            NewRackCommandBase.CreateNotationForRack( document, racks ) ;
+            RackCommandBase.CreateNotationForRack( document, racks ) ;
 
             return Result.Succeeded ;
           } ) ;
