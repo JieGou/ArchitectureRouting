@@ -16,6 +16,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 {
   public static class CableRackUtils
   {
+    private static double ElbowMinimumRadius = 50d.MillimetersToRevitUnits() ;
+    private static double ElbowPadding = 25d.MillimetersToRevitUnits() ;
     private record RackCreationParam( XYZ StartPoint, XYZ EndPoint, double Width, double ScaleFactor, Level? Level = null, FamilySymbol? RackType = null, Element? ReferenceElement = null, string RackClassification = "Normal Rack" ) ;
 
     private record ElbowCreationParam( XYZ InsertPoint, double Angle, double Width, double Radius, double AdditionalLength, double ScaleFactor, Level? Level = null, FamilySymbol? ElbowType = null, Element? ReferenceElement = null, string RackClassification = "Normal Rack" ) ;
@@ -548,6 +550,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     private static (XYZ, XYZ, XYZ, XYZ) ReArrangeToConnect( (XYZ, XYZ, double) marker1, (XYZ, XYZ, double) marker2, int scale, double elbowMinRadius, double elbowPaddingLength )
     {
       var markPoints = ReArrange( ( marker1.Item1, marker1.Item2 ), ( marker2.Item1, marker2.Item2 ) ) ;
+      if ( markPoints.P11.IsAlmostEqualTo( markPoints.P12 ) )
+        return markPoints ;
 
       var isSameWidth = Math.Abs( marker1.Item3.RevitUnitsToMillimeters() - marker2.Item3.RevitUnitsToMillimeters() ) < 1.0 ;
       var isSameDirection = ( markPoints.P11 - markPoints.P12 ).Normalize().IsAlmostEqualTo( ( markPoints.P21 - markPoints.P22 ).Normalize() ) ;
@@ -571,9 +575,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var intersectedPoint = resultArray.get_Item( 0 ).XYZPoint ;
         var realElbowRadius = RealElbowRadius( elbowWidth, elbowMinRadius, scaleFactor ) ;
         var distanceFromIntersect = realElbowRadius + elbowWidth / 2 + elbowPaddingLength ;
-
-        markPoints.P12 = intersectedPoint + ( markPoints.P11 - markPoints.P12 ).Normalize() * distanceFromIntersect ;
-        markPoints.P21 = intersectedPoint + ( markPoints.P22 - markPoints.P21 ).Normalize() * distanceFromIntersect ;
+        
+        // marker2 is too short so it's completely inside elbow
+        if ( distanceFromIntersect > markPoints.P22.DistanceTo( intersectedPoint ) ) {
+          // marker2 become zero-length
+          markPoints.P21 = markPoints.P22 ;
+        }
+        else {
+          markPoints.P12 = intersectedPoint + ( markPoints.P11 - markPoints.P12 ).Normalize() * distanceFromIntersect ;
+          markPoints.P21 = intersectedPoint + ( markPoints.P22 - markPoints.P21 ).Normalize() * distanceFromIntersect ;
+        }
       }
 
       return markPoints ;
@@ -624,6 +635,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     private static FamilyInstance? CreateElbowBetweenRackMarkers( Document document, (XYZ, XYZ, double) thisMarker, (XYZ, XYZ, double) nextMarker, double elbowMinRadius, double paddingLength, FamilySymbol? elbowType, Element? referenceElement, string rackClassification )
     {
+      if ( thisMarker.Item1.IsAlmostEqualTo( thisMarker.Item2 ) || nextMarker.Item1.IsAlmostEqualTo( nextMarker.Item2 ) )
+        return null ;
       if ( ! ( thisMarker.Item1 - thisMarker.Item2 ).IsPerpendicularTo( nextMarker.Item1 - nextMarker.Item2, 1d.Deg2Rad() ) )
         return null ;
       var rotateClockWise = ( thisMarker.Item2 - thisMarker.Item1 ).CrossProduct( nextMarker.Item1 - thisMarker.Item2 ).Z > 0 ;
@@ -675,11 +688,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       var rackType = GetGenericRackSymbol( doc ) ;
       var elbowType = GetElbowSymbol( doc ) ;
-
-      var r0 = 50d.MillimetersToRevitUnits() ;
-      var l0 = 25d.MillimetersToRevitUnits() ;
-
-
+      
       for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
         if ( i == simplifiedMarkerMap.Count - 1 ) {
           break ;
@@ -687,7 +696,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
         var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
-        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, doc.ActiveView.Scale, r0, l0 ) ;
+        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, doc.ActiveView.Scale, ElbowMinimumRadius, ElbowPadding ) ;
 
         // modify marker to have enough space for elbow
         simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, thisMarker.Item3 ), i ) ;
@@ -698,6 +707,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       FamilyInstance? newestInstance = null ;
       for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
         var rackMarker = simplifiedMarkerMap[ i ].RackMarker ;
+        if ( rackMarker.Item1.IsAlmostEqualTo( rackMarker.Item2 ) )
+          continue ;
         var conduit = conduits[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
 
         // create rack
@@ -719,7 +730,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
           continue ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
 
-        var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, r0, l0, elbowType, conduit, rackClassification ) ;
+        var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, ElbowMinimumRadius, ElbowPadding, elbowType, conduit, rackClassification ) ;
         if ( elbow is null ) {
           newestInstance = rack ;
           continue ;
