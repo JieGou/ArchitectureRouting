@@ -200,7 +200,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       var lists = new List<(DetailCurve DetailCurve, (double Distance, int EndPoint) Point)>() ;
 
-      foreach ( var detailCurve in detailCurves ) {
+      foreach ( var detailCurve in detailCurves! ) {
         var distanceOne = detailCurve.GeometryCurve.GetEndPoint( 0 ).DistanceTo( point ) ;
         var distanceTwo = detailCurve.GeometryCurve.GetEndPoint( 1 ).DistanceTo( point ) ;
 

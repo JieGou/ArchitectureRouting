@@ -11,7 +11,7 @@ using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Forms.Pages
+namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class FromToTree : Page, IDockablePaneProvider
   {
