@@ -176,10 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( DetailTableData.Instance.FirstLoaded )
         return ;
 
-      var routeName = RouteUtil.GetMainRouteName( PickInfo?.Element?.GetRouteName() ) ;
-      var toConnector = ConduitUtil.GetConnectorOfRoute( _document, routeName, false ) ;
-      var quantity = toConnector?.GetPropertyInt( ElectricalRoutingElementParameter.Quantity ) ?? 0 ;
-      if ( quantity > 1 )
+      if ( DetailTableItemModels.Any( x => x.IsMultipleConnector ) )
         return ;
 
       DtGrid.SelectAll() ;
