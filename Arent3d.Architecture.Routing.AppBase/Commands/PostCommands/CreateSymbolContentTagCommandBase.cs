@@ -31,12 +31,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       CeedViewModel = ceedViewModel ;
     }
   }
-  
+
   public class CreateSymbolContentTagCommandBase : RoutingExternalAppCommandBaseWithParam<SymbolContentTagCommandParameter>
   {
     protected override string GetTransactionName() => "TransactionName.Commands.PostCommands.CreateSymbolContentTagCommand".GetAppStringByKeyOrDefault( "Create connector" ) ;
-    [DllImport("User32.dll", EntryPoint = "SendMessage")]
-    public static extern int SendMessage( IntPtr hWnd, int Msg, int wParam, int lParam);
+
+    [DllImport( "User32.dll", EntryPoint = "SendMessage" )]
+    public static extern int SendMessage( IntPtr hWnd, int Msg, int wParam, int lParam ) ;
+
     protected override ExecutionResult Execute( SymbolContentTagCommandParameter param, Document document, TransactionWrapper transaction )
     {
       try {
@@ -54,14 +56,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
 
         if ( param.CeedViewModel.SelectedCeedCode == null )
           return ExecutionResult.Cancelled ;
-        
+
         var level = document.ActiveView.GenLevel ;
         var heightOfConnector = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         var connector = GenerateConnector( 0, 0, heightOfConnector, level, param.CeedViewModel.SelectedFloorPlanType ?? string.Empty ) ;
-        document.Regenerate();
+        document.Regenerate() ;
 
         var uiDocument = new UIDocument( document ) ;
-        
+
         FocusToActiveView( uiDocument ) ;
         var (placePoint, direction, firstPoint) = PickPoint( uiDocument, connector ) ;
         if ( null == placePoint )
@@ -117,19 +119,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       }
       catch ( Exception exception ) {
         TaskDialog.Show( "Arent Inc", exception.Message ) ;
-        return ExecutionResult.Failed;
+        return ExecutionResult.Failed ;
       }
+
       return ExecutionResult.Succeeded ;
     }
 
-    private static void FocusToActiveView(UIDocument uiDocument)
+    private static void FocusToActiveView( UIDocument uiDocument )
     {
-      const int WM_MDIGETACTIVE = 0x0229;
-      const int WM_MDIACTIVATE = 0x0222;
-      var childHwnd = SendMessage( uiDocument.Application.MainWindowHandle, WM_MDIGETACTIVE, 0, 0);
-      SendMessage( uiDocument.Application.MainWindowHandle, WM_MDIACTIVATE, childHwnd, 0);
+      const int WM_MDIGETACTIVE = 0x0229 ;
+      const int WM_MDIACTIVATE = 0x0222 ;
+      var childHwnd = SendMessage( uiDocument.Application.MainWindowHandle, WM_MDIGETACTIVE, 0, 0 ) ;
+      SendMessage( uiDocument.Application.MainWindowHandle, WM_MDIACTIVATE, childHwnd, 0 ) ;
     }
-    
+
     private static FamilyInstance GenerateConnector( double originX, double originY, double originZ, Level level, string floorPlanType )
     {
       FamilyInstance instance ;
@@ -137,8 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
         var connectorOneSideFamilyTypeNames = ToHashSetExtension.ToHashSet( ( (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) ).Select( f => f.GetFieldName() ) ) ;
         if ( connectorOneSideFamilyTypeNames.Contains( floorPlanType ) ) {
           var connectorOneSideFamilyType = GetConnectorFamilyType( floorPlanType ) ;
-          var symbol = level.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ??
-                       ( level.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ConnectorOneSide ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
+          var symbol = level.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ?? ( level.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ConnectorOneSide ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
           instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
           SetIsEcoMode( instance ) ;
           return instance ;
@@ -159,7 +161,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       SetIsEcoMode( instance ) ;
       return instance ;
     }
-    
+
     private static ConnectorOneSideFamilyType GetConnectorFamilyType( string floorPlanType )
     {
       var connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide1 ;
@@ -176,7 +178,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
       instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, instance.Document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
     }
-    
+
     private static bool IsValidPoint( UIDocument uiDocument, XYZ point, CeedViewModel ceedViewModel, ref string? condition )
     {
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;

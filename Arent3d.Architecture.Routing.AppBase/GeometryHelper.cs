@@ -330,49 +330,41 @@ namespace Arent3d.Architecture.Routing.AppBase
         }
       }
     }
-    
-    public static IEnumerable<GeometryObject> GetGeometryObjectsFromElementInstance(Element element, Options options, bool isInstance = true)
-        {
-            var geometryObjects = new List<GeometryObject>();
-            if (element is Wall wall && wall.IsStackedWall)
-            {
-                IList<ElementId> elementIds = wall.GetStackedWallMemberIds();
-                foreach (var elementId in elementIds)
-                {
-                    var memberWallStack = element.Document.GetElement(elementId);
-                    if (memberWallStack.get_Geometry(options) is { } geometryElement)
-                        RecursiveGeometryObjects(geometryElement, geometryObjects, isInstance);
-                }
-            }
-            else
-            {
-                if (element.get_Geometry(options) is { } geometryElement)
-                    RecursiveGeometryObjects(geometryElement, geometryObjects, isInstance);
-            }
-            return geometryObjects;
-        }
 
-        private static void RecursiveGeometryObjects(GeometryElement geometryElement, List<GeometryObject> geometryObjects, bool isInstance = true)
-        {
-            foreach (var geometry in geometryElement)
-            {
-                if (geometry is GeometryInstance geometryInstance)
-                {
-                    if (isInstance)
-                    {
-                        if (geometryInstance.GetInstanceGeometry() is { } nestedGeometryElement)
-                            RecursiveGeometryObjects(nestedGeometryElement, geometryObjects, isInstance);
-                    }
-                    else
-                    {
-                        if (geometryInstance.GetSymbolGeometry() is { } nestedGeometryElement)
-                            RecursiveGeometryObjects(nestedGeometryElement, geometryObjects, isInstance);
-                    }
-                }
-                else if (geometry is { } geometryObject) {
-                  geometryObjects.Add(geometryObject);
-                }
-            }
+    public static IEnumerable<GeometryObject> GetGeometryObjectsFromElementInstance( Element element, Options options, bool isInstance = true )
+    {
+      var geometryObjects = new List<GeometryObject>() ;
+      if ( element is Wall wall && wall.IsStackedWall ) {
+        IList<ElementId> elementIds = wall.GetStackedWallMemberIds() ;
+        foreach ( var elementId in elementIds ) {
+          var memberWallStack = element.Document.GetElement( elementId ) ;
+          if ( memberWallStack.get_Geometry( options ) is { } geometryElement )
+            RecursiveGeometryObjects( geometryElement, geometryObjects, isInstance ) ;
         }
+      }
+      else {
+        if ( element.get_Geometry( options ) is { } geometryElement )
+          RecursiveGeometryObjects( geometryElement, geometryObjects, isInstance ) ;
+      }
+
+      return geometryObjects ;
+    }
+
+    private static void RecursiveGeometryObjects( GeometryElement geometryElement, List<GeometryObject> geometryObjects, bool isInstance = true )
+    {
+      foreach ( var geometry in geometryElement ) {
+        if ( geometry is GeometryInstance geometryInstance ) {
+          if ( isInstance && geometryInstance.GetInstanceGeometry() is { } nestedGeometryInstance) {
+            RecursiveGeometryObjects( nestedGeometryInstance, geometryObjects, isInstance ) ;
+          }
+          else if (geometryInstance.GetSymbolGeometry() is { } nestedGeometrySymbol) {
+            RecursiveGeometryObjects( nestedGeometrySymbol, geometryObjects, isInstance ) ;
+          }
+        }
+        else if ( geometry is { } geometryObject ) {
+          geometryObjects.Add( geometryObject ) ;
+        }
+      }
+    }
   }
 }

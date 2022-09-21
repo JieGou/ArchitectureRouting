@@ -63,9 +63,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void OnKeyUp( object sender, KeyEventArgs e )
     {
-      if(e.Key != Key.Enter)
-        return;
-      
+      if ( e.Key != Key.Enter )
+        return ;
+
       IsCancel = false ;
       SendEscToRevit() ;
     }

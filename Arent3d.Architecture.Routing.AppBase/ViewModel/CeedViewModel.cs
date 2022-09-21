@@ -266,9 +266,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       get { return new RelayCommand<System.Windows.Controls.TreeView>( tv => null != tv, _ => { CategoryPreviewSelected = FindSelectedCategory( CategoriesPreview, false ) ; } ) ; }
     }
+
     public ICommand SymbolRegistrationCommand => new RelayCommand( LoadUsingCeedModel ) ;
     public ICommand SearchCommand => new RelayCommand( Search ) ;
     public ICommand ResetCommand => new RelayCommand( Reset ) ;
+
     public ICommand OkCommand
     {
       get
@@ -491,7 +493,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private static  List<CeedModel> GroupCeedModelsByCeedModelNumber( IEnumerable<CeedModel> originCeedModels )
+    private static List<CeedModel> GroupCeedModelsByCeedModelNumber( IEnumerable<CeedModel> originCeedModels )
     {
       var newCeedModels = new List<CeedModel>() ;
       var ceedModelGroupByCeedModelNumber = originCeedModels.GroupBy( c => ( c.CeedModelNumber, c.Name ) ) ;
@@ -839,7 +841,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private static  Dictionary<string, string> GetExistedConnectorFamilies( Document document, IEnumerable<string> connectorFamilyPaths )
+    private static Dictionary<string, string> GetExistedConnectorFamilies( Document document, IEnumerable<string> connectorFamilyPaths )
     {
       Dictionary<string, string> existsConnectorFamilies = new() ;
       foreach ( var connectorFamilyPath in connectorFamilyPaths ) {
@@ -888,7 +890,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return connectorFamilyFiles ;
     }
 
-    private static  Family? LoadFamily( Document document, string filePath, ref bool isLoadFamilySuccessfully )
+    private static Family? LoadFamily( Document document, string filePath, ref bool isLoadFamilySuccessfully )
     {
       try {
         document.LoadFamily( filePath, new FamilyOption( true ), out var family ) ;

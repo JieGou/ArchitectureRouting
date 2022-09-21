@@ -15,21 +15,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App
   public class CeedPostCommandExecutor : IElectricalPostCommandExecutorBase
   {
     private static UIApplication? UiApp => RoutingApp.FromToTreeManager.UiApp ;
-    
+
     public void CreateSymbolContentTagCommand( CeedViewModel ceedViewModel )
     {
       if ( UiApp is not { } uiApp ) return ;
 
       uiApp.PostCommand<CreateSymbolContentTagCommand, SymbolContentTagCommandParameter>( new SymbolContentTagCommandParameter( ceedViewModel ) ) ;
     }
-    
+
     public void LoadFamilyCommand( List<LoadFamilyCommandParameter> familyParameters )
     {
       if ( UiApp is not { } uiApp ) return ;
 
       uiApp.PostCommand<LoadFamilyCommand, List<LoadFamilyCommandParameter>>( familyParameters ) ;
     }
-    
+
     public void SaveCeedStorableAndStorageServiceCommand( CeedStorable ceedStorable, StorageService<Level, CeedUserModel> storageService )
     {
       if ( UiApp is not { } uiApp ) return ;
