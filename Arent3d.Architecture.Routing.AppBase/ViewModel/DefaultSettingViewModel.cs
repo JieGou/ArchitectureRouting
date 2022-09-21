@@ -116,6 +116,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged() ;
       }
     }
+    private bool _isEnableChageGrade = false;
+    public bool IsEnableChageGrade
+    { 
+      get => _isEnableChageGrade ;
+      set
+      {
+        _isEnableChageGrade = value ;
+        OnPropertyChanged() ;
+      } 
+    }
 
     private int Scale { get ; }
 
@@ -263,6 +273,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           //To do check scale validation
           wd.DialogResult = true ;
           wd.Close() ;
+          IsEnableChageGrade = false ;
         } ) ;
       }
     }
@@ -333,6 +344,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ImportDwgMappingModels[ 0 ].FloorHeightDisplay = "-" ;
         ImportDwgMappingModels[ 0 ].IsEnabledFloorHeight = false ;
       }
+
+      IsEnableChageGrade = true ;
     }
 
     private void ChangeNameIfDuplicate()

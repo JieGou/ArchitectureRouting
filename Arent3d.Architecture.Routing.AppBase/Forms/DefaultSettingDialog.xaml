@@ -31,16 +31,23 @@
             </ComboBox>
             <Label Content="Grade" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
             <ComboBox ItemsSource="{Binding GradeModeTypes}"
+                      IsEnabled="{Binding IsEnableChageGrade}"
                       SelectedIndex="{Binding SelectedGradeModeIndex}"
-                      HorizontalAlignment="Left"
+                      HorizontalAlignment="Left" 
                       DisplayMemberPath="Value"
                       Width="170"
                       Margin="10,0,0,0">
                 <ComboBox.Style>
                     <Style TargetType="{x:Type ComboBox}">
+                        <Setter Property="Foreground" Value="Black"></Setter>
                         <Setter Property="Visibility" Value="Visible" />
                         <Setter Property="Height" Value="20" />
                         <Setter Property="FontSize" Value="12" />
+                        <Style.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="Gray"></Setter>
+                            </Trigger>
+                        </Style.Triggers>
                     </Style>
                 </ComboBox.Style>
             </ComboBox>
