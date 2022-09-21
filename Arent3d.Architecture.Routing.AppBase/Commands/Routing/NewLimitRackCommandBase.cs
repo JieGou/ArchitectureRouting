@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var groupRoutingElements = routingElements.GroupBy( x => CableRackUtils.GetMainRouteName( x.Value[ 0 ].GetRouteName() ) ).ToDictionary( x => x.Key, x => x.ToList() ) ;
           foreach ( var groupRoutingElement in groupRoutingElements ) {
             var horizontalRackMaps = new List<(Element Element, double Width)>() ;
-            var verticalRackMaps = new List<(Element Element, double Width)>() ;
+            var verticalRackMaps = new List<(Conduit Conduit, double Width)>() ;
             
             foreach ( var groupRouting in groupRoutingElement.Value ) {
               var width = CalcCableRackWidth( uiDocument.Document, groupRouting ).MillimetersToRevitUnits() ;
@@ -90,9 +90,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               }
             }
 
+            uiDocument.Document.CreateVerticalCableTray( verticalRackMaps ) ;
             var racks = uiDocument.Document.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack" ) ;
             NewRackCommandBase.CreateNotationForRack( uiDocument.Document, racks.OfType<FamilyInstance>() ) ;
           }
+          
+          uiDocument.ActiveView.SetCategoryHidden(new ElementId(BuiltInCategory.OST_CableTrayFitting), false);
 
           return Result.Succeeded ;
         } ) ;
@@ -104,7 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return Result.Failed ;
       }
     }
-
+    
     private double CalcCableRackWidth( Document document, KeyValuePair<string, List<MEPCurve>> routingElementGroup )
     {
       double widthCable ;

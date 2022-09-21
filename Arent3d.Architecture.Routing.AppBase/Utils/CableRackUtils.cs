@@ -329,9 +329,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return ( startPoint + direction * startPosition, startPoint + endPosition * direction ) ;
     }
 
-    private static FamilySymbol? GetGenericRackSymbol( Document doc )
+    private static FamilySymbol? GetGenericRackSymbol( Document doc, string typeName = "汎用" )
     {
-      var rackSymbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.CableTray ).FirstOrDefault( symbol => symbol.Name == "汎用" ) ;
+      var rackSymbol = doc.GetFamilySymbols( ElectricalRoutingFamilyType.CableTray ).FirstOrDefault( symbol => symbol.Name == typeName ) ;
       if ( rackSymbol is null )
         return null ;
       if ( ! rackSymbol.IsActive )
@@ -498,9 +498,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return markPoints ;
     }
 
-    private static List<((XYZ, XYZ, double) RackMarker, int OriginalIndex)> GetSimplifiedMarkers( IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width)> markers )
+    private static List<((XYZ P11, XYZ P12, double Width) RackMarker, int OriginalIndex)> GetSimplifiedMarkers( IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width)> markers )
     {
-      var simplifiedMarkers = new List<((XYZ, XYZ, double), int)>() ;
+      var simplifiedMarkers = new List<((XYZ P11, XYZ P12, double Width), int)>() ;
       var markerList = markers.ToList() ;
       for ( var i = 0 ; i < markerList.Count ; i++ ) {
         // final marker
@@ -610,9 +610,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var conduit = conduits[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
         
         // create rack
-        var rackWidth = rackMarker.Item3 ;
+        var rackWidth = rackMarker.Width ;
         var scaleFactor = RackWidthOnPlanView( doc.ActiveView.Scale ) / rackWidth ;
-        var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, conduit, rackClassification ) ;
+        var creationParam = new RackCreationParam( rackMarker.P11, rackMarker.P12, rackWidth, scaleFactor, null, rackType, conduit, rackClassification ) ;
 
         if ( CreateRack( doc, creationParam ) is not { } rack )
           continue ;
@@ -660,6 +660,74 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         throw new FormatException( nameof( routeName ) ) ;
 
       return string.Join( $"{SignJoinRouteName}", array[ 0 ], array[ 1 ] ) ;
+    }
+
+    public static IEnumerable<FamilyInstance> CreateVerticalCableTray( this Document document, IList<(Conduit Conduit, double Width)> conduitMaps, string rackClassification = "Normal Rack" )
+    {
+      var cableTrays = new List<FamilyInstance>() ;
+      if ( ! conduitMaps.Any() )
+        return cableTrays ;
+
+      var cableTrayType = GetGenericRackSymbol( document, "シャフト用" ) ?? throw new InvalidOperationException() ;
+      foreach ( var conduitMap in conduitMaps ) {
+        var line = (Line) ( (LocationCurve) conduitMap.Conduit.Location ).Curve ;
+        var firstPoint = line.GetEndPoint( 0 ).Z > line.GetEndPoint( 1 ).Z ? line.GetEndPoint( 1 ) : line.GetEndPoint( 0 ) ;
+        
+        var cableTrayInstance = document.Create.NewFamilyInstance( firstPoint, cableTrayType, StructuralType.NonStructural ) ;
+        
+        var verticalFitting = GetFittingsFromConduit( conduitMap.Conduit ).FirstOrDefault( x => Math.Abs(1 - Math.Abs(x.GetTransform().OfVector(XYZ.BasisZ).Z)) > GeometryHelper.Tolerance ) ;
+        if(null == verticalFitting)
+          continue;
+
+        var directionOfCableTray = GetHorizontalDirectionOfFitting( verticalFitting ) ;
+        if(null == directionOfCableTray)
+          continue;
+        
+        ElementTransformUtils.RotateElement(document, cableTrayInstance.Id, CreateAxis(firstPoint, XYZ.BasisY), - 0.5 * Math.PI);
+        var zDirectionOfFamily = cableTrayInstance.GetTransform().OfVector( XYZ.BasisZ ) ;
+        var angle = zDirectionOfFamily.AngleTo( directionOfCableTray ) ;
+        ElementTransformUtils.RotateElement(document, cableTrayInstance.Id, CreateAxis(firstPoint, XYZ.BasisZ), angle);
+        
+        cableTrayInstance.SetProperty( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), line.Length ) ;
+        cableTrayInstance.SetProperty( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), conduitMap.Width ) ;
+        cableTrayInstance.SetProperty( "ラックの倍率", RackWidthOnPlanView( document.ActiveView.Scale ) / conduitMap.Width ) ;
+        cableTrayInstance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), rackClassification ) ;
+        cableTrayInstance.CopyRouteName( conduitMap.Conduit ) ;
+
+        var (fromConnectorId, toConnectorId) = NewRackCommandBase.GetFromAndToConnectorUniqueId( conduitMap.Conduit ) ;
+        if ( ! string.IsNullOrEmpty( toConnectorId ) )
+          cableTrayInstance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
+        if ( ! string.IsNullOrEmpty( fromConnectorId ) )
+          cableTrayInstance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
+
+        cableTrays.Add(cableTrayInstance);
+      }
+
+      return cableTrays ;
+    }
+
+    public static IEnumerable<FamilyInstance> GetFittingsFromConduit( Conduit conduit )
+    {
+      return conduit.ConnectorManager
+        .Connectors
+        .OfType<Connector>()
+        .Where( x => x.IsConnected )
+        .SelectMany(x => x.AllRefs.OfType<Connector>().Select(y => y.Owner).OfType<FamilyInstance>());
+    }
+
+    private static XYZ? GetHorizontalDirectionOfFitting( FamilyInstance verticalFitting )
+    {
+      foreach ( Connector connector in verticalFitting.MEPModel.ConnectorManager.Connectors ) {
+        if ( Math.Abs( Math.Abs( connector.CoordinateSystem.BasisZ.Z ) - 1 ) > GeometryHelper.Tolerance )
+          return connector.CoordinateSystem.BasisZ ;
+      }
+      return null ;
+    }
+
+    private static Line CreateAxis( XYZ point, XYZ direction )
+    {
+      var movedPoint = Transform.CreateTranslation( direction.Normalize() ).OfPoint( point ) ;
+      return Line.CreateBound( point, movedPoint ) ;
     }
   }
 }
