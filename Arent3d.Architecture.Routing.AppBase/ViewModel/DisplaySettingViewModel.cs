@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -10,18 +12,27 @@ using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
+using Autodesk.Revit.UI ;
 using Autodesk.Windows ;
+using RibbonButton = Autodesk.Windows.RibbonButton ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class DisplaySettingViewModel : NotifyPropertyChanged
   {
+    private const string LeakageZoneClothSymBolName = "LeakageZoneCloth" ;
+    private const string LeakageZoneColoringClothSymBolName = "LeakageZoneColoring" ;
+    private const string LeakageZonePvcSymBolName = "LeakageZonePvc" ;
+    private const string LeakageZoneLineStyleName = "LeakageZone" ;
+
     private readonly StorageService<DataStorage, DisplaySettingModel> _displaySettingByGradeStorageService ;
 
     private readonly Document _document ;
+    private readonly HashSet<string> _leakageSymbolNames = new() { LeakageZoneClothSymBolName, LeakageZonePvcSymBolName, LeakageZoneColoringClothSymBolName } ;
 
     private DisplaySettingModel _dataDisplaySettingModel ;
 
@@ -54,30 +65,36 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void Execute( Window window )
     {
-      using var transactionGroup = new TransactionGroup( _document, "Setup Display Setting By Grade" ) ;
-      transactionGroup.Start() ;
+      try {
+        var result = _document.TransactionGroup( "TransactionName.Commands.Initialization.PickUpFigureCreation".GetAppStringByKeyOrDefault( "Pick Up Figure Creation" ), _ =>
+        {
+          var views = _document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
 
-      var views = _document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
+          using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
+          setupTransaction.Start() ;
 
-      using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
-      setupTransaction.Start() ;
+          SetupDisplayWiring( views, _dataDisplaySettingModel.IsWiringVisible ) ;
+          SetupDisplayDetailSymbol( views, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
+          SetupDisplayPullBox( views, _dataDisplaySettingModel.IsPullBoxVisible ) ;
+          SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
 
-      SetupDisplayWiring( views, _dataDisplaySettingModel.IsWiringVisible ) ;
-      SetupDisplayDetailSymbol( views, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
-      SetupDisplayPullBox( views, _dataDisplaySettingModel.IsPullBoxVisible ) ;
-      SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
+          setupTransaction.Commit() ;
 
-      setupTransaction.Commit() ;
+          _document.RefreshActiveView() ;
 
-      _document.RefreshActiveView() ;
+          SaveDisplaySettingByGradeStorageService() ;
 
-      SaveDisplaySettingByGradeStorageService() ;
+          UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
+        
+          return Result.Succeeded ;
+        } ) ;
 
-      UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
-
-      transactionGroup.Commit() ;
-
-      window.DialogResult = true ;
+        window.DialogResult = result == Result.Succeeded ;
+      }
+      catch ( Exception e ) {
+        CommandUtils.DebugAlertException( e ) ;
+        window.DialogResult = false ;
+      }
       window.Close() ;
     }
 
@@ -90,7 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PassPoints ) ) ;
 
       // Notation and rack
-      var rackNotationStorable = _document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? _document.GetRackNotationStorable() ;
+      var rackNotationStorable = _document.GetAllStorables<RackNotationStorable>().SingleOrDefault() ?? _document.GetRackNotationStorable() ;
       foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData ) {
         if ( _document.GetElement( rackNotationModel.RackId ) is { } rack )
           hiddenOrUnhiddenElements.Add( rack ) ;
@@ -110,11 +127,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ) ) ;
 
       // Leak
-      var leakageSymbolNames = new HashSet<string> { "LeakageZoneCloth", "LeakageZoneColoring", "LeakageZonePvc" } ;
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<FamilyInstance>().Where( x => leakageSymbolNames.Contains( x.Symbol.Family.Name ) ) ) ;
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == "LeakageZone" ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<FamilyInstance>().Where( x => _leakageSymbolNames.Contains( x.Symbol.Family.Name ) ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == LeakageZoneLineStyleName ) ) ;
 
-      HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
     private void SetupDisplayDetailSymbol( List<View> views, bool isVisible )
@@ -132,7 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
     private void SetupDisplayPullBox( List<View> views, bool isVisible )
@@ -146,23 +162,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var labelOfPullBoxIds = _document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( p => p.Data.PullBoxInfoData ).Select( p => p.TextNoteUniqueId ) ;
       hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( t => labelOfPullBoxIds.Contains( t.UniqueId ) ) ) ;
 
-      HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
     private void SetupDisplaySchedule( List<View> views, bool isVisible )
     {
       // Schedules
       var hiddenOrUnhiddenElements = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ScheduleGraphics ).Where( sg => views.Any( lv => lv.Id == sg.OwnerViewId ) ).EnumerateAll() ;
-      HideOrUnhideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
-
-    private static void HideOrUnhideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
+    private static void HideOrUnHideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
     {
-      views.ForEach( v => HideOrUnhideElements( v, isVisible, hiddenOrUnhiddenElements ) ) ;
+      views.ForEach( v => HideOrUnHideElements( v, isVisible, hiddenOrUnhiddenElements ) ) ;
     }
 
-    private static void HideOrUnhideElements( View view, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
+    private static void HideOrUnHideElements( View view, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
     {
       if ( isVisible ) {
         var hiddenElementIds = hiddenOrUnhiddenElements.Where( e => e.IsHidden( view ) ).Select( h => h.Id ).ToList() ;
