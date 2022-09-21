@@ -566,7 +566,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return ;
 
       var symbolInformationModels = document.GetSymbolInformationStorable().AllSymbolInformationModelData ;
-      var ratio = viewScale / 100d ;
+      var ratio = ImportDwgMappingModel.GetMagnificationOfView( viewScale ) / 100d ;
 
       foreach ( var symbolInstance in symbolInstances ) {
         if ( symbolInformationModels.SingleOrDefault( x => x.SymbolUniqueId == symbolInstance.UniqueId ) is not { } symbolInformationModel )
