@@ -1,0 +1,47 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.ShaftSettingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        mc:Ignorable="d" x:Name="WdShaftSettingDialog"
+        Title="ShaftSettingDialog" Height="470" Width="340" ResizeMode="NoResize"
+        d:DataContext="{d:DesignInstance {x:Type local:DesignShaftSettingViewModel}, IsDesignTimeCreatable=True}">
+    <DockPanel Margin="10">
+        <StackPanel DockPanel.Dock="Top">
+            <StackPanel Orientation="Horizontal" >
+                <Label Content="階間" Width="100"/>
+                <Label Content="シャフト作成" Width="100"/>
+                <Label Content="ラック作成" Width="100"/>
+            </StackPanel>
+            <ListBox ItemsSource="{Binding Shafts}" Height="300" 
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden" 
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.CanContentScroll="True">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="{Binding BetweenFloors}" Width="100"/>
+                            <CheckBox IsChecked="{Binding IsShafted}" Width="100" VerticalAlignment="Center"/>
+                            <CheckBox IsChecked="{Binding IsRacked}" IsEnabled="{Binding IsShafted}" Width="70" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Orientation="Horizontal" Margin="10">
+                <Label Content="ラックサイズ" Width="80"/>
+                <ComboBox IsEditable="True" Width="200"
+                          ItemsSource="{Binding Sizes}"
+                          SelectedValue="{Binding Size, Mode=TwoWay}"
+                          Text="{Binding Size, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          PreviewTextInput="NumberValidationTextCombobox">
+                </ComboBox>
+            </StackPanel>
+            <Button Content="作成" Margin="0,5" Width="100" Height="28" 
+                    Command="{ Binding CreateShaftCommand}"
+                    CommandParameter="{Binding ElementName=WdShaftSettingDialog}" />
+        </StackPanel>
+    </DockPanel>
+</Window>
