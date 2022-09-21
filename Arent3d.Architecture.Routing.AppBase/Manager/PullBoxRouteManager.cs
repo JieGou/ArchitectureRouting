@@ -1071,11 +1071,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       foreach ( var pullBoxElement in pullBoxElements ) {
         var (pullBox, position) = pullBoxElement ;
         var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
-        ChangeDimensionOfPullBoxAndSetLabel( document, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, positionLabel, true ) ;
+        ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, DefaultPullBoxLabel, positionLabel, true ) ;
       }
     }
 
-    public static void ChangeDimensionOfPullBoxAndSetLabel( Document document, FamilyInstance pullBox,
+    public static void ChangeDimensionOfPullBoxAndSetLabel( Document document, double baseLengthOfLine, FamilyInstance pullBox,
       CsvStorable? csvStorable, StorageService<Level, DetailSymbolModel>? storageDetailSymbolService, StorageService<Level, PullBoxInfoModel>? storagePullBoxInfoServiceByLevel,
       List<ConduitsModel>? conduitsModelData, List<HiroiMasterModel>? hiroiMasterModels, string textLabel,
       XYZ? positionLabel, bool isAutoCalculatePullBoxSize, PullBoxModel? selectedPullBoxModel = null )
@@ -1083,8 +1083,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var defaultLabel = textLabel ;
       var buzaiCd = string.Empty ;
       int depth = 0, height = 0 ;
-      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
-      var baseLengthOfLine = scale / 100d ;
 
       //Case 1: Automatically calculate dimension of pull box
       if ( isAutoCalculatePullBoxSize ) {
@@ -1116,16 +1114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( isAutoCalculatePullBoxSize )
         storageDetailSymbolService?.Data.DetailSymbolData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
 
-      // Update width, depth parameter for pull box
-      var oldDepthByScale = pullBox.GetParameter( DepthParameter )?.AsDouble() ?? -1d ;
-      var depthByScale = ( DefaultDepthOfPullBox * baseLengthOfLine ).MillimetersToRevitUnits() ;
-      pullBox.GetParameter( DepthParameter )?.Set( depthByScale ) ;
-      pullBox.GetParameter( WidthParameter )?.Set( depthByScale ) ;
-
-      //Resize conduits related pull box
-      var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point ;
-      if ( pullBoxLocation != null && oldDepthByScale > 0 )
-        ResizeConduitsRelatedPullBox( document, pullBox, depthByScale, oldDepthByScale, pullBoxLocation ) ;
+      ResizePullBoxAndRelatedConduits( document, baseLengthOfLine, pullBox ) ;
 
       if ( storagePullBoxInfoServiceByLevel == null ) return ;
       
@@ -1141,8 +1130,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         ChangeLabelOfPullBox( document, storagePullBoxInfoServiceByLevel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
     }
 
-    private static void ResizeConduitsRelatedPullBox( Document document, Element pullBox, double depthByScale, double oldDepthByScale, XYZ pullBoxLocation )
+    public static void ResizePullBoxAndRelatedConduits( Document document, double baseLengthOfLine, FamilyInstance pullBox )
     {
+      // Update width, depth parameter for pull box
+      var oldDepthByScale = pullBox.GetParameter( DepthParameter )?.AsDouble() ?? -1d ;
+      var depthByScale = ( DefaultDepthOfPullBox * baseLengthOfLine ).MillimetersToRevitUnits() ;
+      pullBox.GetParameter( DepthParameter )?.Set( depthByScale ) ;
+      pullBox.GetParameter( WidthParameter )?.Set( depthByScale ) ;
+
+      //Resize conduits related pull box
+      var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point ;
+      if ( pullBoxLocation == null || ! ( oldDepthByScale > 0 ) ) return ;
+      
       var depthDifferenceByScale = ( depthByScale - oldDepthByScale ) / 2 ;
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var routesRelatedPullBox = GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBox, routes ) ;

@@ -424,7 +424,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
           
-          [Button( typeof( ChangePullBoxDimensionCommand ), OnlyInitialized = true )]
+          [Button( typeof( ChangePullBoxDimensionCommand ), OnlyInitialized = true, AvailabilityType = typeof( Commands.Enabler.View2DActivatedCommandEnabler ) )]
           private static class ChangePullBoxDimensionCommandButton
           {
           }

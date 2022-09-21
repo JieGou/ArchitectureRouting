@@ -133,6 +133,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       var level = document.ActiveView.GenLevel ;
+      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
       StorageService<Level, DetailSymbolModel>? storageDetailSymbolService = null ;
       StorageService<Level, PullBoxInfoModel>? storagePullBoxInfoServiceByLevel = null ;
       if ( level != null ) {
@@ -142,7 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       using var transaction = new Transaction( document, "Change pull box dimension" ) ;
       transaction.Start() ;
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
       transaction.Commit() ;
       #endregion
       

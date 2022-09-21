@@ -21,22 +21,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       var level = document.ActiveView.GenLevel ;
+      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
       try {
         var csvStorable = document.GetCsvStorable() ;
         var conduitsModelData = csvStorable.ConduitsModelData ;
         var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
-        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( document.ActiveView.GenLevel ) ;
+        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
         var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
 
         var pullBoxElements = document.GetAllElements<FamilyInstance>()
           .OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-          .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
+          .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id )
           .ToList() ;
 
         using var transaction = new Transaction( document, "Change pull box dimension" ) ;
         transaction.Start() ;
         foreach ( var pullBoxElement in pullBoxElements )
-          PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBoxElement, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
+          PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, pullBoxElement, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
             conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, null, Convert.ToBoolean( pullBoxElement.ParametersMap.get_Item( PullBoxRouteManager.IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
         transaction.Commit() ;
         MessageBox.Show( ChangePullBoxDimensionSuccesfully ) ;

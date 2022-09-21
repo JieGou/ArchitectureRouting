@@ -5,6 +5,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -467,9 +468,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var viewPlan = views.FirstOrDefault( x => x.Name == importDwgMappingModel.FloorName ) ;
         if ( viewPlan != null && viewPlan.Scale != importDwgMappingModel.Scale ) {
           viewPlan.Scale = importDwgMappingModel.Scale ;
-          if ( null != viewPlan.ViewTemplateId && document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale ) {
-            viewTemplate.Scale = importDwgMappingModel.Scale ;
+
+          #region Change pull box dimension if scale changes
+
+          var level = viewPlan.GenLevel ;
+          var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
+          var baseLengthOfLine = scale / 100d ;
+          var pullBoxElements = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id ).ToList() ;
+
+          foreach ( var pullBoxElement in pullBoxElements ) {
+            PullBoxRouteManager.ResizePullBoxAndRelatedConduits( document, baseLengthOfLine, pullBoxElement ) ;
           }
+
+          #endregion
+          
+          if ( null != viewPlan.ViewTemplateId && document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale )
+            viewTemplate.Scale = importDwgMappingModel.Scale ;
 
           document.Regenerate() ;
           FilteredElementCollector allElementsInView = new FilteredElementCollector( document, viewPlan.Id ) ;
