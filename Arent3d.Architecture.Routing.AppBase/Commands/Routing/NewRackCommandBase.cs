@@ -496,7 +496,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y + widthCableTray ), point.Z ) ;
             else
               point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X - widthCableTray ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y ), point.Z ) ;
-            var notation = count > 1 ? string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ) + xSymbol + racks.Count : string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ) ;
+            
+            // content to show
+            var notation = notationDistance switch
+            {
+              > 600 => string.Format( Notation, ( notationDistance / 2 ).ToString( CultureInfo.CurrentCulture ) ) + " x 2",
+              _ => string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ),
+            } ;
+            
             var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;
             if ( null == textNoteType ) return ;
             TextNote textNote ;
