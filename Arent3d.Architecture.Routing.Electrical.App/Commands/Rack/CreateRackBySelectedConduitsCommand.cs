@@ -92,6 +92,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       
+      
+      
       // select conduit, start point, end point of rack
       var uiResult = OperateUI( commandData ) ;
       if ( ! uiResult.HasValue || uiResult.Value.FirstSelectedConduit is not { } firstSelectedConduit || uiResult.Value.SecondSelectedConduit is not { } secondSelectedConduit ) {
@@ -120,6 +122,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       // start generate new racks
       using var createRackTransaction = new Transaction( document, "手動でラックを作成する" ) ;
       createRackTransaction.Start() ;
+      
+      // turn on rack fitting category
+      var category = Category.GetCategory( document, BuiltInCategory.OST_CableTrayFitting ) ;
+      document.ActiveView.SetCategoryHidden( category.Id, false ) ;
       
       // create racks along with conduits
       var conduitWidthMap = linkedConduits.Select( conduit => ( conduit, uiResult.Value.RackWidth ) ) ;
