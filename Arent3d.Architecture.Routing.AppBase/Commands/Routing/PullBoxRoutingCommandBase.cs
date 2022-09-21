@@ -55,18 +55,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var level = ( document.GetElement( pickInfo.Element.GetLevelId() ) as Level ) ! ;
       var heightConnector = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightConnector.MillimetersToRevitUnits() ;
       var heightWire = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightWire.MillimetersToRevitUnits() ;
-
-      XYZ? positionLabel ;
+      
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var baseLengthOfLine = scale / 100d ;
-      if ( pickInfo.Element is FamilyInstance { FacingOrientation: { } } )
-        positionLabel = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 )
-        positionLabel = new XYZ( originX, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 )
-        positionLabel = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else
-        positionLabel = new XYZ( originX, originY, heightConnector ) ;
+      var positionLabel = new XYZ( originX - PullBoxRouteManager.NotationOfPullBoxXAxis * baseLengthOfLine, originY + PullBoxRouteManager.NotationOfPullBoxYAxis * baseLengthOfLine, heightConnector ) ;
 
       return new OperationResult<PickState>( new PickState( pickInfo, null, new XYZ( originX, originY, originZ ), heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, pullBoxViewModel.IsAutoCalculatePullBoxSize, positionLabel, pullBoxViewModel.SelectedPullBox, fromDirection, toDirection, new Dictionary<string, List<string>>() ) ) ;
     }

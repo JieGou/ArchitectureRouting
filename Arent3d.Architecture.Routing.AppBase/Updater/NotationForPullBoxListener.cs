@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
@@ -54,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           if ( pullBoxElement is not FamilyInstance pullBox ) continue ;
           var positionOfPullBox = ( pullBox.Location as LocationPoint )?.Point ;
 
-          var positionOfTextNoteForPullBox = positionOfPullBox != null ? new XYZ( positionOfPullBox.X + 0.4 * baseLengthOfLine, positionOfPullBox.Y + 0.7 * baseLengthOfLine, positionOfPullBox.Z ) : null ;
+          var positionOfTextNoteForPullBox = positionOfPullBox != null ? new XYZ( positionOfPullBox.X - PullBoxRouteManager.NotationOfPullBoxXAxis * baseLengthOfLine, positionOfPullBox.Y + PullBoxRouteManager.NotationOfPullBoxYAxis * baseLengthOfLine, positionOfPullBox.Z ) : null ;
           if ( positionOfTextNoteForPullBox == null ) continue ;
 
           var textNoteOfPullBoxUniqueId = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.SingleOrDefault( t => t.PullBoxUniqueId == pullBox.UniqueId )?.TextNoteUniqueId ;
@@ -67,7 +68,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           selectionElementIds.Add( textNoteOfPullBox!.Id ) ;
         }
 
-        uiDocument.Selection.SetElementIds( selectionElementIds ) ;
+        if ( selectionElementIds.Any() )
+          uiDocument.Selection.SetElementIds( selectionElementIds ) ;
       }
       catch ( Exception exception ) {
         TaskDialog.Show( "Arent Inc", exception.Message ) ;

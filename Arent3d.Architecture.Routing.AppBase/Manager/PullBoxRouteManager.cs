@@ -31,6 +31,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const double NearShaftTolerance = 0.01 ;
     private static readonly double PullBoxWidth = 300d.MillimetersToRevitUnits() ;
     private static readonly double PullBoxLenght = 250d.MillimetersToRevitUnits() ;
+    public static readonly double NotationOfPullBoxXAxis = 715d.MillimetersToRevitUnits() ;
+    public static readonly double NotationOfPullBoxYAxis = 200d.MillimetersToRevitUnits() ;
     private const string HinmeiOfPullBox = "プルボックス" ;
     public const string DefaultPullBoxLabel = "PB" ;
     public const string MaterialCodeParameter = "Material Code" ;
@@ -1070,7 +1072,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       foreach ( var pullBoxElement in pullBoxElements ) {
         var (pullBox, position) = pullBoxElement ;
-        var positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
+        var positionLabel = position != null ? new XYZ( position.X - NotationOfPullBoxXAxis * baseLengthOfLine, position.Y + NotationOfPullBoxYAxis * baseLengthOfLine, position.Z ) : null ;
         ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, DefaultPullBoxLabel, positionLabel, true ) ;
       }
     }
@@ -1123,7 +1125,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       else if ( storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.All( pullBoxInfoItemModel => pullBoxInfoItemModel.PullBoxUniqueId != pullBox.UniqueId ) ) {
         var position = (pullBox.Location as LocationPoint)?.Point ;
-        positionLabel = position != null ? new XYZ( position.X + 0.4 * baseLengthOfLine, position.Y + 0.7 * baseLengthOfLine, position.Z ) : null ;
+        positionLabel = position != null ? new XYZ( position.X - NotationOfPullBoxXAxis * baseLengthOfLine, position.Y + NotationOfPullBoxYAxis * baseLengthOfLine, position.Z ) : null ;
         if ( positionLabel != null )
           CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       } else if ( isAutoCalculatePullBoxSize )
@@ -1240,8 +1242,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     private static void CreateTextNoteAndGroupWithPullBox(Document doc, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
     {
-      var newSize = ( 1.0 / 4.0 ) * TextNoteHelper.TextSize ;
-      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, newSize, false )!.Id ;
+      var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       
       var txtPosition = new XYZ( point.X, point.Y, point.Z ) ;
