@@ -344,7 +344,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ImportDwgMappingModels[ 0 ].FloorHeightDisplay = "-" ;
         ImportDwgMappingModels[ 0 ].IsEnabledFloorHeight = false ;
       }
-
       IsEnableChageGrade = true ;
     }
 
