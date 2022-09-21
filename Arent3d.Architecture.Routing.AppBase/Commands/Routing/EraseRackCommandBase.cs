@@ -11,7 +11,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class EraseLimitRackCommandBase : IExternalCommand
+  public abstract class EraseRackCommandBase : IExternalCommand
   {
     private const string EraseLimitRackTransactionName = "Erase Limit Rack" ;
 
@@ -104,13 +104,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       foreach ( var cableTray in cableTrays ) {
         var comment = cableTray.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ) ).AsString() ;
-        if ( comment == RackCommandBase.RackTypes[ 1 ] )
+        if ( comment == RackCommandBase.RackTypes[ 1 ] || comment == RackCommandBase.RackTypes[ 0 ])
           yield return cableTray ;
       }
 
       foreach ( var cableTrayFitting in cableTrayFittings ) {
         var comment = cableTrayFitting.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ) ).AsString() ;
-        if ( comment == RackCommandBase.RackTypes[ 1 ] )
+        if ( comment == RackCommandBase.RackTypes[ 1 ] || comment == RackCommandBase.RackTypes[ 0 ])
           yield return cableTrayFitting ;
       }
     }

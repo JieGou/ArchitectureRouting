@@ -8,7 +8,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public class EraseAllRackCommandBase : EraseLimitRackCommandBase
+  public class EraseAllRackCommandBase : EraseRackCommandBase
   {
     protected override IEnumerable<string> GetLimitRackUniqueIds( UIDocument uiDocument, Document document )
     {
