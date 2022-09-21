@@ -4,6 +4,7 @@ using System.Linq.Expressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -90,6 +91,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var uiApp = commandData.Application ;
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      
       // select conduit, start point, end point of rack
       var uiResult = OperateUI( commandData ) ;
       if ( ! uiResult.HasValue || uiResult.Value.FirstSelectedConduit is not { } firstSelectedConduit || uiResult.Value.SecondSelectedConduit is not { } secondSelectedConduit ) {
@@ -102,12 +104,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       // calculate lengths of first and last rack
       var specialLengthList = new List<(Element Conduit, double StartParam, double EndParam)>() ;
       if ( firstSelectedConduit.Id != secondSelectedConduit.Id ) {
+        // first and last selected points are on difference conduits
         var firstParams = firstSelectedConduit.CalculatePositionOfRackOnConduit( uiResult.Value.StartPoint, linkedConduits.ElementAt( 1 ) ) ;
         var lastParams = secondSelectedConduit.CalculatePositionOfRackOnConduit( uiResult.Value.EndPoint, linkedConduits.ElementAt( linkedConduits.Count - 2 ) ) ;
+        
         specialLengthList.Add( ( firstSelectedConduit, firstParams.StartParam, firstParams.EndParam ) ) ;
         specialLengthList.Add( ( secondSelectedConduit, lastParams.StartParam, lastParams.EndParam ) ) ;
       }
       else {
+        // first and last selected points are on the same conduit
         var firstParams = firstSelectedConduit.CalculatePositionOfRackOnConduit( uiResult.Value.StartPoint, uiResult.Value.EndPoint ) ;
         specialLengthList.Add( ( firstSelectedConduit, firstParams.StartParam, firstParams.EndParam ) ) ;
       }
