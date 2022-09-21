@@ -78,13 +78,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void GenerateOpenEndPointMark( Document document, FamilySymbol symbol, Connector connector )
     {
-      var level = connector.Owner is Conduit conduit ? conduit.ReferenceLevel : document.GetAllElements<Level>().FirstOrDefault( l => l.Id == ( connector.Owner as FamilyInstance )!.GetLevelId() ) ;
+      var level = connector.Owner is Conduit conduit ? conduit.ReferenceLevel : document.GetAllElements<Level>().SingleOrDefault( l => l.Id == ( connector.Owner as FamilyInstance )!.GetLevelId() ) ;
       if ( level == null ) return ;
       var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
       symbol.Instantiate( new XYZ( connector.Origin.X, connector.Origin.Y, height ), level,
         StructuralType.NonStructural ) ;
     }
-    
+
     private static bool IsMissingConnector( IEnumerable<Element> allConnectors, Element conduit, bool isFrom )
     {
       var endPoint = conduit.GetNearestEndPoints( isFrom ).FirstOrDefault() ;
