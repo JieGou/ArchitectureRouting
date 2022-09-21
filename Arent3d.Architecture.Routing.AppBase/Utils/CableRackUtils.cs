@@ -463,32 +463,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return scaleFactor > 1 ? ( scaleFactor - 1 ) * elbowWidth / 2 + elbowMinRadius : elbowMinRadius ;
     }
 
-    private static (XYZ, XYZ, XYZ, XYZ) ReArrangeToConnect( (XYZ, XYZ, double) marker1, (XYZ, XYZ, double) marker2, double scaleRate, double elbowAnnotationRadius, double elbowAdditionLength )
+    private static (XYZ, XYZ, XYZ, XYZ) ReArrangeToConnect( (XYZ, XYZ, double) marker1, (XYZ, XYZ, double) marker2, int scale, double elbowMinRadius, double elbowPaddingLength )
     {
       var markPoints = ReArrange( ( marker1.Item1, marker1.Item2 ), ( marker2.Item1, marker2.Item2 ) ) ;
-      var minDistance = markPoints.P12.DistanceTo( markPoints.P21 ) ;
 
       var isSameDirection = ( markPoints.P11 - markPoints.P12 ).Normalize().IsAlmostEqualTo( ( markPoints.P21 - markPoints.P22 ).Normalize() ) ;
-      if ( minDistance < 0.01 && isSameDirection ) {
-        // align : unify
+      if ( markPoints.P12.IsAlmostEqualTo( markPoints.P21 ) && isSameDirection ) {
+        // join 2 short markers into a long marker
         markPoints.P21 = markPoints.P11 ;
         markPoints.P11 = XYZ.Zero ;
         markPoints.P12 = XYZ.Zero ;
       }
       else {
         // perpendicular: modify to have enough space for elbow
-        var width = Math.Max( marker1.Item3, marker2.Item3 ) ;
+        var elbowWidth = Math.Max( marker1.Item3, marker2.Item3 ) ;
+        var scaleFactor = RackWidthOnPlanView( scale ) / elbowWidth ;
 
         var line1 = Line.CreateUnbound( markPoints.P11, markPoints.P12 - markPoints.P11 ) ;
         var line2 = Line.CreateUnbound( markPoints.P22, markPoints.P21 - markPoints.P22 ) ;
         line1.Intersect( line2, out var resultArray ) ;
         if ( resultArray is null || resultArray.IsEmpty )
           return markPoints ;
-
-        var res1 = resultArray.get_Item( 0 ) ;
-        var intersectedPoint = res1.XYZPoint ;
-        var realElbowRadius = RealElbowRadius( width, elbowAnnotationRadius, scaleRate ) ;
-        var distanceFromIntersect = realElbowRadius + width / 2 + elbowAdditionLength ;
+        
+        var intersectedPoint = resultArray.get_Item( 0 ).XYZPoint ;
+        var realElbowRadius = RealElbowRadius( elbowWidth, elbowMinRadius, scaleFactor ) ;
+        var distanceFromIntersect = realElbowRadius + elbowWidth / 2 + elbowPaddingLength ;
 
         markPoints.P12 = intersectedPoint + ( markPoints.P11 - markPoints.P12 ).Normalize() * distanceFromIntersect ;
         markPoints.P21 = intersectedPoint + ( markPoints.P22 - markPoints.P21 ).Normalize() * distanceFromIntersect ;
@@ -582,7 +581,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         conduits.Add( conduit ) ;
       }
 
-      // new function here: input rawRackMarkers
+      // simplify : join co-direction short markers into a long marker
       var simplifiedMarkerMap = GetSimplifiedMarkers( conduitMarkers ) ;
 
       var rackType = GetGenericRackSymbol( doc ) ;
@@ -599,18 +598,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
         var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
-        var scaleFactor = RackWidthOnPlanView( doc.ActiveView.Scale ) / thisMarker.Item3 ;
-        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, scaleFactor, r0, l0 ) ;
+        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, doc.ActiveView.Scale, r0, l0 ) ;
+        
+        // modify marker to have enough space for elbow
         simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, thisMarker.Item3 ), i ) ;
         simplifiedMarkerMap[ i + 1 ] = ( ( fourPoints.Item3, fourPoints.Item4, nextMarker.Item3 ), i + 1 ) ;
       }
-
+      
+      // create racks and elbows by markers
       FamilyInstance? currentElbow = null ;
-
-      // create rack by markers
       for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
         var rackMarker = simplifiedMarkerMap[ i ].RackMarker ;
         var conduit = conduits[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
+        
         // create rack
         var rackWidth = rackMarker.Item3 ;
         var scaleFactor = RackWidthOnPlanView( doc.ActiveView.Scale ) / rackWidth ;
