@@ -576,12 +576,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var realElbowRadius = RealElbowRadius( elbowWidth, elbowMinRadius, scaleFactor ) ;
         var distanceFromIntersect = realElbowRadius + elbowWidth / 2 + elbowPaddingLength ;
         
-        // marker2 is too short so it's completely inside elbow
-        if ( distanceFromIntersect > markPoints.P22.DistanceTo( intersectedPoint ) ) {
+        // marker is too short so it's completely inside elbow
+        var isMarker1TooShort = distanceFromIntersect > markPoints.P11.DistanceTo( intersectedPoint ) ;
+        var isMarker2TooShort = distanceFromIntersect > markPoints.P22.DistanceTo( intersectedPoint ) ;
+        
+        if ( isMarker2TooShort ) {
           // marker2 become zero-length
           markPoints.P21 = markPoints.P22 ;
         }
-        else {
+        if ( isMarker1TooShort ) {
+          // marker1 become zero-length
+          markPoints.P12 = markPoints.P11 ;
+        }
+        
+        if ( ! isMarker1TooShort && ! isMarker2TooShort ) {
+          // both marker have enough space
           markPoints.P12 = intersectedPoint + ( markPoints.P11 - markPoints.P12 ).Normalize() * distanceFromIntersect ;
           markPoints.P21 = intersectedPoint + ( markPoints.P22 - markPoints.P21 ).Normalize() * distanceFromIntersect ;
         }
@@ -718,16 +727,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
         if ( CreateRack( doc, creationParam ) is not { } rack )
           continue ;
-        rack.SetProperty( "起点の表示", i == 0 ) ;
-        rack.SetProperty( "終点の表示", i == simplifiedMarkerMap.Count - 1 ) ;
+        rack.SetProperty( "起点の表示", true ) ;
+        rack.SetProperty( "終点の表示", true ) ;
         racksAndElbows.Add( rack ) ;
 
         // Connect to current elbow:
-        if ( newestInstance is not null ) TryConnectRackItems( rack, newestInstance ) ;
+        if ( newestInstance is not null && TryConnectRackItems( rack, newestInstance ) ) {
+          rack.SetProperty( "起点の表示", false ) ;
+        }
 
         // create rack elbow
         if ( i == simplifiedMarkerMap.Count - 1 )
           continue ;
+
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
 
         var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, ElbowMinimumRadius, ElbowPadding, elbowType, conduit, rackClassification ) ;
@@ -735,9 +747,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
           newestInstance = rack ;
           continue ;
         }
-
+        
         // connect rack to new elbow
-        TryConnectRackItems( rack, elbow ) ;
+        var isEndPointConnected = TryConnectRackItems( rack, elbow ) ;
+        rack.SetProperty( "終点の表示", ! isEndPointConnected ) ;
         racksAndElbows.Add( elbow ) ;
         newestInstance = elbow ;
       }
