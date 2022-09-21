@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d" x:Name="WdShaftSettingDialog"
+        WindowStartupLocation="CenterScreen"
         Title="ShaftSettingDialog" Height="470" Width="340" ResizeMode="NoResize"
         d:DataContext="{d:DesignInstance {x:Type local:DesignShaftSettingViewModel}, IsDesignTimeCreatable=True}">
     <DockPanel Margin="10">

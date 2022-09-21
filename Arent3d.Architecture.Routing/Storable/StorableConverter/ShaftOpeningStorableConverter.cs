@@ -12,6 +12,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
         private enum SerializeField
         {
             ShaftOpeningUniqueId,
+            CableTrayUniqueId,
             DetailUniqueIds,
             Size
         }
@@ -21,10 +22,11 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
             var deserializer = deserializerObject.Of<SerializeField>() ;
 
             var shaftOpeningUniqueId = deserializer.GetString( SerializeField.ShaftOpeningUniqueId ) ;
+            var cableTrayUniqueId = deserializer.GetString( SerializeField.CableTrayUniqueId ) ;
             var detailUniqueIds = deserializer.GetNonNullStringArray( SerializeField.DetailUniqueIds ) ;
             var size = deserializer.GetDouble( SerializeField.Size ) ;
 
-            return new ShaftOpeningModel( shaftOpeningUniqueId, detailUniqueIds?.ToList(), size ) ;
+            return new ShaftOpeningModel( shaftOpeningUniqueId, cableTrayUniqueId, detailUniqueIds?.ToList(), size ) ;
         }
 
         protected override ISerializerObject Serialize( Element storedElement, ShaftOpeningModel customTypeValue )
@@ -32,7 +34,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
             var serializerObject = new SerializerObject<SerializeField>() ;
 
             serializerObject.AddNonNull( SerializeField.ShaftOpeningUniqueId, customTypeValue.ShaftOpeningUniqueId ) ;
+            serializerObject.AddNonNull( SerializeField.CableTrayUniqueId, customTypeValue.CableTrayUniqueId ) ;
             serializerObject.AddNonNull( SerializeField.DetailUniqueIds, customTypeValue.DetailUniqueIds ) ;
+            serializerObject.Add( SerializeField.Size, customTypeValue.Size ) ;
 
             return serializerObject ;
         }
