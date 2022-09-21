@@ -185,7 +185,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     #region Methods
 
-    private static List<ClassificationData> GetClassificationDatas( Document document, string routeName, Dictionary<string, List<ClassificationData>> oldClassificationDatas )
+    public static List<ClassificationData> GetClassificationDatas( Document document, string routeName, Dictionary<string, List<ClassificationData>> oldClassificationDatas )
     {
       var classificationDatas = new List<ClassificationData>() ;
       
@@ -928,7 +928,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     #endregion
     
-    private class ClassificationData
+    public class ClassificationData
     {
       public string Classification { get ; init ; } = string.Empty ;
       
