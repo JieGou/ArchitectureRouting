@@ -12,7 +12,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
         private enum SerializeField
         {
             ShaftOpeningUniqueId,
-            DetailUniqueIds
+            DetailUniqueIds,
+            Size
         }
 
         protected override ShaftOpeningModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -21,8 +22,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 
             var shaftOpeningUniqueId = deserializer.GetString( SerializeField.ShaftOpeningUniqueId ) ;
             var detailUniqueIds = deserializer.GetNonNullStringArray( SerializeField.DetailUniqueIds ) ;
+            var size = deserializer.GetDouble( SerializeField.Size ) ;
 
-            return new ShaftOpeningModel( shaftOpeningUniqueId, detailUniqueIds?.ToList() ) ;
+            return new ShaftOpeningModel( shaftOpeningUniqueId, detailUniqueIds?.ToList(), size ) ;
         }
 
         protected override ISerializerObject Serialize( Element storedElement, ShaftOpeningModel customTypeValue )

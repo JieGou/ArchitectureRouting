@@ -4,10 +4,12 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
+using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
@@ -33,12 +35,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
         var centerPoint = selection.PickPoint( ObjectSnapTypes.Midpoints | ObjectSnapTypes.Centers, "Pick a point." ) ;
 
-        var dialog = new GetLevel( document ) ;
+        //var dialog = new GetLevel( document ) ;
+        var shaftSettingViewModel = new ShaftSettingViewModel( document ) ;
+        var dialog = new ShaftSettingDialog( shaftSettingViewModel ) ;
         if ( false == dialog.ShowDialog() )
           return Result.Succeeded ;
 
-        var levels = dialog.GetSelectedLevels().Select( x => document.GetElement( x.Id ) ).OfType<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
-        if ( ! levels.Any() ) {
+        //var levels = dialog.GetSelectedLevels().Select( x => document.GetElement( x.Id ) ).OfType<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
+        var shaftModels = dialog.ShaftSettingViewModel.Shafts.Where( s => s.IsShafted ).ToList() ;
+        if ( ! shaftModels.Any() ) {
           message = "Please, select level in the dialog!" ;
           return Result.Cancelled ;
         }
@@ -49,22 +54,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         var shaftOpeningStore = document.GetShaftOpeningStorable() ;
 
         var shaftProfile = new CurveArray() ;
-        var cylinderCurve = Arc.Create( centerPoint, Radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
+        double.TryParse( dialog.ShaftSettingViewModel.Size, out var widthShaft) ;
+        var radius = widthShaft.MillimetersToRevitUnits() / 2 ;
+        var cylinderCurve = Arc.Create( centerPoint, radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
         shaftProfile.Append( cylinderCurve ) ;
-        var opening = document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
-        document.Regenerate();
-        
-        var detailUniqueIds = new List<string>() ;
-        var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
+        foreach ( var shaftModel in shaftModels ) {
+          var levels = new List<Level>{ shaftModel.FromLevel, shaftModel.ToLevel } ;
+          var opening = document.Create.NewOpening( shaftModel.FromLevel, shaftModel.ToLevel, shaftProfile ) ;
+          document.Regenerate() ;
 
-        var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
-        foreach ( var viewPlan in viewPlans ) {
-          var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape ) ;
-          detailUniqueIds.AddRange(detailCurves);
+          var detailUniqueIds = new List<string>() ;
+          var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
+
+          var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
+          foreach ( var viewPlan in viewPlans ) {
+            var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, radius ) ;
+            detailUniqueIds.AddRange( detailCurves ) ;
+          }
+
+          shaftOpeningStore.ShaftOpeningModels.Add( new ShaftOpeningModel( opening.UniqueId, detailUniqueIds, radius ) ) ;
+          shaftOpeningStore.Save() ;
         }
-        
-        shaftOpeningStore.ShaftOpeningModels.Add(new ShaftOpeningModel(opening.UniqueId, detailUniqueIds));
-        shaftOpeningStore.Save();
 
         trans.Commit() ;
 
@@ -87,10 +97,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       return ( styleForBodyDirection, styleForOuterShape, styleForSymbol ) ;
     }
 
-    public static IEnumerable<string> CreateSymbolForShaftOpeningOnViewPlan(Opening opening, ViewPlan viewPlan, Element styleForSymbol, Element styleForBodyDirection, Element styleForOuterShape)
+    public static IEnumerable<string> CreateSymbolForShaftOpeningOnViewPlan(Opening opening, ViewPlan viewPlan, Element styleForSymbol, Element styleForBodyDirection, Element styleForOuterShape, double radius)
     {
       var ratio = viewPlan.Scale / 100d ;
-      var sacleRadius = Radius * ratio ;
+      var scaleRadius = radius * ratio ;
 
       var detailUniqueIds = new List<string>() ;
       var arc = opening.BoundaryCurves.OfType<Arc>().SingleOrDefault() ;
@@ -108,8 +118,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       var transformRotation = Transform.CreateRotationAtPoint( opening.Document.ActiveView.ViewDirection, RotateAngle, arc.Center ) ;
       var bodyDirections = new List<Curve>
       {
-        Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * sacleRadius ).OfPoint( arc.Center ), Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( arc.Center ) ).CreateTransformed( transformRotation ), 
-        Line.CreateBound( Transform.CreateTranslation( -XYZ.BasisX * sacleRadius ).OfPoint( arc.Center ), Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( arc.Center ) ).CreateTransformed( transformRotation )
+        Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * scaleRadius ).OfPoint( arc.Center ), Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( arc.Center ) ).CreateTransformed( transformRotation ), 
+        Line.CreateBound( Transform.CreateTranslation( -XYZ.BasisX * scaleRadius ).OfPoint( arc.Center ), Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( arc.Center ) ).CreateTransformed( transformRotation )
       } ;
 
       var transformTranslation = Transform.CreateTranslation( XYZ.BasisZ * ( viewPlan.GenLevel.Elevation - arc.Center.Z ) ) ;
@@ -135,10 +145,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
       curvesBody.Select( x => CreateDetailLine( viewPlan, styleForBodyDirection, x ) ).ForEach(x => detailUniqueIds.Add(x.UniqueId)) ;
 
-      var circle = Arc.Create( new XYZ( arc.Center.X, arc.Center.Y, viewPlan.GenLevel.Elevation ), sacleRadius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
+      var circle = Arc.Create( new XYZ( arc.Center.X, arc.Center.Y, viewPlan.GenLevel.Elevation ), scaleRadius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
       detailUniqueIds.Add( CreateDetailLine( viewPlan, styleForOuterShape, circle ).UniqueId ) ;
 
       return detailUniqueIds ;
+    }
+    
+    private static Element CreateRackSymbol( Document document, double originX, double originY, double originZ, Level level )
+    {
+      var routingSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTray ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var rackInstance = routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+      return rackInstance ;
     }
 
     private static List<DetailCurve> CreateSymbol(View viewPlan, XYZ point, double angle, double ratio, Element lineStyle)

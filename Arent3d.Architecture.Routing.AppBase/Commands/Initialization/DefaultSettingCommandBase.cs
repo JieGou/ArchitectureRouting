@@ -551,7 +551,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         opening.Document.Delete( detailCurveIds ) ;
         
         openingStore.DetailUniqueIds.RemoveAll( x => opening.Document.GetElement( x ) is { } element && element.OwnerViewId == viewPlan.Id ) ;
-        var newDetailCurves = CreateCylindricalShaftCommandBase.CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape ) ;
+        var newDetailCurves = CreateCylindricalShaftCommandBase.CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, openingStore.Size ) ;
         openingStore.DetailUniqueIds.AddRange( newDetailCurves.Select( x => x ) ) ;
       }
 
