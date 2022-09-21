@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       set { SetValue( DisplayUnitSystemProperty, value ) ; }
     }
 
-    public FromToTree? ParentFromToTree { get ; set ; }
+    public Pages.FromToTree? ParentFromToTree { get ; set ; }
 
     private RoutePropertySource? _editingSource ;
     public RoutePropertySource? EditingSource
