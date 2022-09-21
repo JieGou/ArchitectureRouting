@@ -1,10 +1,8 @@
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Linq.Expressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
-using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -33,7 +31,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
     /// <param name="StartPoint"></param>
     /// <param name="EndPoint"></param>
     /// <param name="RackWidth">Must be in Revit API unit</param>
-    private record SelectState( string RouteName, MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint, double RackWidth ) ;
+    private record SelectState( string RouteName, MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint, double RackWidth, int NumberOfRack, bool IsAutoSizing  ) ;
 
     private OperationResult<SelectState> OperateUI( ExternalCommandData commandData )
     {
@@ -77,9 +75,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         if ( dialog.ShowDialog() is false )
           return OperationResult<SelectState>.Cancelled ;
 
-        var rackWidth = dialog.SelectedWidthInMillimeter().MillimetersToRevitUnits() ;
+        var rackWidth = dialog.WidthInMillimeter.MillimetersToRevitUnits() ;
+        var numberOfRack = dialog.NumberOfRack ;
+        var isAutoSizing = dialog.IsAutoSizing ;
 
-        return new OperationResult<SelectState>( new SelectState( routeName, firstSelectedConduit, secondSelectedConduit, firstSelectedPoint, secondSelectedPoint, rackWidth ) ) ;
+        return new OperationResult<SelectState>( new SelectState( routeName, firstSelectedConduit, secondSelectedConduit, firstSelectedPoint, secondSelectedPoint, rackWidth, numberOfRack, isAutoSizing ) ) ;
       }
       catch ( OperationCanceledException ) {
         return OperationResult<SelectState>.Cancelled ;
@@ -91,8 +91,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var uiApp = commandData.Application ;
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      
-      
       
       // select conduit, start point, end point of rack
       var uiResult = OperateUI( commandData ) ;
@@ -128,14 +126,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       document.ActiveView.SetCategoryHidden( category.Id, false ) ;
       
       // create racks along with conduits
-      var conduitWidthMap = linkedConduits.Select( conduit => ( conduit, uiResult.Value.RackWidth ) ) ;
-      var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", specialLengthList ) ;
+      var conduitWidthMap = linkedConduits.Where(element => element is Conduit cd && cd.Location as LocationCurve is {} lc && lc.Curve.Length > 20d.MillimetersToRevitUnits() ).Select( conduit => ( conduit, uiResult.Value.RackWidth ) ) ;
+      var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Limit Rack", uiResult.Value.IsAutoSizing, specialLengthList ) ;
 
       // resolve overlapped cases
       var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ) ;
 
       // create annotations for racks
-      NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, modifiedRackLists.OfType<FamilyInstance>() ) ;
+      NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, modifiedRackLists.OfType<FamilyInstance>().Where(fi => fi.IsRack()) ) ;
       
       createRackTransaction.Commit() ;
       return Result.Succeeded ;

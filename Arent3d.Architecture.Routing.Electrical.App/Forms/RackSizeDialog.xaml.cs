@@ -8,7 +8,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
   public partial class RackSizeDialog : Window
   {
     public string Material { get ; set ; } = "" ;
-    public bool IsAutoSizing { get ; set ; } = false ;
+    public bool IsAutoSizing { get ; set ; }
+    public int NumberOfRack => int.Parse( cmbNumberOfRack.Text ) ;
+    public double WidthInMillimeter => double.Parse( cmbSizes.Text ) ;
+    
     public RackSizeDialog()
     {
       InitializeComponent() ;
@@ -19,12 +22,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       cmbNumberOfRack.ItemsSource = Enumerable.Range(1, 30).ToArray() ;
       cmbNumberOfRack.SelectedIndex = 0 ;
 
-      var helper = new WindowInteropHelper( this ) { Owner = Autodesk.Windows.ComponentManager.ApplicationWindow } ;
-    }
+      IsAutoSizing = true ;
+      chkAutoSize.IsChecked = true ;
+      cmbSizes.IsEnabled = false ;
+      cmbNumberOfRack.IsEnabled = false ;
 
-    public double SelectedWidthInMillimeter( )
-    {
-      return double.Parse(cmbSizes.Text);
+      var helper = new WindowInteropHelper( this ) { Owner = Autodesk.Windows.ComponentManager.ApplicationWindow } ;
     }
 
     private void OnOkClicked( object sender, RoutedEventArgs e )
@@ -42,9 +45,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     private void OnClickAutoCalculate( object sender, RoutedEventArgs e )
     {
-      cmbSizes.Text = "" ;
-      cmbNumberOfRack.SelectedIndex = -1 ;
-      IsAutoSizing = true ;
+      IsAutoSizing = chkAutoSize.IsChecked?? false ;
+      cmbSizes.IsEnabled = ! IsAutoSizing ;
+      cmbNumberOfRack.IsEnabled = ! IsAutoSizing ;
     }
   }
 }
