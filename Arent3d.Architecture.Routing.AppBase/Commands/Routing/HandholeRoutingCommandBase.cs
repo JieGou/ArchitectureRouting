@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class HandholeRoutingCommandBase : PullBoxRoutingCommandBase
   {
     private const string DefaultBuzaicdForGradeModeThanThree = "032025" ;
+    private const string DefaultKikaku = "H1" ;
     private const string HandholeName = "ハンドホール" ;
     private const string NoFamily = "There is no handhole family in this project" ;
     private const string Error = "Error" ;
@@ -65,10 +66,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       HandholeModel? handholeModel = null ;
       if ( GetHandholeModels( document ) is { Count: > 0 } handholeModels ) {
-        handholeModel = handholeModels.FirstOrDefault( model => model.Buzaicd == DefaultBuzaicdForGradeModeThanThree ) ?? handholeModels.First() ;
+        handholeModel = handholeModels.FirstOrDefault( model => model.Buzaicd == DefaultBuzaicdForGradeModeThanThree ) ?? handholeModels.First( handhole => handhole.Kikaku == DefaultKikaku ) ;
       }
 
-      return new OperationResult<PickState>( new PickState( pickInfo, null, new XYZ( originX, originY, originZ ), heightConnector, heightWire, pickInfo.RouteDirection, true, true, positionLabel, handholeModel, fromDirection, toDirection, new Dictionary<string, List<string>>() ) ) ;
+      return new OperationResult<PickState>( new PickState( pickInfo, null, new XYZ( originX, originY, originZ ), heightConnector, heightWire, pickInfo.RouteDirection, true, false, positionLabel, handholeModel, fromDirection, toDirection, new Dictionary<string, List<string>>() ) ) ;
     }
 
     private List<HandholeModel> GetHandholeModels( Document document )
