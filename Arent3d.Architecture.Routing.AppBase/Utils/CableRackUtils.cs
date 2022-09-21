@@ -403,10 +403,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       instance.SetProperty( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ), creationParam.Width ) ;
 
       // elbow Length
-      instance.SetProperty( "トレイ長さ", creationParam.AdditionalLength ) ;
+      instance.SetProperty( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ), creationParam.AdditionalLength ) ;
 
       // elbow radius
-      instance.SetProperty( "Bend Radius", creationParam.Radius ) ;
+      instance.SetProperty( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( doc, "Bend Radius" ), creationParam.Radius ) ;
 
       instance.SetProperty( "ラックの倍率", creationParam.ScaleFactor ) ;
 
