@@ -31,7 +31,7 @@
             </ComboBox>
             <Label Content="Grade" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
             <ComboBox ItemsSource="{Binding GradeModeTypes}"
-                      IsEnabled="{Binding IsEnableChageGrade}"
+                      IsEnabled="{Binding IsEnableChangeGrade}"
                       SelectedIndex="{Binding SelectedGradeModeIndex}"
                       HorizontalAlignment="Left"
                       DisplayMemberPath="Value"
