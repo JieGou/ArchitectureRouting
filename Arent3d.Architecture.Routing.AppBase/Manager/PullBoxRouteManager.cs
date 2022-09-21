@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public const string DefaultPullBoxLabel = "PB" ;
     public const string MaterialCodeParameter = "Material Code" ;
     private const string DepthParameter = "Depth" ;
-    private const string WidthParameter = "Width" ;
+    private const string ScaleFactorParameter = "ScaleFactor" ;
     private const double DefaultDepthOfPullBox = 200d ;
     public const string IsAutoCalculatePullBoxSizeParameter = "IsAutoCalculatePullBoxSize" ;
     private const string TaniOfPullBox = "個" ;
@@ -561,9 +561,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         instance.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
       
       // Update width, depth parameter for pull box
-      var depthByScale = ( DefaultDepthOfPullBox * baseLengthOfLine ).MillimetersToRevitUnits() ;
-      instance.GetParameter( DepthParameter )?.Set( depthByScale ) ;
-      instance.GetParameter( WidthParameter )?.Set( depthByScale ) ;
+      instance.GetParameter( ScaleFactorParameter )?.Set( baseLengthOfLine ) ;
 
       instance.SetConnectorFamilyType( connectorType ?? ConnectorFamilyType.PullBox ) ;
 
@@ -1137,8 +1135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       // Update width, depth parameter for pull box
       var oldDepthByScale = pullBox.GetParameter( DepthParameter )?.AsDouble() ?? -1d ;
       var depthByScale = ( DefaultDepthOfPullBox * baseLengthOfLine ).MillimetersToRevitUnits() ;
-      pullBox.GetParameter( DepthParameter )?.Set( depthByScale ) ;
-      pullBox.GetParameter( WidthParameter )?.Set( depthByScale ) ;
+      pullBox.GetParameter( ScaleFactorParameter )?.Set( baseLengthOfLine ) ;
 
       //Resize conduits related pull box
       var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point ;
