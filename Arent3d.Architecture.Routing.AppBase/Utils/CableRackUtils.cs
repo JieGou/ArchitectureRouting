@@ -1,9 +1,11 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
@@ -135,6 +137,76 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return ( startParam, endParam ) ;
     }
 
+    public static bool IsOnSameRack( this Conduit firstConduit, Conduit secondConduit )
+    {
+      if ( secondConduit.Location is not LocationCurve locationCure || locationCure.Curve.Length < 50d.MillimetersToRevitUnits() )
+        return false ;
+      if ( IsOverlappedEndPoint( firstConduit, secondConduit ) is (not null, not null) )
+        return true ;
+      if ( IsOverlappedEndPoint( secondConduit, firstConduit ) is (not null, not null) )
+        return true ;
+      if ( IsOverlappedEachOther( firstConduit, secondConduit ) is (not null, not null) )
+        return true ;
+      if ( IsInside( firstConduit, secondConduit ) != 0 )
+        return true ;
+      if ( IsSamePosition( firstConduit, secondConduit ) )
+        return true ;
+      return false ;
+    }
+
+    /// <summary>
+    /// result is in millimeters
+    /// </summary>
+    /// <param name="conduitsOnRack"></param>
+    /// <returns></returns>
+    public static double CalculateRackWidth( Document document, Element element )
+    {
+      if ( element is not Conduit conduit )
+        return 0 ;
+      var overlappedConduits = document.GetAllElements<Conduit>().Where( cd => cd.Id != conduit.Id && IsSamePosition( conduit, cd ) ).ToList() ;
+      overlappedConduits.Add( conduit ) ;
+
+      var cableList = new List<NewLimitRackCommandBase.ClassificationData>() ;
+      var foundedCables = new Dictionary<string, List<NewLimitRackCommandBase.ClassificationData>>() ;
+
+      var routeNames = overlappedConduits.Select( cd => cd.GetRouteName() ?? "" ) ;
+
+      foreach ( var routeName in routeNames ) {
+        if ( string.IsNullOrEmpty( routeName ) )
+          continue ;
+
+        var cables = NewLimitRackCommandBase.GetClassificationDatas( document, routeName!, foundedCables ) ;
+        if ( ! cables.Any() )
+          continue ;
+
+        cableList.AddRange( cables ) ;
+      }
+
+      var powerCables = new List<double>() ;
+      var instrumentationCables = new List<double>() ;
+
+      foreach ( var cable in cableList ) {
+        if ( cable.Classification == $"{CreateDetailTableCommandBase.SignalType.低電圧}" || cable.Classification == $"{CreateDetailTableCommandBase.SignalType.動力}" ) {
+          powerCables.Add( cable.Diameter ) ;
+        }
+        else {
+          instrumentationCables.Add( cable.Diameter ) ;
+        }
+      }
+
+      var widthCable = ( powerCables.Count > 0 ? ( 60 + powerCables.Sum( x => x + 10 ) ) * 1.2 : 0 ) + ( instrumentationCables.Count > 0 ? ( 120 + instrumentationCables.Sum( x => x + 10 ) ) * 0.6 : 0 ) ;
+
+      foreach ( var width in NewLimitRackCommandBase.CableTrayWidthMapping ) {
+        if ( widthCable > width )
+          continue ;
+
+        widthCable = width ;
+        break ;
+      }
+
+      return widthCable.MillimetersToRevitUnits() ;
+    }
+
     public static bool IsRack( this Element element )
     {
       return element.Document.GetElementById<ElementType>( element.GetTypeId() ) is { } elementType && elementType.FamilyName.Equals( ElectricalRoutingFamilyType.CableTray.GetFamilyName() ) ;
@@ -148,6 +220,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     }
 
     #region Classify relative position of 2 racks
+
+    private static bool IsSamePosition( Element firstCurve, Element secondCurve )
+    {
+      var (connectorFirst1, connectorFirst2) = Get2ConnectorsOfConduit( firstCurve ) ;
+      var (connectorSecond1, connectorSecond2) = Get2ConnectorsOfConduit( secondCurve ) ;
+      if ( connectorFirst1?.Origin is not { } pointFirst1 || connectorFirst2?.Origin is not { } pointFirst2 || connectorSecond1?.Origin is not { } pointSecond1 || connectorSecond2?.Origin is not { } pointSecond2 )
+        return false ;
+
+      return ( pointFirst1.IsAlmostEqualTo( pointSecond1 ) && pointFirst2.IsAlmostEqualTo( pointSecond2 ) ) || ( pointFirst1.IsAlmostEqualTo( pointSecond2 ) && pointFirst2.IsAlmostEqualTo( pointSecond1 ) ) ;
+    }
 
     private static (Connector? ConnectorShort, Connector? ConnectorLong) IsOverlappedEndPoint( Element shortCurve, Element longCurve )
     {
@@ -210,8 +292,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     private static void Reconnect( Connector disconnectedConnector, Connector reconnectedConnector )
     {
       var connectedConnectors = disconnectedConnector.GetConnectedConnectors().ToArray() ;
-      connectedConnectors.ForEach( disconnectedConnector.DisconnectFrom ) ;
-      connectedConnectors.ForEach( c =>
+      MoreEnumerable.ForEach( connectedConnectors, disconnectedConnector.DisconnectFrom ) ;
+      MoreEnumerable.ForEach( connectedConnectors, c =>
       {
         if ( ! reconnectedConnector.IsConnectedTo( c ) )
           reconnectedConnector.ConnectTo( c ) ;
@@ -227,8 +309,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       // remember linking connectors
       var connectedConnectors1 = startConnector.GetConnectedConnectors().ToArray() ;
       var connectedConnectors2 = endConnector.GetConnectedConnectors().ToArray() ;
-      connectedConnectors1.ForEach( startConnector.DisconnectFrom ) ;
-      connectedConnectors2.ForEach( endConnector.DisconnectFrom ) ;
+      MoreEnumerable.ForEach( connectedConnectors1, startConnector.DisconnectFrom ) ;
+      MoreEnumerable.ForEach( connectedConnectors2, endConnector.DisconnectFrom ) ;
       var startPoint = startConnector.Origin ;
       var endPoint = endConnector.Origin ;
 
@@ -246,8 +328,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         return false ;
       if ( connector2.Origin.IsAlmostEqualTo( startPoint ) )
         ( connector1, connector2 ) = ( connector2, connector1 ) ;
-      connectedConnectors1.ForEach( connector1.ConnectTo ) ;
-      connectedConnectors2.ForEach( connector2.ConnectTo ) ;
+      MoreEnumerable.ForEach( connectedConnectors1, connector1.ConnectTo ) ;
+      MoreEnumerable.ForEach( connectedConnectors2, connector2.ConnectTo ) ;
       doc.Regenerate() ;
       return true ;
     }
@@ -467,8 +549,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     {
       var markPoints = ReArrange( ( marker1.Item1, marker1.Item2 ), ( marker2.Item1, marker2.Item2 ) ) ;
 
+      var isSameWidth = Math.Abs( marker1.Item3.RevitUnitsToMillimeters() - marker2.Item3.RevitUnitsToMillimeters() ) < 1.0 ;
       var isSameDirection = ( markPoints.P11 - markPoints.P12 ).Normalize().IsAlmostEqualTo( ( markPoints.P21 - markPoints.P22 ).Normalize() ) ;
-      if ( markPoints.P12.IsAlmostEqualTo( markPoints.P21 ) && isSameDirection ) {
+      if ( isSameWidth && markPoints.P12.IsAlmostEqualTo( markPoints.P21 ) && isSameDirection ) {
         // join 2 short markers into a long marker
         markPoints.P21 = markPoints.P11 ;
         markPoints.P11 = XYZ.Zero ;
@@ -484,7 +567,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         line1.Intersect( line2, out var resultArray ) ;
         if ( resultArray is null || resultArray.IsEmpty )
           return markPoints ;
-        
+
         var intersectedPoint = resultArray.get_Item( 0 ).XYZPoint ;
         var realElbowRadius = RealElbowRadius( elbowWidth, elbowMinRadius, scaleFactor ) ;
         var distanceFromIntersect = realElbowRadius + elbowWidth / 2 + elbowPaddingLength ;
@@ -508,8 +591,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         }
 
         var fourPoints = ReArrange( ( markerList[ i ].StartPoint, markerList[ i ].EndPoint ), ( markerList[ i + 1 ].StartPoint, markerList[ i + 1 ].EndPoint ) ) ;
+        var isSameWidth = Math.Abs( markerList[ i ].Width.RevitUnitsToMillimeters() - markerList[ i + 1 ].Width.RevitUnitsToMillimeters() ) < 1.0 ;
         var isSameDirection = ( fourPoints.P11 - fourPoints.P12 ).Normalize().IsAlmostEqualTo( ( fourPoints.P21 - fourPoints.P22 ).Normalize() ) ;
-        if ( fourPoints.P12.IsAlmostEqualTo( fourPoints.P21 ) && isSameDirection ) {
+        if ( isSameWidth && fourPoints.P12.IsAlmostEqualTo( fourPoints.P21 ) && isSameDirection ) {
           // extend next marker and ignore this marker
           markerList[ i + 1 ] = ( fourPoints.P11, fourPoints.P22, markerList[ i + 1 ].Width ) ;
         }
@@ -540,6 +624,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     private static FamilyInstance? CreateElbowBetweenRackMarkers( Document document, (XYZ, XYZ, double) thisMarker, (XYZ, XYZ, double) nextMarker, double elbowMinRadius, double paddingLength, FamilySymbol? elbowType, Element? referenceElement, string rackClassification )
     {
+      if ( ! ( thisMarker.Item1 - thisMarker.Item2 ).IsPerpendicularTo( nextMarker.Item1 - nextMarker.Item2, 1d.Deg2Rad() ) )
+        return null ;
       var rotateClockWise = ( thisMarker.Item2 - thisMarker.Item1 ).CrossProduct( nextMarker.Item1 - thisMarker.Item2 ).Z > 0 ;
       var elbowInsertPoint = rotateClockWise ? thisMarker.Item2 : nextMarker.Item1 ;
       var elbowDirection = rotateClockWise ? thisMarker.Item2 - thisMarker.Item1 : nextMarker.Item1 - nextMarker.Item2 ;
@@ -563,13 +649,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     /// </summary>
     /// <param name="conduitWidthMap">width ust be in Revit API unit</param>
     /// <returns></returns>
-    public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this Document doc, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", IEnumerable<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
+    public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this Document doc, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", bool IsAutoSizing = false, IEnumerable<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
     {
+      // auto sizing
+      var listConduitWidth = ! IsAutoSizing ? conduitWidthMap : conduitWidthMap.Select( pair => ( pair.Item1, CalculateRackWidth( doc, pair.Item1 ) ) ) ;
+
       // read conduit markers
       var racksAndElbows = new List<Element>() ;
       var conduits = new List<Element>() ;
       var conduitMarkers = new List<(XYZ StartPoint, XYZ EndPoint, double Width)>() ;
-      foreach ( var item in conduitWidthMap ) {
+      foreach ( var item in listConduitWidth ) {
         if ( item.Item1 is not Conduit conduit )
           continue ;
         var (startParam, endParam) = ( 0.0, 1.0 ) ;
@@ -599,18 +688,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
         var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, doc.ActiveView.Scale, r0, l0 ) ;
-        
+
         // modify marker to have enough space for elbow
         simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, thisMarker.Item3 ), i ) ;
         simplifiedMarkerMap[ i + 1 ] = ( ( fourPoints.Item3, fourPoints.Item4, nextMarker.Item3 ), i + 1 ) ;
       }
-      
+
       // create racks and elbows by markers
-      FamilyInstance? currentElbow = null ;
+      FamilyInstance? newestInstance = null ;
       for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
         var rackMarker = simplifiedMarkerMap[ i ].RackMarker ;
         var conduit = conduits[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
-        
+
         // create rack
         var rackWidth = rackMarker.Item3 ;
         var scaleFactor = RackWidthOnPlanView( doc.ActiveView.Scale ) / rackWidth ;
@@ -618,13 +707,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
         if ( CreateRack( doc, creationParam ) is not { } rack )
           continue ;
-
         rack.SetProperty( "起点の表示", i == 0 ) ;
         rack.SetProperty( "終点の表示", i == simplifiedMarkerMap.Count - 1 ) ;
         racksAndElbows.Add( rack ) ;
 
         // Connect to current elbow:
-        TryConnectRackItems( rack, currentElbow ) ;
+        if ( newestInstance is not null ) TryConnectRackItems( rack, newestInstance ) ;
 
         // create rack elbow
         if ( i == simplifiedMarkerMap.Count - 1 )
@@ -632,13 +720,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
 
         var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, r0, l0, elbowType, conduit, rackClassification ) ;
-        if ( elbow is null )
+        if ( elbow is null ) {
+          newestInstance = rack ;
           continue ;
+        }
 
         // connect rack to new elbow
         TryConnectRackItems( rack, elbow ) ;
         racksAndElbows.Add( elbow ) ;
-        currentElbow = elbow ;
+        newestInstance = elbow ;
       }
 
       return racksAndElbows ;
