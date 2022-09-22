@@ -1146,7 +1146,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( oldDepthByScale <= 0 ) return ;
 
       var depthDifferenceByScale = ( depthByScale - oldDepthByScale ) / 2 ;
-      if ( depthDifferenceByScale <= 0 ) return ;
+      if ( depthDifferenceByScale == 0 ) return ;
 
       foreach ( var c in conduitsRelatedPullBox ) {
         if ( c.Conduit.Location is not LocationCurve { Curve: Line line } curve ) continue ;
