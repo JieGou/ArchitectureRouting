@@ -4,7 +4,6 @@ using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -13,6 +12,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
+using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -247,7 +247,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var detailSymbolModel = conduits.Any() ? detailSymbolItemModels.FirstOrDefault( x => x.ConduitUniqueId.Equals( conduits.First().UniqueId ) ) : null;
       var plumbingType = null != detailSymbolModel ? detailSymbolModel.PlumbingType : DefaultPlumbingType ;
-      if ( detailTableItemModels.Any() ) {
+      if ( detailTableItemModels.Any()) {
         SetPlumbingDataForEachWiring( detailTableModelsData, csvStorable.ConduitsModelData, ref detailTableItemModels, plumbingType, isFromCreateDetailTable && ! isReferenceDetailTableModels ) ;
       }
 
@@ -531,7 +531,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var newDetailTableItems = new List<DetailTableItemModel>() ;
       foreach ( var detailTableItemModel in detailTableItemModels ) {
-        const int plumbingCount = 1 ;
         var oldDetailTableItems = detailTableData.Where( d => GetKeyRouting(d) == GetKeyRouting( detailTableItemModel ) && d.RouteName == detailTableItemModel.RouteName ).ToList() ;
         if ( ! oldDetailTableItems.Any() ) {
           if ( isFromCreateDetailTable && ! string.IsNullOrEmpty( detailTableItemModel.PlumbingType ) ) plumbingType = detailTableItemModel.PlumbingType ;
@@ -539,12 +538,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if(!conduitsModels.Any())
             continue;
 
-          var wireBook = int.TryParse( detailTableItemModel.WireBook, out var value ) ? value : 1 ;
+          var wireBook = int.TryParse( detailTableItemModel.WireBook, out var value ) && !detailTableItemModel.IsMultipleConnector ? value : 1 ;
           var currentPlumbingCrossSectionalArea = detailTableItemModel.WireCrossSectionalArea / Percentage * wireBook;
           var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ?? conduitsModels.Last() ;
 
           detailTableItemModel.PlumbingType = plumbing.PipingType ;
-          detailTableItemModel.NumberOfPlumbing = plumbingCount.ToString() ;
           detailTableItemModel.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( detailTableItemModel, false ) ;
           detailTableItemModel.IsParentRoute = true ;
           detailTableItemModel.IsReadOnly = false ;
@@ -556,7 +554,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         else {
           var oldDetailTableRow = oldDetailTableItems.First() ;
           detailTableItemModel.PlumbingType = oldDetailTableRow.PlumbingType ;
-          detailTableItemModel.NumberOfPlumbing = oldDetailTableRow.NumberOfPlumbing ;
           detailTableItemModel.PlumbingIdentityInfo = oldDetailTableRow.PlumbingIdentityInfo ;
           detailTableItemModel.IsParentRoute = oldDetailTableRow.IsParentRoute ;
           detailTableItemModel.IsReadOnly = oldDetailTableRow.IsReadOnly ;
@@ -835,15 +832,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       DetailSymbolItemModel detailSymbolItemModel, bool isParentRoute, bool mixConstructionItems )
     {
       var element = pickedObjects.FirstOrDefault( p => p.UniqueId == detailSymbolItemModel.ConduitUniqueId ) ;
-      string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
-      string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
-      string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
-      string plumbingType = detailSymbolItemModel.PlumbingType ;
+      var routeName = RouteUtil.GetMainRouteName(element?.GetRouteName());
+      var toConnector = ConduitUtil.GetConnectorOfRoute( doc, routeName, false ) ;
+      var quantity = toConnector?.GetPropertyInt(ElectricalRoutingElementParameter.Quantity) ?? 1;
+      var floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
+      var constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
+      var isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
+      var plumbingType = detailSymbolItemModel.PlumbingType ;
 
       var ceedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == detailSymbolItemModel.Code && x.GeneralDisplayDeviceSymbol == detailSymbolItemModel.DeviceSymbol ) ;
       if ( ceedModel != null && ! string.IsNullOrEmpty( ceedModel.CeedSetCode ) && ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ) {
         var ceedCode = ceedModel.CeedSetCode ;
-        var remark = ceedModel.GeneralDisplayDeviceSymbol ;
+        var remark = quantity > 1 ? $"{ceedModel.GeneralDisplayDeviceSymbol}x{quantity}" : ceedModel.GeneralDisplayDeviceSymbol ;
         var hiroiCdModel = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetCdMasterEcoModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeedSetCode ) : hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeedSetCode ) ;
         var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeedModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeedModelNumber ) ).Skip( 1 ) ;
         var constructionClassification = hiroiCdModel?.ConstructionClassification ;
@@ -861,7 +861,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( ! listMaterialCode.Any() ) continue ;
 
           detailTableItemModels.AddRange( CreateDetailTableItemModelsByMaterialCode( hiroiMasterModelData, wiresAndCablesModelData, detailSymbolItemModel, isParentRoute, mixConstructionItems, listMaterialCode,
-            constructionItem, floor, ceedCode, plumbingType, constructionClassification, remark, isEcoMode ) ) ;
+            constructionItem, floor, ceedCode, plumbingType, constructionClassification, remark, isEcoMode, quantity ) ) ;
         }
       }
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
@@ -875,13 +875,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         if ( listMaterialCode.Any() ) {
           detailTableItemModels.AddRange( CreateDetailTableItemModelsByMaterialCode( hiroiMasterModelData, wiresAndCablesModelData, detailSymbolItemModel, isParentRoute, mixConstructionItems, listMaterialCode, 
-            constructionItem, floor, detailSymbolItemModel.Code, plumbingType, "", "", isEcoMode ) ) ;
+            constructionItem, floor, detailSymbolItemModel.Code, plumbingType, "", "", isEcoMode, quantity ) ) ;
         }
       }
     }
 
     private static IEnumerable<DetailTableItemModel> CreateDetailTableItemModelsByMaterialCode( IEnumerable<HiroiMasterModel> hiroiMasterModelData, IReadOnlyCollection<WiresAndCablesModel> wiresAndCablesModelData, DetailSymbolItemModel detailSymbolItemModel, bool isParentRoute,
-      bool mixConstructionItems, List<string> listMaterialCode, string constructionItem, string floor, string ceedCode, string plumbingType, string? constructionClassification, string remark, string isEcoMode )
+      bool mixConstructionItems, List<string> listMaterialCode, string constructionItem, string floor, string ceedCode, string plumbingType, string? constructionClassification, string remark, string isEcoMode, int quantity )
     {
       var detailTableItemModels = new List<DetailTableItemModel>() ;
       var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
@@ -915,13 +915,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           wireType, 
           wireSize, 
           wireStrip, 
-          "1", 
+          $"{quantity}", 
           string.Empty,
           string.Empty,
           string.Empty, 
           plumbingType, 
           string.Empty, 
-          string.Empty, 
+          $"{quantity}", 
           constructionClassification, 
           signalType, 
           constructionItem,
@@ -946,6 +946,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           new List<DetailTableItemModel.ComboboxItemType>(), 
           new List<DetailTableItemModel.ComboboxItemType>(), 
           plumbingItemTypes ) ;
+        if ( quantity > 1 )
+          detailTableItemModel.IsMultipleConnector = true ;
         detailTableItemModels.Add( detailTableItemModel ) ;
       }
       
