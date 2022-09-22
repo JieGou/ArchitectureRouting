@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
     public const string SubCategoryForSymbolName = "SubCategoryForSymbol";
     public const string SubCategoryForDirectionCylindricalShaftName = "SubCategoryForDirectionCylindricalShaft" ;
     
-    public static double Radius => 60d.MillimetersToRevitUnits() ;
+    public static double DefaultRadius => 50d.MillimetersToRevitUnits() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -72,8 +72,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
 
           var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
+          var fromViewPlan = viewPlans.FirstOrDefault( v => v.GenLevel.Id == shaftModel.FromLevel.Id ) ;
           foreach ( var viewPlan in viewPlans ) {
-            var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, radius, cableTraySymbolId ) ;
+            var isFromViewPlan = fromViewPlan != null && viewPlan.Id == fromViewPlan.Id ;
+            var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, radius, cableTraySymbolId, isFromViewPlan ) ;
             detailUniqueIds.AddRange( detailCurves ) ;
           }
 
@@ -102,10 +104,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       return ( styleForBodyDirection, styleForOuterShape, styleForSymbol ) ;
     }
 
-    public static IEnumerable<string> CreateSymbolForShaftOpeningOnViewPlan(Opening opening, ViewPlan viewPlan, Element styleForSymbol, Element styleForBodyDirection, Element styleForOuterShape, double radius, string cableTrayUniqueId )
+    public static IEnumerable<string> CreateSymbolForShaftOpeningOnViewPlan(Opening opening, ViewPlan viewPlan, Element styleForSymbol, Element styleForBodyDirection, Element styleForOuterShape, double radius, string cableTrayUniqueId, bool isFromViewPlan = true )
     {
+      var defaultCableTrayHeight = 32d.MillimetersToRevitUnits() ;
       var ratio = viewPlan.Scale / 100d ;
       var scaleRadius = radius * ratio ;
+      var offsetRadius = radius / DefaultRadius ;
 
       var detailUniqueIds = new List<string>() ;
       var arc = opening.BoundaryCurves.OfType<Arc>().SingleOrDefault() ;
@@ -153,9 +157,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       var circle = Arc.Create( new XYZ( arc.Center.X, arc.Center.Y, viewPlan.GenLevel.Elevation ), scaleRadius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
       detailUniqueIds.Add( CreateDetailLine( viewPlan, styleForOuterShape, circle ).UniqueId ) ;
 
-      if( string.IsNullOrEmpty( cableTrayUniqueId ) ) return detailUniqueIds ;
-      var cableTrayElement = opening.Document.GetElement( cableTrayUniqueId ) ;
-      cableTrayElement.ParametersMap.get_Item( "トレイ幅" ).Set( scaleRadius * 2 ) ;
+      if ( isFromViewPlan && ! string.IsNullOrEmpty( cableTrayUniqueId ) ) {
+        var cableTrayElement = opening.Document.GetElement( cableTrayUniqueId ) ;
+        cableTrayElement.ParametersMap.get_Item( "トレイ幅" ).Set( scaleRadius * 2 ) ;
+        cableTrayElement.ParametersMap.get_Item( "トレイ高さ" ).Set( defaultCableTrayHeight * offsetRadius * ratio ) ;
+      }
 
       return detailUniqueIds ;
     }
