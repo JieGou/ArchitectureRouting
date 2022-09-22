@@ -242,6 +242,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class NewRackSelectionRangeCommandButton
           {
           }
+          
+          [Button( typeof( CreateRackBySelectedConduitsCommand ), OnlyInitialized = true )]
+          private static class CreateRackBySelectedConduitsCommandButton
+          {
+          }
 
           [Button( typeof( EraseAllRackCommand ), OnlyInitialized = true )]
           private static class EraseAllRackCommandButton
@@ -255,11 +260,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( RackSpaceCommand ), OnlyInitialized = true )]
           private static class RackGuidCommandButton
-          {
-          }
-          
-          [Button( typeof( CreateRackBySelectedConduitsCommand ), OnlyInitialized = true )]
-          private static class CreateRackBySelectedConduitsCommandButton
           {
           }
 
