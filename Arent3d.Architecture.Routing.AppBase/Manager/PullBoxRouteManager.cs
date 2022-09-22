@@ -1128,15 +1128,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( storagePullBoxInfoServiceByLevel == null ) return ;
 
       textLabel = GetPullBoxTextBox( depth, height, defaultLabel ) ;
+      var position = ( pullBox.Location as LocationPoint )?.Point! ;
       if ( positionLabel != null )
         CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize, conduitsRelatedPullBox, HeightDistanceBetweenPullAndNotation, baseLengthOfLine ) ;
       else if ( storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.All( pullBoxInfoItemModel => pullBoxInfoItemModel.PullBoxUniqueId != pullBox.UniqueId ) ) {
-        var position = ( pullBox.Location as LocationPoint )?.Point! ;
         positionLabel = new XYZ( position.X, position.Y, position.Z ) ;
         CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize, conduitsRelatedPullBox, HeightDistanceBetweenPullAndNotation, baseLengthOfLine ) ;
       }
       else if ( isAutoCalculatePullBoxSize )
-        ChangeLabelOfPullBox( document, storagePullBoxInfoServiceByLevel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+        ChangeLabelOfPullBox( document, storagePullBoxInfoServiceByLevel, pullBox, textLabel, isAutoCalculatePullBoxSize, position, conduitsRelatedPullBox, HeightDistanceBetweenPullAndNotation, baseLengthOfLine ) ;
     }
 
     public static void ResizePullBoxAndRelatedConduits( double baseLengthOfLine, Element pullBox, List<( Conduit Conduit, int EndPointIndex )> conduitsRelatedPullBox )
@@ -1258,7 +1258,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return routesRelatedPullBox ;
     }
 
-    private static void ChangeLabelOfPullBox( Document document, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, Element pullBoxElement, string textLabel, bool isAutoCalculatePullBoxSize )
+    private static void ChangeLabelOfPullBox( Document document, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, Element pullBoxElement, string textLabel, bool isAutoCalculatePullBoxSize, XYZ positionOfPullBox, List<( Conduit Conduit, int EndPointIndex )> conduitsRelatedPullBox, double heightDistance, double baseLengthOfLine )
     {
       // Find text note compatible with pull box, change label if exists
       var pullBoxInfoModel = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.FirstOrDefault( p => p.PullBoxUniqueId == pullBoxElement.UniqueId ) ;
@@ -1268,6 +1268,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       using var updateNotationTransaction = new Transaction( document, "Update notation of pull box" ) ;
       updateNotationTransaction.Start() ;
       textNote.Text = textLabel ;
+      textNote.Coord = GetPositionOfPullBox( document, textNote, positionOfPullBox, conduitsRelatedPullBox, heightDistance, baseLengthOfLine ) ;
       updateNotationTransaction.Commit() ;
       if ( ! isAutoCalculatePullBoxSize ) return ;
       
