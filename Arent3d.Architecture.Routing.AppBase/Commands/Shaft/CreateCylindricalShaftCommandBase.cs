@@ -182,8 +182,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
       if ( string.IsNullOrEmpty( cableTrayUniqueId ) ) return detailUniqueIds ;
       var cableTrayElement = opening.Document.GetElement( cableTrayUniqueId ) ;
+      if ( cableTrayElement == null ) return detailUniqueIds ;
       cableTrayElement.ParametersMap.get_Item( "トレイ幅" ).Set( cabTrayWidth ) ;
       cableTrayElement.ParametersMap.get_Item( "ラックの倍率" ).Set( DefaultCableTrayScale * ratio / offSetWidth ) ;
+      var overrideGraphic = new OverrideGraphicSettings() ;
+      var color = new Color( 0, 255, 0 ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      viewPlan.SetElementOverrides( cableTrayElement.Id, overrideGraphic ) ;
 
       return detailUniqueIds ;
     }
