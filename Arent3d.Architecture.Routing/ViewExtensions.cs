@@ -204,17 +204,26 @@ namespace Arent3d.Architecture.Routing
 
       return newViews ;
     }
-    
-    public static void RefreshActiveView ( this Document document )
-    {
-      using var transaction = new Transaction( document ) ;
-      transaction.Start( "Enable Reveal Hidden" ) ;
-      document.ActiveView.EnableRevealHiddenMode() ;
-      transaction.Commit() ;
 
-      transaction.Start( "Disable Reveal Hidden" ) ;
-      document.ActiveView.DisableTemporaryViewMode( TemporaryViewMode.RevealHiddenElements ) ;
-      transaction.Commit() ;
+    public static void RefreshActiveView( this Document document )
+    {
+      document.RefreshViews( new List<View> { document.ActiveView } ) ;
+    }
+
+    public static void RefreshViews( this Document document, IEnumerable<View?> views )
+    {
+      foreach ( var view in views ) {
+        if ( view == null ) continue ;
+
+        using var transaction = new Transaction( document ) ;
+        transaction.Start( "Enable Reveal Hidden" ) ;
+        view.EnableRevealHiddenMode() ;
+        transaction.Commit() ;
+
+        transaction.Start( "Disable Reveal Hidden" ) ;
+        view.DisableTemporaryViewMode( TemporaryViewMode.RevealHiddenElements ) ;
+        transaction.Commit() ;
+      }
     }
   }
 }

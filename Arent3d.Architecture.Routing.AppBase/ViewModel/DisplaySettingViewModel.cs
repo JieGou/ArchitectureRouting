@@ -75,6 +75,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           setupTransaction.Commit() ;
 
           _document.RefreshActiveView() ;
+          
+          // Refresh viewports
+          var viewportsOfActiveView = _document.GetAllElements<Viewport>().Where( vp => vp.OwnerViewId == _document.ActiveView.Id ).Select( vp => _document.GetElement( vp.ViewId ) as View ) ;
+          _document.RefreshViews( viewportsOfActiveView ) ;
 
           SaveDisplaySettingByGradeStorageService() ;
 
