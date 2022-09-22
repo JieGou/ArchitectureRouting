@@ -36,7 +36,10 @@
                               IsChecked="{Binding DataDisplaySettingModel.IsPullBoxVisible}" Content="プルボックス"
                               Margin="30 10 0 0" FontSize="13" />
                     <CheckBox HorizontalAlignment="Left"
-                              IsChecked="{Binding DataDisplaySettingModel.IsScheduleVisible}" Content="明細表"
+                              IsChecked="{Binding DataDisplaySettingModel.IsScheduleVisible}" Content="配線明細表"
+                              Margin="30 10 0 0" FontSize="13" />
+                    <CheckBox HorizontalAlignment="Left"
+                              IsChecked="{Binding DataDisplaySettingModel.IsLegendVisible}" Content="機器凡例"
                               Margin="30 10 0 15" FontSize="13" />
                 </StackPanel>
             </GroupBox>

@@ -1,8 +1,9 @@
-﻿using Arent3d.Architecture.Routing.Storages.Attributes ;
+﻿using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  [Schema( "1443AD84-3C95-4656-9812-9A3EBFC5636B", nameof( DisplaySettingModel ) )]
+  [Schema( "F4B42EC4-6BD5-4684-B928-ECE3251F5568", nameof( DisplaySettingModel ) )]
   public class DisplaySettingModel : IDataModel
   {
     public DisplaySettingModel()
@@ -11,14 +12,18 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       IsDetailSymbolVisible = true ;
       IsPullBoxVisible = true ;
       IsScheduleVisible = true ;
+      IsLegendVisible = true ;
+      HiddenLegendElementIds = new List<string>() ;
     }
 
-    public DisplaySettingModel( bool? isWiringVisible, bool? isDetailSymbolVisible, bool? isPullBoxVisible, bool? isScheduleVisible )
+    public DisplaySettingModel( bool? isWiringVisible, bool? isDetailSymbolVisible, bool? isPullBoxVisible, bool? isScheduleVisible, bool? isLegendVisible, List<string>? hiddenLegendElementIds )
     {
       IsWiringVisible = isWiringVisible ?? true ;
       IsDetailSymbolVisible = isDetailSymbolVisible ?? true ;
       IsPullBoxVisible = isPullBoxVisible ?? true ;
       IsScheduleVisible = isScheduleVisible ?? true ;
+      IsLegendVisible = isLegendVisible ?? true ;
+      HiddenLegendElementIds = hiddenLegendElementIds ?? new List<string>() ;
     }
 
     [Field( Documentation = "Is Wiring Visible" )]
@@ -32,7 +37,13 @@ namespace Arent3d.Architecture.Routing.Storages.Models
 
     [Field( Documentation = "Is Schedule Visible" )]
     public bool IsScheduleVisible { get ; set ; }
+    
+    [Field( Documentation = "Is Legend Visible" )]
+    public bool IsLegendVisible { get ; set ; }
+    
+    [Field( Documentation = "Hidden Legend Element Ids" )]
+    public List<string> HiddenLegendElementIds { get ; set ; }
 
-    public DisplaySettingModel Clone() => new(IsWiringVisible, IsDetailSymbolVisible, IsPullBoxVisible, IsScheduleVisible) ;
+    public DisplaySettingModel Clone() => new(IsWiringVisible, IsDetailSymbolVisible, IsPullBoxVisible, IsScheduleVisible, IsLegendVisible, HiddenLegendElementIds) ;
   }
 }

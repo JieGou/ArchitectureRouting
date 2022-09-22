@@ -70,6 +70,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           SetupDisplayDetailSymbol( views, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
           SetupDisplayPullBox( views, _dataDisplaySettingModel.IsPullBoxVisible ) ;
           SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
+          SetupDisplayLegend( views, _dataDisplaySettingModel ) ;
 
           setupTransaction.Commit() ;
 
@@ -164,6 +165,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       // Schedules
       var hiddenOrUnhiddenElements = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ScheduleGraphics ).Where( sg => views.Any( lv => lv.Id == sg.OwnerViewId ) ).EnumerateAll() ;
       HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+    }
+
+    private void SetupDisplayLegend( List<View> views, DisplaySettingModel displaySettingModel )
+    {
+      // Legends
+      var legendViews = _document.GetAllElements<View>().Where( vp => vp.ViewType == ViewType.Legend ).ToList() ;
+      if ( ! legendViews.Any() ) return ;
+
+      if ( displaySettingModel.IsLegendVisible ) {
+        if ( displaySettingModel.HiddenLegendElementIds.Any() ) {
+          foreach ( var legendView in legendViews ) {
+            var hiddenElementIds = displaySettingModel.HiddenLegendElementIds.Where( e => _document.GetElement( e ) is { } element && element.IsHidden( legendView ) ).Select( e => _document.GetElement( e ).Id ).ToList() ;
+            if ( hiddenElementIds.Any() )
+              legendView.UnhideElements( hiddenElementIds ) ;
+          }
+          displaySettingModel.HiddenLegendElementIds = new List<string>() ;
+        }
+      }
+      else {
+        foreach ( var legendView in legendViews ) {
+          var allElementsInLegendView = new FilteredElementCollector( _document, legendView.Id ) ;
+          displaySettingModel.HiddenLegendElementIds.AddRange( allElementsInLegendView.Select( e => e.UniqueId ) ) ;
+          legendView.HideElements( allElementsInLegendView.ToElementIds() ) ;
+        }
+      }
+
+      var hiddenOrUnhiddenElements = _document.GetAllElements<Viewport>().Where( vp => legendViews.Any( lv => lv.Id.IntegerValue == vp.ViewId.IntegerValue ) ).EnumerateAll() ;
+      HideOrUnHideElements( views, displaySettingModel.IsLegendVisible, hiddenOrUnhiddenElements ) ;
     }
 
     private static void HideOrUnHideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
