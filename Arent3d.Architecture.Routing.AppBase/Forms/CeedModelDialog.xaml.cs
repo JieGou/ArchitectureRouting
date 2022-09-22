@@ -96,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   // ReSharper disable once ClassNeverInstantiated.Global
   public class DesignCeedViewModel : CeedViewModel
   {
-    public DesignCeedViewModel() : base( default!, default!, default! )
+    public DesignCeedViewModel() : base( default!, default! )
     {
     }
   }

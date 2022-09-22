@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         return document.Transaction( "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( null ), _ =>
         {
+          if ( GetAddInType() == AddInType.Electrical ) EraseLimitRackCommandBase.RemoveRackNotationsByRouteNames( document, hashSet ) ;
           RouteGenerator.EraseRoutes( document, hashSet, true, true ) ;
           cache.Drop( hashSet ) ;
           return Result.Succeeded ;
