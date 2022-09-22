@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var result = _document.TransactionGroup( "TransactionName.Commands.Initialization.DisplaySetting".GetAppStringByKeyOrDefault( "Display Setting" ), _ =>
         {
           using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
-          progress.Message = "Processing......." ;
+          progress.Message = "Processing..." ;
           var views = _document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
 
           using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
