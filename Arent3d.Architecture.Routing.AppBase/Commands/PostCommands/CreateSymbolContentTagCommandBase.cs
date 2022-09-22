@@ -89,6 +89,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
         connector.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
         connector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
         connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+        connector.SetProperty(ElectricalRoutingElementParameter.Quantity, 1);
 
         var deviceSymbol = param.CeedViewModel.SelectedDeviceSymbol ?? string.Empty ;
         if ( ! string.IsNullOrEmpty( deviceSymbol ) ) {
@@ -101,11 +102,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
             new XYZ( placePoint.X, placePoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * document.ActiveView.Scale, placePoint.Z ) ) ;
 
           var connectorUpdater = new ConnectorUpdater( document.Application.ActiveAddInId ) ;
-          if ( ! UpdaterRegistry.IsUpdaterRegistered( connectorUpdater.GetUpdaterId() ) ) {
-            UpdaterRegistry.RegisterUpdater( connectorUpdater, document ) ;
-            var multicategoryFilter = new ElementMulticategoryFilter( BuiltInCategorySets.OtherElectricalElements ) ;
-            UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), document, multicategoryFilter, Element.GetChangeTypeAny() ) ;
-          }
+          UpdaterRegistry.RegisterUpdater( connectorUpdater, document ) ;
+          var sharedParameter = SharedParameterElement.Lookup( document, ElectricalRoutingElementParameter.Quantity.GetParameterGuid() ) ;
+          UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), document, new List<ElementId> { connector.Id }, Element.GetChangeTypeParameter(sharedParameter.Id) ) ;
         }
 
         if ( connector.HasParameter( switch2DSymbol ) )

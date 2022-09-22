@@ -133,7 +133,7 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
     SymbolContent,
     
-    [Parameter( "6a4206f1-156b-449e-b9b6-a124dc56dfd5", "数量", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "数量")]
+    [Parameter( "6a4206f1-156b-449e-b9b6-a124dc56dfd5", "数量", DataType.Integer, ParameterVisibility.Editable, DescriptionKey = "数量")]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
     Quantity,
     
