@@ -2,7 +2,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.StorableConverter ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using InvalidOperationException = Autodesk.Revit.Exceptions.InvalidOperationException ;
@@ -76,39 +75,12 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
-    /// Get register symbol settings data from snoop DB.
-    /// </summary>
-    public static RegisterSymbolStorable GetRegisterSymbolStorable( this Document document )
-    {
-      try {
-        return RegisterSymbolStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( RegisterSymbolStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new RegisterSymbolStorable( document ) ;
-      }
-    }
-
-
-    /// <summary>
-    /// Get location type settings data from snoop DB.
-    /// </summary>
-    public static LocationTypeStorable GetLocationTypeStorable( this Document document )
-    {
-      try {
-        return LocationTypeStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( LocationTypeStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new LocationTypeStorable( document ) ;
-      }
-    }
-
-    /// <summary>
     /// Get CNS Setting data from snoop DB.
     /// </summary>
     public static CnsSettingStorable GetCnsSettingStorable( this Document document )
     {
       try {
-        return CnsSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CnsSettingStorable.StorableName ) ;
+        return CnsSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CnsSettingStorable.CnsStorableName ) ;
       }
       catch ( InvalidOperationException ) {
         return new CnsSettingStorable( document ) ;
@@ -233,19 +205,6 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new CeedDetailStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get ConduitAndDetailCurve data from snoop DB.
-    /// </summary>
-    public static ConduitAndDetailCurveStorable GetConduitAndDetailCurveStorable( this Document document )
-    {
-      try {
-        return ConduitAndDetailCurveStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ConduitAndDetailCurveStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new ConduitAndDetailCurveStorable( document ) ;
       }
     }
 

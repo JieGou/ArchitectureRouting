@@ -40,7 +40,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var missingConnectors = new List<Connector>() ;
       var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
-        .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
+        .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().ToList() ;
+
+      var conduitsFitting = new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_ConduitFitting ).AsEnumerable().ToList() ;
+      
+      conduits.AddRange( conduitsFitting );
+      
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       foreach ( var conduit in conduits ) {
         var connectors = conduit.GetConnectors().ToList() ;
@@ -66,11 +71,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                    throw new InvalidOperationException() ;
       foreach ( var connector in missingConnectors )
         GenerateOpenEndPointMark( document, symbol, connector ) ;
+      
+      var openEndPointMarkInstanceIds = GetExistedOpenEndPointMarkInstanceIds( document ) ;
+      HideOpenEndPointMarksIn3DView( document, openEndPointMarkInstanceIds ) ;
     }
 
     private static void GenerateOpenEndPointMark( Document document, FamilySymbol symbol, Connector connector )
     {
-      var level = ( connector.Owner as Conduit )!.ReferenceLevel ;
+      var level = connector.Owner is Conduit conduit ? conduit.ReferenceLevel : document.GetAllElements<Level>().SingleOrDefault( l => l.Id == ( connector.Owner as FamilyInstance )!.GetLevelId() ) ;
+      if ( level == null ) return ;
       var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
       symbol.Instantiate( new XYZ( connector.Origin.X, connector.Origin.Y, height ), level,
         StructuralType.NonStructural ) ;
@@ -81,6 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var endPoint = conduit.GetNearestEndPoints( isFrom ).FirstOrDefault() ;
       var endPointKey = endPoint?.Key ;
       if ( endPointKey == null ) return true ;
+
       var fromElementUniqueId = endPointKey.GetElementUniqueId() ;
       return ! string.IsNullOrEmpty( fromElementUniqueId ) &&
              allConnectors.All( c => c.UniqueId != fromElementUniqueId ) ;
@@ -98,6 +108,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var openEndPointMarkInstanceIds = GetExistedOpenEndPointMarkInstanceIds( document ) ;
       if ( openEndPointMarkInstanceIds.Count > 0 )
         document.Delete( openEndPointMarkInstanceIds ) ;
+    }
+    
+    private static void HideOpenEndPointMarksIn3DView( Document document, ICollection<ElementId> elementIds )
+    { 
+      var views = document.GetAllElements<View>().Where( v => v is View3D ) ;
+      foreach ( var view in views ) {
+        view.HideElements( elementIds ) ;
+      }
     }
   }
 }

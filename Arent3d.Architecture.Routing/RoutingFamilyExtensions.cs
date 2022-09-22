@@ -111,6 +111,9 @@ namespace Arent3d.Architecture.Routing
     [Family( "M_電線管エルボ - 鉄鋼 - Arent", BuiltInCategory.OST_ConduitFitting )]
     ArentConduitFittingType,
     
+    [Family( "M_電線管エルボ - 鉄鋼 - 曲げ半径50mm - Arent", BuiltInCategory.OST_ConduitFitting )]
+    ArentConduit50mmElbowType,
+    
     [Family( "Pressure End Point", BuiltInCategory.OST_ElectricalFixtures )]
     PressureConnector,
     
@@ -119,6 +122,9 @@ namespace Arent3d.Architecture.Routing
     
     [Family( "Symbol Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
     SymbolContentTag,
+    
+    [Family( "Symbol Content Equipment Tag", BuiltInCategory.OST_ElectricalEquipmentTags )]
+    SymbolContentEquipmentTag,
     
     [Family( "Symbol Information Tag", BuiltInCategory.OST_GenericModelTags )]
     SymbolInformationTag

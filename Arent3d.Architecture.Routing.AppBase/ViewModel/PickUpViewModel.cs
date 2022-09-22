@@ -566,7 +566,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var wireStrip = Regex.IsMatch( detailTableItemModel.WireStrip, @"^\d" ) ? $"x{detailTableItemModel.WireStrip}" : "" ;
         var wiringKey = $"{detailTableItemModel.WireType}{detailTableItemModel.WireSize}{wireStrip}" ;
         // TODO: 600V_はハードコードしているため、このハードコード部分を解消する必要がある。600V_と3kV_の種類、サイズが重なっているため現状場合分けが必要
-        var hiroiMasterModelForWiring = _hiroiMasterModels.FirstOrDefault( x => x.Ryakumeicd.Replace( " ", "" ).Replace("*", "").Replace("600V_", "") == wiringKey ) ;
+        var hiroiMasterModelForWiring = _hiroiMasterModels.FirstOrDefault( x => FormatRyakumeicd(x.Ryakumeicd) == wiringKey ) ;
         if ( null != hiroiMasterModelForWiring ) {
           for ( var i = 0 ; i < int.Parse(detailTableItemModel.WireBook) ; i++ ) {
             materialCodes.Add(new MaterialCodeInfo (hiroiMasterModelForWiring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWiring.Kikaku, "1" ));
@@ -585,6 +585,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
       return materialCodes ;
+    }
+
+    public static string FormatRyakumeicd( string ryakumeicd )
+    {
+      return ryakumeicd.Replace( " ", "" ).Replace( "*", "" ).Replace( "600V_", "" ) ;
     }
     
     private List<MaterialCodeInfo> GetMaterialCodes( List<string> plumbingInfos, int index )

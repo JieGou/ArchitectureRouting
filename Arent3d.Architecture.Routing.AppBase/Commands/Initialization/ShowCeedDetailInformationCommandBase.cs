@@ -23,8 +23,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       
       if ( null == reference || uiDoc.Document.GetElement( reference ) is not IndependentTag independentTag )
         return Result.Cancelled ;
-
+#if REVIT2022
       var connector = independentTag.GetTaggedLocalElements().FirstOrDefault( x => BuiltInCategorySets.OtherElectricalElements.Any( y => (int) y == x.Category.Id.IntegerValue ) ) ;
+#else
+      var connector = independentTag.GetTaggedLocalElement() ;
+#endif
+      
       if ( null == connector )
         return Result.Cancelled ;
         
@@ -55,7 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( elementType is not FamilySymbol familySymbol )
           return false ;
 
-        return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() ;
+        return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() || familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentEquipmentTag.GetFamilyName() ;
       }
 
       public bool AllowReference( Reference r, XYZ p )

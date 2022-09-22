@@ -20,5 +20,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
         
         [Field(Documentation = "Is Difference")]
         public bool IsDiff { get ; set ; }
+        
+        [Field(Documentation = "Is Exist Using Code")]
+        public bool IsExistUsingCode { get ; set ; }
     }
 }

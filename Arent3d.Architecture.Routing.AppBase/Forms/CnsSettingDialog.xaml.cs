@@ -7,7 +7,6 @@ using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using System.ComponentModel ;
-using System.Data ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Extensions ;
