@@ -12,11 +12,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class EraseSelectedRacksCommandBase : EraseRackCommandBase
   {
-    protected override IEnumerable<string> GetLimitRackUniqueIds( UIDocument uiDocument, Document document )
+    protected override IEnumerable<Element> GetRacks( UIDocument uiDocument)
     {
       var selectedLimitRackRefElements = uiDocument.Selection
         .PickElementsByRectangle( LimitRackReferenceSelectionFilter.Instance, "Please select any rack or rack detail curve by mouse drag." ).EnumerateAll() ;
-      return selectedLimitRackRefElements.Any() ? selectedLimitRackRefElements.Select( x => x.UniqueId ).ToList() : new List<string>() ;
+      return selectedLimitRackRefElements.Any() ? selectedLimitRackRefElements : new List<Element>() ;
     }
   }
 }

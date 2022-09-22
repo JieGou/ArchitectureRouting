@@ -4,8 +4,12 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
+using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -19,13 +23,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
-      var limitRacks = GetLimitRackUniqueIds( uiDocument, document ) ;
+      if ( uiDocument.ActiveView is not ViewPlan viewPlan ) {
+        TaskDialog.Show( "Arent Inc", "Only support in the view plan!" ) ;
+        return Result.Cancelled ;
+      }
       
-      using var transaction = new Transaction( document, EraseLimitRackTransactionName ) ;
+      var racks = GetRacks( uiDocument).EnumerateAll() ;
+      
+      using var transaction = new Transaction( uiDocument.Document, EraseLimitRackTransactionName ) ;
       try {
         transaction.Start() ;
-        RemoveLimitRacks( document, limitRacks ) ;
+        RemoveRacksInStorage( viewPlan.GenLevel, racks ) ;
+        RemoveLimitRacks( uiDocument.Document, racks.Select(x => x.UniqueId) ) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -36,7 +45,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected abstract IEnumerable<string> GetLimitRackUniqueIds( UIDocument uiDocument, Document document ) ;
+    protected abstract IEnumerable<Element> GetRacks( UIDocument uiDocument ) ;
+
+    private static void RemoveRacksInStorage(Level level, IEnumerable<Element> racks )
+    {
+      var elements = racks as Element[] ?? racks.ToArray() ;
+      if(!elements.Any())
+        return;
+
+      var routeNames = elements.Select( x => RouteUtil.GetMainRouteName( x.GetRouteName() ) ).Distinct() ;
+      var storage = new StorageService<Level, RackForRouteModel>( level ) ;
+      storage.Data.RackForRoutes.RemoveAll( x => routeNames.Any( y => y == x.RouteName ) ) ;
+      storage.SaveChange();
+    }
 
     private static void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
     {

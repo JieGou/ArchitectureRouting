@@ -10,11 +10,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class EraseAllRackCommandBase : EraseRackCommandBase
   {
-    protected override IEnumerable<string> GetLimitRackUniqueIds( UIDocument uiDocument, Document document )
+    protected override IEnumerable<Element> GetRacks( UIDocument uiDocument)
     {
-      var allLimitRack = GetAllLimitRackInstances( document ) ;
-      var allLimitRackIds = allLimitRack.Select( x => x.UniqueId ).EnumerateAll() ;
-      return allLimitRackIds ;
+      var allLimitRack = GetAllLimitRackInstances( uiDocument.Document ) ;
+      return allLimitRack ;
     }
   }
 }

@@ -13,6 +13,8 @@ using Arent3d.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -37,9 +39,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       try {
+        if ( uiDocument.ActiveView is not ViewPlan viewPlan ) {
+          TaskDialog.Show( "Arent Inc", "Please create rack at the view plan!" ) ;
+          return Result.Cancelled ;
+        }
+        
         var result = uiDocument.Document.Transaction( TransactionName, _ =>
         {
           Dictionary<string, List<MEPCurve>> routingElements ;
+          var storage = new StorageService<Level, RackForRouteModel>( viewPlan.GenLevel ) ;
 
           if ( IsSelectionRange ) {
             List<Element> pickedObjects ;
@@ -67,6 +75,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           var groupRoutingElements = routingElements.GroupBy( x => CableRackUtils.GetMainRouteName( x.Value[ 0 ].GetRouteName() ) ).ToDictionary( x => x.Key, x => x.ToList() ) ;
           foreach ( var groupRoutingElement in groupRoutingElements ) {
+            if(storage.Data.RackForRoutes.Any(x => x.RouteName == groupRoutingElement.Key))
+              continue;
+            
             var horizontalRackMaps = new List<(Element Element, double Width)>() ;
             var verticalRackMaps = new List<(Conduit Conduit, double Width)>() ;
             
@@ -89,10 +100,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   horizontalRackMaps.Add( ( conduit, width ) ) ;
               }
             }
+            
+            var rackForRouteItem = new RackForRouteItem { RouteName = groupRoutingElement.Key } ;
+            
+            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, rackClassification: "Limit Rack" ) ;
+            rackForRouteItem.RackIds.AddRange(verticalRacks.Select(x => x.Id));
+            
+            var horizontalRacks = uiDocument.Document.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack" ).EnumerateAll() ;
+            rackForRouteItem.RackIds.AddRange(horizontalRacks.Select(x => x.Id));
+            RackCommandBase.CreateNotationForRack( uiDocument.Document, horizontalRacks.OfType<FamilyInstance>() ) ;
 
-            uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, rackClassification: "Limit Rack" ) ;
-            var racks = uiDocument.Document.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack" ) ;
-            RackCommandBase.CreateNotationForRack( uiDocument.Document, racks.OfType<FamilyInstance>() ) ;
+            storage.Data.RackForRoutes.Add(rackForRouteItem);
+            storage.SaveChange();
           }
           
           uiDocument.ActiveView.SetCategoryHidden(new ElementId(BuiltInCategory.OST_CableTrayFitting), false);
