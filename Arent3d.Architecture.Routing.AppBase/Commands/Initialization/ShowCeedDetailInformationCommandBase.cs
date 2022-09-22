@@ -1,4 +1,5 @@
 ﻿using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
@@ -23,12 +24,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       
       if ( null == reference || uiDoc.Document.GetElement( reference ) is not IndependentTag independentTag )
         return Result.Cancelled ;
-#if REVIT2022
-      var connector = independentTag.GetTaggedLocalElements().FirstOrDefault( x => BuiltInCategorySets.OtherElectricalElements.Any( y => (int) y == x.Category.Id.IntegerValue ) ) ;
-#else
-      var connector = independentTag.GetTaggedLocalElement() ;
-#endif
       
+      var connector = independentTag.GetElementFromIndependentTag().FirstOrDefault( x => BuiltInCategorySets.OtherElectricalElements.Any( y => (int) y == x.Category.Id.IntegerValue ) ) ;
       if ( null == connector )
         return Result.Cancelled ;
         
@@ -59,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( elementType is not FamilySymbol familySymbol )
           return false ;
 
-        return familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentTag.GetFamilyName() || familySymbol.FamilyName == ElectricalRoutingFamilyType.SymbolContentEquipmentTag.GetFamilyName() ;
+        return familySymbol.FamilyName == ElectricalRoutingFamilyType.ElectricalFixtureContentTag.GetFamilyName() || familySymbol.FamilyName == ElectricalRoutingFamilyType.ElectricalEquipmentContentTag.GetFamilyName() ;
       }
 
       public bool AllowReference( Reference r, XYZ p )

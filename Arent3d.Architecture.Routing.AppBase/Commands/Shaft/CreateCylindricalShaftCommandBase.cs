@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
     private const double RotateAngle = Math.PI / 3 ;
     public const string SubCategoryForSymbolName = "SubCategoryForSymbol";
     public const string SubCategoryForDirectionCylindricalShaftName = "SubCategoryForDirectionCylindricalShaft" ;
+    public const string SubCategoryForCylindricalShaftName = "SubCategoryForCylindricalShaft" ;
     
     private static double DefaultRadius => 60d.MillimetersToRevitUnits() ;
     private static double DefaultCableTrayScale => 4d ;
@@ -121,8 +122,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
     public static (Element StyleForBodyDirection, Element StyleForOuterShape, Element StyleForSymbol) GetLineStyles(Document document)
     {
-      var styleForBodyDirection = GetLineStyle( document, "SubCategoryForDirectionCylindricalShaft", new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-      var styleForOuterShape = GetLineStyle( document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      var styleForBodyDirection = GetLineStyle( document, SubCategoryForDirectionCylindricalShaftName, new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      var styleForOuterShape = GetLineStyle( document, SubCategoryForCylindricalShaftName, new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
       var styleForSymbol = GetLineStyle( document, SubCategoryForSymbolName, new Color( 0, 0, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
       return ( styleForBodyDirection, styleForOuterShape, styleForSymbol ) ;
     }

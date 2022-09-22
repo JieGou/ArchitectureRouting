@@ -21,12 +21,14 @@ using MessageBox = System.Windows.MessageBox ;
 using Expression = System.Linq.Expressions.Expression;
 using System.Linq.Expressions;
 using System.Windows.Media ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Utils ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -55,7 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private Dictionary<int, string> _pickUpNumbers ;
     private int _pickUpNumber ;
     private readonly string? _version ;
-    private EquipmentCategory? _equipmentCategory = null ;
+    private readonly EquipmentCategory? _equipmentCategory ;
 
     private string Version => _version ?? DateTime.Now.ToString( VersionDateTimeFormat ) ;
     public readonly List<PickUpItemModel> DataPickUpModels ;
@@ -157,16 +159,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void CalculateTotalBasedOnCreateTable(List<PickUpItemModel> listPickUpModels)
-    {
-      var pickUpModelsWires = listPickUpModels.Where( p => IsWire( p.ProductCode ) ) ;
-      foreach ( var pickUpModelsWire in pickUpModelsWires ) {
-        var wireBook = pickUpModelsWire.WireBook ;
-        if ( string.IsNullOrEmpty( wireBook ) ) continue ;
-        pickUpModelsWire.Quantity = ( double.Parse( pickUpModelsWire.Quantity ) * int.Parse( wireBook ) ).ToString() ;
-      }
-    }
-    
     private List<PickUpItemModel>? _filterPickUpModels ;
     public List<PickUpItemModel> FilterPickUpModels
     {
@@ -247,18 +239,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( level != null ) 
           _pickUpModels = _pickUpModels.Where( p =>  p.Floor == level.Name ).ToList() ;
       } 
-      else if ( _storagePickUpService != null )
+      else if ( _storagePickUpService != null ) {
         _pickUpModels = _storagePickUpService.Data.PickUpData.Where( p => p.Version == _version ).ToList() ;
-      else if ( _storagePickUpServiceByLevel != null )
+      }
+      else if ( _storagePickUpServiceByLevel != null ) {
         _pickUpModels = _storagePickUpServiceByLevel.Data.PickUpData.Where( p => p.Version == _version ).ToList() ;
-      else 
+      }
+      else {
         _pickUpModels = new List<PickUpItemModel>() ;
+      }
 
       DataPickUpModels = _pickUpModels ;
       
 
-      if ( ! _pickUpModels.Any() ) 
+      if ( ! _pickUpModels.Any() ) {
         MessageBox.Show( "Don't have element.", "Result Message" ) ;
+      }
       else {
         var pickUpModels = new List<PickUpItemModel>() ;
         
@@ -320,7 +316,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return pickUpModels ;
     }
 
-    private void SetPickUpModels( List<PickUpItemModel> pickUpModels, List<(Element Connector, Element? Conduit)> pickUpElements, ProductType productType, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, List<string> constructionItemList, List<string?> isEcoModeList, List<MaterialCodeInfo>? dictMaterialCode, List<string>? constructionClassifications, List<string>? plumbingInfos, List<string> routeNames )
+    private void SetPickUpModels( List<PickUpItemModel> pickUpModels, List<(Element Connector, Element? Conduit)> pickUpElements, ProductType productType, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ,
+      List<string> constructionItemList, List<string?> isEcoModeList, List<MaterialCodeInfo>? dictMaterialCode, List<string>? constructionClassifications, List<string>? plumbingInfos, List<string> routeNames )
     {
       var index = 0 ;
       foreach ( var pickUpElement in pickUpElements ) {
@@ -400,8 +397,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                   var materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, detailTableItemModel ) ;
                   
                   if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
-                    PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, @group, layer,
-                      classification, pickUpNumber, direction, ceedSetCode, deviceSymbol, condition, routeName) ;
+                    PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, 
+                      use, usageName, quantity, supplement, supplement2, @group, layer, classification, pickUpNumber, direction, ceedSetCode, deviceSymbol, condition, routeName) ;
                   }
                 }
               } else if ( hiroiSetMasterModel != null ) {
@@ -414,8 +411,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 }
                 else {
                   materialCodes = GetMaterialCodes( productType, hiroiSetMasterModel, null ) ;
-                  var value = pickUpElement.Connector.GetPropertyString(ElectricalRoutingElementParameter.Quantity);
-                  var qtt = string.IsNullOrEmpty( value ) ? 1 : int.Parse( value ) ;
+                  var qtt = pickUpElement.Connector.GetPropertyInt(ElectricalRoutingElementParameter.Quantity);
                   foreach ( var materialCode in materialCodes ) {
                     materialCode.Quantity = $"{qtt}" ;
                   }
@@ -493,9 +489,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void PickUpModelBaseOnMaterialCode( List<MaterialCodeInfo>  materialCodes, string specification, string productName, string size, string tani, string standard, ProductType productType, List<PickUpItemModel> pickUpModels, string? floor, string constructionItems, string construction,
-      string modelNumber, string specification2, string item, string equipmentType, string use, string usageName, string quantity, string supplement, string supplement2, string group, string layer, string classification, string pickUpNumber, string direction,
-      string ceedSetCode, string deviceSymbol, string condition, string relatedRouteName)
+    private void PickUpModelBaseOnMaterialCode( List<MaterialCodeInfo>  materialCodes, string specification, string productName, string size, string tani, string standard, ProductType productType, List<PickUpItemModel> pickUpModels, 
+      string? floor, string constructionItems, string construction, string modelNumber, string specification2, string item, string equipmentType, string use, string usageName, string quantity, string supplement, string supplement2, 
+      string group, string layer, string classification, string pickUpNumber, string direction, string ceedSetCode, string deviceSymbol, string condition, string relatedRouteName)
     {
       var routeName = string.Empty ;
       if ( !string.IsNullOrEmpty( relatedRouteName ) ) {
@@ -613,6 +609,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':' ).ToList() : new List<string>() ;
     }
 
+    private static int GetQuantity( Element conduit )
+    {
+      var quantity = 1 ;
+
+      var routeName = RouteUtil.GetMainRouteName( conduit.GetRouteName() ) ;
+      if ( string.IsNullOrEmpty( routeName ) )
+        return quantity ;
+
+      var toConnector = ConduitUtil.GetConnectorOfRoute( conduit.Document, routeName, false ) ;
+      if ( null == toConnector )
+        return quantity ;
+      
+      quantity = toConnector.GetPropertyInt(ElectricalRoutingElementParameter.Quantity);
+      return quantity ;
+    }
+
     private void GetToConnectorsOfConduit( IReadOnlyCollection<Element> allConnectors, List<PickUpItemModel> pickUpModels )
     {
       _pickUpNumber = 1 ;
@@ -634,18 +646,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       foreach ( var conduit in conduits ) {
         conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
-        var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
+        var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() * GetQuantity(conduit);
         conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
-        if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
+        if ( string.IsNullOrEmpty( constructionItem ) ) 
+          constructionItem = DefaultConstructionItem ;
         AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty,string.Empty, routeNames) ;
       }
 
       var conduitFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
       foreach ( var conduitFitting in conduitFittings ) {
         conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
-        var quantity = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( _document, "電線管長さ" ) ).AsDouble() ;
+        var quantity = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( _document, "電線管長さ" ) ).AsDouble() * GetQuantity(conduitFitting);
         conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
-        if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
+        if ( string.IsNullOrEmpty( constructionItem ) ) 
+          constructionItem = DefaultConstructionItem ;
         AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty, string.Empty, routeNames) ;
       }
       
@@ -653,7 +667,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( changePlumbingInformationStorable.ChangePlumbingInformationModelData.Any() ) {
         foreach ( var changePlumbingInformationModel in changePlumbingInformationStorable.ChangePlumbingInformationModelData ) {
           var conduit = _document.GetElement( changePlumbingInformationModel.ConduitId ) ;
-          if ( conduit == null ) continue ;
+          if ( conduit == null ) 
+            continue ;
           conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
           var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
           var constructionItem = changePlumbingInformationModel.ConstructionItems ;
@@ -722,8 +737,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null, null, null, routeNames ) ;
     }
 
-    private void AddPickUpConduit( 
-      List<string> routes, IReadOnlyCollection<Element> allConnectors, IReadOnlyCollection<Element> pullBoxs, List<(Element, Element?)> pickUpConnectors, 
+    private void AddPickUpConduit( List<string> routes, IReadOnlyCollection<Element> allConnectors, IReadOnlyCollection<Element> pullBoxs, List<(Element, Element?)> pickUpConnectors, 
       List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, List<string> plumbingInfos, Element conduit, 
       double quantity, ConduitType conduitType, List<string> constructionItems, string constructionItem, List<MaterialCodeInfo> dictMaterialCode, 
       List<string?> isEcoModes, string? isEcoMode, List<string> constructionClassifications, string constructionClassification,
@@ -964,24 +978,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void ExportFile( Window window )
     {
       try {
-        if ( IsExportCsv ) {
-          if ( ! _pickUpModels.Any() ) return ;
+        if ( ! _pickUpModels.Any() ) return ;
 
-          var pickUpModels = new List<PickUpItemModel>() ;
-          if ( _equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
-            pickUpModels.AddRange( _pickUpModels.Where( p=> p.EquipmentType ==  ProductType.Conduit.GetFieldName() || p.EquipmentType == ProductType.Cable.GetFieldName()) ) ;
-          }
-
-          if ( _equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
-            var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
-            pickUpModels.AddRange( pickUpConnectors ); 
-          }
-          
-          var pickUpReportViewModel = new PickUpReportViewModel( _document, pickUpModels ) ;
-          
-          var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
-          dialog.ShowDialog() ;
+        var pickUpModels = new List<PickUpItemModel>() ;
+        if ( _equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
+          pickUpModels.AddRange( _pickUpModels.Where( p=> p.EquipmentType ==  ProductType.Conduit.GetFieldName() || p.EquipmentType == ProductType.Cable.GetFieldName()) ) ;
         }
+
+        if ( _equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
+          var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ) ;
+          pickUpModels.AddRange( pickUpConnectors ); 
+        }
+        
+        var pickUpReportViewModel = new PickUpReportViewModel( _document, pickUpModels, IsExportCsv ) ;
+        var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
+        dialog.ShowDialog() ;
       }
       catch ( Exception ex ) {
         MessageBox.Show( "Export data failed because " + ex, "Error Message" ) ;
