@@ -11,8 +11,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
         private enum SerializeField
         {
+            ShaftIndex,
             ShaftOpeningUniqueId,
-            CableTrayUniqueId,
+            CableTrayUniqueIds,
             DetailUniqueIds,
             Size
         }
@@ -21,20 +22,22 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
         {
             var deserializer = deserializerObject.Of<SerializeField>() ;
 
+            var shaftIndex = deserializer.GetInt( SerializeField.ShaftIndex ) ;
             var shaftOpeningUniqueId = deserializer.GetString( SerializeField.ShaftOpeningUniqueId ) ;
-            var cableTrayUniqueId = deserializer.GetString( SerializeField.CableTrayUniqueId ) ;
+            var cableTrayUniqueIds = deserializer.GetNonNullStringArray( SerializeField.CableTrayUniqueIds ) ;
             var detailUniqueIds = deserializer.GetNonNullStringArray( SerializeField.DetailUniqueIds ) ;
             var size = deserializer.GetDouble( SerializeField.Size ) ;
 
-            return new ShaftOpeningModel( shaftOpeningUniqueId, cableTrayUniqueId, detailUniqueIds?.ToList(), size ) ;
+            return new ShaftOpeningModel( shaftIndex, shaftOpeningUniqueId, cableTrayUniqueIds?.ToList(), detailUniqueIds?.ToList(), size ) ;
         }
 
         protected override ISerializerObject Serialize( Element storedElement, ShaftOpeningModel customTypeValue )
         {
             var serializerObject = new SerializerObject<SerializeField>() ;
 
+            serializerObject.Add( SerializeField.ShaftIndex, customTypeValue.ShaftIndex ) ;
             serializerObject.AddNonNull( SerializeField.ShaftOpeningUniqueId, customTypeValue.ShaftOpeningUniqueId ) ;
-            serializerObject.AddNonNull( SerializeField.CableTrayUniqueId, customTypeValue.CableTrayUniqueId ) ;
+            serializerObject.AddNonNull( SerializeField.CableTrayUniqueIds, customTypeValue.CableTrayUniqueIds ) ;
             serializerObject.AddNonNull( SerializeField.DetailUniqueIds, customTypeValue.DetailUniqueIds ) ;
             serializerObject.Add( SerializeField.Size, customTypeValue.Size ) ;
 
