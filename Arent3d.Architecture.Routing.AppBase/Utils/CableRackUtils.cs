@@ -733,6 +733,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         // Connect to current elbow:
         if ( newestInstance is not null && TryConnectRackItems( rack, newestInstance ) ) {
           rack.SetProperty( "起点の表示", false ) ;
+          if (newestInstance.IsRack())
+            newestInstance.SetProperty( "終点の表示", false ) ;
         }
 
         // Create rack elbow
