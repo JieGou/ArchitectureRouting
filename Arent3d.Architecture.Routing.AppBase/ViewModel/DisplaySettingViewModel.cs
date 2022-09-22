@@ -148,7 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       // Boundary rack
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseRackCommandBase.BoundaryCableTrayLineStyleName ) ) ;
 
       // Leak
       hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<FamilyInstance>().Where( x => ChangeWireTypeCommand.WireSymbolOptions.Values.Contains( x.Symbol.Family.Name ) ) ) ;
