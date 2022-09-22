@@ -1172,7 +1172,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var first = p.First() ;
           var newModel = new PickUpItemModel( first ) ;
           newModel.ProductCode = newModel.ProductCode.Split( '-' ).FirstOrDefault() ?? newModel.ProductCode ;
-          newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
+          newModel.Quantity = $"{p.Sum( x => Math.Round( Convert.ToDouble( x.Quantity ) , 1) )}" ;
           return newModel ;
         } ).OrderBy( x => GetLevelIndexOfLevelCollection( document ).FirstOrDefault( y => y.levelName == x.Floor ) ) ;
     }
