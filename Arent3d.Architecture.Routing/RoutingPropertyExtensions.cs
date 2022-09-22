@@ -129,11 +129,11 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_TEXT, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
     RoomCondition,
     
-    [Parameter( "bd2c2a04-5b41-40f4-b59b-bbb50f5d1c74", "Symbol Content", DataType.Text, ParameterVisibility.ReadOnlyOnHasValue, DescriptionKey = "Symbol Content")]
+    [Parameter( "fcacd40a-3bf7-495f-8d0c-6efeafa45775", "Symbol Content", DataType.Text, ParameterVisibility.ReadOnlyOnHasValue, DescriptionKey = "Symbol Content")]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
     SymbolContent,
     
-    [Parameter( "8510104a-b42c-4b9b-ad19-57dd4ce3bb11", "数量", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "数量")]
+    [Parameter( "6a4206f1-156b-449e-b9b6-a124dc56dfd5", "数量", DataType.Integer, ParameterVisibility.Editable, DescriptionKey = "数量")]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
     Quantity,
     

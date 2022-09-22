@@ -129,6 +129,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     [Field(Documentation = "Is ReadOnly Plumbing Size")]
     public bool IsReadOnlyPlumbingSize { get ; set ; }
     
+    public bool IsMultipleConnector { get ; set ; }
+    
     private List<ComboboxItemType> _wireSizes = new() ;
     
     [Field(Documentation = "Wire Size List")]
