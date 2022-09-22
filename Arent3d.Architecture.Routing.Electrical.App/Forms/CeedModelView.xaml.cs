@@ -1,5 +1,4 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Forms
@@ -9,7 +8,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     public void SetupDockablePane( DockablePaneProviderData data )
     {
       data.FrameworkElement = this ;
-
       data.InitialState = new DockablePaneState
       {
         DockPosition = DockPosition.Tabbed, 
@@ -22,9 +20,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       InitializeComponent() ;
     }
     
-    public void CustomInitiator( UIDocument uiDocument, Document document )
+    public void CustomInitiator( UIDocument uiDocument )
     {
-      var viewModel = new CeedViewModel( uiDocument, document, new CeedPostCommandExecutor() ) ;
+      var viewModel = new CeedViewModel( uiDocument, new CeedPostCommandExecutor() ) ;
       CeedModels = new CeedDockPaneContent( viewModel ) ;
       DataContext = viewModel ;
     }
