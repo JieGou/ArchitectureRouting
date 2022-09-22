@@ -430,7 +430,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static void CreateNotation( Document doc, RackNotationStorable rackNotationStorable, IReadOnlyCollection<FamilyInstance> racks, string fromConnectorId, bool isDirectionX, double scale )
     {
-      const string xSymbol = " x " ;
       var count = racks.Count ;
       var rack = racks.OrderByDescending( x => x.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).AsDouble() ).FirstOrDefault() ;
       if ( rack != null ) {
@@ -445,14 +444,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y + widthCableTray ), point.Z ) ;
             else
               point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X - widthCableTray ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y ), point.Z ) ;
-            
+
             // content to show
             var notation = notationDistance switch
             {
               > 600 => string.Format( Notation, ( notationDistance / 2 ).ToString( CultureInfo.CurrentCulture ) ) + " x 2",
               _ => string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ),
             } ;
-            
+
             var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;
             if ( null == textNoteType ) return ;
             TextNote textNote ;
@@ -460,12 +459,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             const double multiple = 3 ;
             var heightText = TextNoteHelper.TotalHeight.MillimetersToRevitUnits() ;
             if ( isDirectionX ) {
-              var vector = (XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText )* scale ;
+              var vector = ( XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * scale ;
               var transform = Transform.CreateTranslation( vector ) ;
               textNote = TextNote.Create( doc, doc.ActiveView.Id, transform.OfPoint( point ), notation, textNoteType.Id ) ;
             }
             else {
-              var vector = (XYZ.BasisX.Negate() * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText)* scale ;
+              var vector = ( XYZ.BasisX.Negate() * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * scale ;
               var transform = Transform.CreateTranslation( vector ) ;
               textNote = TextNote.Create( doc, doc.ActiveView.Id, transform.OfPoint( point ), notation, textNoteType.Id ) ;
               ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
@@ -491,21 +490,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
         else {
-          var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == notationModel.NotationId ) ;
-          if ( textElement == null ) return ;
-          var textNote = textElement as TextNote ;
-          var text = textNote!.Text ;
-          if ( text.Contains( XChar ) ) {
-            var number = text.Substring( text.IndexOf( XChar ) + 1 ).Trim( '\r' ) ;
-            textNote.Text = text.Substring( 0, text.IndexOf( XChar ) + 2 ) + ( Convert.ToInt16( number ) + count ) ;
-          }
-          else {
-            textNote.Text = text.Trim( '\r' ) + xSymbol + ( 1 + count ) ;
-          }
-
           foreach ( var item in racks ) {
-            var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth, 
-              notationModel.EndLineLeaderId, notationModel.EndPoint, notationModel.OtherLineIds ) ;
+            var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth, notationModel.EndLineLeaderId, notationModel.EndPoint, notationModel.OtherLineIds ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }

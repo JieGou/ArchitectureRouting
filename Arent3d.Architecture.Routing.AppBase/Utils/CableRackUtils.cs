@@ -666,7 +666,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     private static double RackWidthOnPlanView( int nScale )
     {
       var symbolRatio = Model.ImportDwgMappingModel.GetDefaultSymbolRatio( nScale ) ;
-      return ( symbolRatio * 600 * 2 / 3 ).MillimetersToRevitUnits() ;
+      return ( 4 * nScale * symbolRatio ).MillimetersToRevitUnits() ;
     }
     
     public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this Document doc, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", 
@@ -733,6 +733,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         // Connect to current elbow:
         if ( newestInstance is not null && TryConnectRackItems( rack, newestInstance ) ) {
           rack.SetProperty( "起点の表示", false ) ;
+          if (newestInstance.IsRack())
+            newestInstance.SetProperty( "終点の表示", false ) ;
         }
 
         // Create rack elbow
