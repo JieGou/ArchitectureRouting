@@ -153,9 +153,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
         defaultSettingStorable.GradeSettingData.GradeMode = gradeMode ;
-        if ( importDwgMappingModels.Any() ) {
+
+        if ( importDwgMappingModels.Any() )
           UpdateImportDwgMappingModels( defaultSettingStorable, importDwgMappingModels, deletedFloorName ) ;
-        }
 
         defaultSettingStorable.Save() ;
         transaction.Commit() ;

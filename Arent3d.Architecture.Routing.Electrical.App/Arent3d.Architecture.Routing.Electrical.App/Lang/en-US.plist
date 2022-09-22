@@ -343,6 +343,9 @@
         <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
         <string>Pick Up Number Setting</string>
 
+        <key>TransactionName.Commands.Initialization.DisplaySetting</key>
+        <string>Display Setting</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>
@@ -567,5 +570,8 @@
 
         <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
         <string>Pick Up&#xA;Number Setting</string>
+
+        <key>Electrical.App.Commands.Initialization.DisplaySettingCommand</key>
+        <string>Display Setting</string>
     </dict>
 </plist>

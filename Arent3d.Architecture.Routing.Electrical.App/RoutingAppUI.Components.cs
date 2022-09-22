@@ -108,6 +108,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class PickUpNumberSettingCommandButton
           {
           }
+          
+          [Button( typeof( DisplaySettingCommand ), OnlyInitialized = true )]
+          private static class DisplaySettingButton
+          {
+          }
         }
       }
 
