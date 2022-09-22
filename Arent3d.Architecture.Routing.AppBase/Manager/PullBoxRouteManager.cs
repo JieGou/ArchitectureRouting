@@ -31,14 +31,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const double NearShaftTolerance = 0.01 ;
     private static readonly double PullBoxWidth = 300d.MillimetersToRevitUnits() ;
     private static readonly double PullBoxLenght = 250d.MillimetersToRevitUnits() ;
-    public static readonly double NotationOfPullBoxXAxis = 715d.MillimetersToRevitUnits() ;
-    public static readonly double NotationOfPullBoxYAxis = 200d.MillimetersToRevitUnits() ;
     private const string HinmeiOfPullBox = "プルボックス" ;
     public const string DefaultPullBoxLabel = "PB" ;
     public const string MaterialCodeParameter = "Material Code" ;
     private const string DepthParameter = "Depth" ;
     private const string ScaleFactorParameter = "ScaleFactor" ;
     private const double DefaultDepthOfPullBox = 200d ;
+    public static readonly double HeightDistanceBetweenPullAndNotation = 50d.MillimetersToRevitUnits() ;
     public const string IsAutoCalculatePullBoxSizeParameter = "IsAutoCalculatePullBoxSize" ;
     private const string TaniOfPullBox = "個" ;
 
@@ -1106,30 +1105,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             ( depth, _, height ) = ParseKikaku( kikaku! ) ;
         }
       }
-      
+
+      using var updateParamPullBoxTransaction = new Transaction( document, "Update Parameters Of Pull Box" ) ;
+      updateParamPullBoxTransaction.Start() ;
       if ( ! string.IsNullOrEmpty( buzaiCd ) )
         pullBox.GetParameter( MaterialCodeParameter )?.Set( buzaiCd ) ;
       pullBox.GetParameter( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
       if ( isAutoCalculatePullBoxSize )
         storageDetailSymbolService?.Data.DetailSymbolData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
-
+      updateParamPullBoxTransaction.Commit() ;
+      
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var routesRelatedPullBox = GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBox, routes ) ;
       var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point! ;
       var conduitsRelatedPullBox = GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
+      
+      using var resizePullBoxAndRelatedConduitsTransaction = new Transaction( document, "Resize pull box and related conduits" ) ;
+      resizePullBoxAndRelatedConduitsTransaction.Start() ;
       ResizePullBoxAndRelatedConduits( baseLengthOfLine, pullBox, conduitsRelatedPullBox ) ;
-      if ( positionLabel != null )
-        positionLabel = GetPullBoxPosition( baseLengthOfLine, positionLabel, conduitsRelatedPullBox ) ;
+      resizePullBoxAndRelatedConduitsTransaction.Commit() ;
 
       if ( storagePullBoxInfoServiceByLevel == null ) return ;
 
       textLabel = GetPullBoxTextBox( depth, height, defaultLabel ) ;
       if ( positionLabel != null )
-        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize, conduitsRelatedPullBox, HeightDistanceBetweenPullAndNotation, baseLengthOfLine ) ;
       else if ( storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.All( pullBoxInfoItemModel => pullBoxInfoItemModel.PullBoxUniqueId != pullBox.UniqueId ) ) {
         var position = ( pullBox.Location as LocationPoint )?.Point! ;
-        positionLabel = GetPullBoxPosition( baseLengthOfLine, position, conduitsRelatedPullBox ) ;
-        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+        positionLabel = new XYZ( position.X, position.Y, position.Z ) ;
+        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize, conduitsRelatedPullBox, HeightDistanceBetweenPullAndNotation, baseLengthOfLine ) ;
       }
       else if ( isAutoCalculatePullBoxSize )
         ChangeLabelOfPullBox( document, storagePullBoxInfoServiceByLevel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
@@ -1176,8 +1180,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    public static XYZ GetPullBoxPosition( double baseLengthOfLine, XYZ positionLabel, List<( Conduit Conduit, int EndPointIndex )> conduitsRelatedPullBox )
+    public static XYZ GetPositionOfPullBox( Document document, TextNote label, XYZ positionLabel, List<( Conduit Conduit, int EndPointIndex )> conduitsRelatedPullBox, double heightDistanceBetweenPullAndNotation, double baseLengthOfLine )
     {
+      var depthByScale = ( DefaultDepthOfPullBox * baseLengthOfLine ).MillimetersToRevitUnits() ;
+      var widthOfLabel = label.Width * document.ActiveView.Scale ;
+      var heightOfLabel = label.Height * document.ActiveView.Scale ;
+      var distanceBetweenCenterOfPullBoxAndNotation = depthByScale / Math.Sqrt( 2 ) + Math.Sqrt( Math.Pow( widthOfLabel, 2 ) + Math.Pow( heightOfLabel, 2 ) ) / 2 ;
       var defaultDirections = new List<XYZ> { new(-1, 0, 0), new(1, 0, 0), new(0, 1, 0), new(0, -1, 0) } ;
       var conduitDirections = new List<XYZ>() ;
       foreach ( var c in conduitsRelatedPullBox ) {
@@ -1185,18 +1193,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
         conduitDirections.Add( c.EndPointIndex == 0 ? line.Direction : line.Direction.Negate() ) ;
       }
-
+      
       var textNoteDirection = defaultDirections.FirstOrDefault( d => ! conduitDirections.Any( cd => cd.IsAlmostEqualTo( d ) ) ) ;
       if ( textNoteDirection == null )
-        positionLabel = new XYZ( positionLabel.X + 165d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y + 560d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+        positionLabel = new XYZ( positionLabel.X + distanceBetweenCenterOfPullBoxAndNotation - widthOfLabel / 2 + TextNoteHelper.LeaderOffsetSheet.MillimetersToRevitUnits(), positionLabel.Y + distanceBetweenCenterOfPullBoxAndNotation + heightOfLabel / 2 - heightDistanceBetweenPullAndNotation, positionLabel.Z ) ;
       else if ( textNoteDirection.Y is 1 )
-        positionLabel = new XYZ( positionLabel.X - 275d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y + 560d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+        positionLabel = new XYZ( positionLabel.X - widthOfLabel / 2 + TextNoteHelper.LeaderOffsetSheet.MillimetersToRevitUnits(), positionLabel.Y + distanceBetweenCenterOfPullBoxAndNotation + heightOfLabel / 2 - heightDistanceBetweenPullAndNotation, positionLabel.Z ) ;
       else if ( textNoteDirection.Y is -1 )
-        positionLabel = new XYZ( positionLabel.X - 275d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y - 160d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+        positionLabel = new XYZ( positionLabel.X - widthOfLabel / 2 + TextNoteHelper.LeaderOffsetSheet.MillimetersToRevitUnits(), positionLabel.Y - distanceBetweenCenterOfPullBoxAndNotation + heightOfLabel / 2 + heightDistanceBetweenPullAndNotation, positionLabel.Z ) ;
       else if ( textNoteDirection.X is 1 )
-        positionLabel = new XYZ( positionLabel.X + 165d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y + 200d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+        positionLabel = new XYZ( positionLabel.X + distanceBetweenCenterOfPullBoxAndNotation - widthOfLabel / 2 + TextNoteHelper.LeaderOffsetSheet.MillimetersToRevitUnits(), positionLabel.Y + heightOfLabel / 2, positionLabel.Z ) ;
       else if ( textNoteDirection.X is -1 )
-        positionLabel = new XYZ( positionLabel.X - 715d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y + 200d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+        positionLabel = new XYZ( positionLabel.X - distanceBetweenCenterOfPullBoxAndNotation - widthOfLabel / 2 + TextNoteHelper.LeaderOffsetSheet.MillimetersToRevitUnits(), positionLabel.Y + heightOfLabel / 2, positionLabel.Z ) ;
+      
       return positionLabel ;
     }
 
@@ -1256,15 +1265,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var textNote = document.GetAllElements<TextNote>().FirstOrDefault( t => pullBoxInfoModel?.TextNoteUniqueId == t.UniqueId ) ;
       if ( textNote == null ) return ;
       
+      using var updateNotationTransaction = new Transaction( document, "Update notation of pull box" ) ;
+      updateNotationTransaction.Start() ;
       textNote.Text = textLabel ;
+      updateNotationTransaction.Commit() ;
       if ( ! isAutoCalculatePullBoxSize ) return ;
       
+      using var updateColorOfNotationTransaction = new Transaction( document, "Update color for notation of pull box" ) ;
+      updateColorOfNotationTransaction.Start() ;
       var color = new Color( 255, 0, 0 ) ;
       ConfirmUnsetCommandBase.ChangeElementColor( new []{ textNote }, color ) ;
+      updateColorOfNotationTransaction.Commit() ;
     }
 
-    private static void CreateTextNoteAndGroupWithPullBox(Document doc, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize)
+    private static void CreateTextNoteAndGroupWithPullBox(Document doc, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, XYZ point, Element pullBox, string text, bool isAutoCalculatePullBoxSize, List<( Conduit Conduit, int EndPointIndex )> conduitsRelatedPullBox, double heightDistance, double baseLengthOfLine)
     {
+      using var createNotationTransaction = new Transaction( doc, "Create notation of pull box" ) ;
+      createNotationTransaction.Start() ;
       var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false )!.Id ;
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       
@@ -1276,9 +1293,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var color = new Color( 255, 0, 0 ) ;
         ConfirmUnsetCommandBase.ChangeElementColor( new []{ textNote }, color ) ;
       }
+      createNotationTransaction.Commit() ;
 
+      using var updatePositionOfNotationTransaction = new Transaction( doc, "Update position of notation" ) ;
+      updatePositionOfNotationTransaction.Start() ;
+      textNote.Coord = GetPositionOfPullBox( doc, textNote, point, conduitsRelatedPullBox, heightDistance, baseLengthOfLine ) ;
+      updatePositionOfNotationTransaction.Commit() ;
+      
+      using var saveStorageTransaction = new Transaction( doc, "Save storage of pull box information" ) ;
+      saveStorageTransaction.Start() ;
       storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Add( new PullBoxInfoItemModel( pullBox.UniqueId, textNote.UniqueId ) );
       storagePullBoxInfoServiceByLevel.SaveChange() ;
+      saveStorageTransaction.Commit() ;
     }
 
     private static string GetPullBoxTextBox( int depth, int height, string text)

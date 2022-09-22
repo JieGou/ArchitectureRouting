@@ -6,6 +6,8 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
@@ -24,25 +26,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var baseLengthOfLine = scale / 100d ;
       try {
-        var csvStorable = document.GetCsvStorable() ;
-        var conduitsModelData = csvStorable.ConduitsModelData ;
-        var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
-        var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
-        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
+        var result = document.TransactionGroup( "TransactionName.Commands.Routing.ChangePullBoxDimension".GetAppStringByKeyOrDefault( "Change Pull Box Dimension" ), _ =>
+        {
+          var csvStorable = document.GetCsvStorable() ;
+          var conduitsModelData = csvStorable.ConduitsModelData ;
+          var hiroiMasterModels = csvStorable.HiroiMasterModelData ;
+          var storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
+          var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
 
-        var pullBoxElements = document.GetAllElements<FamilyInstance>()
-          .OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-          .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id )
-          .ToList() ;
+          var pullBoxElements = document.GetAllElements<FamilyInstance>()
+            .OfCategory( BuiltInCategory.OST_ElectricalFixtures )
+            .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id )
+            .ToList() ;
+        
+          foreach ( var pullBoxElement in pullBoxElements )
+            PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, pullBoxElement, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
+              conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, null, Convert.ToBoolean( pullBoxElement.ParametersMap.get_Item( PullBoxRouteManager.IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
+          MessageBox.Show( ChangePullBoxDimensionSuccesfully ) ;
+          return Result.Succeeded ;
+        } ) ;
 
-        using var transaction = new Transaction( document, "Change pull box dimension" ) ;
-        transaction.Start() ;
-        foreach ( var pullBoxElement in pullBoxElements )
-          PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, pullBoxElement, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
-            conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, null, Convert.ToBoolean( pullBoxElement.ParametersMap.get_Item( PullBoxRouteManager.IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
-        transaction.Commit() ;
-        MessageBox.Show( ChangePullBoxDimensionSuccesfully ) ;
-        return Result.Succeeded ;
+        return result ;
       }
       catch ( OperationCanceledException ) {
         return Result.Cancelled ;

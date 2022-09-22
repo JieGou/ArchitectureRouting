@@ -340,6 +340,9 @@
         <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
         <string>Pick Up Number Setting</string>
 
+        <key>TransactionName.Commands.Routing.ChangePullBoxDimension</key>
+        <string>Change PullBox Dimension</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>

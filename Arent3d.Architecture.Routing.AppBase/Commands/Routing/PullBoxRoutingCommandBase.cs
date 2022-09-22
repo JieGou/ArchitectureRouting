@@ -130,11 +130,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
         storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       }
-
-      using var transaction = new Transaction( document, "Change pull box dimension" ) ;
-      transaction.Start() ;
+      
       PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
-      transaction.Commit() ;
       #endregion
       
       #region Change Representative Route Name

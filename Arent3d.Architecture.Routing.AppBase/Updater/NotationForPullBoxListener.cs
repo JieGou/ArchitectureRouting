@@ -58,18 +58,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
 
           if ( positionOfPullBox == null ) continue ;
 
-          var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-          var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBox, routes ) ;
-          var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point! ;
-          var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
-          var positionOfTextNoteForPullBox = PullBoxRouteManager.GetPullBoxPosition( baseLengthOfLine, positionOfPullBox, conduitsRelatedPullBox ) ;
-
           var textNoteOfPullBoxUniqueId = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.SingleOrDefault( t => t.PullBoxUniqueId == pullBox.UniqueId )?.TextNoteUniqueId ;
           if ( string.IsNullOrEmpty( textNoteOfPullBoxUniqueId ) ) continue ;
 
           var textNoteOfPullBox = document.GetAllElements<TextNote>().FirstOrDefault( t => textNoteOfPullBoxUniqueId == t.UniqueId ) ;
-          if ( textNoteOfPullBox != null )
+          if ( textNoteOfPullBox != null ) {
+            var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+            var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBox, routes ) ;
+            var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point! ;
+            var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
+            var positionOfTextNoteForPullBox = PullBoxRouteManager.GetPositionOfPullBox( document, textNoteOfPullBox, positionOfPullBox, conduitsRelatedPullBox, PullBoxRouteManager.HeightDistanceBetweenPullAndNotation, baseLengthOfLine ) ;
             textNoteOfPullBox.Coord = positionOfTextNoteForPullBox ;
+          }
           selectionElementIds.Add( modifiedElementId ) ;
           selectionElementIds.Add( textNoteOfPullBox!.Id ) ;
         }
