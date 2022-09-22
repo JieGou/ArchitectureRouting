@@ -1,6 +1,7 @@
 using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -26,11 +27,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         var elementsToDelete = document.GetAllElementsOfRoute<Element>().Where( e => deletingCategories.Contains( e.GetBuiltInCategory() ) ).Select( e => e.Id ).ToList() ;
         document.Delete( elementsToDelete ) ;
 
+        DeleteBoundaryRack( document ) ;
         DeleteNotationAndRack( document ) ;
         DeleteLocationConduit( document ) ;
 
         return Result.Succeeded ;
       } ) ;
+    }
+
+    private void DeleteBoundaryRack( Document document )
+    {
+      var curveElements = document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
+      if ( ! curveElements.Any() )
+        return ;
+
+      document.Delete( curveElements.Select( x => x.Id ).ToList() ) ;
     }
 
     private void DeleteNotationAndRack( Document document )

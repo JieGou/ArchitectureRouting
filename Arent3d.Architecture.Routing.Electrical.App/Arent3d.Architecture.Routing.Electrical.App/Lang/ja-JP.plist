@@ -348,6 +348,9 @@
         <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
         <string>拾い番号設定</string>
 
+        <key>TransactionName.Commands.Initialization.DisplaySetting</key>
+        <string>表示項目設定</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>自動ルーティング初期化エラー</string>
@@ -558,6 +561,9 @@
 
         <key>Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
         <string>印刷モード切替</string>
+
+        <key>Electrical.App.Commands.Initialization.DisplaySettingCommand</key>
+        <string>表示項目設定</string>
     </dict>
 </plist>
 

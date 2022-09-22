@@ -4,10 +4,13 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
+using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
@@ -19,7 +22,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
     public const string SubCategoryForDirectionCylindricalShaftName = "SubCategoryForDirectionCylindricalShaft" ;
     public const string SubCategoryForCylindricalShaftName = "SubCategoryForCylindricalShaft" ;
     
-    public static double Radius => 60d.MillimetersToRevitUnits() ;
+    private static double DefaultRadius => 60d.MillimetersToRevitUnits() ;
+    private static double DefaultCableTrayScale => 4d ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -34,12 +38,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
         var centerPoint = selection.PickPoint( ObjectSnapTypes.Midpoints | ObjectSnapTypes.Centers, "Pick a point." ) ;
 
-        var dialog = new GetLevel( document ) ;
+        var shaftSettingViewModel = new ShaftSettingViewModel( document ) ;
+        var dialog = new ShaftSettingDialog( shaftSettingViewModel ) ;
         if ( false == dialog.ShowDialog() )
           return Result.Succeeded ;
 
-        var levels = dialog.GetSelectedLevels().Select( x => document.GetElement( x.Id ) ).OfType<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
-        if ( ! levels.Any() ) {
+        var shaftModels = dialog.ShaftSettingViewModel.Shafts.Where( s => s.IsShafted ).ToList() ;
+        if ( ! shaftModels.Any() ) {
           message = "Please, select level in the dialog!" ;
           return Result.Cancelled ;
         }
@@ -50,22 +55,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         var shaftOpeningStore = document.GetShaftOpeningStorable() ;
 
         var shaftProfile = new CurveArray() ;
-        var cylinderCurve = Arc.Create( centerPoint, Radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
+        double.TryParse( dialog.ShaftSettingViewModel.Size, out var widthRack) ;
+        var radius = widthRack.MillimetersToRevitUnits() / 2 ;
+        var cylinderCurve = Arc.Create( centerPoint, radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
         shaftProfile.Append( cylinderCurve ) ;
-        var opening = document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
-        document.Regenerate();
-        
-        var detailUniqueIds = new List<string>() ;
-        var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
+        var shaftModelGroup = GroupShaftModels( shaftModels ) ;
+        var shaftIndex = shaftOpeningStore.ShaftOpeningModels.Count ;
+        foreach ( var shafts in shaftModelGroup ) {
+          var levels = shafts.Select( s => s.FromLevel ).ToList() ;
+          levels.Add( shafts.Last().ToLevel ) ;
+          var opening = document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
+          document.Regenerate() ;
 
-        var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
-        foreach ( var viewPlan in viewPlans ) {
-          var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape ) ;
-          detailUniqueIds.AddRange(detailCurves);
+          List<Element> cableTraySymbols = new() ;
+          List<string> cableTraySymbolIds = new() ;
+          foreach ( var shaftModel in shafts ) {
+            if ( ! shaftModel.IsRacked ) continue ;
+            var cableTrayLength = shaftModel.ToLevel.Elevation - shaftModel.FromLevel.Elevation ;
+            var cableTraySymbol = CreateCableTraySymbol( document, centerPoint.X, centerPoint.Y, cableTrayLength, shaftModel.FromLevel ) ;
+            cableTraySymbols.Add( cableTraySymbol ) ;
+            cableTraySymbolIds.Add( cableTraySymbol.UniqueId ) ;
+          }
+
+          var detailUniqueIds = new List<string>() ;
+          var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
+
+          var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
+          foreach ( var viewPlan in viewPlans ) {
+            var cableTraySymbolId = cableTraySymbols.FirstOrDefault( x => x.LevelId == viewPlan.GenLevel.Id )?.UniqueId ?? string.Empty ;
+            var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, radius, cableTraySymbolId ) ;
+            detailUniqueIds.AddRange( detailCurves ) ;
+            if( ! string.IsNullOrEmpty( cableTraySymbolId ) ) cableTraySymbols.RemoveAll( e => e.UniqueId == cableTraySymbolId ) ;
+          }
+
+          shaftOpeningStore.ShaftOpeningModels.Add( new ShaftOpeningModel( shaftIndex, opening.UniqueId, cableTraySymbolIds, detailUniqueIds, radius ) ) ;
+          shaftOpeningStore.Save() ;
         }
-        
-        shaftOpeningStore.ShaftOpeningModels.Add(new ShaftOpeningModel(opening.UniqueId, detailUniqueIds));
-        shaftOpeningStore.Save();
 
         trans.Commit() ;
 
@@ -80,6 +105,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       }
     }
 
+    private static IEnumerable<List<ShaftModel>> GroupShaftModels( IReadOnlyList<ShaftModel> shaftModels )
+    {
+      var shaftModelGroups = new List<List<ShaftModel>> { new() { shaftModels.First() } } ;
+      for ( var i = 1 ; i < shaftModels.Count ; i++ ) {
+        if ( shaftModels[ i - 1 ].ToLevel.Id == shaftModels[ i ].FromLevel.Id ) {
+          shaftModelGroups.Last().Add( shaftModels[ i ] ) ;
+        }
+        else {
+          shaftModelGroups.Add( new List<ShaftModel> { shaftModels[ i ] } ) ;
+        }
+      }
+
+      return shaftModelGroups ;
+    }
+
     public static (Element StyleForBodyDirection, Element StyleForOuterShape, Element StyleForSymbol) GetLineStyles(Document document)
     {
       var styleForBodyDirection = GetLineStyle( document, SubCategoryForDirectionCylindricalShaftName, new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
@@ -88,10 +128,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       return ( styleForBodyDirection, styleForOuterShape, styleForSymbol ) ;
     }
 
-    public static IEnumerable<string> CreateSymbolForShaftOpeningOnViewPlan(Opening opening, ViewPlan viewPlan, Element styleForSymbol, Element styleForBodyDirection, Element styleForOuterShape)
+    public static IEnumerable<string> CreateSymbolForShaftOpeningOnViewPlan(Opening opening, ViewPlan viewPlan, Element styleForSymbol, Element styleForBodyDirection, Element styleForOuterShape, double radius, string cableTrayUniqueId)
     {
       var ratio = viewPlan.Scale / 100d ;
-      var sacleRadius = Radius * ratio ;
+      var scaleRadius = DefaultRadius * ratio ;
+      var cabTrayWidth = radius * 2 ;
+      var offSetWidth = cabTrayWidth / 100d.MillimetersToRevitUnits() ;
 
       var detailUniqueIds = new List<string>() ;
       var arc = opening.BoundaryCurves.OfType<Arc>().SingleOrDefault() ;
@@ -109,8 +151,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       var transformRotation = Transform.CreateRotationAtPoint( opening.Document.ActiveView.ViewDirection, RotateAngle, arc.Center ) ;
       var bodyDirections = new List<Curve>
       {
-        Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * sacleRadius ).OfPoint( arc.Center ), Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( arc.Center ) ).CreateTransformed( transformRotation ), 
-        Line.CreateBound( Transform.CreateTranslation( -XYZ.BasisX * sacleRadius ).OfPoint( arc.Center ), Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( arc.Center ) ).CreateTransformed( transformRotation )
+        Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * scaleRadius ).OfPoint( arc.Center ), Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( arc.Center ) ).CreateTransformed( transformRotation ), 
+        Line.CreateBound( Transform.CreateTranslation( -XYZ.BasisX * scaleRadius ).OfPoint( arc.Center ), Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( arc.Center ) ).CreateTransformed( transformRotation )
       } ;
 
       var transformTranslation = Transform.CreateTranslation( XYZ.BasisZ * ( viewPlan.GenLevel.Elevation - arc.Center.Z ) ) ;
@@ -134,12 +176,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, bodyDirections.Select( x => x.CreateTransformed( transformTranslation ) ).ToList() ) ;
       }
 
-      curvesBody.Select( x => CreateDetailLine( viewPlan, styleForBodyDirection, x ) ).ForEach(x => detailUniqueIds.Add(x.UniqueId)) ;
+      SequenceExtensions.ForEach( curvesBody.Select( x => CreateDetailLine( viewPlan, styleForBodyDirection, x ) ), x => detailUniqueIds.Add(x.UniqueId)) ;
 
-      var circle = Arc.Create( new XYZ( arc.Center.X, arc.Center.Y, viewPlan.GenLevel.Elevation ), sacleRadius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
+      var circle = Arc.Create( new XYZ( arc.Center.X, arc.Center.Y, viewPlan.GenLevel.Elevation ), scaleRadius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
       detailUniqueIds.Add( CreateDetailLine( viewPlan, styleForOuterShape, circle ).UniqueId ) ;
 
+      if ( string.IsNullOrEmpty( cableTrayUniqueId ) ) return detailUniqueIds ;
+      var cableTrayElement = opening.Document.GetElement( cableTrayUniqueId ) ;
+      if ( cableTrayElement == null ) return detailUniqueIds ;
+      cableTrayElement.ParametersMap.get_Item( "トレイ幅" ).Set( cabTrayWidth ) ;
+      cableTrayElement.ParametersMap.get_Item( "ラックの倍率" ).Set( DefaultCableTrayScale * ratio / offSetWidth ) ;
+      var overrideGraphic = new OverrideGraphicSettings() ;
+      var color = new Color( 0, 255, 0 ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      viewPlan.SetElementOverrides( cableTrayElement.Id, overrideGraphic ) ;
+
       return detailUniqueIds ;
+    }
+    
+    private static Element CreateCableTraySymbol( Document document, double originX, double originY, double length, Level level )
+    {
+      var routingSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTray ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var position = new XYZ( originX, originY, 0 ) ;
+      var cableTrayInstance = routingSymbol.Instantiate( position, level, StructuralType.NonStructural ) ;
+      ElementTransformUtils.RotateElement( document, cableTrayInstance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), Math.PI / 2 ) ;
+      position = ( cableTrayInstance.Location as LocationPoint )!.Point ;
+      ElementTransformUtils.RotateElement( document, cableTrayInstance.Id, Line.CreateBound( position, position + XYZ.BasisX ), Math.PI / 2 ) ;
+      cableTrayInstance.ParametersMap.get_Item( "トレイ長さ" ).Set( length ) ;
+      return cableTrayInstance ;
     }
 
     private static List<DetailCurve> CreateSymbol(View viewPlan, XYZ point, double angle, double ratio, Element lineStyle)
