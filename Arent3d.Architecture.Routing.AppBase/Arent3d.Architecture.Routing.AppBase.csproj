@@ -29,6 +29,7 @@
     <None Update="resources\拾い根拠確認表_template.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Compile Remove="ViewModel\PickUpReportDatFileViewModel.cs" />
   </ItemGroup>
 
   <ItemGroup>

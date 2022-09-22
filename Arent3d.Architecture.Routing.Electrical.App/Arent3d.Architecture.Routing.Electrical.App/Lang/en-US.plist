@@ -73,6 +73,9 @@
         <key>Electrical.App.Commands.Rack.ImportRacksCommand</key>
         <string>Import&#xA;PS</string>
 
+        <key>Electrical.App.Commands.Rack.CreateRackBySelectedConduitsCommand</key>
+        <string>Create Rack&#xA;From-To</string>
+
         <key>Electrical.App.Commands.Routing.AllReRouteCommand</key>
         <string>Re-Route&#xA;All</string>
 
@@ -113,10 +116,10 @@
         <string>CNS Setting</string>
 
         <key>Electrical.App.Commands.Routing.NewLimitRackCommand</key>
-        <string>Create Limit Rack</string>
+        <string>Create Rack For All</string>
         
         <key>Electrical.App.Commands.Routing.NewLimitRackSelectionRangeCommand</key>
-        <string>Create Limit Rack&#xA;(Selection Range)</string>
+        <string>Create Rack For Selection Range</string>
         
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack&#xA;For All</string>
@@ -343,6 +346,9 @@
         <key>TransactionName.Commands.Routing.ChangePullBoxDimension</key>
         <string>Change PullBox Dimension</string>
 
+        <key>TransactionName.Commands.Initialization.DisplaySetting</key>
+        <string>Display Setting</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>
@@ -511,10 +517,20 @@
         <!-- File Names -->
         <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
         <string>Arent-export-layers.txt</string>
+
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ModifyArentExportLayersFile</key>
+        <string>Modify-Arent-export-layers.txt</string>
         
         <key>Electrical.App.Commands.Initialization.RegisterSymbolFolderPath</key>
         <string>RegisterSymbolFolderPath.txt</string>
-      
+
+        <!-- Family Names -->
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalEquipmentTags</key>
+        <string>Electrical Equipment Tags</string>
+
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalFixtureTags</key>
+        <string>Electrical Fixture Tags</string>
+
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>Grade </string>
@@ -557,5 +573,8 @@
 
         <key>Electrical.App.Commands.Initialization.PickUpNumberSettingCommand</key>
         <string>Pick Up&#xA;Number Setting</string>
+
+        <key>Electrical.App.Commands.Initialization.DisplaySettingCommand</key>
+        <string>Display Setting</string>
     </dict>
 </plist>

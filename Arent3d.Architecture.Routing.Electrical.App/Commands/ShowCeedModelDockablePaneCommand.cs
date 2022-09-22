@@ -14,11 +14,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      UIApplication uiApp = commandData.Application ;
+      var uiApp = commandData.Application ;
 
       var dpId = new DockablePaneId( RoutingAppUI.PaneId ) ;
       if ( DockablePane.PaneIsRegistered( dpId ) ) {
-        DockablePane dockPane = uiApp.GetDockablePane( dpId ) ;
+        var dockPane = uiApp.GetDockablePane( dpId ) ;
 
         if ( dockPane.IsShown() )
           return Result.Succeeded ;

@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var scale = setupPrintStorable.Scale ;
       var defaultSettingViewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, activeViewName ) ;
       defaultSettingViewModel.LoadDefaultDb() ;
-      RoutingAppUI.CeedModelDockPanelProvider?.CustomInitiator( uiDocument, document ) ;
+      RoutingAppUI.CeedModelDockPanelProvider?.CustomInitiator( uiDocument ) ;
     }
     
     private static void LoadDefaultRegisterSymbols( Document document )
