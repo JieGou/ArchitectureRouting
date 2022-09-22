@@ -547,11 +547,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           continue ;
 
         var oldDetailCurveUniqueIds = openingStore.DetailUniqueIds.Where( x => opening.Document.GetElement( x ) is { } element && element.OwnerViewId == viewPlan.Id ) ;
-        var detailCurveIds = oldDetailCurveUniqueIds.Select( x => opening.Document.GetElement( x ) ).OfType<Element>().Select( x => x.Id ).ToList() ;
+        var detailCurveIds = oldDetailCurveUniqueIds.Select( x => opening.Document.GetElement( x ) ).Select( x => x.Id ).ToList() ;
         opening.Document.Delete( detailCurveIds ) ;
         
         openingStore.DetailUniqueIds.RemoveAll( x => opening.Document.GetElement( x ) is { } element && element.OwnerViewId == viewPlan.Id ) ;
-        var newDetailCurves = CreateCylindricalShaftCommandBase.CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape ) ;
+        var cableTrayUniqueId = openingStore.CableTrayUniqueIds.FirstOrDefault( x => opening.Document.GetElement( x ) is { } element && element.LevelId == viewPlan.GenLevel.Id ) ?? string.Empty ;
+        var newDetailCurves = CreateCylindricalShaftCommandBase.CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, openingStore.Size, cableTrayUniqueId ) ;
         openingStore.DetailUniqueIds.AddRange( newDetailCurves.Select( x => x ) ) ;
       }
 
