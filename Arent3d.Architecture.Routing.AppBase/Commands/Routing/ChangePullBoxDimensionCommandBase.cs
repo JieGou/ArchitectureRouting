@@ -31,12 +31,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var pullBoxElements = document.GetAllElements<FamilyInstance>()
           .OfCategory( BuiltInCategory.OST_ElectricalFixtures )
           .Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox )
-          .Where( e => Convert.ToBoolean( e.ParametersMap.get_Item( PullBoxRouteManager.IsAutoCalculatePullBoxSizeParameter ).AsString() ) )
           .ToList() ;
 
         foreach ( var pullBoxElement in pullBoxElements )
           PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, pullBoxElement, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel,
-            conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, null, true ) ;
+            conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, null, Convert.ToBoolean( pullBoxElement.ParametersMap.get_Item( PullBoxRouteManager.IsAutoCalculatePullBoxSizeParameter ).AsString() ) ) ;
         MessageBox.Show( ChangePullBoxDimensionSuccesfully ) ;
         return Result.Succeeded ;
       }

@@ -55,6 +55,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       document.Delete( allLimitRackElements.Select( x => x.Id ).ToList() ) ;
     }
 
+    public static void RemoveRackNotationsByRouteNames( Document document, IEnumerable<string>? routeNames )
+    {
+      var racksAndElbows = document.GetAllElementsOfRoute<FamilyInstance>().Where( e => e.GetBuiltInCategory() == BuiltInCategory.OST_CableTrayFitting && e.GetRouteName() is { } routeName && routeNames.Contains( routeName ) ) ;
+      var racksAndElbowsUniqueIds = racksAndElbows.Select( fi => fi.UniqueId ) ;
+      RemoveRackNotation( document, racksAndElbowsUniqueIds ) ;
+    }
+
     private static void RemoveRackNotation( Document document, IEnumerable<string> rackUniqueIds )
     {
       var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ??

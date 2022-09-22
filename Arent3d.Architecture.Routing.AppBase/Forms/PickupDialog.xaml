@@ -13,6 +13,7 @@
     <Window.Resources>
         <cvt:MultiValueOrConverter x:Key="MultiValueOrConverter"/>
         <cvt:ValidValueConverter x:Key="ValidValueConverter"/>
+        <cvt:InvertBooleanConverter x:Key="InvertBooleanConverter"/>
         <Style TargetType="{x:Type Button}">
             <Setter Property="Width" Value="80"/>
             <Setter Property="Height" Value="30"/>
@@ -308,7 +309,8 @@
                     GroupName="ExportType"
                     Content="dat"
                     VerticalAlignment="Center"
-                    Margin="10 0 0 0"/>
+                    Margin="10 0 0 0"
+                    IsChecked="{Binding Path=IsExportCsv,Converter={StaticResource InvertBooleanConverter}}"/>
                 <RadioButton
                     GroupName="ExportType"
                     Content="拾い書"

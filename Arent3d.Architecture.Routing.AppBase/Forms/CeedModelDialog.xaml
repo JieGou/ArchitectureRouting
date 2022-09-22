@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         xmlns:model="clr-namespace:Arent3d.Architecture.Routing.AppBase.Model"

@@ -562,7 +562,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var wireStrip = Regex.IsMatch( detailTableItemModel.WireStrip, @"^\d" ) ? $"x{detailTableItemModel.WireStrip}" : "" ;
         var wiringKey = $"{detailTableItemModel.WireType}{detailTableItemModel.WireSize}{wireStrip}" ;
         // TODO: 600V_はハードコードしているため、このハードコード部分を解消する必要がある。600V_と3kV_の種類、サイズが重なっているため現状場合分けが必要
-        var hiroiMasterModelForWiring = _hiroiMasterModels.FirstOrDefault( x => x.Ryakumeicd.Replace( " ", "" ).Replace("*", "").Replace("600V_", "") == wiringKey ) ;
+        var hiroiMasterModelForWiring = _hiroiMasterModels.FirstOrDefault( x => FormatRyakumeicd(x.Ryakumeicd) == wiringKey ) ;
         if ( null != hiroiMasterModelForWiring ) {
           for ( var i = 0 ; i < int.Parse(detailTableItemModel.WireBook) ; i++ ) {
             materialCodes.Add(new MaterialCodeInfo (hiroiMasterModelForWiring.Buzaicd + $"-{materialCodes.Count + 1}", hiroiMasterModelForWiring.Kikaku, "1" ));
@@ -581,6 +581,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
       return materialCodes ;
+    }
+
+    public static string FormatRyakumeicd( string ryakumeicd )
+    {
+      return ryakumeicd.Replace( " ", "" ).Replace( "*", "" ).Replace( "600V_", "" ) ;
     }
     
     private List<MaterialCodeInfo> GetMaterialCodes( List<string> plumbingInfos, int index )
@@ -973,24 +978,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void ExportFile( Window window )
     {
       try {
-        if ( IsExportCsv ) {
-          if ( ! _pickUpModels.Any() ) return ;
+        if ( ! _pickUpModels.Any() ) return ;
 
-          var pickUpModels = new List<PickUpItemModel>() ;
-          if ( _equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
-            pickUpModels.AddRange( _pickUpModels.Where( p=> p.EquipmentType ==  ProductType.Conduit.GetFieldName() || p.EquipmentType == ProductType.Cable.GetFieldName()) ) ;
-          }
-
-          if ( _equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
-            var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
-            pickUpModels.AddRange( pickUpConnectors ); 
-          }
-          
-          var pickUpReportViewModel = new PickUpReportViewModel( _document, pickUpModels ) ;
-          
-          var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
-          dialog.ShowDialog() ;
+        var pickUpModels = new List<PickUpItemModel>() ;
+        if ( _equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
+          pickUpModels.AddRange( _pickUpModels.Where( p=> p.EquipmentType ==  ProductType.Conduit.GetFieldName() || p.EquipmentType == ProductType.Cable.GetFieldName()) ) ;
         }
+
+        if ( _equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
+          var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ) ;
+          pickUpModels.AddRange( pickUpConnectors ); 
+        }
+        
+        var pickUpReportViewModel = new PickUpReportViewModel( _document, pickUpModels, IsExportCsv ) ;
+        var dialog = new PickUpReportDialog( pickUpReportViewModel ) ;
+        dialog.ShowDialog() ;
       }
       catch ( Exception ex ) {
         MessageBox.Show( "Export data failed because " + ex, "Error Message" ) ;

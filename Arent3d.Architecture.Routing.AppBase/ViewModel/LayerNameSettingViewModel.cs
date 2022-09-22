@@ -7,12 +7,16 @@ using System.Reflection ;
 using System.Text ;
 using System.Windows ;
 using System.Windows.Forms ;
+using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
+using Color = Autodesk.Revit.DB.Color ;
 using MessageBox = System.Windows.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -25,7 +29,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly string _settingFilePath ;
 
     public ObservableCollection<Layer> Layers { get ; }
-    
+    private List<Layer> RemovedLayers { get ; set ; }
+    public List<AutoCadColorsManager.AutoCadColor> AutoCadColors { get ; }
+
     public string LayerNames { get; set ; }
 
     public RelayCommand<Window> ExportFileDwgCommand => new(ExportDwg) ;
@@ -36,28 +42,39 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _settingFilePath = GetSettingPath() ;
       _newLayerNames = new List<Layer>() ;
       _oldLayerNames = new List<Layer>() ;
+      AutoCadColors = AutoCadColorsManager.GetAutoCadColorDict() ;
       Layers = new ObservableCollection<Layer>() ;
-      LayerNames = String.Empty ;
-      var layers = GetLayerNames( _settingFilePath ) ;
+      RemovedLayers = new List<Layer>() ;
+      LayerNames = string.Empty ;
+      var layers = GetLayers( _settingFilePath ) ;
       if ( ! layers.Any() ) return ;
-      _newLayerNames = layers ;
-      _oldLayerNames = layers.Select( x => x.Copy() ).ToList() ;
-      ;
-      SetDataSource( layers ) ;
+      SetDataSource( layers, AutoCadColors ) ;
     }
 
-    private void SetDataSource( List<Layer> layers )
+    private void SetDataSource( IEnumerable<Layer> layers, IReadOnlyCollection<AutoCadColorsManager.AutoCadColor> autoCadColors )
     {
       Layers.Clear() ;
       foreach ( var layer in layers ) {
+        if ( string.IsNullOrEmpty( layer.Index ) ) {
+          layer.Index = AutoCadColorsManager.NoColor ;
+        }
+        else {
+          var solidColor = autoCadColors.FirstOrDefault( c => c.Index == layer.Index )?.SolidColor ?? new SolidColorBrush() ;
+          layer.SolidColor = solidColor ;
+        }
+
         Layers.Add( layer ) ;
+        _newLayerNames.Add( layer ) ;
+        _oldLayerNames.Add( new Layer( layer.LayerName, layer.FullFamilyName, layer.FamilyName, layer.FamilyType, layer.Index ) ) ;
       }
     }
 
-    private string GetSettingPath()
+    private string GetSettingPath( bool isOriginFile = true )
     {
       string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "resources" )  ;
-      var layerSettingsFileName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile".GetDocumentStringByKeyOrDefault( _document, "Arent-export-layers.txt" ) ;
+      var layerSettingsFileName = isOriginFile 
+        ? "Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile".GetDocumentStringByKeyOrDefault( _document, "Arent-export-layers.txt" )
+        : "Electrical.App.Commands.Initialization.ExportDWGCommand.ModifyArentExportLayersFile".GetDocumentStringByKeyOrDefault( _document, "Modify-Arent-export-layers.txt" ) ;
       var filePath = Path.Combine( resourcesPath, layerSettingsFileName ) ;
 
       return filePath ;
@@ -70,21 +87,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
       var filePath = Path.GetDirectoryName( saveFileDialog.FileName ) ;
       var fileName = Path.GetFileName( saveFileDialog.FileName ) ;
-      DWGExportOptions options = new() { LayerMapping = _settingFilePath } ;
-      List<ElementId> viewIds = new() { activeView.Id } ;
       // replace text
       var encoding = GetEncoding( _settingFilePath ) ;
-      ReplaceLayerNames( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
+      var settingFilePath = ReplaceLayerNamesAndColors( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
       
-      // Delete layers
-      DeleteLayers(LayerNames) ;
-
+      DWGExportOptions options = new() { LayerMapping = settingFilePath } ;
+      List<ElementId> viewIds = new() { activeView.Id } ;
       using var transaction = new Transaction( _document ) ;
       transaction.Start( "Override Element Graphic" ) ;
-      var overrideGraphic = new OverrideGraphicSettings() ;
-      overrideGraphic.SetProjectionLineColor( new Color( 255, 255, 255 ) ) ;
-      var curveElements = _document.GetAllInstances<CurveElement>(_document.ActiveView).Where(x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForSymbolName).ToList() ;
-      curveElements.ForEach(x => _document.ActiveView.SetElementOverrides(x.Id, overrideGraphic));
+      var curveElements = SetCurveElementOverrides() ;
+      var elementsOverrideGraphic = SetElementOverrides() ;
       transaction.Commit() ;
       
       // export dwg
@@ -92,57 +104,148 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       transaction.Start( "Reset Element Graphic" ) ;
       var defaultGraphic = new OverrideGraphicSettings() ;
-      curveElements.ForEach(x => _document.ActiveView.SetElementOverrides(x.Id, defaultGraphic));
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, defaultGraphic ) ) ;
+      elementsOverrideGraphic.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, defaultGraphic ) ) ;
       transaction.Commit() ;
 
       // close window
       window.DialogResult = true ;
       window.Close() ;
     }
-    
-    private void DeleteLayers( string stringListLayer )
+
+    private List<CurveElement> SetCurveElementOverrides()
     {
-      var listLayer = stringListLayer.Split( ',' ).Select( p => p.Trim() ).ToList() ;
-      var categories = _document.Settings.Categories.Cast<Category>().ToList() ;
+      var elementsOverrideGraphic = new List<CurveElement>() ;
+      var overrideGraphic = new OverrideGraphicSettings() ;
       
-      foreach ( var category in categories ) {
-        List<Category> layers = category.SubCategories.Cast<Category>().Where( x=>listLayer.Contains( x.Name  )).ToList() ;
-        if ( layers.Any() ) {
-          foreach ( var layer in layers ) {
-            _document.Delete( layer.Id ) ;
-          }
-        }
+      var color = new Color( 255, 255, 255 ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      var curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForSymbolName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+      
+      var subCategoryForCylindricalShaftColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == CreateCylindricalShaftCommandBase.SubCategoryForCylindricalShaftName )?.Index ?? AutoCadColorsManager.NoColor ;
+      color = GetElementColor( subCategoryForCylindricalShaftColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForCylindricalShaftName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+      
+      var subCategoryForDirectionCylindricalShaftColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == CreateCylindricalShaftCommandBase.SubCategoryForDirectionCylindricalShaftName )?.Index ?? AutoCadColorsManager.NoColor ;
+      color = GetElementColor( subCategoryForDirectionCylindricalShaftColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForDirectionCylindricalShaftName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+      
+      var boundaryCableTrayColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName )?.Index ?? AutoCadColorsManager.NoColor ;
+      color = GetElementColor( boundaryCableTrayColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+
+      return elementsOverrideGraphic ;
+    }
+    
+    private List<Element> SetElementOverrides()
+    {
+      var elementsOverrideGraphic = new List<Element>() ;
+      var electricalEquipmentTagsFamilyName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalEquipmentTags".GetDocumentStringByKeyOrDefault( _document, "Electrical Equipment Tags" ) ;
+      var electricalFixtureTagsFamilyName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalFixtureTags".GetDocumentStringByKeyOrDefault( _document, "Electrical Fixture Tags" ) ;
+      var electricalEquipmentTagsColorIndex = _newLayerNames.SingleOrDefault( l => l.FamilyName == electricalEquipmentTagsFamilyName )?.Index ?? AutoCadColorsManager.NoColor ;
+      var electricalFixtureTagsColorIndex = _newLayerNames.SingleOrDefault( l => l.FamilyName == electricalFixtureTagsFamilyName )?.Index ?? AutoCadColorsManager.NoColor ;
+      var symbolContentTags = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtureTags ).ToList() ;
+      var symbolContentEquipmentTags = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalEquipmentTags ).ToList() ;
+
+      var overrideGraphic = new OverrideGraphicSettings() ;
+      var color = GetElementColor( electricalEquipmentTagsColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      symbolContentEquipmentTags.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( symbolContentEquipmentTags ) ;
+      
+      color = GetElementColor( electricalFixtureTagsColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      symbolContentTags.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( symbolContentTags ) ;
+
+      return elementsOverrideGraphic ;
+    }
+
+    private Color GetElementColor( string colorIndex )
+    {
+      switch ( colorIndex ) {
+        case "0":
+          return new Color( 255, 255, 255 ) ;
+        case "7":
+        case AutoCadColorsManager.NoColor:
+          return new Color( 0, 0, 0 ) ;
+        default:
+          var index = int.Parse( colorIndex ) ;
+          var color = AutoCadColorsManager.AutoCadColorDict[ index ] ;
+          return new Color( color.R, color.G, color.B ) ;
       }
     }
-  
 
-
-    private static List<Layer> GetLayerNames( string filePath )
+    private List<Layer> GetLayers( string filePath )
     {
       const string exceptString = "Ifc" ;
-      var names = new List<Layer>() ;
-      using ( var reader = File.OpenText( filePath ) ) {
-        while ( reader.ReadLine() is { } line ) {
-          if ( line[ 0 ] == '#' ) continue ;
-          var words = line.Split( '\t' ) ;
-          var familyName = words[ 0 ] ;
-          var typeOfLayer = words[ 1 ] ;
-          var layerName = words[ 2 ] ;
-          var familyType = "" ;
-          if ( typeOfLayer != "" ) {
-            familyType = $" ({typeOfLayer})" ;
-          }
+      var layers = GetLayersFromFile( filePath ) ;
+      var modifyFilePath = GetSettingPath( false ) ;
+      var modifyLayers = GetLayersFromFile( modifyFilePath ) ;
 
-          names.Add( new Layer( layerName, familyName + familyType ) ) ;
+      RemovedLayers = layers.Distinct()
+        .Where( x => string.IsNullOrEmpty( x.LayerName ) )
+        .ToList() ;
+
+      var filterLayers = layers.Distinct()
+        .Where( x => ! x.LayerName.Contains( exceptString ) && ! string.IsNullOrEmpty( x.LayerName ) )
+        .OrderBy( x => x.LayerName )
+        .ToList() ;
+
+      if ( ! modifyLayers.Any() ) return filterLayers ;
+
+      var modifyFilterLayers = modifyLayers.Distinct()
+        .Where( x => ! x.LayerName.Contains( exceptString ) )
+        .ToList() ;
+      
+      foreach ( var layer in filterLayers ) {
+        var modifyLayer = modifyFilterLayers.SingleOrDefault( l => l.FamilyName + l.FamilyType == layer.FamilyName + layer.FamilyType ) ;
+        if ( modifyLayer == null ) {
+          layer.LayerName = string.Empty ;
+          layer.Index = AutoCadColorsManager.NoColor ;
         }
-
-        reader.Close() ;
+        else {
+          layer.LayerName = modifyLayer.LayerName ;
+          layer.Index = modifyLayer.Index ;
+        }
       }
 
-      var filterNames = names.Distinct().Where( x => ! x.LayerName.Contains( exceptString ) 
-                                                     && ! string.IsNullOrEmpty( x.LayerName ) ).GroupBy( x => x.LayerName ).Select( ng => new Layer { LayerName = ng.First().LayerName, FamilyName = string.Join( "\n", ng.Select( x => x.FamilyName ).ToArray() ) } ).ToList() ;
+      return filterLayers ;
+    }
 
-      return filterNames ;
+    private List<Layer> GetLayersFromFile( string filePath )
+    {
+      var layers = new List<Layer>() ;
+      if ( ! File.Exists( filePath ) ) return layers ;
+      using var reader = File.OpenText( filePath ) ;
+      while ( reader.ReadLine() is { } line ) {
+        if ( line[ 0 ] == '#' ) continue ;
+        var words = line.Split( '\t' ) ;
+        var familyName = words[ 0 ] ;
+        var typeOfLayer = words[ 1 ] ;
+        var layerName = words[ 2 ] ;
+        var colorIndex = words.Length > 3 ? words[ 3 ] : string.Empty ;
+        var familyType = "" ;
+        if ( typeOfLayer != "" ) {
+          familyType = $" ({typeOfLayer})" ;
+        }
+
+        layers.Add( new Layer( layerName, familyName + familyType, familyName, typeOfLayer, colorIndex ) ) ;
+      }
+
+      reader.Close() ;
+      return layers ;
     }
 
     private static Encoding GetEncoding( string filename )
@@ -162,42 +265,69 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return Encoding.ASCII ;
     }
 
-    private static void ReplaceLayerNames( IReadOnlyList<Layer> oldLayerNames, IReadOnlyList<Layer> newLayerNames, string filePath, Encoding encoding )
+    private string ReplaceLayerNamesAndColors( IReadOnlyList<Layer> oldLayerNames, IReadOnlyList<Layer> newLayerNames, string filePath, Encoding encoding )
     {
+      var modifyFilePath = GetSettingPath( false ) ;
       try {
-        var hasChange = false ;
         var content = File.ReadAllText( filePath ) ;
+        if ( RemovedLayers.Any() ) {
+          foreach ( var layer in RemovedLayers ) {
+            var oldValue = layer.FamilyName + ( string.IsNullOrEmpty( layer.FamilyType ) ? string.Empty : '\t' + layer.FamilyType ) ;
+            var index = content.IndexOf( oldValue, StringComparison.Ordinal ) ;
+            if ( index < 0 ) continue ;
+            var length = content.Substring( index ).IndexOf( '\n' ) ;
+            content = content.Substring( 0, index ) + content.Substring( index + length + 1 ) ;
+          }
+        }
+        
         for ( var i = 0 ; i < newLayerNames.Count() ; i++ ) {
-          if ( oldLayerNames[ i ].LayerName == newLayerNames[ i ].LayerName ) continue ;
-          hasChange = true ;
-          content = content.Replace( oldLayerNames[ i ].LayerName, newLayerNames[ i ].LayerName ) ;
+          var oldValue = oldLayerNames[ i ].FamilyName + ( string.IsNullOrEmpty( oldLayerNames[ i ].FamilyType ) ? string.Empty : '\t' + oldLayerNames[ i ].FamilyType ) ;
+          var index = content.IndexOf( oldValue, StringComparison.Ordinal ) ;
+          if ( index < 0 ) continue ;
+          var length = content.Substring( index ).IndexOf( '\n' ) ;
+          if ( string.IsNullOrEmpty( newLayerNames[ i ].LayerName ) ) {
+            content = content.Substring( 0, index ) + content.Substring( index + length + 1 ) ;
+          }
+          else {
+            oldValue = content.Substring( index, length - 1 ) ;
+            var newValue = string.Join( "\t", newLayerNames[i].FamilyName, newLayerNames[i].FamilyType, newLayerNames[ i ].LayerName ) + ( newLayerNames[ i ].Index == AutoCadColorsManager.NoColor ? string.Empty : '\t' + newLayerNames[ i ].Index ) ;
+            content = content.Replace( oldValue, newValue ) ;
+          }
         }
 
-        if ( hasChange ) File.WriteAllText( filePath, content, encoding ) ;
+        if ( ! File.Exists( modifyFilePath ) ) {
+          using var fileStream = File.Create( modifyFilePath ) ;
+          fileStream.Close() ;
+        }
+
+        File.WriteAllText( modifyFilePath, content, encoding ) ;
       }
       catch ( Exception e ) {
         MessageBox.Show( e.Message, "Error" ) ;
+        return filePath ;
       }
+
+      return modifyFilePath ;
     }
   }
 
   public class Layer
   {
     public string LayerName { get ; set ; }
-
+    public string FullFamilyName { get ; set ; }
     public string FamilyName { get ; set ; }
+    public string FamilyType{ get ; set ; }
+    public string Index { get ; set ; }
+    public SolidColorBrush SolidColor { get ; set ; }
 
-
-    public Layer()
-    {
-      LayerName = string.Empty ;
-      FamilyName = string.Empty ;
-    }
-
-    public Layer( string layerName, string familyName )
+    public Layer( string layerName, string fullFamilyName, string familyName, string familyType, string colorIndex )
     {
       LayerName = layerName ;
+      FullFamilyName = fullFamilyName ;
       FamilyName = familyName ;
+      FamilyType = familyType ;
+      Index = colorIndex ;
+      SolidColor = new SolidColorBrush() ;
     }
   }
 }

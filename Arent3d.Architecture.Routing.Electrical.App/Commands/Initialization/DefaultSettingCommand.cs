@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   {
     protected override void UpdateCeedDockPaneDataContext( UIDocument uiDocument )
     {
-      RoutingAppUI.CeedModelDockPanelProvider?.CustomInitiator( uiDocument, uiDocument.Document ) ;
+      RoutingAppUI.CeedModelDockPanelProvider?.CustomInitiator( uiDocument ) ;
     }
   }
 }

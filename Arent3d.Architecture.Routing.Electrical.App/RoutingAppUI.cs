@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       // create ceed dockable pane
       var uiApplication = new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ;
       var uiDocument = uiApplication.ActiveUIDocument ;
-      CeedModelDockPanelProvider?.CustomInitiator( uiDocument, uiDocument.Document ) ;
+      CeedModelDockPanelProvider?.CustomInitiator( uiDocument ) ;
       CeedModelDockPanelProvider?.HideDockPane( uiApplication ) ;
     }
 
