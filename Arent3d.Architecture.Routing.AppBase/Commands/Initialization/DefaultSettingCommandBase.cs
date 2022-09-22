@@ -10,6 +10,7 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
@@ -474,10 +475,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var level = viewPlan.GenLevel ;
           var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
           var baseLengthOfLine = scale / 100d ;
+          var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
           var pullBoxElements = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id ).ToList() ;
 
           foreach ( var pullBoxElement in pullBoxElements ) {
-            PullBoxRouteManager.ResizePullBoxAndRelatedConduits( document, baseLengthOfLine, pullBoxElement ) ;
+            var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBoxElement, routes ) ;
+            var pullBoxLocation = ( pullBoxElement.Location as LocationPoint )?.Point! ;
+            var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
+            PullBoxRouteManager.ResizePullBoxAndRelatedConduits( baseLengthOfLine, pullBoxElement, conduitsRelatedPullBox ) ;
           }
 
           #endregion

@@ -1070,8 +1070,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       foreach ( var pullBoxElement in pullBoxElements ) {
         var (pullBox, position) = pullBoxElement ;
-        var positionLabel = position != null ? new XYZ( position.X - NotationOfPullBoxXAxis * baseLengthOfLine, position.Y + NotationOfPullBoxYAxis * baseLengthOfLine, position.Z ) : null ;
-        ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, DefaultPullBoxLabel, positionLabel, true ) ;
+        ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, pullBox, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, DefaultPullBoxLabel, position, true ) ;
       }
     }
 
@@ -1114,37 +1113,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( isAutoCalculatePullBoxSize )
         storageDetailSymbolService?.Data.DetailSymbolData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
 
-      ResizePullBoxAndRelatedConduits( document, baseLengthOfLine, pullBox ) ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var routesRelatedPullBox = GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBox, routes ) ;
+      var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point! ;
+      var conduitsRelatedPullBox = GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
+      ResizePullBoxAndRelatedConduits( baseLengthOfLine, pullBox, conduitsRelatedPullBox ) ;
+      if ( positionLabel != null )
+        positionLabel = GetPullBoxPosition( baseLengthOfLine, positionLabel, conduitsRelatedPullBox ) ;
 
       if ( storagePullBoxInfoServiceByLevel == null ) return ;
-      
+
       textLabel = GetPullBoxTextBox( depth, height, defaultLabel ) ;
       if ( positionLabel != null )
         CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
       else if ( storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.All( pullBoxInfoItemModel => pullBoxInfoItemModel.PullBoxUniqueId != pullBox.UniqueId ) ) {
-        var position = (pullBox.Location as LocationPoint)?.Point ;
-        positionLabel = position != null ? new XYZ( position.X - NotationOfPullBoxXAxis * baseLengthOfLine, position.Y + NotationOfPullBoxYAxis * baseLengthOfLine, position.Z ) : null ;
-        if ( positionLabel != null )
-          CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
-      } else if ( isAutoCalculatePullBoxSize )
+        var position = ( pullBox.Location as LocationPoint )?.Point! ;
+        positionLabel = GetPullBoxPosition( baseLengthOfLine, position, conduitsRelatedPullBox ) ;
+        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionLabel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
+      }
+      else if ( isAutoCalculatePullBoxSize )
         ChangeLabelOfPullBox( document, storagePullBoxInfoServiceByLevel, pullBox, textLabel, isAutoCalculatePullBoxSize ) ;
     }
 
-    public static void ResizePullBoxAndRelatedConduits( Document document, double baseLengthOfLine, FamilyInstance pullBox )
+    public static void ResizePullBoxAndRelatedConduits( double baseLengthOfLine, Element pullBox, List<( Conduit Conduit, int EndPointIndex )> conduitsRelatedPullBox )
     {
       // Update width, depth parameter for pull box
       var oldDepthByScale = pullBox.GetParameter( DepthParameter )?.AsDouble() ?? -1d ;
       var depthByScale = ( DefaultDepthOfPullBox * baseLengthOfLine ).MillimetersToRevitUnits() ;
       pullBox.GetParameter( ScaleFactorParameter )?.Set( baseLengthOfLine ) ;
 
-      //Resize conduits related pull box
-      var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point ;
-      if ( pullBoxLocation == null || ! ( oldDepthByScale > 0 ) ) return ;
-      
+      // Resize conduits related pull box
+      if ( oldDepthByScale <= 0 ) return ;
+
       var depthDifferenceByScale = ( depthByScale - oldDepthByScale ) / 2 ;
-      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-      var routesRelatedPullBox = GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBox, routes ) ;
-      var conduitsRelatedPullBox = GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
+      if ( depthDifferenceByScale <= 0 ) return ;
 
       foreach ( var c in conduitsRelatedPullBox ) {
         if ( c.Conduit.Location is not LocationCurve { Curve: Line line } curve ) continue ;
@@ -1174,7 +1176,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    private static List<(Conduit Conduit, int EndPointIndex)> GetConduitsRelatedPullBox( Document document, XYZ pullBoxLocation, List<Route> routesRelatedPullBox )
+    public static XYZ GetPullBoxPosition( double baseLengthOfLine, XYZ positionLabel, List<( Conduit Conduit, int EndPointIndex )> conduitsRelatedPullBox )
+    {
+      var defaultDirections = new List<XYZ> { new(-1, 0, 0), new(1, 0, 0), new(0, 1, 0), new(0, -1, 0) } ;
+      var conduitDirections = new List<XYZ>() ;
+      foreach ( var c in conduitsRelatedPullBox ) {
+        if ( c.Conduit.Location is not LocationCurve { Curve: Line line } ) continue ;
+
+        conduitDirections.Add( c.EndPointIndex == 0 ? line.Direction : line.Direction.Negate() ) ;
+      }
+
+      var textNoteDirection = defaultDirections.FirstOrDefault( d => ! conduitDirections.Any( cd => cd.IsAlmostEqualTo( d ) ) ) ;
+      if ( textNoteDirection == null )
+        positionLabel = new XYZ( positionLabel.X + 165d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y + 560d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+      else if ( textNoteDirection.Y is 1 )
+        positionLabel = new XYZ( positionLabel.X - 275d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y + 560d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+      else if ( textNoteDirection.Y is -1 )
+        positionLabel = new XYZ( positionLabel.X - 275d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y - 160d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+      else if ( textNoteDirection.X is 1 )
+        positionLabel = new XYZ( positionLabel.X + 165d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y + 200d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+      else if ( textNoteDirection.X is -1 )
+        positionLabel = new XYZ( positionLabel.X - 715d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Y + 200d.MillimetersToRevitUnits() * baseLengthOfLine, positionLabel.Z ) ;
+      return positionLabel ;
+    }
+
+    public static List<(Conduit Conduit, int EndPointIndex)> GetConduitsRelatedPullBox( Document document, XYZ pullBoxLocation, List<Route> routesRelatedPullBox )
     {
       var conduitsRelatedPullBox = new List<(Conduit Conduit, int EndPointIndex)>() ;
       foreach ( var routeRelatedPullBox in routesRelatedPullBox ) {
@@ -1202,7 +1228,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return conduitsRelatedPullBox ;
     }
 
-    private static List<Route> GetRoutesRelatedPullBoxByNearestEndPoints( Document document, Element pullBox, RouteCache routes )
+    public static List<Route> GetRoutesRelatedPullBoxByNearestEndPoints( Document document, Element pullBox, RouteCache routes )
     {
       var routesRelatedPullBox = new List<Route>() ;
       var allConduits = document.GetAllElements<Conduit>().OfCategory( BuiltInCategory.OST_Conduit ).EnumerateAll() ;

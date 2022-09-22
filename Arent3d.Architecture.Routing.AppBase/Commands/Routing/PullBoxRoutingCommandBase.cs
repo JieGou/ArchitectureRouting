@@ -55,10 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var level = ( document.GetElement( pickInfo.Element.GetLevelId() ) as Level ) ! ;
       var heightConnector = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightConnector.MillimetersToRevitUnits() ;
       var heightWire = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightWire.MillimetersToRevitUnits() ;
-      
-      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
-      var baseLengthOfLine = scale / 100d ;
-      var positionLabel = new XYZ( originX - PullBoxRouteManager.NotationOfPullBoxXAxis * baseLengthOfLine, originY + PullBoxRouteManager.NotationOfPullBoxYAxis * baseLengthOfLine, heightConnector ) ;
+      var positionLabel = new XYZ( originX, originY, heightConnector ) ;
 
       return new OperationResult<PickState>( new PickState( pickInfo, null, new XYZ( originX, originY, originZ ), heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, pullBoxViewModel.IsAutoCalculatePullBoxSize, positionLabel, pullBoxViewModel.SelectedPullBox, fromDirection, toDirection, new Dictionary<string, List<string>>() ) ) ;
     }
@@ -80,7 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var route in routeInTheSamePosition ) {
         result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox, pickState.HeightConnector,
           pickState.HeightWire, pickState.RouteDirection, pickState.IsCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex,
-          ref parentAndChildRoute, pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) );
+          ref parentAndChildRoute, pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) ) ;
       }
 
       pickState.ParentAndChildRoute = parentAndChildRoute ;

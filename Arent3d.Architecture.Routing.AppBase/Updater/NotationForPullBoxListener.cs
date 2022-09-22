@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
@@ -55,8 +56,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           if ( pullBoxElement is not FamilyInstance pullBox ) continue ;
           var positionOfPullBox = ( pullBox.Location as LocationPoint )?.Point ;
 
-          var positionOfTextNoteForPullBox = positionOfPullBox != null ? new XYZ( positionOfPullBox.X - PullBoxRouteManager.NotationOfPullBoxXAxis * baseLengthOfLine, positionOfPullBox.Y + PullBoxRouteManager.NotationOfPullBoxYAxis * baseLengthOfLine, positionOfPullBox.Z ) : null ;
-          if ( positionOfTextNoteForPullBox == null ) continue ;
+          if ( positionOfPullBox == null ) continue ;
+
+          var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+          var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBox, routes ) ;
+          var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point! ;
+          var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
+          var positionOfTextNoteForPullBox = PullBoxRouteManager.GetPullBoxPosition( baseLengthOfLine, positionOfPullBox, conduitsRelatedPullBox ) ;
 
           var textNoteOfPullBoxUniqueId = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.SingleOrDefault( t => t.PullBoxUniqueId == pullBox.UniqueId )?.TextNoteUniqueId ;
           if ( string.IsNullOrEmpty( textNoteOfPullBoxUniqueId ) ) continue ;
