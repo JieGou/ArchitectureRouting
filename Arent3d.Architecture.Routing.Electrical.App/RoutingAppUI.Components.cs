@@ -238,50 +238,33 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [SplitButton( "arent3d.architecture.routing.drawing.rack", TitleKey = "Electrical.App.Panels.Routing.Drawing.Rack" )]
         private static class Rack
         {
-          [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
-          private static class NewLimitRackCommandButton
-          {
-          }
-          
-          [Button( typeof( NewLimitRackSelectionRangeCommand ), OnlyInitialized = true )]
-          private static class NewLimitRackSelectionRangeCommandButton
-          {
-          }
-          
-          [Button( typeof( NewLimitRackCircleCommand ), OnlyInitialized = true )]
-          private static class NewLimitRackCircleCommandButton
-          {
-          }
-          
-          
-
           [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
           private static class NewRackCommandButton
           {
           }
-
-          [Button( typeof( NewRackFromToCommand ), OnlyInitialized = true )]
-          private static class NewRackFromToCommandButton
-          {
-          }
-
-          [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
-          private static class EraseAllLimitRackCommandButton
-          {
-          }
           
-          [Button( typeof( EraseSelectedLimitRacksCommand ), OnlyInitialized = true )]
-          private static class EraseSelectedLimitRacksCommandButton
-          {
-          }
-          
-          [Button( typeof( RackSpaceCommand ), OnlyInitialized = true )]
-          private static class RackGuidCommandButton
+          [Button( typeof( NewRackSelectionRangeCommand ), OnlyInitialized = true )]
+          private static class NewRackSelectionRangeCommandButton
           {
           }
           
           [Button( typeof( CreateRackBySelectedConduitsCommand ), OnlyInitialized = true )]
           private static class CreateRackBySelectedConduitsCommandButton
+          {
+          }
+
+          [Button( typeof( EraseAllRackCommand ), OnlyInitialized = true )]
+          private static class EraseAllRackCommandButton
+          {
+          }
+          
+          [Button( typeof( EraseSelectedRackCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedRackCommandButton
+          {
+          }
+          
+          [Button( typeof( RackSpaceCommand ), OnlyInitialized = true )]
+          private static class RackGuidCommandButton
           {
           }
 

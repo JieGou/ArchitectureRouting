@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
 
     private static FamilyInstance InsertPassPointElement( Document document, PointOnRoutePicker.PickInfo pickInfo )
     {
-      var (fromElementId, toElementId) = NewRackCommandBase.GetFromAndToConnectorUniqueId( pickInfo.Element ) ;
+      var (fromElementId, toElementId) = RackCommandBase.GetFromAndToConnectorUniqueId( pickInfo.Element ) ;
       var (fromConnectorUniqueId, toConnectorUniqueId) = GetFromAndToConnectorUniqueId( document, fromElementId, toElementId ) ;
       var passPoint = document.AddPassPoint( pickInfo.Route.RouteName, pickInfo.Position, pickInfo.RouteDirection, pickInfo.Radius, pickInfo.Element.GetLevelId() ) ;
       passPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toConnectorUniqueId ) ;

@@ -9,7 +9,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     public IList<string> RackIds { get ; } = new List<string>() ;
     public IList<Element> CableTrays { get ; } = new List<Element>() ;
     public IList<Element> CableTrayFittings { get ; } = new List<Element>() ;
-    public IList<string> RackDetailCurveIds { get ; } = new List<string>() ;
 
     public RackMap( string routeName ) => RouteName = routeName ;
   }

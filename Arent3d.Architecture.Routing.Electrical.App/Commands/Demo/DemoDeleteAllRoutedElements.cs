@@ -2,7 +2,6 @@ using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -21,7 +20,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-      return document.Transaction( "Delete All Routed Elements", t =>
+      return document.Transaction( "Delete All Routed Elements", _ =>
       {
         var deletingCategories = new HashSet<BuiltInCategory> { BuiltInCategory.OST_Conduit, BuiltInCategory.OST_ConduitFitting, } ;
 
@@ -38,7 +37,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
 
     private void DeleteBoundaryRack( Document document )
     {
-      var curveElements = document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
+      var curveElements = document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
       if ( ! curveElements.Any() )
         return ;
 

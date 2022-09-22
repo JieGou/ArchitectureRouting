@@ -74,7 +74,7 @@
         <string>Import&#xA;PS</string>
 
         <key>Electrical.App.Commands.Rack.CreateRackBySelectedConduitsCommand</key>
-        <string>Manually&#xA;Create Rack</string>
+        <string>Create Rack&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.AllReRouteCommand</key>
         <string>Re-Route&#xA;All</string>
@@ -116,10 +116,10 @@
         <string>CNS Setting</string>
 
         <key>Electrical.App.Commands.Routing.NewLimitRackCommand</key>
-        <string>Create Limit Rack</string>
+        <string>Create Rack For All</string>
         
         <key>Electrical.App.Commands.Routing.NewLimitRackSelectionRangeCommand</key>
-        <string>Create Limit Rack&#xA;(Selection Range)</string>
+        <string>Create Rack For Selection Range</string>
         
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack&#xA;For All</string>
