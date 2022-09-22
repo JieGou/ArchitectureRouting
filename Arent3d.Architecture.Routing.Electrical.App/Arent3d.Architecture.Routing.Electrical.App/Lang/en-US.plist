@@ -508,10 +508,20 @@
         <!-- File Names -->
         <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
         <string>Arent-export-layers.txt</string>
+
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ModifyArentExportLayersFile</key>
+        <string>Modify-Arent-export-layers.txt</string>
         
         <key>Electrical.App.Commands.Initialization.RegisterSymbolFolderPath</key>
         <string>RegisterSymbolFolderPath.txt</string>
-      
+
+        <!-- Family Names -->
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalEquipmentTags</key>
+        <string>Electrical Equipment Tags</string>
+
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalFixtureTags</key>
+        <string>Electrical Fixture Tags</string>
+
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>Grade </string>
