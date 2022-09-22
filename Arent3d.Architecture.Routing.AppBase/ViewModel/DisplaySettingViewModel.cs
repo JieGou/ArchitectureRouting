@@ -187,7 +187,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         foreach ( var legendView in legendViews ) {
           var allElementsInLegendView = new FilteredElementCollector( _document, legendView.Id ) ;
           displaySettingModel.HiddenLegendElementIds.AddRange( allElementsInLegendView.Select( e => e.UniqueId ) ) ;
-          legendView.HideElements( allElementsInLegendView.ToElementIds() ) ;
+          if ( allElementsInLegendView.Any() )
+            legendView.HideElements( allElementsInLegendView.ToElementIds() ) ;
         }
       }
 
