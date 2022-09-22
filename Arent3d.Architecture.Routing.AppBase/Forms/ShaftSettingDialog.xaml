@@ -6,32 +6,40 @@
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d" x:Name="WdShaftSettingDialog"
         WindowStartupLocation="CenterScreen"
-        Title="ShaftSettingDialog" Height="470" Width="340" ResizeMode="NoResize"
+        Title="ShaftSettingDialog" Height="400" Width="340"
         d:DataContext="{d:DesignInstance {x:Type local:DesignShaftSettingViewModel}, IsDesignTimeCreatable=True}">
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Top">
-            <StackPanel Orientation="Horizontal" >
-                <Label Content="階間" Width="100"/>
-                <Label Content="シャフト作成" Width="100"/>
-                <Label Content="ラック作成" Width="100"/>
-            </StackPanel>
-            <ListBox ItemsSource="{Binding Shafts}" Height="300" 
-                     ScrollViewer.HorizontalScrollBarVisibility="Hidden" 
-                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                     ScrollViewer.CanContentScroll="True">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="{Binding BetweenFloors}" Width="100"/>
-                            <CheckBox IsChecked="{Binding IsShafted}" Width="100" VerticalAlignment="Center"/>
-                            <CheckBox IsChecked="{Binding IsRacked}" IsEnabled="{Binding IsShafted}" Width="70" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <DataGrid ItemsSource="{Binding Shafts}" MinHeight="250" 
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto" 
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ScrollViewer.CanContentScroll="True"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                        <DataGridTextColumn Header="階間" Binding="{Binding BetweenFloors}" IsReadOnly="True" CanUserSort="False" MinWidth="150" Width="*"/>
+                        <DataGridTemplateColumn Header="シャフト作成" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsShafted, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="ラック作成" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsRacked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                              IsEnabled="{Binding IsShafted, Mode=OneWay}"
+                                              HorizontalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
         </StackPanel>
-        <StackPanel DockPanel.Dock="Bottom">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Orientation="Horizontal" Margin="10">
+        <StackPanel DockPanel.Dock="Bottom" VerticalAlignment="Top" HorizontalAlignment="Center" >
+            <StackPanel Orientation="Horizontal" Margin="10">
                 <Label Content="ラックサイズ" Width="80"/>
                 <ComboBox IsEditable="True" Width="200"
                           ItemsSource="{Binding Sizes}"
