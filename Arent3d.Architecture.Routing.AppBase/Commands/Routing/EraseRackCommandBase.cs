@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class EraseRackCommandBase : IExternalCommand
   {
+    public const string BoundaryCableTrayLineStyleName = "BoundaryCableTray" ;
     private const string EraseLimitRackTransactionName = "Erase Limit Rack" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )

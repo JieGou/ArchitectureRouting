@@ -1,4 +1,3 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit.UI ;
@@ -37,7 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       using var transaction = new Transaction( document ) ;
       transaction.Start( "Delete Rack Notations" ) ;
       try {
-        EraseLimitRackCommandBase.RemoveRackNotationsByRouteNames( document, routeNames ) ;
+        EraseRackCommandBase.RemoveRackNotationsByRouteNames( document, routeNames ) ;
       }
       catch {
         // Ignore

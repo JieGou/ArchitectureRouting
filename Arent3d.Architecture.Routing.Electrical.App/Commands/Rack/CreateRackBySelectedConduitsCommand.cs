@@ -133,7 +133,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ) ;
 
       // create annotations for racks
-      NewRackCommandBase.CreateNotationForRack( document, uiApp.Application, modifiedRackLists.OfType<FamilyInstance>().Where(fi => fi.IsRack()) ) ;
+      RackCommandBase.CreateNotationForRack( document, modifiedRackLists.OfType<FamilyInstance>().Where(fi => fi.IsRack()) ) ;
       
       createRackTransaction.Commit() ;
       return Result.Succeeded ;
