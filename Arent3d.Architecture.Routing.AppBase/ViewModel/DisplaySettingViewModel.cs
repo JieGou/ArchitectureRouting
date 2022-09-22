@@ -13,6 +13,7 @@ using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Revit.UI.Forms ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
@@ -61,28 +62,53 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         var result = _document.TransactionGroup( "TransactionName.Commands.Initialization.DisplaySetting".GetAppStringByKeyOrDefault( "Display Setting" ), _ =>
         {
+          using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
+          progress.Message = "Processing......." ;
           var views = _document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
 
           using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
           setupTransaction.Start() ;
 
-          SetupDisplayWiring( views, _dataDisplaySettingModel.IsWiringVisible ) ;
-          SetupDisplayDetailSymbol( views, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
-          SetupDisplayPullBox( views, _dataDisplaySettingModel.IsPullBoxVisible ) ;
-          SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
-          SetupDisplayLegend( views, _dataDisplaySettingModel ) ;
+          using ( var progressData = progress.Reserve( 0.2 ) ) {
+            SetupDisplayWiring( views, _dataDisplaySettingModel.IsWiringVisible ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+          using ( var progressData = progress.Reserve( 0.1 ) ) {
+            SetupDisplayDetailSymbol( views, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+          using ( var progressData = progress.Reserve( 0.1 ) ) {
+            SetupDisplayPullBox( views, _dataDisplaySettingModel.IsPullBoxVisible ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+          using ( var progressData = progress.Reserve( 0.1 ) ) {
+            SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+          using ( var progressData = progress.Reserve( 0.2 ) ) {
+            SetupDisplayLegend( views, _dataDisplaySettingModel ) ;
+            progressData.ThrowIfCanceled() ;
+          }
 
           setupTransaction.Commit() ;
 
-          _document.RefreshActiveView() ;
+          using ( var progressData = progress.Reserve( 0.2 ) ) {
+            _document.RefreshActiveView() ;
           
-          // Refresh viewports
-          var viewportsOfActiveView = _document.GetAllElements<Viewport>().Where( vp => vp.OwnerViewId == _document.ActiveView.Id ).Select( vp => _document.GetElement( vp.ViewId ) as View ) ;
-          _document.RefreshViews( viewportsOfActiveView ) ;
-
-          SaveDisplaySettingByGradeStorageService() ;
-
-          UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
+            // Refresh viewports
+            var viewportsOfActiveView = _document.GetAllElements<Viewport>().Where( vp => vp.OwnerViewId == _document.ActiveView.Id ).Select( vp => _document.GetElement( vp.ViewId ) as View ) ;
+            _document.RefreshViews( viewportsOfActiveView ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+          
+          using ( var progressData = progress.Reserve( 0.1 ) ) {
+            SaveDisplaySettingByGradeStorageService() ;
+            
+            UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+          
+          progress.Finish() ;
 
           return Result.Succeeded ;
         } ) ;
@@ -93,7 +119,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CommandUtils.DebugAlertException( e ) ;
         window.DialogResult = false ;
       }
-
       window.Close() ;
     }
 
