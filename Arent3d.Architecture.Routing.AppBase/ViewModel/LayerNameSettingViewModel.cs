@@ -138,10 +138,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
       elementsOverrideGraphic.AddRange( curveElements ) ;
       
-      var boundaryCableTrayColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName )?.Index ?? AutoCadColorsManager.NoColor ;
+      var boundaryCableTrayColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == EraseRackCommandBase.BoundaryCableTrayLineStyleName )?.Index ?? AutoCadColorsManager.NoColor ;
       color = GetElementColor( boundaryCableTrayColorIndex ) ;
       overrideGraphic.SetProjectionLineColor( color ) ;
-      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == EraseLimitRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
+      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == EraseRackCommandBase.BoundaryCableTrayLineStyleName ).ToList() ;
       curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
       elementsOverrideGraphic.AddRange( curveElements ) ;
 

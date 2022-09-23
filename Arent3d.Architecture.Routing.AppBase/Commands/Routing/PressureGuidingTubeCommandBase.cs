@@ -307,7 +307,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       doc.Regenerate() ;
 
-      var underLineTextNote = NewRackCommandBase.CreateUnderLineText( textNote, viewPlan.GenLevel.Elevation ) ;
+      var underLineTextNote = RackCommandBase.CreateUnderLineText( textNote, viewPlan.GenLevel.Elevation ) ;
       var nearestPoint = underLineTextNote.GetEndPoint( 0 ).DistanceTo( point ) > underLineTextNote.GetEndPoint( 1 ).DistanceTo( point ) ? underLineTextNote.GetEndPoint( 1 ) : underLineTextNote.GetEndPoint( 0 ) ;
       var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( nearestPoint, new XYZ( point.X, point.Y, viewPlan.GenLevel.Elevation ) ) }, new List<Type> { typeof( CableTray ) } ) ;
       curves.Add( underLineTextNote ) ;

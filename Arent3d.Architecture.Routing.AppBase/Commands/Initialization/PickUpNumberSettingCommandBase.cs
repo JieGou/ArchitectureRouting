@@ -31,13 +31,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var wireLengthNotationStorable = document.GetWireLengthNotationStorable() ;
             var isDisplay = wireLengthNotationStorable.WireLengthNotationData.Any( t => t.Level == level.Name ) ;
 
-            if ( !isDisplay ) return Result.Succeeded ;
+            if ( ! isDisplay ) return Result.Succeeded ;
             
             var pickUpViewModel = new PickUpViewModel( document, level ) ;
             if ( ! pickUpViewModel.DataPickUpModels.Any() ) return Result.Succeeded ;
             
             var pickUpModels = pickUpViewModel.DataPickUpModels ;
-            if ( !pickUpModels.Any() ) {
+            if ( ! pickUpModels.Any() ) {
               MessageBox.Show( "Don't have pick up data on this view.", "Message Warning" ) ;
               return Result.Succeeded ;
             }

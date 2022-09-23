@@ -1,0 +1,66 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.DisplaySettingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        Name="DisplaySettingByGrade"
+        mc:Ignorable="d"
+        Title="表示項目設定" Height="280" Width="390"
+        WindowStartupLocation="CenterScreen"
+        VerticalAlignment="Center"
+        d:DataContext="{d:DesignInstance {x:Type local:DesignDisplaySettingViewModel}, IsDesignTimeCreatable=True}">
+    <Grid VerticalAlignment="Center">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center">
+            <GroupBox
+                Header="表示項目"
+                DockPanel.Dock="Left"
+                FontSize="16"
+                VerticalAlignment="Top"
+                Margin="0, 5, 0, 0"
+                Width="320"
+                HorizontalAlignment="Left">
+                <StackPanel>
+                    <CheckBox HorizontalAlignment="Left"
+                              IsChecked="{Binding DataDisplaySettingModel.IsWiringVisible }"
+                              Content="配線（配線、配管、ラック、漏水帯など）" Margin="30 15 0 0" FontSize="13" />
+                    <CheckBox HorizontalAlignment="Left"
+                              IsChecked="{Binding DataDisplaySettingModel.IsDetailSymbolVisible}" Content="明細記号"
+                              Margin="30 10 0 0" FontSize="13" />
+                    <CheckBox HorizontalAlignment="Left"
+                              IsChecked="{Binding DataDisplaySettingModel.IsPullBoxVisible}" Content="プルボックス"
+                              Margin="30 10 0 0" FontSize="13" />
+                    <CheckBox HorizontalAlignment="Left"
+                              IsChecked="{Binding DataDisplaySettingModel.IsScheduleVisible}" Content="配線明細表"
+                              Margin="30 10 0 0" FontSize="13" />
+                    <CheckBox HorizontalAlignment="Left"
+                              IsChecked="{Binding DataDisplaySettingModel.IsLegendVisible}" Content="機器凡例"
+                              Margin="30 10 0 15" FontSize="13" />
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0 10 30 0" HorizontalAlignment="Right">
+            <Button
+                Content="OK"
+                Command="{Binding ExecuteCommand}"
+                CommandParameter="{Binding ElementName=DisplaySettingByGrade}"
+                HorizontalAlignment="Center"
+                Width="100"
+                Height="30" />
+            <Button
+                Content="キャンセル"
+                Command="{Binding CancelCommand}"
+                CommandParameter="{Binding ElementName=DisplaySettingByGrade}"
+                HorizontalAlignment="Center"
+                Height="30"
+                Margin="20 0 0 0"
+                Width="100" />
+        </StackPanel>
+    </Grid>
+</Window>
