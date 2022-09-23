@@ -1,5 +1,8 @@
 ﻿using System ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -62,6 +65,17 @@ namespace Arent3d.Architecture.Routing.AppBase
         textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
 
       return textNoteType ;
+    }
+
+    public static void DeleteAllTextNotesRelatedStorages( Document document )
+    {
+      // Pull boxes
+      var textNotesOfPullBoxIds = document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( d => d.Data.PullBoxInfoData ).Select( d => document.GetElement( d.TextNoteUniqueId ) ).Select( t => t.Id ).ToList() ;
+      document.Delete( textNotesOfPullBoxIds ) ;
+      
+      // Wire length notation
+      var wireLengthNotationIds = document.GetWireLengthNotationStorable().WireLengthNotationData.Select( d => document.GetElement( d.TextNoteId ) ).Select( t => t.Id ).ToList() ;
+      document.Delete( wireLengthNotationIds ) ;
     }
   }
 }
