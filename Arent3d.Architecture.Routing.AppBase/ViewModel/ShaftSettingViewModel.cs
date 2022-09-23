@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
+using System.Globalization ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Input ;
@@ -64,6 +65,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return shafts ;
+    }
+    
+    public void SetShaftModels( IEnumerable<ShaftOpeningModel> shaftOpeningModels )
+    {
+      var levels = _document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
+      foreach ( var shaftOpeningModel in shaftOpeningModels ) {
+        var shaftOpening = _document.GetElementById<Opening>( shaftOpeningModel.ShaftOpeningUniqueId ) ;
+        if ( shaftOpening == null ) continue ;
+        var baseLevel = (Level) _document.GetElement( shaftOpening.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT ).AsElementId() ) ;
+        var topLevel = (Level) _document.GetElement( shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).AsElementId() ) ;
+        var shaftLevelIds = levels.Where( l => l.Elevation >= baseLevel.Elevation && l.Elevation < topLevel.Elevation ).Select( l => l.Id ).EnumerateAll() ;
+        Shafts.Where( s => shaftLevelIds.Contains( s.FromLevel.Id ) ).ForEach( s => s.IsShafted = true ) ;
+        var cableTrays = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_CableTrayFitting ).Where( e => shaftOpeningModel.CableTrayUniqueIds.Contains( e.UniqueId ) ).EnumerateAll() ;
+        var cableTrayLevelIds = cableTrays.Select( c => c.LevelId ).EnumerateAll() ;
+        Shafts.Where( s => cableTrayLevelIds.Contains( s.FromLevel.Id ) ).ForEach( s => s.IsRacked = true ) ;
+        Size = shaftOpeningModel.Size.ToString( CultureInfo.InvariantCulture ) ;
+      }
     }
 
     private List<string> GetDefaultShaftSizes()
