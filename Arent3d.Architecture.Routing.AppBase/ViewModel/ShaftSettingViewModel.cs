@@ -7,6 +7,7 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
@@ -27,6 +28,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnPropertyChanged() ;
       }
     }
+    
+    public ICommand SelectAllCommand => new RelayCommand( SelectAll ) ;
+
+    public ICommand DeSelectAllCommand => new RelayCommand( DeSelectAll ) ;
     
     public ICommand CreateShaftCommand
     {
@@ -69,6 +74,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return sizes ;
+    }
+
+    private void SelectAll()
+    {
+      Shafts.ForEach( s => s.IsShafted = true ) ;
+      Shafts.ForEach( s => s.IsRacked = true ) ;
+    }
+    
+    private void DeSelectAll()
+    {
+      Shafts.ForEach( s => s.IsShafted = false ) ;
+      Shafts.ForEach( s => s.IsRacked = false ) ;
     }
   }
 }
