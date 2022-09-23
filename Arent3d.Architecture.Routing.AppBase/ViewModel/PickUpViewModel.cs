@@ -727,9 +727,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var cable in cables ) {
         cable.TryGetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, out string? toElementId ) ;
         cable.TryGetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, out string? fromElementId ) ;
-        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        if ( string.IsNullOrEmpty( toElementId ) )
+          continue ;
+        
         var checkPickUp = AddPickUpConnectors( allConnectors, pickUpConnectors, toElementId!, fromElementId!, pickUpNumbers ) ;
-        if ( ! checkPickUp ) continue ;
+        if ( ! checkPickUp ) 
+          continue ;
+        
         var quantity = cable.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( _document, "トレイ長さ" ) ).AsDouble() ;
         quantities.Add( Math.Round( quantity, 2 ) ) ;
       }
@@ -833,14 +837,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return true ;
     }
 
-    private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<(Element Connector, Element? Conduit)> pickUpConnectors, string elementId, string fromElementId, List<int> pickUpNumbers )
+    private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<(Element Connector, Element? Conduit)> pickUpConnectors, string toElementId, string fromElementId, List<int> pickUpNumbers )
     {
-      var connector = allConnectors.FirstOrDefault( c => c.UniqueId == elementId ) ;
+      var connector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
       if ( connector!.IsTerminatePoint() || connector!.IsPassPoint() ) {
         connector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? connectorId ) ;
         if ( ! string.IsNullOrEmpty( connectorId ) ) {
           connector = allConnectors.FirstOrDefault( c => c.UniqueId == connectorId ) ;
-          elementId = connectorId! ;
+          toElementId = connectorId! ;
         }
       }
 
@@ -852,22 +856,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      if ( connector != null ) {
-        pickUpConnectors.Add( (connector, null) ) ;
-        if ( ! _pickUpNumbers.ContainsValue( fromElementId + ", " + elementId ) ) {
-          _pickUpNumbers.Add( _pickUpNumber, fromElementId + ", " + elementId ) ;
-          pickUpNumbers.Add( _pickUpNumber ) ;
-          _pickUpNumber++ ;
-        }
-        else {
-          var pickUpNumber = _pickUpNumbers.FirstOrDefault( n => n.Value == fromElementId + ", " + elementId ).Key ;
-          pickUpNumbers.Add( pickUpNumber ) ;
-        }
-
-        return true ;
+      if ( connector == null ) 
+        return false ;
+      
+      pickUpConnectors.Add( (connector, null) ) ;
+      if ( ! _pickUpNumbers.ContainsValue( fromElementId + ", " + toElementId ) ) {
+        _pickUpNumbers.Add( _pickUpNumber, fromElementId + ", " + toElementId ) ;
+        pickUpNumbers.Add( _pickUpNumber ) ;
+        _pickUpNumber++ ;
+      }
+      else {
+        var pickUpNumber = _pickUpNumbers.FirstOrDefault( n => n.Value == fromElementId + ", " + toElementId ).Key ;
+        pickUpNumbers.Add( pickUpNumber ) ;
       }
 
-      return false ;
+      return true ;
+
     }
 
     private List<PickUpItemModel> PickUpModelByNumber( ProductType productType )
