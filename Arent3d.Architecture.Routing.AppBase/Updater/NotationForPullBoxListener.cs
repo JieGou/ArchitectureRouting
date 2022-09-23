@@ -7,7 +7,9 @@ using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Updater
@@ -64,10 +66,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           var textNoteOfPullBox = document.GetAllElements<TextNote>().FirstOrDefault( t => textNoteOfPullBoxUniqueId == t.UniqueId ) ;
           if ( textNoteOfPullBox != null ) {
             var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-            var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBox, routes ) ;
+            var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
+            var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( routes, allConduits, pullBox ) ;
             var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point! ;
-            var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
-            var positionOfTextNoteForPullBox = PullBoxRouteManager.GetPositionOfPullBox( document, textNoteOfPullBox, positionOfPullBox, conduitsRelatedPullBox, PullBoxRouteManager.HeightDistanceBetweenPullAndNotation, baseLengthOfLine ) ;
+            var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( allConduits, routesRelatedPullBox, pullBoxLocation ) ;
+            var conduitDirections = PullBoxRouteManager.GetConduitDirectionsRelatedPullBox( conduitsRelatedPullBox ) ;
+            var positionOfTextNoteForPullBox = PullBoxRouteManager.GetPositionOfPullBox( document, textNoteOfPullBox, positionOfPullBox, conduitDirections, baseLengthOfLine ) ;
             textNoteOfPullBox.Coord = positionOfTextNoteForPullBox ;
           }
           selectionElementIds.Add( modifiedElementId ) ;

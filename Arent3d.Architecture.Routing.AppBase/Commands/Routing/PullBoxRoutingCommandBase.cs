@@ -10,9 +10,11 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Utility ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.Exceptions ;
 
 
@@ -124,6 +126,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var level = document.ActiveView.GenLevel ;
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
       var baseLengthOfLine = scale / 100d ;
+      var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
+      var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
       StorageService<Level, DetailSymbolModel>? storageDetailSymbolService = null ;
       StorageService<Level, PullBoxInfoModel>? storagePullBoxInfoServiceByLevel = null ;
       if ( level != null ) {
@@ -131,7 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       }
       
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, baseLengthOfLine, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, routeCache, allConduits, baseLengthOfLine, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
       #endregion
       
       #region Change Representative Route Name

@@ -17,6 +17,7 @@ using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
@@ -476,13 +477,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
           var baseLengthOfLine = scale / 100d ;
           var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+          var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
           var pullBoxElements = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id ).ToList() ;
 
           foreach ( var pullBoxElement in pullBoxElements ) {
-            var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( document, pullBoxElement, routes ) ;
+            var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( routes, allConduits, pullBoxElement ) ;
             var pullBoxLocation = ( pullBoxElement.Location as LocationPoint )?.Point! ;
-            var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( document, pullBoxLocation, routesRelatedPullBox ) ;
-            PullBoxRouteManager.ResizePullBoxAndRelatedConduits( baseLengthOfLine, pullBoxElement, conduitsRelatedPullBox ) ;
+            var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( allConduits, routesRelatedPullBox, pullBoxLocation ) ;
+            PullBoxRouteManager.ResizePullBoxAndRelatedConduits( conduitsRelatedPullBox, pullBoxElement, baseLengthOfLine ) ;
           }
 
           #endregion
