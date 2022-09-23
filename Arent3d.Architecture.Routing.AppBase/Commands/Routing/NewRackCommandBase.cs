@@ -103,7 +103,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             
             var rackForRouteItem = new RackForRouteItem { RouteName = groupRoutingElement.Key } ;
             
-            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, rackClassification: "Limit Rack" ) ;
+            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, uiDocument.Document.ActiveView.Scale, rackClassification: "Limit Rack" ) ;
             rackForRouteItem.RackIds.AddRange(verticalRacks.Select(x => x.Id));
             
             var horizontalRacks = uiDocument.Document.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack" ).EnumerateAll() ;
