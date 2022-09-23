@@ -115,14 +115,17 @@
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>CNS Setting</string>
 
-        <key>Electrical.App.Commands.Routing.NewLimitRackCommand</key>
-        <string>Create Rack For All</string>
-        
-        <key>Electrical.App.Commands.Routing.NewLimitRackSelectionRangeCommand</key>
-        <string>Create Rack For Selection Range</string>
-        
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
-        <string>Create Rack&#xA;For All</string>
+        <string>Create Rack</string>
+        
+        <key>Electrical.App.Commands.Routing.NewRackSelectionRangeCommand</key>
+        <string>Create Rack&#xA;(Selection Range)</string>
+
+        <key>Electrical.App.Commands.Routing.EraseAllRackCommand</key>
+        <string>Delete Rack</string>
+
+        <key>Electrical.App.Commands.Routing.EraseSelectedRackCommand</key>
+        <string>Delete Rack&#xA;(Selection Range)</string>
 
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>

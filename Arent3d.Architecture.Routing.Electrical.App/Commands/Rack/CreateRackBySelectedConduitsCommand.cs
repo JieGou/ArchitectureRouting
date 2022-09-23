@@ -17,7 +17,7 @@ using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledEx
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Rack.CreateRackBySelectedConduitsCommand", DefaultString = "Manually\nCreate Rack" )]
+  [DisplayNameKey( "Electrical.App.Commands.Rack.CreateRackBySelectedConduitsCommand", DefaultString = "Create Rack From-To" )]
   [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateRackBySelectedConduitsCommand : IExternalCommand
