@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
     <dict>
+        <!-- Application Strings -->
+        <key>App.SelectFolder</key>
+        <string>Please select a folder.</string>
+        
         <!-- Application UI Strings -->
         <key>App.Routing.TabName</key>
         <string>Routing Assist</string>

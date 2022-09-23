@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       TextNote textNote, DetailLine detailLine )
     {
       var endPoint = detailLine.GeometryCurve.GetEndPoint( rackNotationModel.EndPoint ) ;
-      var underLineText = NewRackCommandBase.CreateUnderLineText( textNote, endPoint.Z ) ;
+      var underLineText = RackCommandBase.CreateUnderLineText( textNote, endPoint.Z ) ;
       var pointNearest =
         underLineText.GetEndPoint( 0 ).DistanceTo( endPoint ) < underLineText.GetEndPoint( 1 ).DistanceTo( endPoint )
           ? underLineText.GetEndPoint( 0 )

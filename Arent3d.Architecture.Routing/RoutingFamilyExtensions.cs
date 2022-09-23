@@ -123,11 +123,11 @@ namespace Arent3d.Architecture.Routing
     [Family( "Handhole", BuiltInCategory.OST_ElectricalFixtures )]
     Handhole,
 
-    [Family( "Symbol Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
-    SymbolContentTag,
-    
-    [Family( "Symbol Content Equipment Tag", BuiltInCategory.OST_ElectricalEquipmentTags )]
-    SymbolContentEquipmentTag,
+    [Family( "Electrical Fixture Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
+    ElectricalFixtureContentTag,
+
+    [Family( "Electrical Equipment Content Tag", BuiltInCategory.OST_ElectricalEquipmentTags )]
+    ElectricalEquipmentContentTag,
     
     [Family( "Symbol Information Tag", BuiltInCategory.OST_GenericModelTags )]
     SymbolInformationTag

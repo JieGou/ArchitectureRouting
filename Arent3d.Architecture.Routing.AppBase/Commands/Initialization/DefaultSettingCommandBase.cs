@@ -153,9 +153,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
         defaultSettingStorable.GradeSettingData.GradeMode = gradeMode ;
-        if ( importDwgMappingModels.Any() ) {
+
+        if ( importDwgMappingModels.Any() )
           UpdateImportDwgMappingModels( defaultSettingStorable, importDwgMappingModels, deletedFloorName ) ;
-        }
 
         defaultSettingStorable.Save() ;
         transaction.Commit() ;
@@ -547,11 +547,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           continue ;
 
         var oldDetailCurveUniqueIds = openingStore.DetailUniqueIds.Where( x => opening.Document.GetElement( x ) is { } element && element.OwnerViewId == viewPlan.Id ) ;
-        var detailCurveIds = oldDetailCurveUniqueIds.Select( x => opening.Document.GetElement( x ) ).OfType<Element>().Select( x => x.Id ).ToList() ;
+        var detailCurveIds = oldDetailCurveUniqueIds.Select( x => opening.Document.GetElement( x ) ).Select( x => x.Id ).ToList() ;
         opening.Document.Delete( detailCurveIds ) ;
         
         openingStore.DetailUniqueIds.RemoveAll( x => opening.Document.GetElement( x ) is { } element && element.OwnerViewId == viewPlan.Id ) ;
-        var newDetailCurves = CreateCylindricalShaftCommandBase.CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape ) ;
+        var cableTrayUniqueId = openingStore.CableTrayUniqueIds.FirstOrDefault( x => opening.Document.GetElement( x ) is { } element && element.LevelId == viewPlan.GenLevel.Id ) ?? string.Empty ;
+        var newDetailCurves = CreateCylindricalShaftCommandBase.CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, openingStore.Size, cableTrayUniqueId ) ;
         openingStore.DetailUniqueIds.AddRange( newDetailCurves.Select( x => x ) ) ;
       }
 
@@ -566,7 +567,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return ;
 
       var symbolInformationModels = document.GetSymbolInformationStorable().AllSymbolInformationModelData ;
-      var ratio = viewScale / 100d ;
+      var ratio = ImportDwgMappingModel.GetMagnificationOfView( viewScale ) / 100d ;
 
       foreach ( var symbolInstance in symbolInstances ) {
         if ( symbolInformationModels.SingleOrDefault( x => x.SymbolUniqueId == symbolInstance.UniqueId ) is not { } symbolInformationModel )

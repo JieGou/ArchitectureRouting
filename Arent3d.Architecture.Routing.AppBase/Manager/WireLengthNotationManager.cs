@@ -382,19 +382,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return result ;
     }
 
-    private static TextNote? CreateTextNote(Document doc, TextNoteOfPickUpFigureModel textNoteOfPickUpFigureModel )
+    private static TextNote? CreateTextNote( Document doc, TextNoteOfPickUpFigureModel textNoteOfPickUpFigureModel )
     {
       var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       var baseLengthOfLine = scale / 100d ;
-      var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
+      var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( CeedViewModel.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
       var fontSize = .01 ;
       if ( deviceSymbolTextNoteType != null )
         fontSize = deviceSymbolTextNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).AsDouble() ;
       fontSize = fontSize.RevitUnitsToMillimeters() ;
-      
+
       var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, fontSize, false ) ;
       if ( textNoteType == null ) return null ;
-      
+
       var textTypeId = textNoteType.Id ;
 
       var rotation = textNoteOfPickUpFigureModel.PickUpAlignment switch
@@ -404,25 +404,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         _ => 0
       } ;
 
-      TextNoteOptions textNoteOptions = new()
-      {
-        HorizontalAlignment = HorizontalTextAlignment.Center, 
-        TypeId = textTypeId, 
-        Rotation = rotation
-      } ;
+      TextNoteOptions textNoteOptions = new() { HorizontalAlignment = HorizontalTextAlignment.Center, TypeId = textTypeId, Rotation = rotation } ;
 
       if ( textNoteOfPickUpFigureModel.Position != null ) {
         if ( textNoteOfPickUpFigureModel.PickUpAlignment is WireLengthNotationAlignment.Vertical )
           textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X - 2 * ( baseLengthOfLine - 1 ), textNoteOfPickUpFigureModel.Position.Y, textNoteOfPickUpFigureModel.Position.Z ) ;
-        
+
         else if ( textNoteOfPickUpFigureModel.PickUpAlignment is WireLengthNotationAlignment.Horizontal )
           textNoteOfPickUpFigureModel.Position = new XYZ( textNoteOfPickUpFigureModel.Position.X, textNoteOfPickUpFigureModel.Position.Y + 2 * ( baseLengthOfLine - 1 ), textNoteOfPickUpFigureModel.Position.Z ) ;
       }
-      
+
       var textNoteOfPickUpFigure = TextNote.Create( doc, doc.ActiveView.Id, textNoteOfPickUpFigureModel.Position, textNoteOfPickUpFigureModel.Content, textNoteOptions ) ;
-      
+
       var colorOfTextNote = new Color( 255, 225, 51 ) ; // Dark yellow
-      ConfirmUnsetCommandBase.ChangeElementColor( new []{ textNoteOfPickUpFigure }, colorOfTextNote ) ;
+      ConfirmUnsetCommandBase.ChangeElementColor( new[] { textNoteOfPickUpFigure }, colorOfTextNote ) ;
 
       return textNoteOfPickUpFigure ;
     }

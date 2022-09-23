@@ -5,10 +5,9 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Initialization.ShowCeedModelsCommand", DefaultString = "View\nSet Code" )]
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.DisplaySettingCommand", DefaultString = "Display Setting" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class ShowCeedModelsCommand : ShowCeedModelsCommandBase
+  public class DisplaySettingCommand : DisplaySettingCommandBase
   {
-    protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.ConnectorOneSide ;
   }
 }

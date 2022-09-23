@@ -79,6 +79,9 @@
         <key>Electrical.App.Commands.Rack.ImportRacksCommand</key>
         <string>Import&#xA;PS</string>
 
+        <key>Electrical.App.Commands.Rack.CreateRackBySelectedConduitsCommand</key>
+        <string>ラック&#xA;手動作成</string>
+
         <key>Electrical.App.Commands.Routing.AllReRouteCommand</key>
         <string>Reroute&#xA;All</string>
 
@@ -351,6 +354,9 @@
         <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
         <string>拾い番号設定</string>
 
+        <key>TransactionName.Commands.Initialization.DisplaySetting</key>
+        <string>表示項目設定</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>自動ルーティング初期化エラー</string>
@@ -511,6 +517,16 @@
         <!-- File Names -->
         <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
         <string>Arent-export-layers-jp.txt</string>
+
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ModifyArentExportLayersFile</key>
+        <string>Modify-Arent-export-layers-jp.txt</string>
+
+        <!-- Family Names -->
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalEquipmentTags</key>
+        <string>電気設備タグ</string>
+
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalFixtureTags</key>
+        <string>電気器具タグ</string>
         
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
@@ -551,5 +567,8 @@
 
         <key>Electrical.App.Commands.Initialization.SwitchPrintModeCommand</key>
         <string>印刷モード切替</string>
+
+        <key>Electrical.App.Commands.Initialization.DisplaySettingCommand</key>
+        <string>表示項目設定</string>
     </dict>
 </plist>
