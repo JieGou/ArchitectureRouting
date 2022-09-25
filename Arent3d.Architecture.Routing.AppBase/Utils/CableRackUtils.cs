@@ -3,6 +3,8 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -805,26 +807,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
           continue ;
         if ( ! rackInstance.TryGetRackWidth( out var width ) )
           continue ;
-        yield return ( startPoint, endPoint , width , rack ) ;
+        yield return ( startPoint, endPoint, width, rack ) ;
       }
     }
 
     public static void ReDrawAllRacksAndElbows( this Document document, View view, int? scale = null )
     {
-      int newScale = scale ?? document.ActiveView.Scale ;
-      var allRacksAndFittings = document.GetAllElements<FamilyInstance>(view).OfCategory( BuiltInCategory.OST_CableTrayFitting ).ToList() ;
-      EraseRackCommandBase.RemoveRackNotation( document, allRacksAndFittings.Select( fi => fi.UniqueId ) ) ;
+      var newScale = scale ?? document.ActiveView.Scale ;
+      // var groups = allRacksAndFittings.GroupBy( fi => fi.GetRouteName() ) ;
 
-      var groups = allRacksAndFittings.GroupBy( fi => fi.GetRouteName() ) ;
+      var storage = new StorageService<Level, RackFromToModel>( document.ActiveView.GenLevel ) ;
+      var rackFromToList = storage.Data.RackFromToItems.ToList() ;
+      storage.Data.RackFromToItems.Clear() ;
+
       var newItems = new List<Element>() ;
-      foreach ( var group in groups ) {
-        var fullMakers = ConvertRacksToFullMarkers( allRacksAndFittings ) ;
-        var racksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, newScale, "" ).ToList() ;
-        newItems.AddRange( racksAndFittings ) ;
+      var oldUniqueIds = new List<string>() ;
+      foreach ( var rackFromTo in rackFromToList ) {
+        // read positions of existing racks and fittings
+        var oldRacksAndFittings = rackFromTo.UniqueIds.ConvertAll( uniqueId => document.GetElement( uniqueId ) ) ;
+        var fullMakers = ConvertRacksToFullMarkers( oldRacksAndFittings ) ;
+
+        // create racks and fittings with new scale
+        var newRacksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, newScale, "" ).ToList() ;
+        newItems.AddRange( newRacksAndFittings ) ;
+
+        // delete existing notations and rack items
+        EraseRackCommandBase.RemoveRackNotation( document, rackFromTo.UniqueIds ) ;
+        document.Delete( rackFromTo.UniqueIds ) ;
+
+        // add to storage
+        storage.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = newRacksAndFittings.Select( element => element.UniqueId ).ToList() } ) ;
       }
+
+      // create notation for new rack
       RackCommandBase.CreateNotationForRack( document, newItems.OfType<FamilyInstance>().Where( fi => fi.IsRack() ) ) ;
-      
-      document.Delete( allRacksAndFittings.Select( e => e.Id ).ToArray() ) ;
+      storage.SaveChange() ;
     }
     
     public static bool IsVertical( this Conduit conduit )

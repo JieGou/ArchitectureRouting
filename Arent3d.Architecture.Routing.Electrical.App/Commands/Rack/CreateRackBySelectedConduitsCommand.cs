@@ -4,6 +4,8 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
@@ -130,10 +132,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", uiResult.Value.IsAutoSizing, specialLengthList ) ;
 
       // resolve overlapped cases
-      var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ) ;
+      var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ).ToList() ;
 
       // create annotations for racks
       RackCommandBase.CreateNotationForRack( document, modifiedRackLists.OfType<FamilyInstance>().Where(fi => fi.IsRack()) ) ;
+
+      // save arranged array of racks
+      var storage = new StorageService<Level, RackFromToModel>( document.ActiveView.GenLevel ) ;
+      storage.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = modifiedRackLists.Select( element => element.UniqueId ).ToList() } ) ;
+      storage.SaveChange() ;
       
       createRackTransaction.Commit() ;
       return Result.Succeeded ;
