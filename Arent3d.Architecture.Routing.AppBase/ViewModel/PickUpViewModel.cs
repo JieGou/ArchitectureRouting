@@ -132,7 +132,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       Connector,
       Conduit,
-      Cable
+      Cable,
+      CableTray,
+      CableTrayFitting
     }
     
     public enum EquipmentCategory
@@ -260,14 +262,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         
         if ( equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
           var pickUpConduitByNumbers = MergePickUpModels(PickUpModelByNumber( ProductType.Conduit ), ProductType.Conduit) ;
+          if ( pickUpConduitByNumbers.Any() ) 
+            pickUpModels.AddRange( pickUpConduitByNumbers ) ;
+          
           var pickUpRackByNumbers = PickUpModelByNumber( ProductType.Cable ) ;
-          if ( pickUpConduitByNumbers.Any() ) pickUpModels.AddRange( pickUpConduitByNumbers ) ;
-          if ( pickUpRackByNumbers.Any() ) pickUpModels.AddRange( pickUpRackByNumbers ) ;
+          if ( pickUpRackByNumbers.Any() ) 
+            pickUpModels.AddRange( pickUpRackByNumbers ) ;
+
+          var pickUpCableTrays = MergePickUpModels( _pickUpModels.Where( x => x.EquipmentType == ProductType.CableTray.GetFieldName()), ProductType.CableTray ) ;
+          if ( pickUpCableTrays.Any() ) 
+            pickUpModels.AddRange( pickUpCableTrays ) ;
         }
 
         if ( equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
           var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
-          pickUpModels.AddRange( pickUpConnectors ); 
+          pickUpModels.AddRange( pickUpConnectors );
+          var pickUpFittings = _pickUpModels.Where( x => x.EquipmentType == ProductType.CableTrayFitting.GetFieldName() ).ToList() ;
+          pickUpModels.AddRange(pickUpFittings);
         }
 
         OriginPickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor select pickUpModel ).ToList() ;
@@ -307,9 +318,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       GetToConnectorsOfConduit( connectors, pickUpModels ) ;
       GetToConnectorsOfCables( connectors, pickUpModels ) ;
       GetDataFromSymbolInformation( pickUpModels ) ;
+      GetPickupDataForRack( pickUpModels ) ;
       
       foreach ( var pickUpModel in pickUpModels ) {
-        if(pickUpModel.EquipmentType == $"{ProductType.Cable}" || pickUpModel.EquipmentType == $"{ProductType.Conduit}")
+        if(pickUpModel.EquipmentType == $"{ProductType.Cable}" || pickUpModel.EquipmentType == $"{ProductType.Conduit}" || pickUpModel.EquipmentType == $"{ProductType.CableTray}")
           pickUpModel.Quantity = $"{Math.Round( double.Parse( pickUpModel.Quantity ).RevitUnitsToMillimeters() / 1000, 2 )}" ;
       }
       
@@ -535,8 +547,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
         else {
           if ( ! string.IsNullOrEmpty( tani ) && tani != defaultConduitTani ) tani = defaultConduitTani ;
-          PickUpItemModel pickUpModel = new( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction,
-            materialCode.MaterialCode, ceedSetCode, deviceSymbol, condition,quantity, routeName, relatedRouteName, null, wireBook) ;
+          PickUpItemModel pickUpModel = new( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, 
+            supplement2, group, layer, classification, standard, pickUpNumber, direction, materialCode.MaterialCode, ceedSetCode, deviceSymbol, condition,quantity, routeName, relatedRouteName, null, wireBook) ;
           pickUpModels.Add( pickUpModel ) ;
         }
       }
@@ -650,7 +662,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         if ( string.IsNullOrEmpty( constructionItem ) ) 
           constructionItem = DefaultConstructionItem ;
-        AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty,string.Empty, routeNames) ;
+        AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, 
+          dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty,string.Empty, routeNames) ;
       }
 
       var conduitFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
@@ -660,7 +673,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         if ( string.IsNullOrEmpty( constructionItem ) ) 
           constructionItem = DefaultConstructionItem ;
-        AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem!, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty, string.Empty, routeNames) ;
+        AddPickUpConduit( routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem!, 
+          dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, string.Empty, string.Empty, routeNames) ;
       }
       
       var changePlumbingInformationStorable = _document.GetChangePlumbingInformationStorable() ;
@@ -673,8 +687,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
           var constructionItem = changePlumbingInformationModel.ConstructionItems ;
           var plumbingInfo = string.Join( ":", changePlumbingInformationModel.PlumbingName, changePlumbingInformationModel.PlumbingType, changePlumbingInformationModel.PlumbingSize ) ;
-          AddPickUpConduit(routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem, dictMaterialCode, isEcoModes, isEcoMode, constructionClassifications, 
-            changePlumbingInformationModel.ClassificationOfPlumbing, plumbingInfo, routeNames,  changePlumbingInformationModel.ConnectorId  ) ;
+          AddPickUpConduit(routes, allConnectors, pullBoxs, pickUpConnectors, quantities, pickUpNumbers, directionZ, plumbingInfos, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem, dictMaterialCode, 
+            isEcoModes, isEcoMode, constructionClassifications, changePlumbingInformationModel.ClassificationOfPlumbing, plumbingInfo, routeNames,  changePlumbingInformationModel.ConnectorId  ) ;
         }
       }
 
@@ -960,9 +974,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var symbolInformation in symbolInformations ) {
         var floor = symbolInformation.Floor ;
         foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.SymbolUniqueId ) ) {
-          PickUpItemModel newPickUpModel = new( null, floor, DefaultConstructionItem, ceedDetail.Unit == "m" ? ProductType.Conduit.GetFieldName() : ProductType.Connector.GetFieldName(), ceedDetail.Specification, null, null, ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, 
-            ceedDetail.ProductName, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Unit == "m" ? $"{ceedDetail.Total.MetersToRevitUnits()}" : $"{ceedDetail.Total}", ceedDetail.Unit, ceedDetail.Supplement, null, null, null,
-            ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode, null, null, null, $"{ceedDetail.QuantitySet}" ) ;
+          PickUpItemModel newPickUpModel = new( null, floor, DefaultConstructionItem, ceedDetail.Unit == "m" ? ProductType.Conduit.GetFieldName() : ProductType.Connector.GetFieldName(), ceedDetail.Specification, null, null, 
+            ceedDetail.ConstructionClassification, ceedDetail.ModeNumber, ceedDetail.ProductName, ceedDetail.CeedCode, ceedDetail.Size2, ceedDetail.Unit == "m" ? $"{ceedDetail.Total.MetersToRevitUnits()}" : $"{ceedDetail.Total}", 
+            ceedDetail.Unit, ceedDetail.Supplement, null, null, null, ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode, null, null, null, $"{ceedDetail.QuantitySet}" ) ;
           var oldPickUpModel = pickUpModels.FirstOrDefault( x => x.Floor == newPickUpModel.Floor && x.ProductName == newPickUpModel.ProductName && x.ProductCode == newPickUpModel.ProductCode 
                                                                  && x.Specification == newPickUpModel.Specification && x.ConstructionItems == newPickUpModel.ConstructionItems && x.Construction == newPickUpModel.Construction ) ;
           if ( null != oldPickUpModel ) {
@@ -972,6 +986,49 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             pickUpModels.Add( newPickUpModel ) ;
           }
         }
+      }
+    }
+
+    private void GetPickupDataForRack( List<PickUpItemModel> pickUpModels )
+    {
+      var levels = _document.GetAllInstances<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
+      
+      var cableTrays = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
+        .OfType<FamilyInstance>()
+        .Where(x => x.Symbol.FamilyName == ElectricalRoutingFamilyType.CableTray.GetFamilyName()) ;
+      foreach ( var cableTray in cableTrays ) {
+        var elevationFormLevel = cableTray.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).AsDouble() ;
+        var level = levels.Where( x => x.Elevation <= elevationFormLevel ).OrderByDescending(x => x.Elevation).FirstOrDefault() ;
+        var pickUpItemModel = new PickUpItemModel
+        {
+          ProductName = "ケーブルラック",
+          Floor = level?.Name ?? string.Empty,
+          Specification = $"{cableTray.LookupParameter("トレイ幅").AsValueString()}mm",
+          EquipmentType = ProductType.CableTray.GetFieldName(),
+          ConstructionItems = DefaultConstructionItem,
+          Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
+          Tani = "m"
+        } ;
+        pickUpModels.Add(pickUpItemModel);
+      }
+      
+      var cableTrayFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
+        .OfType<FamilyInstance>()
+        .Where(x => x.Symbol.FamilyName == ElectricalRoutingFamilyType.CableTrayFitting.GetFamilyName());
+      foreach ( var cableTrayFitting in cableTrayFittings ) {
+        var elevationFormLevel = cableTrayFitting.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).AsDouble() ;
+        var level = levels.Where( x => x.Elevation <= elevationFormLevel ).OrderByDescending(x => x.Elevation).FirstOrDefault() ;
+        var pickUpItemModel = new PickUpItemModel
+        {
+          ProductName = "L形分岐ラック",
+          Floor = level?.Name ?? string.Empty,
+          Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm",
+          EquipmentType = ProductType.CableTrayFitting.GetFieldName(),
+          ConstructionItems = DefaultConstructionItem,
+          Quantity = "1",
+          Tani = "個"
+        } ;
+        pickUpModels.Add(pickUpItemModel);
       }
     }
 
@@ -1244,6 +1301,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             newModel.Specification = string.Empty ;
             return newModel ;
           } ).OrderBy( p => p.Floor ).ToList() ;
+        }
+        case ProductType.CableTray or ProductType.CableTrayFitting :
+        {
+          return pickUpModels.GroupBy( p => new { p.ProductName, p.Specification } ).Select( p =>
+          {
+            var newModel = p.First() ;
+            newModel.Quantity = $"{p.Sum( x => Convert.ToDouble( x.Quantity ) )}" ;
+            return newModel ;
+          } ).OrderBy(p => p.Floor).ToList() ;
         }
         default :
         {
