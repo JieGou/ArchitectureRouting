@@ -278,10 +278,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         if ( equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
-          var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
-          pickUpModels.AddRange( pickUpConnectors );
           var pickUpFittings = _pickUpModels.Where( x => x.EquipmentType == ProductType.CableTrayFitting.GetFieldName() ).ToList() ;
           pickUpModels.AddRange(pickUpFittings);
+          
+          var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+          pickUpModels.AddRange( pickUpConnectors );
         }
 
         OriginPickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor select pickUpModel ).ToList() ;
