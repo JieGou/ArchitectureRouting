@@ -6,9 +6,9 @@ using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Selection
 {
-  public class LimitRackReferenceSelectionFilter : ISelectionFilter
+  public class RackReferenceSelectionFilter : ISelectionFilter
   {
-    public static ISelectionFilter Instance => new LimitRackReferenceSelectionFilter() ;
+    public static ISelectionFilter Instance => new RackReferenceSelectionFilter() ;
 
     public bool AllowElement( Element element ) => IsCableTrayOrCableTrayFitting( element ) ;
 
@@ -17,10 +17,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
     private static bool IsCableTrayOrCableTrayFitting( Element element )
     {
       var builtInCategory = element.GetBuiltInCategory() ;
-      if ( builtInCategory != BuiltInCategory.OST_CableTrayFitting ) return false ;
+      if ( builtInCategory != BuiltInCategory.OST_CableTrayFitting ) 
+        return false ;
+      
       var paramName = "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( element.Document, "Rack Type" ) ;
       var comment = element.GetParameter( paramName )?.AsString() ;
-      return !string.IsNullOrEmpty( comment ) &&  comment == RackCommandBase.RackTypes[ 1 ] ;
+      return !string.IsNullOrEmpty( comment ) &&  (comment == RackCommandBase.RackTypes[ 0 ] || comment == RackCommandBase.RackTypes[ 1 ] );
     }
   }
 }
