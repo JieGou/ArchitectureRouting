@@ -250,11 +250,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       XYZ? direction = null ;
       XYZ? firstPoint = null ;
       try {
-        if ( ! symbolInstance.HasParameter( "W" ) ) {
-          dlg.Close() ;
-          return ( placePoint, direction, firstPoint ) ;
-        }
-
         tabPlaceExternal = new TabPlaceExternal( uiDocument.Application, curves, locationPoint, dlg ) ;
         while ( true ) {
           if ( null == tabPlaceExternal.FirstPoint ) {
