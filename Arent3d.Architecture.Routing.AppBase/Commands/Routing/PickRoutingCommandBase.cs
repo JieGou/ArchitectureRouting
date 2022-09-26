@@ -1,6 +1,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
@@ -52,6 +53,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
         if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
+
+        if ( property.GetShaft() != null ) {
+          var isShaftThroughFromAndToLevel = IsShaftThroughFromLevelAndToLevel( document, property.GetShaft()!.UniqueId, fromPickResult.GetLevelId(), toPickResult.GetLevelId() ) ;
+          if ( ! isShaftThroughFromAndToLevel ) {
+            MessageBox.Show( "The shaft does not go through the levels of connectors", "Arent" ) ;
+            return OperationResult<PickState>.Cancelled ;
+          }
+        }
 
         if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
 
@@ -214,6 +223,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       sv.ShowDialog() ;
 
       return sv ;
+    }
+
+    private static bool IsShaftThroughFromLevelAndToLevel( Document document, string shaftElementUniqueId, ElementId fromLevelId, ElementId toLevelId )
+    {
+      var shaft = document.GetElementById<Opening>( shaftElementUniqueId ) ;
+      if ( shaft == null ) return false ;
+      var baseConstraintOfShaft = (Level) document.GetElement( shaft.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT ).AsElementId() ) ;
+      var topConstraintOfShaft = (Level) document.GetElement( shaft.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).AsElementId() ) ;
+      var fromLevel = (Level) document.GetElement( fromLevelId ) ;
+      var toLevel = (Level) document.GetElement( toLevelId ) ;
+      return fromLevel.Elevation >= baseConstraintOfShaft.Elevation && fromLevel.Elevation <= topConstraintOfShaft.Elevation && toLevel.Elevation >= baseConstraintOfShaft.Elevation && toLevel.Elevation <= topConstraintOfShaft.Elevation ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )

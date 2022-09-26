@@ -6,11 +6,11 @@
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d" x:Name="WdShaftSettingDialog"
         WindowStartupLocation="CenterScreen"
-        Title="ShaftSettingDialog" Height="400" Width="340"
+        Title="ShaftSettingDialog" Height="450" Width="350"
         d:DataContext="{d:DesignInstance {x:Type local:DesignShaftSettingViewModel}, IsDesignTimeCreatable=True}">
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Top">
-            <DataGrid ItemsSource="{Binding Shafts}" MinHeight="250" 
+            <DataGrid ItemsSource="{Binding Shafts}" Height="260" 
                       ScrollViewer.HorizontalScrollBarVisibility="Auto" 
                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                       ScrollViewer.CanContentScroll="True"
@@ -47,6 +47,12 @@
                           Text="{Binding Size, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                           PreviewTextInput="NumberValidationTextCombobox">
                 </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="5" HorizontalAlignment="Center">
+            <Button Height="28" Width="130"
+                    Content="Select All" Command="{ Binding SelectAllCommand}"/>
+            <Button Height="28" Width="130" Margin="10, 0, 0 , 0"
+                    Content="Deselect All" Command="{ Binding DeSelectAllCommand}"/>
             </StackPanel>
             <Button Content="作成" Margin="0,5" Width="100" Height="28" 
                     Command="{ Binding CreateShaftCommand}"
