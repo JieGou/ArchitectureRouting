@@ -1005,7 +1005,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           Floor = level?.Name ?? string.Empty,
           Specification = $"{cableTray.LookupParameter("トレイ幅").AsValueString()}mm",
           EquipmentType = ProductType.CableTray.GetFieldName(),
-          ConstructionItems = DefaultConstructionItem,
+          ConstructionItems = cableTray.GetPropertyString(ElectricalRoutingElementParameter.ConstructionItem) ?? DefaultConstructionItem,
           Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
           Tani = "m"
         } ;
@@ -1024,7 +1024,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           Floor = level?.Name ?? string.Empty,
           Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm",
           EquipmentType = ProductType.CableTrayFitting.GetFieldName(),
-          ConstructionItems = DefaultConstructionItem,
+          ConstructionItems = cableTrayFitting.GetPropertyString(ElectricalRoutingElementParameter.ConstructionItem) ?? DefaultConstructionItem,
           Quantity = "1",
           Tani = "個"
         } ;
