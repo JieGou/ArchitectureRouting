@@ -85,7 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       RemoveRackNotation( document, racksAndElbowsUniqueIds ) ;
     }
 
-    private static void RemoveRackNotation( Document document, IEnumerable<string> rackUniqueIds )
+    public static void RemoveRackNotation( Document document, IEnumerable<string> rackUniqueIds )
     {
       var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ??
                                  document.GetRackNotationStorable() ;
