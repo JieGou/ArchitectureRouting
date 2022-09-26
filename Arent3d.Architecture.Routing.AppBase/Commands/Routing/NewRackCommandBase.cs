@@ -110,6 +110,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             rackForRouteItem.RackIds.AddRange(horizontalRacks.Select(x => x.Id));
             RackCommandBase.CreateNotationForRack( uiDocument.Document, horizontalRacks.OfType<FamilyInstance>() ) ;
 
+            foreach ( var rackId in rackForRouteItem.RackIds ) {
+              if(uiDocument.Document.GetElement(rackId) is not { } rack)
+                continue;
+              
+              rack.SetProperty(ElectricalRoutingElementParameter.Separator, true);
+              rack.SetProperty(ElectricalRoutingElementParameter.Cover, "無し");
+              rack.SetProperty(ElectricalRoutingElementParameter.Material, "アルミ");
+            }
+
             storage.Data.RackForRoutes.Add(rackForRouteItem);
             storage.SaveChange();
           }
