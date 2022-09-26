@@ -11,7 +11,6 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.Exceptions ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -19,7 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     public record PickState(List<Route> RoutesRelatedPullBox, Element PullBox, Dictionary<string, string> RouteNameDictionary ) ;
     protected abstract AddInType GetAddInType() ;
-    protected virtual ISelectionFilter GetFilter() => new PullPoxPickFilter();
+    protected virtual ISelectionFilter GetSelectionFilter() => new PullPoxPickFilter();
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
@@ -28,7 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       Reference pickedPullBox ;
 
       try {
-        pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, GetFilter() ) ;
+        pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, GetSelectionFilter() ) ;
       }
       catch ( OperationCanceledException ) {
         return OperationResult<PickState>.Cancelled ;

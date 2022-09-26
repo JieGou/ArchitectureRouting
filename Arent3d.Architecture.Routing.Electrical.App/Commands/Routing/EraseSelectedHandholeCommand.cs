@@ -12,13 +12,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/DeleteFrom-To.png" )]
   public class EraseSelectedHandholeCommand : EraseSelectedPullBoxCommandBase
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.EraseSelectedRoutes" ;
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.EraseSelectedHandhole" ;
 
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    protected override ISelectionFilter GetFilter() => new HandholePickFilter() ;
+    protected override ISelectionFilter GetSelectionFilter() => new HandholePickFilter() ;
 
     private class HandholePickFilter : ISelectionFilter
     {
