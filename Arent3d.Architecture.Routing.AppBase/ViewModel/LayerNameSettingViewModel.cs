@@ -113,9 +113,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       window.Close() ;
     }
 
-    private List<CurveElement> SetCurveElementOverrides()
+    private List<Element> SetCurveElementOverrides()
     {
-      var elementsOverrideGraphic = new List<CurveElement>() ;
+      var elementsOverrideGraphic = new List<Element>() ;
       var overrideGraphic = new OverrideGraphicSettings() ;
       
       var color = new Color( 255, 255, 255 ) ;
@@ -130,6 +130,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForCylindricalShaftName ).ToList() ;
       curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
       elementsOverrideGraphic.AddRange( curveElements ) ;
+      
+      var hSymbols = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting ).Where( f => f.Symbol.FamilyName == ElectricalRoutingFamilyType.ShaftHSymbol.GetFamilyName() ).ToList() ;
+      hSymbols.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( hSymbols ) ;
       
       var subCategoryForDirectionCylindricalShaftColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == CreateCylindricalShaftCommandBase.SubCategoryForDirectionCylindricalShaftName )?.Index ?? AutoCadColorsManager.NoColor ;
       color = GetElementColor( subCategoryForDirectionCylindricalShaftColorIndex ) ;
