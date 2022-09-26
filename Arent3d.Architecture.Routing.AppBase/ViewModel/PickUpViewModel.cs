@@ -40,6 +40,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private const string DefaultConstructionItem = "未設定" ;
     private const string VersionDateTimeFormat = "yyyy/MM/dd HH:mm:ss" ;
+    public const string MaterialDefault = "アルミ" ;
+    public const string NoCover = "無し" ;
+    
     private readonly Document _document ;
     private List<PickUpItemModel> _pickUpModels ;
     private readonly StorageService<Level, PickUpModel>? _storagePickUpServiceByLevel ;
@@ -999,32 +1002,52 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var cableTray in cableTrays ) {
         var elevationFormLevel = cableTray.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).AsDouble() ;
         var level = levels.Where( x => x.Elevation <= elevationFormLevel ).OrderByDescending(x => x.Elevation).FirstOrDefault() ;
+        
+        var material = cableTray.GetPropertyString( ElectricalRoutingElementParameter.Material ) ?? string.Empty ;
+        var showMaterial = material != MaterialDefault && !string.IsNullOrEmpty(material) ? $"({material})" : string.Empty ;
+
+        var constructionItem = cableTray.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ?? DefaultConstructionItem ;
+        
         var pickUpCableTray = new PickUpItemModel
         {
           ProductName = "ケーブルラック",
           Floor = level?.Name ?? string.Empty,
-          Specification = $"{cableTray.LookupParameter("トレイ幅").AsValueString()}mm",
+          Specification = $"{cableTray.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
           EquipmentType = ProductType.CableTray.GetFieldName(),
-          ConstructionItems = cableTray.GetPropertyString(ElectricalRoutingElementParameter.ConstructionItem) ?? DefaultConstructionItem,
+          ConstructionItems = constructionItem,
           Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
           Tani = "m"
         } ;
         pickUpModels.Add(pickUpCableTray);
 
-        if ( ! cableTray.GetPropertyBool( ElectricalRoutingElementParameter.Separator ) ) 
-          continue ;
+        if ( cableTray.GetPropertyBool( ElectricalRoutingElementParameter.Separator ) ) {
+          var pickUpSeparator = new PickUpItemModel
+          {
+            ProductName = "ケーブルラック",
+            Floor = level?.Name ?? string.Empty,
+            Specification = $"直線ｾﾊﾟﾚｰﾀ{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
+            EquipmentType = ProductType.CableTray.GetFieldName(),
+            ConstructionItems = constructionItem,
+            Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
+            Tani = "m"
+          } ;
+          pickUpModels.Add(pickUpSeparator);
+        }
         
-        var pickUpSeparator = new PickUpItemModel
+        if(cableTray.GetPropertyString(ElectricalRoutingElementParameter.Cover) is not { } cover || cover == NoCover)
+          continue;
+        
+        var pickUpCover = new PickUpItemModel
         {
-          ProductName = "ケーブルラック",
+          ProductName = "ケーブルラックカバー",
           Floor = level?.Name ?? string.Empty,
-          Specification = "直線ｾﾊﾟﾚｰﾀ",
+          Specification = $"{cableTray.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
           EquipmentType = ProductType.CableTray.GetFieldName(),
-          ConstructionItems = cableTray.GetPropertyString(ElectricalRoutingElementParameter.ConstructionItem) ?? DefaultConstructionItem,
+          ConstructionItems = constructionItem,
           Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
           Tani = "m"
         } ;
-        pickUpModels.Add(pickUpSeparator);
+        pickUpModels.Add(pickUpCover);
       }
 
       var cableTrayFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
@@ -1033,17 +1056,52 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var cableTrayFitting in cableTrayFittings ) {
         var elevationFormLevel = cableTrayFitting.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).AsDouble() ;
         var level = levels.Where( x => x.Elevation <= elevationFormLevel ).OrderByDescending(x => x.Elevation).FirstOrDefault() ;
+        
+        var material = cableTrayFitting.GetPropertyString( ElectricalRoutingElementParameter.Material ) ?? string.Empty ;
+        var showMaterial = material != MaterialDefault && !string.IsNullOrEmpty(material) ? $"({material})" : string.Empty ;
+        
+        var constructionItem = cableTrayFitting.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ?? DefaultConstructionItem ;
+        
         var pickUpFitting = new PickUpItemModel
         {
           ProductName = "L形分岐ラック",
           Floor = level?.Name ?? string.Empty,
-          Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm",
+          Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
           EquipmentType = ProductType.CableTrayFitting.GetFieldName(),
-          ConstructionItems = cableTrayFitting.GetPropertyString(ElectricalRoutingElementParameter.ConstructionItem) ?? DefaultConstructionItem,
+          ConstructionItems = constructionItem,
           Quantity = "1",
           Tani = "個"
         } ;
         pickUpModels.Add(pickUpFitting);
+
+        if ( cableTrayFitting.GetPropertyBool( ElectricalRoutingElementParameter.Separator ) ) {
+          var pickUpSeparator = new PickUpItemModel
+          {
+            ProductName = "ケーブルラック",
+            Floor = level?.Name ?? string.Empty,
+            Specification = $"分岐ｾﾊﾟﾚｰﾀ{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
+            EquipmentType = ProductType.CableTrayFitting.GetFieldName(),
+            ConstructionItems = constructionItem,
+            Quantity = "1",
+            Tani = "個"
+          } ;
+          pickUpModels.Add(pickUpSeparator);
+        }
+
+        if(cableTrayFitting.GetPropertyString(ElectricalRoutingElementParameter.Cover) is not { } cover || cover == NoCover)
+          continue;
+        
+        var pickUpCover = new PickUpItemModel
+        {
+          ProductName = "L形分岐ラックカバー",
+          Floor = level?.Name ?? string.Empty,
+          Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
+          EquipmentType = ProductType.CableTrayFitting.GetFieldName(),
+          ConstructionItems = constructionItem,
+          Quantity = "1",
+          Tani = "個"
+        } ;
+        pickUpModels.Add(pickUpCover);
       }
     }
 
