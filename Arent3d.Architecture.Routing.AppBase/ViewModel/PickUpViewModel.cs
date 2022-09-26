@@ -195,7 +195,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #region Constructor
 
-    public PickUpViewModel( Document document, Level? level, string? version = null, EquipmentCategory? equipmentCategory = null)
+    public PickUpViewModel( Document document, Level? level, string? version = null, EquipmentCategory? equipmentCategory = null )
     {
       _document = document ;
       _ceedModels = new List<CeedModel>() ;
@@ -208,7 +208,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
       _equipmentCategory = equipmentCategory ;
-      
+
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null ) _ceedModels = ceedStorable.CeedModelData ;
 
@@ -243,9 +243,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       // Get pick up data
       if ( string.IsNullOrEmpty( _version ) || _version == EquipmentCategoryViewModel.LatestVersion ) {
         _pickUpModels = GetPickUpData() ;
-        if ( level != null ) 
-          _pickUpModels = _pickUpModels.Where( p =>  p.Floor == level.Name ).ToList() ;
-      } 
+        if ( level != null )
+          _pickUpModels = _pickUpModels.Where( p => p.Floor == level.Name ).ToList() ;
+      }
       else if ( _storagePickUpService != null ) {
         _pickUpModels = _storagePickUpService.Data.PickUpData.Where( p => p.Version == _version ).ToList() ;
       }
@@ -257,35 +257,40 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       DataPickUpModels = _pickUpModels ;
-      
+
 
       if ( ! _pickUpModels.Any() ) {
         MessageBox.Show( "Don't have element.", "Result Message" ) ;
       }
       else {
         var pickUpModels = new List<PickUpItemModel>() ;
-        
+
+        var racks = new List<PickUpItemModel>() ;
         if ( equipmentCategory is null or EquipmentCategory.OnlyLongItems ) {
-          var pickUpConduitByNumbers = MergePickUpModels(PickUpModelByNumber( ProductType.Conduit ), ProductType.Conduit) ;
-          if ( pickUpConduitByNumbers.Any() ) 
+          var pickUpConduitByNumbers = MergePickUpModels( PickUpModelByNumber( ProductType.Conduit ), ProductType.Conduit ) ;
+          if ( pickUpConduitByNumbers.Any() )
             pickUpModels.AddRange( pickUpConduitByNumbers ) ;
-          
+
           var pickUpRackByNumbers = PickUpModelByNumber( ProductType.Cable ) ;
-          if ( pickUpRackByNumbers.Any() ) 
+          if ( pickUpRackByNumbers.Any() )
             pickUpModels.AddRange( pickUpRackByNumbers ) ;
 
-          var pickUpCableTrays = MergePickUpModels( _pickUpModels.Where( x => x.EquipmentType == ProductType.CableTray.GetFieldName()), ProductType.CableTray ) ;
+          var pickUpCableTrays = MergePickUpModels( _pickUpModels.Where( x => x.EquipmentType == ProductType.CableTray.GetFieldName() ), ProductType.CableTray ) ;
           if ( pickUpCableTrays.Any() )
-            pickUpModels.AddRange( pickUpCableTrays.OrderBy(x => x.ProductName).ThenBy(x => x.Classification) ) ;
+            racks.AddRange( pickUpCableTrays ) ;
         }
 
         if ( equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
           var pickUpFittings = _pickUpModels.Where( x => x.EquipmentType == ProductType.CableTrayFitting.GetFieldName() ).ToList() ;
-          pickUpModels.AddRange(pickUpFittings.OrderBy(x => x.ProductName).ThenBy(x => x.Classification));
-          
-          var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
-          pickUpModels.AddRange( pickUpConnectors );
+          if ( pickUpFittings.Any() )
+            racks.AddRange( pickUpFittings ) ;
+
+          var pickUpConnectors = _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+          pickUpModels.AddRange( pickUpConnectors ) ;
         }
+
+        if ( racks.Any() )
+          pickUpModels.AddRange( racks.OrderBy( x => x.ProductName ).ThenBy( x => x.Classification ) ) ;
 
         OriginPickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor select pickUpModel ).ToList() ;
       }
