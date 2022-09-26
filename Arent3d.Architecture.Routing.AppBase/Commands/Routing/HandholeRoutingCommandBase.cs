@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       PointOnRoutePicker.PickInfo pickInfo ;
       try {
-        pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+        pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType() ) ;
       }
       catch ( OperationCanceledException ) {
         return OperationResult<PickState>.Cancelled ;
