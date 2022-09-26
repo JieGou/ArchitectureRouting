@@ -141,7 +141,7 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
     Text,
     
-    [Parameter( "1b8f0e8e-fb33-440c-b8b7-9669107061f9", "カバー", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Is there a cover or not?" )]
+    [Parameter( "1b8f0e8e-fb33-440c-b8b7-9669107061f9", "カバー", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Cover" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
     Cover,
     
