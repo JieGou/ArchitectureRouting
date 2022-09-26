@@ -1025,7 +1025,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           {
             ProductName = "ケーブルラック",
             Floor = level?.Name ?? string.Empty,
-            Specification = $"直線ｾﾊﾟﾚｰﾀ{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
+            Specification = $"直線ｾﾊﾟﾚｰﾀ{( !string.IsNullOrEmpty(showMaterial) ? $"{showMaterial}" : string.Empty )}",
             EquipmentType = ProductType.CableTray.GetFieldName(),
             ConstructionItems = constructionItem,
             Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
@@ -1041,7 +1041,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         {
           ProductName = "ケーブルラックカバー",
           Floor = level?.Name ?? string.Empty,
-          Specification = $"{cableTray.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
+          Specification = $"{cableTray.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"{showMaterial}" : string.Empty )}",
           EquipmentType = ProductType.CableTray.GetFieldName(),
           ConstructionItems = constructionItem,
           Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
@@ -1066,7 +1066,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         {
           ProductName = "L形分岐ラック",
           Floor = level?.Name ?? string.Empty,
-          Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
+          Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"{showMaterial}" : string.Empty )}",
           EquipmentType = ProductType.CableTrayFitting.GetFieldName(),
           ConstructionItems = constructionItem,
           Quantity = "1",
@@ -1079,7 +1079,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           {
             ProductName = "ケーブルラック",
             Floor = level?.Name ?? string.Empty,
-            Specification = $"分岐ｾﾊﾟﾚｰﾀ{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
+            Specification = $"分岐ｾﾊﾟﾚｰﾀ{( !string.IsNullOrEmpty(showMaterial) ? $"{showMaterial}" : string.Empty )}",
             EquipmentType = ProductType.CableTrayFitting.GetFieldName(),
             ConstructionItems = constructionItem,
             Quantity = "1",
@@ -1095,7 +1095,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         {
           ProductName = "L形分岐ラックカバー",
           Floor = level?.Name ?? string.Empty,
-          Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"({showMaterial})" : string.Empty )}",
+          Specification = $"{cableTrayFitting.LookupParameter("トレイ幅").AsValueString()}mm{( !string.IsNullOrEmpty(showMaterial) ? $"{showMaterial}" : string.Empty )}",
           EquipmentType = ProductType.CableTrayFitting.GetFieldName(),
           ConstructionItems = constructionItem,
           Quantity = "1",
