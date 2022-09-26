@@ -39,15 +39,15 @@
         <GroupBox Margin="10,5,10,0" Padding="10,10,0,0" Header="セパレータ">
             <StackPanel Orientation="Horizontal" Height="25" HorizontalAlignment="Left" VerticalAlignment="Bottom">
                 <RadioButton GroupName="SeparatorOption" Width="80">無し</RadioButton>
-                <RadioButton GroupName="SeparatorOption" Width="80" IsChecked="True">有り</RadioButton>
+                <RadioButton GroupName="SeparatorOption" Width="80" IsChecked="True" Checked="SeparatorOnChecked" Unchecked="SeparatorOnUnchecked">有り</RadioButton>
             </StackPanel>
         </GroupBox>
         
         <GroupBox Margin="10,5,10,10" Padding="10,10,0,0" Header="カバー">
             <StackPanel Orientation="Horizontal" Height="25" HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                <RadioButton GroupName="CoverOption" Width="80" IsChecked="True">無し</RadioButton>
-                <RadioButton GroupName="CoverOption" Width="80">屋内</RadioButton>
-                <RadioButton GroupName="CoverOption" Width="80">屋外</RadioButton>
+                <RadioButton GroupName="CoverOption" Width="80" Checked="CoverOnChecked" IsChecked="True">無し</RadioButton>
+                <RadioButton GroupName="CoverOption" Width="80" Checked="CoverOnChecked">屋内</RadioButton>
+                <RadioButton GroupName="CoverOption" Width="80" Checked="CoverOnChecked">屋外</RadioButton>
             </StackPanel>
         </GroupBox>
         

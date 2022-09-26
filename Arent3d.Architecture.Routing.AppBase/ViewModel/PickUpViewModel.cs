@@ -1011,7 +1011,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         } ;
         pickUpModels.Add(pickUpCableTray);
 
-        if ( ! cableTray.GetPropertyBool( ElectricalRoutingElementParameter.IsSeparator ) ) 
+        if ( ! cableTray.GetPropertyBool( ElectricalRoutingElementParameter.Separator ) ) 
           continue ;
         
         var pickUpSeparator = new PickUpItemModel

@@ -141,13 +141,13 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
     Text,
     
-    [Parameter( "1b8f0e8e-fb33-440c-b8b7-9669107061f9", "カバー", DataType.YesNo, ParameterVisibility.Editable, DescriptionKey = "Is there a cover or not?" )]
+    [Parameter( "1b8f0e8e-fb33-440c-b8b7-9669107061f9", "カバー", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Is there a cover or not?" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
-    IsCover,
+    Cover,
     
     [Parameter( "73dcabeb-987d-4ea4-abd2-1a461d2cfb09", "セパレータ", DataType.YesNo, ParameterVisibility.Editable, DescriptionKey = "Is there a separator or not?" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
-    IsSeparator,
+    Separator,
     
     [Parameter( "f66954cc-b2cf-4d9a-b820-ff083a75a312", "ラック材質", DataType.Text, ParameterVisibility.Editable, DescriptionKey = "Material" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
