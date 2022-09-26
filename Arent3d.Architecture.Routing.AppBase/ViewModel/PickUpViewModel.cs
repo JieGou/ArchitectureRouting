@@ -62,6 +62,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly string? _version ;
     private readonly EquipmentCategory? _equipmentCategory ;
 
+    private record SortPickUpRack( HiroiMasterModel HiroiMasterModel, PickUpItemModel PickUpItemModel ) ;
+
     private string Version => _version ?? DateTime.Now.ToString( VersionDateTimeFormat ) ;
     public readonly List<PickUpItemModel> DataPickUpModels ;
 
@@ -273,13 +275,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             pickUpModels.AddRange( pickUpRackByNumbers ) ;
 
           var pickUpCableTrays = MergePickUpModels( _pickUpModels.Where( x => x.EquipmentType == ProductType.CableTray.GetFieldName()), ProductType.CableTray ) ;
-          if ( pickUpCableTrays.Any() ) 
-            pickUpModels.AddRange( pickUpCableTrays ) ;
+          if ( pickUpCableTrays.Any() )
+            pickUpModels.AddRange( pickUpCableTrays.OrderBy(x => x.ProductName).ThenBy(x => x.Classification) ) ;
         }
 
         if ( equipmentCategory is null or EquipmentCategory.OnlyPieces ) {
           var pickUpFittings = _pickUpModels.Where( x => x.EquipmentType == ProductType.CableTrayFitting.GetFieldName() ).ToList() ;
-          pickUpModels.AddRange(pickUpFittings);
+          pickUpModels.AddRange(pickUpFittings.OrderBy(x => x.ProductName).ThenBy(x => x.Classification));
           
           var pickUpConnectors =  _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
           pickUpModels.AddRange( pickUpConnectors );
