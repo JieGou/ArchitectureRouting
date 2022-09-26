@@ -12,6 +12,7 @@ using System.Globalization ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.AppBase.Utils;
 using Arent3d.Utility ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using Transform = Autodesk.Revit.DB.Transform ;
@@ -433,23 +434,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var count = racks.Count ;
       var rack = racks.OrderByDescending( x => x.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).AsDouble() ).FirstOrDefault() ;
       if ( rack != null ) {
-        var widthCableTray = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble() ;
+        var widthCableTray = CableRackUtils.RackWidthOnPlanView( (int)scale ) ;
+        //var widthCableTray = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble() ;
         var notationModel = rackNotationStorable.RackNotationModelData.FirstOrDefault( n => n.FromConnectorId == fromConnectorId && n.IsDirectionX == isDirectionX && Math.Abs( n.RackWidth - Math.Round( widthCableTray, 4 ) ) == 0 ) ;
         if ( notationModel == null ) {
           if ( doc.ActiveView is ViewPlan viewPlan ) {
             var point = ( rack.Location as LocationPoint )!.Point ;
             var connectors = rack.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
-            var notationDistance = widthCableTray.RevitUnitsToMillimeters() ;
+            var rackWidthInMillimeters = widthCableTray.RevitUnitsToMillimeters() ;
             if ( isDirectionX )
               point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y + widthCableTray ), point.Z ) ;
             else
               point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X - widthCableTray ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y ), point.Z ) ;
 
             // content to show
-            var notation = notationDistance switch
+            var notation = rackWidthInMillimeters switch
             {
-              > 600 => string.Format( Notation, ( notationDistance / 2 ).ToString( CultureInfo.CurrentCulture ) ) + " x 2",
-              _ => string.Format( Notation, notationDistance.ToString( CultureInfo.CurrentCulture ) ),
+              > 600 => string.Format( Notation, ( rackWidthInMillimeters / 2 ).ToString( CultureInfo.CurrentCulture ) ) + " x 2",
+              _ => string.Format( Notation, rackWidthInMillimeters.ToString( CultureInfo.CurrentCulture ) ),
             } ;
 
             var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;

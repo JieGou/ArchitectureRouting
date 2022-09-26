@@ -434,14 +434,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return rackSymbol ;
     }
 
-    private static void CopyRouteName( this FamilyInstance instance, Element conduit )
+    private static void CopyProperties( this FamilyInstance rack, Element referenceElement )
     {
-      var routeName = conduit.GetRouteName() ;
+      var routeName = referenceElement.GetRouteName() ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
 
       var routeNameArray = routeName!.Split( '_' ) ;
       routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
+      rack.SetProperty( RoutingParameter.RouteName, routeName ) ;
+
+      if ( ! referenceElement.IsRack() )
+        return ;
+      
+      if(referenceElement.TryGetProperty(ElectricalRoutingElementParameter.Separator, out bool separator))
+        rack.TrySetProperty( ElectricalRoutingElementParameter.Separator, separator ) ;
+      if(referenceElement.TryGetProperty(ElectricalRoutingElementParameter.Material, out string? material) && material is {})
+        rack.TrySetProperty( ElectricalRoutingElementParameter.Material, material ) ;
+      if(referenceElement.TryGetProperty(ElectricalRoutingElementParameter.Cover, out string? cover) && cover is {})
+        rack.TrySetProperty( ElectricalRoutingElementParameter.Material, cover ) ;
     }
 
     private static FamilyInstance? CreateRack( Document doc, RackCreationParam creationParam )
@@ -468,8 +478,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         if ( ! string.IsNullOrEmpty( fromConnectorId ) )
           instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
 
-        // set route name
-        instance.CopyRouteName( refElement ) ;
+        // set route name + rack specified parameters
+        instance.CopyProperties( refElement ) ;
       }
 
       if ( instance.GetTransform() is not { } tf )
@@ -508,8 +518,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         if ( ! string.IsNullOrEmpty( fromConnectorId ) )
           instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
 
-        // set route name
-        instance.CopyRouteName( refElement ) ;
+        // set route name + rack specified parameters
+        instance.CopyProperties( refElement ) ;
       }
 
       doc.Regenerate() ;
@@ -662,7 +672,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return CreateElbow( document, elbowCreationParam ) ;
     }
 
-    private static double RackWidthOnPlanView( int nScale )
+    /// <summary>
+    /// calculate 2d width in Revit unit
+    /// </summary>
+    public static double RackWidthOnPlanView( int nScale )
     {
       var symbolRatio = Model.ImportDwgMappingModel.GetDefaultSymbolRatio( nScale ) ;
       return ( 4 * nScale * symbolRatio ).MillimetersToRevitUnits() ;
@@ -808,7 +821,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         cableTrayInstance.SetProperty( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), conduitMap.Width ) ;
         cableTrayInstance.SetProperty( "ラックの倍率", RackWidthOnPlanView( document.ActiveView.Scale ) / conduitMap.Width ) ;
         cableTrayInstance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), rackClassification ) ;
-        cableTrayInstance.CopyRouteName( conduitMap.Conduit ) ;
+        cableTrayInstance.CopyProperties( conduitMap.Conduit ) ;
 
         var (fromConnectorId, toConnectorId) = RackCommandBase.GetFromAndToConnectorUniqueId( conduitMap.Conduit ) ;
         if ( ! string.IsNullOrEmpty( toConnectorId ) )
