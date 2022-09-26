@@ -362,7 +362,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               while ( result.Any( rs => rs.RouteName == name ) ) name += "_" + index ;
               var firstRouteSegment = allRouteSegments.Single( rs => rs.FromEndPoint.Key.GetElementUniqueId() == iterativeSegment.ToEndPoint.Key.GetElementUniqueId() ) ;
               if ( routes.FirstOrDefault( rs => rs.Value.RouteSegments.Any( rs2 => rs2.FromEndPoint.Key == firstRouteSegment.FromEndPoint.Key && rs2.ToEndPoint.Key == firstRouteSegment.ToEndPoint.Key ) ) is { } duplicatedRoute ) {
-                if ( result.All( rs => rs.RouteName != duplicatedRoute .Value.Name) ) {
+                if ( result.All( rs => rs.RouteName != duplicatedRoute.Value.Name ) ) {
                   name = duplicatedRoute.Value.Name ;
                 }
               }
