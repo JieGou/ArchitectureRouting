@@ -5,6 +5,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -531,6 +532,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       //Update Shaft Opening
       var shaftOpeningStore = document.GetShaftOpeningStorable() ;
       UpdateShaftOpeningInViewPlan( shaftOpeningStore, elementsInView, viewPlan ) ;
+      
+      // Update rack
+      document.ReDrawAllRacksAndElbows( viewPlan ) ;
     }
 
     private static void UpdateShaftOpeningInViewPlan( ShaftOpeningStorable storable, IEnumerable<Element> elementsInView, ViewPlan viewPlan )
