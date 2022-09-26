@@ -513,7 +513,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       instance.SetProperty( "ラックの倍率", creationParam.ScaleFactor ) ;
 
       // rack classification
-      instance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ), creationParam.RackClassification ) ;
+      var rackClassification = "" ;
+      if ( ! string.IsNullOrEmpty( creationParam.RackClassification ) )
+        rackClassification = creationParam.RackClassification ;
+      else if ( creationParam.ReferenceElement is FamilyInstance fi && fi.TryGetProperty( ElectricalRoutingElementParameter.RackType, out string? oldRackType ) && oldRackType is { } )
+        rackClassification = oldRackType ;
+      instance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ), rackClassification ) ;
 
       if ( creationParam.ReferenceElement is { } refElement ) {
         // set To-Side Connector Id
@@ -811,37 +816,81 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       }
     }
 
-    public static void ReDrawAllRacksAndElbows( this Document document, View view, int? scale = null )
+    private static List<Element> ReDrawArrayOfRacksAndElbows( this Document document, IEnumerable<Element> oldElements, int scale )
     {
-      var newScale = scale ?? document.ActiveView.Scale ;
-      // var groups = allRacksAndFittings.GroupBy( fi => fi.GetRouteName() ) ;
-
-      var storage = new StorageService<Level, RackFromToModel>( document.ActiveView.GenLevel ) ;
-      var rackFromToList = storage.Data.RackFromToItems.ToList() ;
-      storage.Data.RackFromToItems.Clear() ;
-
-      var newItems = new List<Element>() ;
-      var oldUniqueIds = new List<string>() ;
-      foreach ( var rackFromTo in rackFromToList ) {
-        // read positions of existing racks and fittings
-        var oldRacksAndFittings = rackFromTo.UniqueIds.ConvertAll( uniqueId => document.GetElement( uniqueId ) ) ;
-        var fullMakers = ConvertRacksToFullMarkers( oldRacksAndFittings ) ;
-
-        // create racks and fittings with new scale
-        var newRacksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, newScale, "" ).ToList() ;
-        newItems.AddRange( newRacksAndFittings ) ;
-
-        // delete existing notations and rack items
-        EraseRackCommandBase.RemoveRackNotation( document, rackFromTo.UniqueIds ) ;
-        document.Delete( rackFromTo.UniqueIds ) ;
-
-        // add to storage
-        storage.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = newRacksAndFittings.Select( element => element.UniqueId ).ToList() } ) ;
+      var newElements = new List<Element>() ;
+      // modify scale factor of vertical rack 
+      var verticalRacks = oldElements.Where( x => x.IsValidObject ).OfType<FamilyInstance>().Where( element => element.IsVerticalRack() ).ToList() ;
+      var planViewRackWidth = RackWidthOnPlanView( scale ) ;
+      foreach ( var verticalRack in verticalRacks ) {
+        if ( verticalRack.TryGetRackWidth( out var width ) )
+          verticalRack.SetProperty( "ラックの倍率", planViewRackWidth / width ) ;
+        newElements.Add( verticalRack ) ;
       }
 
+      // read positions of existing racks and fittings
+      var horizontalRacks = oldElements.Where( element => ! element.IsVerticalRack() ).ToList() ;
+      var fullMakers = ConvertRacksToFullMarkers( horizontalRacks ) ;
+
+      // create racks and fittings with new scale
+      var newHorizontalRacksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, scale, "" ).ToList() ;
+      newElements.AddRange( newHorizontalRacksAndFittings ) ;
+
+      // delete existing notations and rack items
+      var oldUniqueIds = horizontalRacks.Select( e => e.UniqueId ).ToArray() ;
+      EraseRackCommandBase.RemoveRackNotation( document, oldUniqueIds ) ;
+      document.Delete( oldUniqueIds ) ;
+
       // create notation for new rack
-      RackCommandBase.CreateNotationForRack( document, newItems.OfType<FamilyInstance>().Where( fi => fi.IsRack() ) ) ;
-      storage.SaveChange() ;
+      RackCommandBase.CreateNotationForRack( document, newHorizontalRacksAndFittings.OfType<FamilyInstance>().Where( fi => fi.IsRack() ) ) ;
+
+      return newElements ;
+    }
+
+    public static void ReDrawAllRacksAndElbows( this Document document, View view, int? scale = null )
+    {
+      var newScale = scale ?? view.Scale ;
+
+      // redraw manual racks
+      var storageRackFromTo = new StorageService<Level, RackFromToModel>( view.GenLevel ) ;
+      {
+        var rackFromToList = storageRackFromTo.Data.RackFromToItems.Where( x => x.UniqueIds.All( uniqueId => document.GetElement( uniqueId ) is { } ) ).ToList() ;
+        storageRackFromTo.Data.RackFromToItems.Clear() ;
+        foreach ( var rackFromTo in rackFromToList ) {
+          // redraw racks and fittings with new scale
+          var newRacksAndFittings = document.ReDrawArrayOfRacksAndElbows( rackFromTo.UniqueIds.ConvertAll( document.GetElement ), newScale ) ;
+
+          // add to storage
+          storageRackFromTo.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = newRacksAndFittings.Select( element => element.UniqueId ).ToList() } ) ;
+        }
+
+        storageRackFromTo.SaveChange() ;
+      }
+
+      // redraw auto racks
+      var storageRackForRoute = new StorageService<Level, RackForRouteModel>( view.GenLevel ) ;
+      {
+        var rackForRouteItems = storageRackForRoute.Data.RackForRoutes.Where( item => item.RackIds.All( id => id.IsValid() ) ).ToList() ;
+        storageRackForRoute.Data.RackForRoutes.Clear() ;
+        foreach ( var rackForRouteItem in rackForRouteItems ) {
+          // redraw racks and fittings with new scale
+          var newRacksAndFittings = document.ReDrawArrayOfRacksAndElbows( rackForRouteItem.RackIds.ConvertAll( document.GetElement ), newScale ) ;
+
+          // add to storage
+          storageRackForRoute.Data.RackForRoutes.Add( new RackForRouteItem() { RouteName = rackForRouteItem.RouteName, RackIds = newRacksAndFittings.Select( element => element.Id ).ToList() } ) ;
+        }
+
+        storageRackForRoute.SaveChange() ;
+      }
+    }
+
+    public static bool IsVerticalRack( this Element element )
+    {
+      if ( element is not FamilyInstance rack || ! rack.IsRack() )
+        return false ;
+      var tf = rack.GetTransform() ;
+      var rackDirection = tf.BasisX ;
+      return rackDirection.IsAlmostEqualTo( XYZ.BasisZ ) || rackDirection.IsAlmostEqualTo( -XYZ.BasisZ ) ;
     }
     
     public static bool IsVertical( this Conduit conduit )
