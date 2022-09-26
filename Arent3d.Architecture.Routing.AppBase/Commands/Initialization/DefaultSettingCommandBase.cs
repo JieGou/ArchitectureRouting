@@ -493,26 +493,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
       
-      // // Update size text note border
-      // var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 0 ].Trim() == textNote.Name ) ;
-      // var textNoteDoubleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 1 ].Trim() == textNote.Name ) ;
-      // foreach ( var textNoteBorder in textNoteSingleBorders ) {
-      //   var textNote = textNoteBorder as TextNote ;
-      //   if ( textNote == null ) continue ;
-      //
-      //   var curves = GetSingleBorderTextNote( textNote ) ;
-      //   var borderIds = CreateDetailCurve( document, textNote, curves ) ;
-      //   SetDataForTextNote( storageService, textNote, borderIds ) ;
-      // }
-      //
-      // foreach ( var textNoteBorder in textNoteDoubleBorders ) {
-      //   var textNote = textNoteBorder as TextNote ;
-      //   if ( textNote == null ) continue ;
-      //
-      //   var curves = GetDoubleBorderTextNote( textNote ) ;
-      //   var borderIds = CreateDetailCurve( document, textNote, curves ) ;
-      //   SetDataForTextNote( storageService, textNote, borderIds ) ;
-      // }
+      // Update size text note border
+      var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 0 ].Trim() == textNote.Name ) ;
+      var textNoteDoubleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 1 ].Trim() == textNote.Name ) ;
+      foreach ( var textNoteBorder in textNoteSingleBorders ) {
+        var textNote = textNoteBorder as TextNote ;
+        if ( textNote == null ) continue ;
+      
+        var curves = GetSingleBorderTextNote( textNote ) ;
+        var borderIds = CreateDetailCurve( document, textNote, curves ) ;
+        SetDataForTextNote( storageService, textNote, borderIds ) ;
+      }
+      
+      foreach ( var textNoteBorder in textNoteDoubleBorders ) {
+        var textNote = textNoteBorder as TextNote ;
+        if ( textNote == null ) continue ;
+      
+        var curves = GetDoubleBorderTextNote( textNote ) ;
+        var borderIds = CreateDetailCurve( document, textNote, curves ) ;
+        SetDataForTextNote( storageService, textNote, borderIds ) ;
+      }
 
       // Update Y of ceedcode
       var independentTags = elementsInView.Where( e => e is IndependentTag ).ToList() ;
