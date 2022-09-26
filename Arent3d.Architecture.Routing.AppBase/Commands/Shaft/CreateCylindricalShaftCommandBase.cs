@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             .FirstOrDefault( x => x.LineStyle.Name is SubCategoryForSymbolName or SubCategoryForDirectionCylindricalShaftName or SubCategoryForCylindricalShaftName 
                          && selection.GetElementIds().Contains( x.Id ) ) ;
           if ( shaftOpening == null && cableTrayInstance == null && curveElement == null ) return Result.Succeeded ;
-          shaftOpeningModels = GetShaftModels( shaftOpeningStore, shaftOpening?.UniqueId ?? string.Empty, cableTrayInstance?.UniqueId ?? string.Empty, curveElement?.UniqueId ?? string.Empty ) ;
+          shaftOpeningModels = GetExistedShaftModels( shaftOpeningStore, shaftOpening?.UniqueId ?? string.Empty, cableTrayInstance?.UniqueId ?? string.Empty, curveElement?.UniqueId ?? string.Empty ) ;
           if ( ! shaftOpeningModels.Any() ) return Result.Succeeded ;
           centerPoint = GetShaftOriginPoint( document, shaftOpeningModels ) ;
           if ( centerPoint == null ) return Result.Succeeded ;
@@ -143,7 +143,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       return shaftModelGroups ;
     }
 
-    private static List<ShaftOpeningModel> GetShaftModels( ShaftOpeningStorable shaftOpeningStore, string shaftOpeningId, string cableTrayId, string curveElementId )
+    private static List<ShaftOpeningModel> GetExistedShaftModels( ShaftOpeningStorable shaftOpeningStore, string shaftOpeningId, string cableTrayId, string curveElementId )
     {
       var shaftOpeningModel = shaftOpeningStore.ShaftOpeningModels
         .FirstOrDefault( s => ( ! string.IsNullOrEmpty( shaftOpeningId ) && s.ShaftOpeningUniqueId == shaftOpeningId ) 
