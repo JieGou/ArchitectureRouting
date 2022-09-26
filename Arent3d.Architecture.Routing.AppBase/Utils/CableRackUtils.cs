@@ -634,11 +634,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         }
 
         var fourPoints = ReArrange( ( markerList[ i ].StartPoint, markerList[ i ].EndPoint ), ( markerList[ i + 1 ].StartPoint, markerList[ i + 1 ].EndPoint ) ) ;
-        var isSameWidth = Math.Abs( markerList[ i ].Width.RevitUnitsToMillimeters() - markerList[ i + 1 ].Width.RevitUnitsToMillimeters() ) < 1.0 ;
         var isSameDirection = ( fourPoints.P11 - fourPoints.P12 ).Normalize().IsAlmostEqualTo( ( fourPoints.P21 - fourPoints.P22 ).Normalize() ) ;
-        if ( isSameWidth && fourPoints.P12.IsAlmostEqualTo( fourPoints.P21 ) && isSameDirection ) {
+        if ( isSameDirection && fourPoints.P12.IsAlmostEqualTo( fourPoints.P21 ) && isSameDirection ) {
           // extend next marker and ignore this marker
-          markerList[ i + 1 ] = ( fourPoints.P11, fourPoints.P22, markerList[ i + 1 ].Width ) ;
+          markerList[ i + 1 ] = ( fourPoints.P11, fourPoints.P22, Math.Max(markerList[ i ].Width, markerList[ i + 1 ].Width) ) ;
         }
         else {
           // add this marker to list

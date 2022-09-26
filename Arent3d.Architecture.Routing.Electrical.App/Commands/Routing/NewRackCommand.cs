@@ -5,7 +5,7 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.NewLimitRackCommand", DefaultString = "Create Rack For All" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.NewRackCommand", DefaultString = "Create Rack" )]
   [Image( "resources/rack.png" )]
   public class NewRackCommand : NewRackCommandBase
   {

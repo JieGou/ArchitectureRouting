@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return Result.Cancelled ;
       }
       
-      var racks = GetRacks( uiDocument).EnumerateAll() ;
+      var racks = FilterRacks( uiDocument).EnumerateAll() ;
       
       using var transaction = new Transaction( uiDocument.Document, EraseLimitRackTransactionName ) ;
       try {
@@ -46,6 +46,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     protected abstract IEnumerable<Element> GetRacks( UIDocument uiDocument ) ;
+
+    private IEnumerable<Element> FilterRacks(UIDocument uiDocument)
+    {
+      var racks = GetRacks( uiDocument ) ;
+      foreach ( var rack in racks ) {
+        var comment = rack.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( uiDocument.Document, "Rack Type" ) ).AsString() ;
+        if ( comment == RackCommandBase.RackTypes[ 1 ] || comment == RackCommandBase.RackTypes[ 0 ])
+          yield return rack ;
+      }
+    }
 
     private static void RemoveRacksInStorage(Level level, IEnumerable<Element> racks )
     {
@@ -126,23 +136,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         document.Delete( elementIds ) ;
     }
 
-    protected static IEnumerable<FamilyInstance> GetAllLimitRackInstances(Document doc)
-    {
-      var cableTrays = doc.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTray ) ;
-      var cableTrayFittings = doc.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTrayFitting ) ;
-
-      foreach ( var cableTray in cableTrays ) {
-        var comment = cableTray.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ) ).AsString() ;
-        if ( comment == RackCommandBase.RackTypes[ 1 ] || comment == RackCommandBase.RackTypes[ 0 ])
-          yield return cableTray ;
-      }
-
-      foreach ( var cableTrayFitting in cableTrayFittings ) {
-        var comment = cableTrayFitting.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ) ).AsString() ;
-        if ( comment == RackCommandBase.RackTypes[ 1 ] || comment == RackCommandBase.RackTypes[ 0 ])
-          yield return cableTrayFitting ;
-      }
-    }
-    
   }
 }
