@@ -337,8 +337,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void HighLightSelectedConstructionITemElements(IEnumerable<Element> constructionItemElements)
     {
-      var color = new Color(
-        0, 0, 255 );
+      var color = new Color( 255, 0, 0 ) ;
       using var tx = new Transaction( _document) ;
       tx.Start( "Reset Element Color" );
       ConfirmUnsetCommandBase.ChangeElementColor( constructionItemElements, color ) ;    
