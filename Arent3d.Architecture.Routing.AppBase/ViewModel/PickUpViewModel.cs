@@ -995,11 +995,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       var cableTrays = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
         .OfType<FamilyInstance>()
-        .Where(x => x.Symbol.FamilyName == ElectricalRoutingFamilyType.CableTray.GetFamilyName()) ;
+        .Where(x => x.Symbol.FamilyName == ElectricalRoutingFamilyType.CableTray.GetFamilyName()).EnumerateAll() ;
       foreach ( var cableTray in cableTrays ) {
         var elevationFormLevel = cableTray.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).AsDouble() ;
         var level = levels.Where( x => x.Elevation <= elevationFormLevel ).OrderByDescending(x => x.Elevation).FirstOrDefault() ;
-        var pickUpItemModel = new PickUpItemModel
+        var pickUpCableTray = new PickUpItemModel
         {
           ProductName = "ケーブルラック",
           Floor = level?.Name ?? string.Empty,
@@ -1009,16 +1009,31 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
           Tani = "m"
         } ;
-        pickUpModels.Add(pickUpItemModel);
+        pickUpModels.Add(pickUpCableTray);
+
+        if ( ! cableTray.GetPropertyBool( ElectricalRoutingElementParameter.IsSeparator ) ) 
+          continue ;
+        
+        var pickUpSeparator = new PickUpItemModel
+        {
+          ProductName = "ケーブルラック",
+          Floor = level?.Name ?? string.Empty,
+          Specification = "直線ｾﾊﾟﾚｰﾀ",
+          EquipmentType = ProductType.CableTray.GetFieldName(),
+          ConstructionItems = cableTray.GetPropertyString(ElectricalRoutingElementParameter.ConstructionItem) ?? DefaultConstructionItem,
+          Quantity = $"{cableTray.LookupParameter("トレイ長さ").AsDouble()}",
+          Tani = "m"
+        } ;
+        pickUpModels.Add(pickUpSeparator);
       }
-      
+
       var cableTrayFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_CableTrayFitting )
         .OfType<FamilyInstance>()
         .Where(x => x.Symbol.FamilyName == ElectricalRoutingFamilyType.CableTrayFitting.GetFamilyName());
       foreach ( var cableTrayFitting in cableTrayFittings ) {
         var elevationFormLevel = cableTrayFitting.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).AsDouble() ;
         var level = levels.Where( x => x.Elevation <= elevationFormLevel ).OrderByDescending(x => x.Elevation).FirstOrDefault() ;
-        var pickUpItemModel = new PickUpItemModel
+        var pickUpFitting = new PickUpItemModel
         {
           ProductName = "L形分岐ラック",
           Floor = level?.Name ?? string.Empty,
@@ -1028,7 +1043,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           Quantity = "1",
           Tani = "個"
         } ;
-        pickUpModels.Add(pickUpItemModel);
+        pickUpModels.Add(pickUpFitting);
       }
     }
 
