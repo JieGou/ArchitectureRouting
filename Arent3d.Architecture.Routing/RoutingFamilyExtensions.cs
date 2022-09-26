@@ -127,7 +127,10 @@ namespace Arent3d.Architecture.Routing
     ElectricalEquipmentContentTag,
     
     [Family( "Symbol Information Tag", BuiltInCategory.OST_GenericModelTags )]
-    SymbolInformationTag
+    SymbolInformationTag,
+    
+    [Family( "Shaft H Symbol", BuiltInCategory.OST_CableTrayFitting )]
+    ShaftHSymbol
   }
 
   public enum MechanicalRoutingFamilyType

@@ -243,17 +243,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       if ( cableTrayElement == null ) return detailUniqueIds ;
       cableTrayElement.ParametersMap.get_Item( "トレイ幅" ).Set( cabTrayWidth ) ;
       cableTrayElement.ParametersMap.get_Item( "ラックの倍率" ).Set( DefaultCableTrayScale * ratio / offSetWidth ) ;
-      var overrideGraphic = new OverrideGraphicSettings() ;
-      var color = new Color( 0, 255, 0 ) ;
-      overrideGraphic.SetProjectionLineColor( color ) ;
-      viewPlan.SetElementOverrides( cableTrayElement.Id, overrideGraphic ) ;
 
       return detailUniqueIds ;
     }
     
     private static Element CreateCableTraySymbol( Document document, double originX, double originY, double length, Level level )
     {
-      var routingSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTray ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var routingSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.ShaftHSymbol ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var position = new XYZ( originX, originY, 0 ) ;
       var cableTrayInstance = routingSymbol.Instantiate( position, level, StructuralType.NonStructural ) ;
       ElementTransformUtils.RotateElement( document, cableTrayInstance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), Math.PI / 2 ) ;
