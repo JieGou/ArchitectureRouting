@@ -472,24 +472,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( viewPlan != null && viewPlan.Scale != importDwgMappingModel.Scale ) {
           viewPlan.Scale = importDwgMappingModel.Scale ;
 
-          #region Change pull box dimension if scale changes
-
-          var level = viewPlan.GenLevel ;
-          var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
-          var baseLengthOfLine = scale / 100d ;
-          var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
-          var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
-          var pullBoxElements = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id ).ToList() ;
-
-          foreach ( var pullBoxElement in pullBoxElements ) {
-            var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( routes, allConduits, pullBoxElement ) ;
-            var pullBoxLocation = ( pullBoxElement.Location as LocationPoint )?.Point! ;
-            var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( allConduits, routesRelatedPullBox, pullBoxLocation ) ;
-            PullBoxRouteManager.ResizePullBoxAndRelatedConduits( conduitsRelatedPullBox, pullBoxElement, baseLengthOfLine ) ;
-          }
-
-          #endregion
-          
           if ( null != viewPlan.ViewTemplateId && document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale )
             viewTemplate.Scale = importDwgMappingModel.Scale ;
 
@@ -509,29 +491,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private void UpdateSizeElement( Document document, IList<Element> elementsInView, StorageService<DataStorage, BorderTextNoteModel> storageService, ViewPlan viewPlan )
     {
-      // Update size text note border
-      var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 0 ].Trim() == textNote.Name ) ;
-      var textNoteDoubleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 1 ].Trim() == textNote.Name ) ;
-      foreach ( var textNoteBorder in textNoteSingleBorders ) {
-        var textNote = textNoteBorder as TextNote ;
-        if ( textNote == null ) continue ;
-
-        var curves = GetSingleBorderTextNote( textNote ) ;
-        var borderIds = CreateDetailCurve( document, textNote, curves ) ;
-        SetDataForTextNote( storageService, textNote, borderIds ) ;
-      }
-
-      foreach ( var textNoteBorder in textNoteDoubleBorders ) {
-        var textNote = textNoteBorder as TextNote ;
-        if ( textNote == null ) continue ;
-
-        var curves = GetDoubleBorderTextNote( textNote ) ;
-        var borderIds = CreateDetailCurve( document, textNote, curves ) ;
-        SetDataForTextNote( storageService, textNote, borderIds ) ;
-      }
+      var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
+      
+      // // Update size text note border
+      // var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 0 ].Trim() == textNote.Name ) ;
+      // var textNoteDoubleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 1 ].Trim() == textNote.Name ) ;
+      // foreach ( var textNoteBorder in textNoteSingleBorders ) {
+      //   var textNote = textNoteBorder as TextNote ;
+      //   if ( textNote == null ) continue ;
+      //
+      //   var curves = GetSingleBorderTextNote( textNote ) ;
+      //   var borderIds = CreateDetailCurve( document, textNote, curves ) ;
+      //   SetDataForTextNote( storageService, textNote, borderIds ) ;
+      // }
+      //
+      // foreach ( var textNoteBorder in textNoteDoubleBorders ) {
+      //   var textNote = textNoteBorder as TextNote ;
+      //   if ( textNote == null ) continue ;
+      //
+      //   var curves = GetDoubleBorderTextNote( textNote ) ;
+      //   var borderIds = CreateDetailCurve( document, textNote, curves ) ;
+      //   SetDataForTextNote( storageService, textNote, borderIds ) ;
+      // }
 
       // Update Y of ceedcode
-      var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
       var independentTags = elementsInView.Where( e => e is IndependentTag ).ToList() ;
       foreach ( var element in independentTags ) {
         var independentTag = (IndependentTag) element ;
@@ -556,6 +539,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       
       // Update rack
       document.ReDrawAllRacksAndElbows( viewPlan ) ;
+      
+      // Change pull box dimension and related conduits if scale changes
+      var level = viewPlan.GenLevel ;
+      var baseLengthOfLine = scale / 100d ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
+      var pullBoxElements = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id ).ToList() ;
+
+      foreach ( var pullBoxElement in pullBoxElements ) {
+        var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( routes, allConduits, pullBoxElement ) ;
+        var pullBoxLocation = ( pullBoxElement.Location as LocationPoint )?.Point! ;
+        var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( allConduits, routesRelatedPullBox, pullBoxLocation ) ;
+        PullBoxRouteManager.ResizePullBoxAndRelatedConduits( conduitsRelatedPullBox, pullBoxElement, baseLengthOfLine ) ;
+      }
     }
 
     private static void UpdateShaftOpeningInViewPlan( ShaftOpeningStorable storable, IEnumerable<Element> elementsInView, ViewPlan viewPlan )

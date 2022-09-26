@@ -70,11 +70,11 @@ namespace Arent3d.Architecture.Routing.AppBase
     public static void DeleteAllTextNotesRelatedStorages( Document document )
     {
       // Pull boxes
-      var textNotesOfPullBoxIds = document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( d => d.Data.PullBoxInfoData ).Select( d => document.GetElement( d.TextNoteUniqueId ) ).Select( t => t.Id ).ToList() ;
+      var textNotesOfPullBoxIds = document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( d => d.Data.PullBoxInfoData ).Select( d => document.GetElement( d.TextNoteUniqueId ) ).Where( e => e != null ).Select( t => t.Id ).ToList() ;
       document.Delete( textNotesOfPullBoxIds ) ;
       
       // Wire length notation
-      var wireLengthNotationIds = document.GetWireLengthNotationStorable().WireLengthNotationData.Select( d => document.GetElement( d.TextNoteId ) ).Select( t => t.Id ).ToList() ;
+      var wireLengthNotationIds = document.GetWireLengthNotationStorable().WireLengthNotationData.Select( d => document.GetElement( d.TextNoteId ) ).Where( e => e != null ).Select( t => t.Id ).ToList() ;
       document.Delete( wireLengthNotationIds ) ;
     }
   }

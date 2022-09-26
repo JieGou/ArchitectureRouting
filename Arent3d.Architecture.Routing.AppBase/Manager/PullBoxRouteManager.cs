@@ -1162,11 +1162,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    public static XYZ GetPositionOfPullBox( Document document, TextNote notation, XYZ positionOfNotation, List<(XYZ Direction, int EndPointIndex)> conduitDirectionsRelatedPullBox, double baseLengthOfLine )
+    public static XYZ GetPositionOfPullBox( TextNote notation, XYZ positionOfNotation, List<(XYZ Direction, int EndPointIndex)> conduitDirectionsRelatedPullBox, double viewScale, double baseLengthOfLine )
     {
       var depthByScale = ( DefaultDepthOfPullBox * baseLengthOfLine ).MillimetersToRevitUnits() ;
-      var widthOfLabel = notation.Width * document.ActiveView.Scale ;
-      var heightOfLabel = notation.Height * document.ActiveView.Scale ;
+      var widthOfLabel = notation.Width * viewScale ;
+      var heightOfLabel = notation.Height * viewScale ;
       var distanceBetweenCenterOfPullBoxAndNotation = depthByScale / Math.Sqrt( 2 ) + Math.Sqrt( Math.Pow( widthOfLabel, 2 ) + Math.Pow( heightOfLabel, 2 ) ) / 2 ;
       var defaultDirections = new List<XYZ> { new(-1, 0, 0), new(1, 0, 0), new(0, 1, 0), new(0, -1, 0) } ;
 
@@ -1259,7 +1259,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       using var updateNotationTransaction = new Transaction( document, "Update notation of pull box" ) ;
       updateNotationTransaction.Start() ;
       notation.Text = notationContent ;
-      notation.Coord = GetPositionOfPullBox( document, notation, positionOfPullBox, conduitDirectionsRelatedPullBox, baseLengthOfLine ) ;
+      notation.Coord = GetPositionOfPullBox( notation, positionOfPullBox, conduitDirectionsRelatedPullBox, document.ActiveView.Scale, baseLengthOfLine ) ;
       updateNotationTransaction.Commit() ;
       if ( ! isAutoCalculatePullBoxSize ) return ;
 
@@ -1287,7 +1287,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       using var updatePositionOfNotationTransaction = new Transaction( document, "Update position of notation" ) ;
       updatePositionOfNotationTransaction.Start() ;
-      textNote.Coord = GetPositionOfPullBox( document, textNote, positionOfNotation, conduitDirectionsRelatedPullBox, baseLengthOfLine ) ;
+      textNote.Coord = GetPositionOfPullBox( textNote, positionOfNotation, conduitDirectionsRelatedPullBox, document.ActiveView.Scale, baseLengthOfLine ) ;
       updatePositionOfNotationTransaction.Commit() ;
 
       using var saveStorageTransaction = new Transaction( document, "Save storage of pull box information" ) ;
