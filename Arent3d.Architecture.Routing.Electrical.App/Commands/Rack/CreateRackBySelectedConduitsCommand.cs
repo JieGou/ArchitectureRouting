@@ -6,6 +6,7 @@ using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -31,7 +32,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
     /// <param name="StartPoint"></param>
     /// <param name="EndPoint"></param>
     /// <param name="RackWidth">Must be in Revit API unit</param>
-    private record SelectState( string RouteName, MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint, double RackWidth, int NumberOfRack, bool IsAutoSizing  ) ;
+    private record SelectState( string RouteName, MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint, double RackWidth, int NumberOfRack, bool IsAutoSizing, bool IsSeparator, string Material, string Cover  ) ;
 
     private OperationResult<SelectState> OperateUI( ExternalCommandData commandData )
     {
@@ -78,8 +79,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         var rackWidth = dialog.WidthInMillimeter.MillimetersToRevitUnits() ;
         var numberOfRack = dialog.NumberOfRack ;
         var isAutoSizing = dialog.IsAutoSizing ;
+        var material = dialog.Material ;
+        var isSeparator = dialog.IsSeparator ;
+        var cover = dialog.Cover ;
 
-        return new OperationResult<SelectState>( new SelectState( routeName, firstSelectedConduit, secondSelectedConduit, firstSelectedPoint, secondSelectedPoint, rackWidth, numberOfRack, isAutoSizing ) ) ;
+        return new OperationResult<SelectState>( new SelectState( routeName, firstSelectedConduit, secondSelectedConduit, firstSelectedPoint, secondSelectedPoint, rackWidth, numberOfRack, isAutoSizing, isSeparator, material, cover ) ) ;
       }
       catch ( OperationCanceledException ) {
         return OperationResult<SelectState>.Cancelled ;
@@ -130,7 +134,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Limit Rack", uiResult.Value.IsAutoSizing, specialLengthList ) ;
 
       // resolve overlapped cases
-      var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ) ;
+      var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ).EnumerateAll() ;
+      foreach ( var modifiedRackList in modifiedRackLists ) {
+        modifiedRackList.SetProperty(ElectricalRoutingElementParameter.Separator, uiResult.Value.IsSeparator);
+        modifiedRackList.SetProperty(ElectricalRoutingElementParameter.Material, uiResult.Value.Material);
+        modifiedRackList.SetProperty(ElectricalRoutingElementParameter.Cover, uiResult.Value.Cover);
+      }
 
       // create annotations for racks
       RackCommandBase.CreateNotationForRack( document, modifiedRackLists.OfType<FamilyInstance>().Where(fi => fi.IsRack()) ) ;

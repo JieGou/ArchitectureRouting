@@ -8,6 +8,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
   public partial class RackSizeDialog : Window
   {
     public string Material { get ; set ; } = "" ;
+    public bool IsSeparator { get ; set ; } = true ;
+    public string Cover { get ; set ; } = "" ;
     public bool IsAutoSizing { get ; set ; }
     public int NumberOfRack => int.Parse( cmbNumberOfRack.Text ) ;
     public double WidthInMillimeter => double.Parse( cmbSizes.Text ) ;
@@ -48,6 +50,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       IsAutoSizing = chkAutoSize.IsChecked?? false ;
       cmbSizes.IsEnabled = ! IsAutoSizing ;
       cmbNumberOfRack.IsEnabled = ! IsAutoSizing ;
+    }
+
+    private void SeparatorOnChecked( object sender, RoutedEventArgs e )
+    {
+      IsSeparator = true ;
+    }
+
+    private void SeparatorOnUnchecked( object sender, RoutedEventArgs e )
+    {
+      IsSeparator = false ;
+    }
+
+    private void CoverOnChecked( object sender, RoutedEventArgs e )
+    {
+      Cover = (string)((sender as RadioButton)?.Content?? "");
     }
   }
 }
