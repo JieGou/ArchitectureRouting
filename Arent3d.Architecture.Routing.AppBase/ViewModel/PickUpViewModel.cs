@@ -30,6 +30,8 @@ using DataGrid = System.Windows.Controls.DataGrid ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Utils ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
+using MoreLinq ;
+using MoreLinq.Extensions ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -289,8 +291,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           pickUpModels.AddRange( pickUpConnectors ) ;
         }
 
-        if ( racks.Any() )
-          pickUpModels.AddRange( racks.OrderBy( x => x.ProductName ).ThenBy( x => x.Classification ) ) ;
+        if ( racks.Any() ) {
+          var sortPickUpRacks = racks.GroupBy( x =>
+          {
+            var indexFrom = x.Specification.IndexOf( "(", StringComparison.Ordinal ) ;
+            if ( indexFrom == -1 )
+              return string.Empty ;
+
+            var indexTo = x.Specification.IndexOf( ")", StringComparison.Ordinal ) ;
+            if ( indexTo == -1 )
+              return string.Empty ;
+
+            return indexFrom < indexTo ? x.Specification.Substring( indexFrom + 1, indexTo - indexFrom - 1 ) : string.Empty ;
+          } ).ToDictionary(x => x.Key, x => x.ToList()).OrderBy( x => x.Key ).SelectMany( x => x.Value.OrderBy( y => y.ProductName ).ThenBy( z => z.Classification ) ) ;
+          pickUpModels.AddRange( sortPickUpRacks ) ;
+        }
 
         OriginPickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor select pickUpModel ).ToList() ;
       }
