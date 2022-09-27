@@ -415,16 +415,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // for each route, create one tag for the longest rack in array of racks with same width and direction
       if ( directionXRacks.Any() ) {
-        foreach ( var (routeName, widthRacksDic) in directionXRacks ) {
-          foreach ( var widthRacks in widthRacksDic ) {
+        foreach ( var (routeName, widthToRacksDictionary) in directionXRacks ) {
+          foreach ( var widthRacks in widthToRacksDictionary ) {
             CreateNotation( document, rackNotationStorable, widthRacks.Value, routeName, true, viewPlan ) ;
           }
         }
       }
 
       if ( directionYRacks.Any() ) {
-        foreach ( var (routeName, widthRacksDic) in directionYRacks ) {
-          foreach ( var widthRacks in widthRacksDic ) {
+        foreach ( var (routeName, widthToRacksDictionary) in directionYRacks ) {
+          foreach ( var widthRacks in widthToRacksDictionary ) {
             CreateNotation( document, rackNotationStorable, widthRacks.Value, routeName, false, viewPlan ) ;
           }
         }
@@ -449,10 +449,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var point = ( longestRack.Location as LocationPoint )!.Point ;
             var connectors = longestRack.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
             var rackWidthInMillimeters = widthCableTray.RevitUnitsToMillimeters() ;
-            if ( isDirectionX )
-              point = ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) * 0.5 + widthCableTray2D * 0.5 * XYZ.BasisY ;
-            else
-              point = ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) * 0.5 - widthCableTray2D * 0.5 * XYZ.BasisX ;
+            if ( connectors.Count == 2 )
+              point = ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) * 0.5 + widthCableTray2D * 0.5 * ( isDirectionX ? XYZ.BasisY : -XYZ.BasisX ) ;
 
             // content to show
             var notation = rackWidthInMillimeters switch

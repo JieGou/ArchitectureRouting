@@ -442,17 +442,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       if ( string.IsNullOrEmpty( routeName ) ) return ;
 
       var routeNameArray = routeName!.Split( '_' ) ;
-      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAtOrDefault( 1 ) ) ;
       rack.SetProperty( RoutingParameter.RouteName, routeName ) ;
 
       if ( ! referenceElement.IsRack() )
         return ;
-      
-      if(referenceElement.TryGetProperty(ElectricalRoutingElementParameter.Separator, out bool separator))
+
+      if ( referenceElement.TryGetProperty( ElectricalRoutingElementParameter.Separator, out bool separator ) )
         rack.TrySetProperty( ElectricalRoutingElementParameter.Separator, separator ) ;
-      if(referenceElement.TryGetProperty(ElectricalRoutingElementParameter.Material, out string? material) && material is {})
+      if ( referenceElement.TryGetProperty( ElectricalRoutingElementParameter.Material, out string? material ) && material is { } )
         rack.TrySetProperty( ElectricalRoutingElementParameter.Material, material ) ;
-      if(referenceElement.TryGetProperty(ElectricalRoutingElementParameter.Cover, out string? cover) && cover is {})
+      if ( referenceElement.TryGetProperty( ElectricalRoutingElementParameter.Cover, out string? cover ) && cover is { } )
         rack.TrySetProperty( ElectricalRoutingElementParameter.Cover, cover ) ;
     }
 
