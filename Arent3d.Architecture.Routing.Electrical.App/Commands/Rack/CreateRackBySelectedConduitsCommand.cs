@@ -126,23 +126,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       // start generate new racks
       using var createRackTransaction = new Transaction( document, "手動でラックを作成する" ) ;
       createRackTransaction.Start() ;
-      
+
       // turn on rack fitting category
       var category = Category.GetCategory( document, BuiltInCategory.OST_CableTrayFitting ) ;
       document.ActiveView.SetCategoryHidden( category.Id, false ) ;
-      
+
       // create racks along with conduits
-      var conduitWidthMap = linkedConduits.Where(element => element is Conduit cd && cd.Location as LocationCurve is {} lc && lc.Curve.Length > 20d.MillimetersToRevitUnits() ).Select( conduit => ( conduit, uiResult.Value.RackWidth ) ) ;
-      var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", uiResult.Value.IsAutoSizing, specialLengthList ) ;
+      var conduitWidthMap = linkedConduits.Where( element => element is Conduit cd && cd.Location as LocationCurve is { } lc && lc.Curve.Length > 20d.MillimetersToRevitUnits() ).Select( conduit => ( conduit, uiResult.Value.RackWidth ) ) ;
+
+      var executor = AppCommandSettings.CreateRoutingExecutor( document, document.ActiveView ) ;
+      executor.TurnOffWarning( createRackTransaction ) ;
+      var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", uiResult.Value.IsAutoSizing, specialLengthList, executor ) ;
 
       // resolve overlapped cases
       var modifiedRacksAndElbows = document.ResolveOverlapCases( racksAndFittings ).EnumerateAll() ;
-      
+
       // set pick up parameters
       foreach ( var rackOrElbow in modifiedRacksAndElbows ) {
-        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Separator, uiResult.Value.IsSeparator);
-        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Material, uiResult.Value.Material);
-        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Cover, uiResult.Value.Cover);
+        rackOrElbow.SetProperty( ElectricalRoutingElementParameter.Separator, uiResult.Value.IsSeparator ) ;
+        rackOrElbow.SetProperty( ElectricalRoutingElementParameter.Material, uiResult.Value.Material ) ;
+        rackOrElbow.SetProperty( ElectricalRoutingElementParameter.Cover, uiResult.Value.Cover ) ;
       }
 
       // create annotations for racks

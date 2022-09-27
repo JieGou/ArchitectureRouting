@@ -42,7 +42,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new OperationResult<PickState>( new PickState( routesRelatedPullBox, elementPullBox, routeNameDictionary ) ) ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
+    public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> DeletePullBoxAndGetNewSegmentsToReconnect( Element elementPullBox )
+    {
+      var document = elementPullBox.Document ;
+      //Get information to reroute
+      var routes = document.CollectRoutes( AddInType.Electrical ) ;
+      var routesRelatedPullBox = GetRouteRelatedPullBox( routes, elementPullBox ).ToList() ;
+
+      var routeNameDictionary = new Dictionary<string, string>() ;
+      var pickState = new PickState( routesRelatedPullBox, elementPullBox, routeNameDictionary ) ;
+      return GetRouteSegmentsImplement( document, pickState ) ;
+    }
+
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegmentsImplement( Document document, PickState pickState )
     {
       var (routesRelatedPullBox, elementPullBox, routeNameDictionary) = pickState ;
       var routesRelatedPullBoxWithMultiConnectors = routesRelatedPullBox.Where( r => r.GetAllConnectors().Count() > 1 ).ToList() ;
@@ -97,7 +109,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return result ;
     }
 
-    private static void GetNewRouteSegmentsAfterDeletingPullBox( Document document, List<Route> routesRelatedPullBoxWithMultiConnectors, Element elementPullBox, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeight, FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId, Dictionary<string, string> routeNameDictionary, List<(string RouteName, RouteSegment Segment)> result, List<(string RouteName, RouteSegment Segment)> routeRecords, double? radius )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState ) => GetRouteSegmentsImplement( document, pickState ) ;
+
+      private static void GetNewRouteSegmentsAfterDeletingPullBox( Document document, List<Route> routesRelatedPullBoxWithMultiConnectors, Element elementPullBox, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeight, FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId, Dictionary<string, string> routeNameDictionary, List<(string RouteName, RouteSegment Segment)> result, List<(string RouteName, RouteSegment Segment)> routeRecords, double? radius )
     {
       var endPointsOfRouteSegmentsCrossPullBox = GetEndPointsOfRouteSegmentsCrossPullBox( routesRelatedPullBoxWithMultiConnectors, elementPullBox ) ;
       var routeSegmentsGroup = GetMainRouteSegments( routesRelatedPullBoxWithMultiConnectors, elementPullBox, classificationInfo, systemType, curveType, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId, endPointsOfRouteSegmentsCrossPullBox ) ;
@@ -262,6 +276,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             document.Delete( textNote.Id ) ;
           storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Remove( pullBoxInfoModel ) ;
         }
+        storagePullBoxInfoServiceByLevel.SaveChange() ;
       }
 
       //Delete pull box
