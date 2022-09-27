@@ -7,9 +7,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
   public partial class RackSizeDialog : Window
   {
-    public string Material { get ; set ; } = "" ;
+    public string Material { get ; set ; } = "アルミ" ;
     public bool IsSeparator { get ; set ; } = true ;
-    public string Cover { get ; set ; } = "" ;
+    public string Cover { get ; set ; } = "無し" ;
     public bool IsAutoSizing { get ; set ; }
     public int NumberOfRack => int.Parse( cmbNumberOfRack.Text ) ;
     public double WidthInMillimeter => double.Parse( cmbSizes.Text ) ;
@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     private void OnChangeMaterial( object sender, RoutedEventArgs e )
     {
-      Material = (string)((sender as RadioButton)?.Content?? "");
+      Material = (string)((sender as RadioButton)?.Content?? "アルミ");
     }
 
     private void OnClickAutoCalculate( object sender, RoutedEventArgs e )
@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     private void CoverOnChecked( object sender, RoutedEventArgs e )
     {
-      Cover = (string)((sender as RadioButton)?.Content?? "");
+      Cover = (string)((sender as RadioButton)?.Content?? "無し");
     }
   }
 }
