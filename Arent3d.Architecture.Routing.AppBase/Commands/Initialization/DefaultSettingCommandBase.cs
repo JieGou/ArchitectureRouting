@@ -495,7 +495,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var textNote = textNoteBorder as TextNote ;
         if ( textNote == null ) continue ;
 
-        var curves = GetSingleBorderTextNote( textNote ) ;
+        var curves = GetSingleBorderTextNote( textNote, viewPlan.Scale ) ;
         var borderIds = CreateDetailCurve( document, textNote, curves ) ;
         SetDataForTextNote( storageService, textNote, borderIds ) ;
       }
@@ -504,7 +504,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var textNote = textNoteBorder as TextNote ;
         if ( textNote == null ) continue ;
 
-        var curves = GetDoubleBorderTextNote( textNote ) ;
+        var curves = GetDoubleBorderTextNote( textNote, viewPlan ) ;
         var borderIds = CreateDetailCurve( document, textNote, curves ) ;
         SetDataForTextNote( storageService, textNote, borderIds ) ;
       }
@@ -591,18 +591,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private IEnumerable<Curve> GetSingleBorderTextNote( TextNote textNote )
+    private IEnumerable<Curve> GetSingleBorderTextNote( TextNote textNote, double scale )
     {
-      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote, scale ) ;
       return curveLoop.OfType<Curve>().ToList() ;
     }
 
-    private IEnumerable<Curve> GetDoubleBorderTextNote(TextNote textNote)
+    private IEnumerable<Curve> GetDoubleBorderTextNote( TextNote textNote, ViewPlan viewPlan )
     {
-      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote, viewPlan.Scale ) ;
       var curves = curveLoop.OfType<Curve>().ToList() ;
-      var curveLoopOffset = CurveLoop.CreateViaOffset(curveLoop, -0.5.MillimetersToRevitUnits() * textNote.Document.ActiveView.Scale, textNote.Document.ActiveView.ViewDirection);
-      curves.AddRange(curveLoopOffset.OfType<Curve>());
+      var curveLoopOffset = CurveLoop.CreateViaOffset( curveLoop, -0.5.MillimetersToRevitUnits() * viewPlan.Scale, viewPlan.ViewDirection ) ;
+      curves.AddRange( curveLoopOffset.OfType<Curve>() ) ;
       return curves ;
     }
     

@@ -222,15 +222,16 @@ namespace Arent3d.Architecture.Routing.AppBase
       return Line.CreateBound( new XYZ( coord.X, coord.Y, basePoint.Z ), new XYZ( middle.X, middle.Y, basePoint.Z ) ) ;
     }
 
-    public static CurveLoop GetOutlineTextNote( TextNote textNote )
+    public static CurveLoop GetOutlineTextNote( TextNote textNote, double? viewScale = null )
     {
+      var scale = viewScale ?? textNote.Document.ActiveView.Scale ;
       var offset = textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() ;
-      var height = ( textNote.Height + 2 * offset ) * textNote.Document.ActiveView.Scale ;
-      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * textNote.Document.ActiveView.Scale ;
+      var height = ( textNote.Height + 2 * offset ) * scale ;
+      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * scale ;
 
       var transformHeight = Transform.CreateTranslation( textNote.UpDirection.Negate() * height ) ;
       var transformWidth = Transform.CreateTranslation( textNote.BaseDirection * width ) ;
-      var transformCoord = Transform.CreateTranslation( textNote.UpDirection.Add( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? textNote.BaseDirection : textNote.BaseDirection.Negate() ) * offset * textNote.Document.ActiveView.Scale ) ;
+      var transformCoord = Transform.CreateTranslation( textNote.UpDirection.Add( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? textNote.BaseDirection : textNote.BaseDirection.Negate() ) * offset * scale ) ;
 
       var curveLoop = new CurveLoop() ;
       var p1 = transformCoord.OfPoint( textNote.Coord ) ;
