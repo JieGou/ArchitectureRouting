@@ -367,10 +367,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( fromConnectorId, toConnectorId ) ;
     }
 
-    public static void CreateNotationForRack(Document document, IEnumerable<FamilyInstance> racks )
+    public static void CreateNotationForRack( Document document, IEnumerable<FamilyInstance> instances, View? viewPlan = null )
     {
+      viewPlan ??= document.ActiveView ;
       var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? document.GetRackNotationStorable() ;
       RemoveNotationUnused( document, rackNotationStorable ) ;
+
+      var racks = instances.Where( fi => fi.IsRack() ) ;
+      
+      // group racks by rack route name, direction, width
       var directionXRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
       var directionYRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
       foreach ( var rack in racks ) {
@@ -381,10 +386,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( rack.HandOrientation.X is 1.0 or -1.0 ) {
           if ( directionXRacks.ContainsKey( routeName ) ) {
             var xRacks = directionXRacks[ routeName ] ;
-            if ( xRacks.ContainsKey( widthRack ))
-              xRacks[ widthRack ].Add( rack );
+            if ( xRacks.ContainsKey( widthRack ) )
+              xRacks[ widthRack ].Add( rack ) ;
             else {
-              xRacks.Add( widthRack, new List<FamilyInstance>() { rack } );
+              xRacks.Add( widthRack, new List<FamilyInstance>() { rack } ) ;
             }
           }
           else {
@@ -395,10 +400,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else if ( rack.HandOrientation.Y is 1.0 or -1.0 ) {
           if ( directionYRacks.ContainsKey( routeName ) ) {
             var yRacks = directionYRacks[ routeName ] ;
-            if ( yRacks.ContainsKey( widthRack ))
-              yRacks[ widthRack ].Add( rack );
+            if ( yRacks.ContainsKey( widthRack ) )
+              yRacks[ widthRack ].Add( rack ) ;
             else {
-              yRacks.Add( widthRack, new List<FamilyInstance>() { rack } );
+              yRacks.Add( widthRack, new List<FamilyInstance>() { rack } ) ;
             }
           }
           else {
@@ -408,20 +413,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
-      
+      // for each route, create one tag for the longest rack in array of racks with same width and direction
       if ( directionXRacks.Any() ) {
-        foreach ( var (key, value) in directionXRacks ) {
-          foreach ( var xRack in value ) {
-            CreateNotation( document, rackNotationStorable, xRack.Value, key, true, defaultSymbolMagnification ) ;
+        foreach ( var (routeName, widthRacksDic) in directionXRacks ) {
+          foreach ( var widthRacks in widthRacksDic ) {
+            CreateNotation( document, rackNotationStorable, widthRacks.Value, routeName, true, viewPlan ) ;
           }
         }
       }
 
       if ( directionYRacks.Any() ) {
-        foreach ( var (key, value) in directionYRacks ) {
-          foreach ( var yRack in value ) {
-            CreateNotation( document, rackNotationStorable, yRack.Value, key, false, defaultSymbolMagnification ) ;
+        foreach ( var (routeName, widthRacksDic) in directionYRacks ) {
+          foreach ( var widthRacks in widthRacksDic ) {
+            CreateNotation( document, rackNotationStorable, widthRacks.Value, routeName, false, viewPlan ) ;
           }
         }
       }
@@ -429,23 +433,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       rackNotationStorable.Save() ;
     }
 
-    private static void CreateNotation( Document doc, RackNotationStorable rackNotationStorable, IReadOnlyCollection<FamilyInstance> racks, string fromConnectorId, bool isDirectionX, double scale )
+    private static void CreateNotation( Document doc, RackNotationStorable rackNotationStorable, IReadOnlyCollection<FamilyInstance> racks, string fromConnectorId, bool isDirectionX, View view )
     {
-      var count = racks.Count ;
-      var rack = racks.OrderByDescending( x => x.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).AsDouble() ).FirstOrDefault() ;
-      if ( rack != null ) {
-        var widthCableTray = CableRackUtils.RackWidthOnPlanView( (int)scale ) ;
-        //var widthCableTray = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble() ;
+      var scale = view.Scale ;
+      var magnification = ImportDwgMappingModel.GetMagnificationOfView( scale ) ;
+      var longestRack = racks.MaxBy( x => x.TryGetRackLength(out var length) ? length : 0 ) ;
+      if ( longestRack != null ) {
+        var widthCableTray2D = CableRackUtils.RackWidthOnPlanView( scale );
+        var widthCableTray = longestRack.TryGetRackWidth( out var w ) ? w : widthCableTray2D ;
         var notationModel = rackNotationStorable.RackNotationModelData.FirstOrDefault( n => n.FromConnectorId == fromConnectorId && n.IsDirectionX == isDirectionX && Math.Abs( n.RackWidth - Math.Round( widthCableTray, 4 ) ) == 0 ) ;
         if ( notationModel == null ) {
-          if ( doc.ActiveView is ViewPlan viewPlan ) {
-            var point = ( rack.Location as LocationPoint )!.Point ;
-            var connectors = rack.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
+          if ( view is ViewPlan viewPlan ) {
+            
+            // target point of leader line
+            var point = ( longestRack.Location as LocationPoint )!.Point ;
+            var connectors = longestRack.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
             var rackWidthInMillimeters = widthCableTray.RevitUnitsToMillimeters() ;
             if ( isDirectionX )
-              point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y + widthCableTray ), point.Z ) ;
+              point = ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) * 0.5 + widthCableTray2D * 0.5 * XYZ.BasisY ;
             else
-              point = new XYZ( 0.5 * ( connectors[ 0 ].Origin.X + connectors[ 1 ].Origin.X - widthCableTray ), 0.5 * ( connectors[ 0 ].Origin.Y + connectors[ 1 ].Origin.Y ), point.Z ) ;
+              point = ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) * 0.5 - widthCableTray2D * 0.5 * XYZ.BasisX ;
 
             // content to show
             var notation = rackWidthInMillimeters switch
@@ -453,7 +460,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               > 600 => string.Format( Notation, ( rackWidthInMillimeters / 2 ).ToString( CultureInfo.CurrentCulture ) ) + " x 2",
               _ => string.Format( Notation, rackWidthInMillimeters.ToString( CultureInfo.CurrentCulture ) ),
             } ;
+            if ( longestRack.TryGetProperty( ElectricalRoutingElementParameter.Cover, out string? text ) && text is not null && ! text.Equals( "無し" ) )
+              notation += " カバー付" ;
 
+            // create text note
             var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;
             if ( null == textNoteType ) return ;
             TextNote textNote ;
@@ -461,32 +471,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             const double multiple = 3 ;
             var heightText = TextNoteHelper.TotalHeight.MillimetersToRevitUnits() ;
             if ( isDirectionX ) {
-              var vector = ( XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * scale ;
-              var transform = Transform.CreateTranslation( vector ) ;
-              textNote = TextNote.Create( doc, doc.ActiveView.Id, transform.OfPoint( point ), notation, textNoteType.Id ) ;
+              var vector = ( XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * magnification ;
+              textNote = TextNote.Create( doc, view.Id, point + vector, notation, textNoteType.Id ) ;
             }
             else {
-              var vector = ( XYZ.BasisX.Negate() * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * scale ;
-              var transform = Transform.CreateTranslation( vector ) ;
-              textNote = TextNote.Create( doc, doc.ActiveView.Id, transform.OfPoint( point ), notation, textNoteType.Id ) ;
+              var vector = ( XYZ.BasisX.Negate() * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * magnification ;
+              textNote = TextNote.Create( doc, view.Id, point + vector, notation, textNoteType.Id ) ;
               ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
             }
 
             doc.Regenerate() ;
 
+            // create 2 detail lines
             var underLineTextNote = CreateUnderLineText( textNote, viewPlan.GenLevel.Elevation ) ;
             var nearestPoint = underLineTextNote.GetEndPoint( 0 ).DistanceTo( point ) > underLineTextNote.GetEndPoint( 1 ).DistanceTo( point ) ? underLineTextNote.GetEndPoint( 1 ) : underLineTextNote.GetEndPoint( 0 ) ;
-            var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( nearestPoint, new XYZ( point.X, point.Y, viewPlan.GenLevel.Elevation ) ) }, new List<Type> { typeof( CableTray ) } ) ;
+            var notUsedForIntersect = new List<Element> { longestRack } ;
+            var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( nearestPoint, new XYZ( point.X, point.Y, viewPlan.GenLevel.Elevation ) ) }, new List<Type> { typeof( CableTray ) }, notUsedForIntersect ) ;
             curves.Add( underLineTextNote ) ;
 
-            var detailCurves = NotationHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
+            var detailCurves = NotationHelper.CreateDetailCurve( view, curves ) ;
             var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, point ) ;
 
             (string? endLineUniqueId, int? endPoint) endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;
             var otherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
 
             foreach ( var item in racks ) {
-              var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( widthCableTray, 4 ), endLineLeader.endLineUniqueId, endLineLeader.endPoint, otherLineId ) ;
+              var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, longestRack.UniqueId, fromConnectorId, isDirectionX, Math.Round( widthCableTray, 4 ), endLineLeader.endLineUniqueId, endLineLeader.endPoint, otherLineId ) ;
               rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
             }
           }
@@ -502,11 +512,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static Line CreateUnderLineText( TextNote textNote, double elevation )
     {
+      var view = textNote.Document.GetElement(textNote.OwnerViewId) as View;
       var offset = textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() ;
-      var height = ( textNote.Height + offset ) * textNote.Document.ActiveView.Scale ;
+      var height = ( textNote.Height + offset ) * view!.Scale ;
       var coord = Transform.CreateTranslation( textNote.UpDirection.Negate() * height ).OfPoint( textNote.Coord ) ;
-      coord = Transform.CreateTranslation( ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? 1 : -1 ) * offset * textNote.Document.ActiveView.Scale * textNote.BaseDirection ).OfPoint( coord ) ;
-      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * textNote.Document.ActiveView.Scale ;
+      coord = Transform.CreateTranslation( ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? 1 : -1 ) * offset * view.Scale * textNote.BaseDirection ).OfPoint( coord ) ;
+      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * view.Scale ;
       var middle = Transform.CreateTranslation( textNote.BaseDirection * width ).OfPoint( coord ) ;
 
       return Line.CreateBound( new XYZ( coord.X, coord.Y, elevation ), new XYZ( middle.X, middle.Y, elevation ) ) ;

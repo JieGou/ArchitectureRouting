@@ -828,12 +828,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       }
     }
 
-    private static List<Element> ReDrawArrayOfRacksAndElbows( this Document document, IEnumerable<Element> oldElements, int scale )
+    private static List<Element> ReDrawArrayOfRacksAndElbows( this Document document, IEnumerable<Element> oldElements, View view )
     {
       var newElements = new List<Element>() ;
       // modify scale factor of vertical rack 
       var verticalRacks = oldElements.Where( x => x.IsValidObject ).OfType<FamilyInstance>().Where( element => element.IsVerticalRack() ).ToList() ;
-      var planViewRackWidth = RackWidthOnPlanView( scale ) ;
+      var planViewRackWidth = RackWidthOnPlanView( view.Scale ) ;
       foreach ( var verticalRack in verticalRacks ) {
         if ( verticalRack.TryGetRackWidth( out var width ) )
           verticalRack.SetProperty( "ラックの倍率", planViewRackWidth / width ) ;
@@ -845,7 +845,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var fullMakers = ConvertRacksToFullMarkers( horizontalRacks ) ;
 
       // create racks and fittings with new scale
-      var newHorizontalRacksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, scale, "" ).ToList() ;
+      var newHorizontalRacksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, view.Scale, "" ).ToList() ;
       newElements.AddRange( newHorizontalRacksAndFittings ) ;
 
       // delete existing notations and rack items
@@ -854,7 +854,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       document.Delete( oldUniqueIds ) ;
 
       // create notation for new rack
-      RackCommandBase.CreateNotationForRack( document, newHorizontalRacksAndFittings.OfType<FamilyInstance>().Where( fi => fi.IsRack() ) ) ;
+      RackCommandBase.CreateNotationForRack( document, newHorizontalRacksAndFittings.OfType<FamilyInstance>().Where( fi => fi.IsRack() ), view ) ;
 
       return newElements ;
     }
@@ -870,7 +870,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         storageRackFromTo.Data.RackFromToItems.Clear() ;
         foreach ( var rackFromTo in rackFromToList ) {
           // redraw racks and fittings with new scale
-          var newRacksAndFittings = document.ReDrawArrayOfRacksAndElbows( rackFromTo.UniqueIds.ConvertAll( document.GetElement ), newScale ) ;
+          var newRacksAndFittings = document.ReDrawArrayOfRacksAndElbows( rackFromTo.UniqueIds.ConvertAll( document.GetElement ), view ) ;
 
           // add to storage
           storageRackFromTo.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = newRacksAndFittings.Select( element => element.UniqueId ).ToList() } ) ;
@@ -886,7 +886,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         storageRackForRoute.Data.RackForRoutes.Clear() ;
         foreach ( var rackForRouteItem in rackForRouteItems ) {
           // redraw racks and fittings with new scale
-          var newRacksAndFittings = document.ReDrawArrayOfRacksAndElbows( rackForRouteItem.RackIds.ConvertAll( document.GetElement ), newScale ) ;
+          var newRacksAndFittings = document.ReDrawArrayOfRacksAndElbows( rackForRouteItem.RackIds.ConvertAll( document.GetElement ), view ) ;
 
           // add to storage
           storageRackForRoute.Data.RackForRoutes.Add( new RackForRouteItem() { RouteName = rackForRouteItem.RouteName, RackIds = newRacksAndFittings.Select( element => element.Id ).ToList() } ) ;
