@@ -453,7 +453,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       if(referenceElement.TryGetProperty(ElectricalRoutingElementParameter.Material, out string? material) && material is {})
         rack.TrySetProperty( ElectricalRoutingElementParameter.Material, material ) ;
       if(referenceElement.TryGetProperty(ElectricalRoutingElementParameter.Cover, out string? cover) && cover is {})
-        rack.TrySetProperty( ElectricalRoutingElementParameter.Material, cover ) ;
+        rack.TrySetProperty( ElectricalRoutingElementParameter.Cover, cover ) ;
     }
 
     public static ( string, string ) GetFromAndToConnectorUniqueIdOfRack( Element rack )
