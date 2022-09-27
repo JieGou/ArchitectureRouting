@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Updater ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -16,11 +17,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
   public class SingleBorderCommand : IExternalCommand
   {
-    public const string TextNoteTypeName = "ARENT_2.5MM_SIMPLE-BORDER" ;
-    private const double TextSize = 2.5 ;
+    private const double TextSize = 2.7 ;
     private const double OffsetSheet = 0.6 ;
     private const int BackGround = 1 ;
     private const int VisibleBox = 0 ;
+    private const string FontFamily = "MS Gothic" ;
+    private const double WidthFactor = 0.75 ;
+    private const double TabSize = 10 ;
     
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -28,9 +31,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
       var document = application.ActiveUIDocument.Document ;
 
       using var transaction = new Transaction( document ) ;
-      transaction.Start( "Simple TextNote Border" ) ;
+      transaction.Start( "Single TextNote Border" ) ;
 
-      var textNoteType = FindOrCreateTextNoteType( document, TextNoteTypeName ) ;
+      var textNoteType = FindOrCreateTextNoteType( document, DefaultSettingCommandBase.SingleTextNoteTypeName ) ;
       if ( null == textNoteType ) {
         message = "Cannot create text note type!" ;
         return Result.Failed ;
@@ -76,6 +79,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
         if ( textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ) is { } visibleBox && visibleBox.AsInteger() != VisibleBox )
           visibleBox.Set( VisibleBox ) ;
         
+        if ( textNoteType.get_Parameter( BuiltInParameter.TEXT_FONT ) is { } textFont && textFont.AsString() != FontFamily )
+          textFont.Set( FontFamily ) ;
+        
+        if ( textNoteType.get_Parameter( BuiltInParameter.TEXT_TAB_SIZE ) is { } tabSize && Math.Abs(tabSize.AsDouble() - TabSize.MillimetersToRevitUnits()) > GeometryHelper.Tolerance)
+          tabSize.Set( TabSize.MillimetersToRevitUnits() ) ;
+        
+        if ( textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ) is { } widthFactor && Math.Abs(widthFactor.AsDouble() - WidthFactor) > GeometryHelper.Tolerance)
+          widthFactor.Set( WidthFactor ) ;
+        
         return textNoteType ;
       }
 
@@ -87,6 +99,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
       textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( OffsetSheet.MillimetersToRevitUnits() ) ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( BackGround ) ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( VisibleBox ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_FONT ).Set( FontFamily ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_TAB_SIZE ).Set( TabSize.MillimetersToRevitUnits() ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( WidthFactor ) ;
 
       return textNoteType ;
     }
