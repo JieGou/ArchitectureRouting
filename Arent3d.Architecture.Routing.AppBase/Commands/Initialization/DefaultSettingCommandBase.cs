@@ -16,6 +16,8 @@ using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -37,72 +39,75 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var document = uiDocument.Document ;
+      _activeViewName = document.ActiveView.Name ;
       try {
-        var uiDocument = commandData.Application.ActiveUIDocument ;
-        var document = uiDocument.Document ;
-        _activeViewName = document.ActiveView.Name ;
-        // Get data of default setting from snoop DB
-        DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
-        SetupPrintStorable setupPrintStorable = document.GetSetupPrintStorable() ;
-        var scale = setupPrintStorable.Scale ;
-
-        var listFloorsDefault = new ObservableCollection<ImportDwgMappingModel>( GetFloorsDefault( document ) ) ;
-
-        if ( defaultSettingStorable.ImportDwgMappingData.Any() )
-          try {
-            Transaction transaction = new(document, "Remove") ;
-            transaction.Start() ;
-            foreach ( var floorPlan in defaultSettingStorable.ImportDwgMappingData.ToList() ) {
-              var existFloorPlan = listFloorsDefault.FirstOrDefault( x => x.FloorName == floorPlan.FloorName ) ;
-              if ( existFloorPlan == null ) {
-                defaultSettingStorable.ImportDwgMappingData.Remove( floorPlan ) ;
-              }
-            }
-
-            defaultSettingStorable.Save() ;
-            transaction.Commit() ;
-          }
-          catch ( Exception exception ) {
-            CommandUtils.DebugAlertException( exception ) ;
-          }
-        else
-          UpdateImportDwgMappingModels( defaultSettingStorable, listFloorsDefault, new List<string>() ) ;
-
-        var viewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, _activeViewName ) ;
-        var dialog = new DefaultSettingDialog( viewModel ) ;
-        dialog.ShowDialog() ;
+        var result = document.TransactionGroup( "Default Settings", _ =>
         {
-          if ( dialog.DialogResult == false )
-            return Result.Cancelled ;
+          // Get data of default setting from snoop DB
+          var defaultSettingStorable = document.GetDefaultSettingStorable() ;
+          var setupPrintStorable = document.GetSetupPrintStorable() ;
+          var scale = setupPrintStorable.Scale ;
 
-          viewModel = dialog.ViewModel ;
+          var listFloorsDefault = new ObservableCollection<ImportDwgMappingModel>( GetFloorsDefault( document ) ) ;
 
-          // Save default db
-          viewModel.SaveData() ;
+          if ( defaultSettingStorable.ImportDwgMappingData.Any() )
+            try {
+              using Transaction transaction = new(document, "Remove") ;
+              transaction.Start() ;
+              foreach ( var floorPlan in defaultSettingStorable.ImportDwgMappingData.ToList() ) {
+                var existFloorPlan = listFloorsDefault.FirstOrDefault( x => x.FloorName == floorPlan.FloorName ) ;
+                if ( existFloorPlan == null ) defaultSettingStorable.ImportDwgMappingData.Remove( floorPlan ) ;
+              }
 
-          var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
-          var gradeMode = viewModel.SelectedGradeMode ;
-          var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
-          var deletedFloorName = viewModel.DeletedFloorName ;
-          SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
+              defaultSettingStorable.Save() ;
+              transaction.Commit() ;
+            }
+            catch ( Exception exception ) {
+              CommandUtils.DebugAlertException( exception ) ;
+            }
+          else
+            UpdateImportDwgMappingModels( defaultSettingStorable, listFloorsDefault, new List<string>() ) ;
 
-          if ( deletedFloorName.Any() ) {
-            RemoveViews( document, deletedFloorName, uiDocument ) ;
+          var viewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, _activeViewName ) ;
+          var dialog = new DefaultSettingDialog( viewModel ) ;
+          dialog.ShowDialog() ;
+          {
+            if ( dialog.DialogResult == false )
+              return Result.Cancelled ;
+
+            viewModel = dialog.ViewModel ;
+
+            // Save default db
+            viewModel.SaveData() ;
+
+            var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
+            var gradeMode = viewModel.SelectedGradeMode ;
+            var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
+            var deletedFloorName = viewModel.DeletedFloorName ;
+            SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
+
+            if ( deletedFloorName.Any() ) RemoveViews( document, deletedFloorName, uiDocument ) ;
+
+            var transactionStatus = UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
+            if ( transactionStatus == TransactionStatus.RolledBack )
+              return Result.Failed ;
+            LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
+            UpdateCeedDockPaneDataContext( uiDocument ) ;
+
+            return Result.Succeeded ;
           }
+        } ) ;
 
-          UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
-          LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
-          UpdateCeedDockPaneDataContext( uiDocument ) ;
-          
-          return Result.Succeeded ;
-        }
+        return result ;
       }
       catch ( OperationCanceledException ) {
         return Result.Cancelled ;
       }
-      catch ( Exception exception ) {
-        CommandUtils.DebugAlertException( exception ) ;
-        return Result.Cancelled ;
+      catch ( Exception e ) {
+        CommandUtils.DebugAlertException( e ) ;
+        return Result.Failed ;
       }
     }
 
@@ -456,7 +461,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       uiDocument.ActiveView = viewPlan ;
     }
 
-    private void UpdateScaleAndHeightPlanView( Document document, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels )
+    private TransactionStatus UpdateScaleAndHeightPlanView( Document document, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels )
     {
       List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( document ).OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>().Where( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
 
@@ -464,7 +469,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var storageService = new StorageService<DataStorage, BorderTextNoteModel>( dataStorage ) ;
 
       var allCurrentLevels = new FilteredElementCollector( document ).OfClass( typeof( Level ) ).ToList() ;
-      var updateScaleTrans = new Transaction( document ) ;
+      using var updateScaleTrans = new Transaction( document ) ;
       updateScaleTrans.SetName( "Update Scale" ) ;
       updateScaleTrans.Start() ;
       foreach ( var importDwgMappingModel in importDwgMappingModels ) {
@@ -486,7 +491,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         importDwgLevel?.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
       }
 
-      updateScaleTrans.Commit() ;
+      return updateScaleTrans.Commit() ;
     }
 
     private void UpdateSizeElement( Document document, IList<Element> elementsInView, StorageService<DataStorage, BorderTextNoteModel> storageService, ViewPlan viewPlan )
