@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           var viewPlans = new FilteredElementCollector( document ).OfClass( typeof( ViewPlan ) ).Where( v => v is ViewPlan { GenLevel: { } } viewPlan && viewPlan.GenLevel.Id == level.Id ).Cast<ViewPlan>().EnumerateAll() ;
           if ( ! viewPlans.Any() ) continue ;
 
-          var textNoteOfPullBox = document.GetAllElements<TextNote>().FirstOrDefault( t => textNoteOfPullBoxUniqueId == t.UniqueId && viewPlans.Any( v => v.Id == t.OwnerViewId ) ) ;
+          var textNoteOfPullBox = document.GetAllElements<TextNote>().SingleOrDefault( t => textNoteOfPullBoxUniqueId == t.UniqueId && viewPlans.Any( v => v.Id == t.OwnerViewId ) ) ;
           if ( textNoteOfPullBox != null ) {
             var viewPlan = viewPlans.SingleOrDefault( v => v.Id == textNoteOfPullBox.OwnerViewId ) ;
             if ( viewPlan == null ) continue ;

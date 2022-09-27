@@ -1257,14 +1257,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       updateNotationTransaction.Start() ;
       notation.Text = notationContent ;
       notation.Coord = GetPositionOfPullBox( notation, positionOfPullBox, conduitDirectionsRelatedPullBox, document.ActiveView.Scale, baseLengthOfLine ) ;
-      updateNotationTransaction.Commit() ;
-      if ( ! isAutoCalculatePullBoxSize ) return ;
 
-      using var updateColorOfNotationTransaction = new Transaction( document, "Update color for notation of pull box" ) ;
-      updateColorOfNotationTransaction.Start() ;
-      var color = new Color( 255, 0, 0 ) ;
-      ConfirmUnsetCommandBase.ChangeElementColor( new[] { notation }, color ) ;
-      updateColorOfNotationTransaction.Commit() ;
+      if ( isAutoCalculatePullBoxSize ) {
+        var color = new Color( 255, 0, 0 ) ;
+        ConfirmUnsetCommandBase.ChangeElementColor( new[] { notation }, color ) ;
+      }
+      updateNotationTransaction.Commit() ;
     }
 
     private static void CreateTextNoteAndGroupWithPullBox( Document document, StorageService<Level, PullBoxInfoModel> storagePullBoxInfoServiceByLevel, XYZ positionOfNotation, Element pullBox, string notationContent, bool isAutoCalculatePullBoxSize, List<(XYZ Direction, int EndPointIndex)> conduitDirectionsRelatedPullBox, double baseLengthOfLine )

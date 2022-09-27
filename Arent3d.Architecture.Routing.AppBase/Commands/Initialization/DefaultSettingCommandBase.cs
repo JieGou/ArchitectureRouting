@@ -476,7 +476,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var viewPlan = views.FirstOrDefault( x => x.Name == importDwgMappingModel.FloorName ) ;
         if ( viewPlan != null && viewPlan.Scale != importDwgMappingModel.Scale ) {
           viewPlan.Scale = importDwgMappingModel.Scale ;
-
           if ( null != viewPlan.ViewTemplateId && document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale )
             viewTemplate.Scale = importDwgMappingModel.Scale ;
 
