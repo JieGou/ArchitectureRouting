@@ -1096,19 +1096,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         }
       }
 
-      using var updateParamPullBoxTransaction = new Transaction( document, "Update Parameters Of Pull Box" ) ;
+      using var updateParamPullBoxTransaction = new Transaction( document, "Update Parameters Of Pull Box and resize pull box and related conduits" ) ;
       updateParamPullBoxTransaction.Start() ;
       if ( ! string.IsNullOrEmpty( buzaiCd ) )
         pullBox.GetParameter( MaterialCodeParameter )?.Set( buzaiCd ) ;
       pullBox.GetParameter( IsAutoCalculatePullBoxSizeParameter )?.Set( Convert.ToString( isAutoCalculatePullBoxSize ) ) ;
       if ( isAutoCalculatePullBoxSize )
         storageDetailSymbolService?.Data.DetailSymbolData.RemoveAll( d => d.DetailSymbolUniqueId == pullBox.UniqueId ) ;
-      updateParamPullBoxTransaction.Commit() ;
 
-      using var resizePullBoxAndRelatedConduitsTransaction = new Transaction( document, "Resize pull box and related conduits" ) ;
-      resizePullBoxAndRelatedConduitsTransaction.Start() ;
       ResizePullBoxAndRelatedConduits( conduitsRelatedPullBox, pullBox, baseLengthOfLine ) ;
-      resizePullBoxAndRelatedConduitsTransaction.Commit() ;
+      updateParamPullBoxTransaction.Commit() ;
 
       if ( storagePullBoxInfoServiceByLevel == null ) return ;
 
@@ -1285,16 +1282,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
       createNotationTransaction.Commit() ;
 
-      using var updatePositionOfNotationTransaction = new Transaction( document, "Update position of notation" ) ;
-      updatePositionOfNotationTransaction.Start() ;
+      using var updateNotationTransaction = new Transaction( document, "Update position of notation and save storage of pull box information" ) ;
+      updateNotationTransaction.Start() ;
       textNote.Coord = GetPositionOfPullBox( textNote, positionOfNotation, conduitDirectionsRelatedPullBox, document.ActiveView.Scale, baseLengthOfLine ) ;
-      updatePositionOfNotationTransaction.Commit() ;
-
-      using var saveStorageTransaction = new Transaction( document, "Save storage of pull box information" ) ;
-      saveStorageTransaction.Start() ;
+      
       storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Add( new PullBoxInfoItemModel( pullBox.UniqueId, textNote.UniqueId ) ) ;
       storagePullBoxInfoServiceByLevel.SaveChange() ;
-      saveStorageTransaction.Commit() ;
+      updateNotationTransaction.Commit() ;
     }
 
     private static string GetPullBoxTextBox( int depth, int height, string defaultContent )
