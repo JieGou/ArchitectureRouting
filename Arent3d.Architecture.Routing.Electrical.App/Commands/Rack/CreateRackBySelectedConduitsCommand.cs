@@ -146,7 +146,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       }
 
       // create annotations for racks
-      RackCommandBase.CreateNotationForRack( document, modifiedRacksAndElbows.OfType<FamilyInstance>().Where( fi => fi.IsRack() ) ) ;
+      RackCommandBase.CreateNotationForRack( document, modifiedRacksAndElbows.OfType<FamilyInstance>() ) ;
 
       // save arranged array of racks
       var storage = new StorageService<Level, RackFromToModel>( document.ActiveView.GenLevel ) ;
