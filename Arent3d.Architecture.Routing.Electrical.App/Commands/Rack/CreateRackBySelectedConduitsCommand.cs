@@ -136,21 +136,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", uiResult.Value.IsAutoSizing, specialLengthList ) ;
 
       // resolve overlapped cases
-      var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ).EnumerateAll() ;
-      foreach ( var modifiedRackList in modifiedRackLists ) {
-        modifiedRackList.SetProperty(ElectricalRoutingElementParameter.Separator, uiResult.Value.IsSeparator);
-        modifiedRackList.SetProperty(ElectricalRoutingElementParameter.Material, uiResult.Value.Material);
-        modifiedRackList.SetProperty(ElectricalRoutingElementParameter.Cover, uiResult.Value.Cover);
+      var modifiedRacksAndElbows = document.ResolveOverlapCases( racksAndFittings ).EnumerateAll() ;
+      
+      // set pick up parameters
+      foreach ( var rackOrElbow in modifiedRacksAndElbows ) {
+        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Separator, uiResult.Value.IsSeparator);
+        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Material, uiResult.Value.Material);
+        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Cover, uiResult.Value.Cover);
       }
 
       // create annotations for racks
-      RackCommandBase.CreateNotationForRack( document, modifiedRackLists.OfType<FamilyInstance>().Where(fi => fi.IsRack()) ) ;
+      RackCommandBase.CreateNotationForRack( document, modifiedRacksAndElbows.OfType<FamilyInstance>() ) ;
 
       // save arranged array of racks
       var storage = new StorageService<Level, RackFromToModel>( document.ActiveView.GenLevel ) ;
-      storage.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = modifiedRackLists.Select( element => element.UniqueId ).ToList() } ) ;
+      storage.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = modifiedRacksAndElbows.Select( element => element.UniqueId ).ToList() } ) ;
       storage.SaveChange() ;
-      
+
       createRackTransaction.Commit() ;
       return Result.Succeeded ;
     }
