@@ -700,37 +700,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return ( 4 * nScale * symbolRatio ).MillimetersToRevitUnits() ;
     }
 
-    public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this UIApplication uiApp, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", bool isAutoSizing = false, IEnumerable<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null, RoutingExecutor? executor = null )
-    {
-      var doc = uiApp.ActiveUIDocument.Document ;
-      // auto sizing
-      var listConduitWidth = ! isAutoSizing ? conduitWidthMap : conduitWidthMap.Select( pair => ( pair.Item1, CalculateRackWidth( doc, pair.Item1 ) ) ) ;
-
-      // read conduit markers
-      var creationInfors = new List<(XYZ, XYZ, double, Element)>() ;
-      foreach ( var item in listConduitWidth ) {
-        if ( item.Item1 is not Conduit conduit )
-          continue ;
-        var (startParam, endParam) = ( 0.0, 1.0 ) ;
-        if ( specialLengthList?.FirstOrDefault( x => x.Conduit.Id.Equals( conduit.Id ) ) is { Conduit: Conduit } specialLengthItem )
-          ( startParam, endParam ) = ( specialLengthItem.StartParam, specialLengthItem.EndParam ) ;
-
-        var (startPoint, endPoint) = GetEndPoints( conduit, startParam, endParam ) ;
-        creationInfors.Add( ( startPoint, endPoint, item.Item2, conduit ) ) ;
-      }
-
-      var racksAndFittings = doc.CreateRacksAndElbowsFromRawMarkers( creationInfors, doc.ActiveView.Scale, rackClassification ).ToList() ;
-
-      // detect and delete pull box that clash with rack
-      doc.Regenerate() ;
-      if ( executor is { } )
-        uiApp.DeletePullBoxesAndReroute( racksAndFittings, executor ) ;
-      
-      // update route names after delete pull boxes
-      racksAndFittings.OfType<FamilyInstance>().ForEach( fi => UpdateRouteName( fi ) ) ;
-      return racksAndFittings ;
-    }
-
     private static IEnumerable<Element> DetectPullBoxes( IEnumerable<Element> racksAndFittings )
     {
       var pullBoxes = new List<Element>() ;
@@ -759,79 +728,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         executor.Run( segments , progressData ) ;
         uiApp.ActiveUIDocument.Document.Regenerate();
       }
-    }
-
-    private static IEnumerable<Element> CreateRacksAndElbowsFromRawMarkers( this Document doc, IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width, Element ReferenceElement)> creationInforList, int viewScale, string rackClassification )
-    {
-      var racksAndElbows = new List<Element>() ;
-      var referencedElements = creationInforList.Select( x => x.ReferenceElement ).ToList() ;
-      var conduitMarkers = creationInforList.Select( x => ( x.StartPoint, x.EndPoint, x.Width ) ) ;
-      // simplify : join co-direction short markers into a long marker
-      var simplifiedMarkerMap = GetSimplifiedMarkers( conduitMarkers ) ;
-
-      var rackType = GetGenericRackSymbol( doc ) ;
-      var elbowType = GetElbowSymbol( doc ) ;
-      
-      for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
-        if ( i == simplifiedMarkerMap.Count - 1 ) {
-          break ;
-        }
-
-        var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
-        var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
-        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, viewScale, ElbowMinimumRadius, ElbowPadding ) ;
-
-        // modify marker to have enough space for elbow
-        simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, thisMarker.Item3 ), i ) ;
-        simplifiedMarkerMap[ i + 1 ] = ( ( fourPoints.Item3, fourPoints.Item4, nextMarker.Item3 ), i + 1 ) ;
-      }
-
-      // create racks and elbows by markers
-      FamilyInstance? newestInstance = null ;
-      for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
-        var rackMarker = simplifiedMarkerMap[ i ].RackMarker ;
-        if ( rackMarker.Item1.IsAlmostEqualTo( rackMarker.Item2 ) )
-          continue ;
-        var referencedElement = referencedElements[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
-
-        // create rack
-        var rackWidth = rackMarker.Item3 ;
-        var scaleFactor = RackWidthOnPlanView( viewScale ) / rackWidth ;
-        var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, referencedElement, rackClassification ) ;
-
-        if ( CreateRack( doc, creationParam ) is not { } rack )
-          continue ;
-        rack.SetProperty( "起点の表示", true ) ;
-        rack.SetProperty( "終点の表示", true ) ;
-        racksAndElbows.Add( rack ) ;
-
-        // Connect to current elbow:
-        if ( newestInstance is not null && TryConnectRackItems( rack, newestInstance ) ) {
-          rack.SetProperty( "起点の表示", false ) ;
-          if (newestInstance.IsRack())
-            newestInstance.SetProperty( "終点の表示", false ) ;
-        }
-
-        // Create rack elbow
-        if ( i == simplifiedMarkerMap.Count - 1 )
-          continue ;
-
-        var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
-
-        var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, ElbowMinimumRadius, ElbowPadding, elbowType, referencedElement, rackClassification, viewScale ) ;
-        if ( elbow is null ) {
-          newestInstance = rack ;
-          continue ;
-        }
-        
-        // Connect rack to new elbow
-        var isEndPointConnected = TryConnectRackItems( rack, elbow ) ;
-        rack.SetProperty( "終点の表示", ! isEndPointConnected ) ;
-        racksAndElbows.Add( elbow ) ;
-        newestInstance = elbow ;
-      }
-
-      return racksAndElbows ;
     }
 
     public static bool TryGetRackWidth( this FamilyInstance rack, out double width ) => rack.TryGetProperty( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( rack.Document, "トレイ幅" ), out width ) ;
@@ -1063,13 +959,116 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return newName ;
     }
 
-
     public static void TurnOffWarning( this RoutingExecutor executor, Transaction transaction )
     {
       if ( executor.CreateFailuresPreprocessor() is not { } failuresPreprocessor ) return ;
       var handlingOptions = transaction.GetFailureHandlingOptions() ;
       var failureHandlingOptions = handlingOptions.SetFailuresPreprocessor( failuresPreprocessor ) ;
       transaction.SetFailureHandlingOptions( failureHandlingOptions ) ;
+    }
+
+    private static IEnumerable<Element> CreateRacksAndElbowsFromRawMarkers( this Document doc, IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width, Element ReferenceElement)> creationInforList, int viewScale, string rackClassification )
+    {
+      var racksAndElbows = new List<Element>() ;
+      var referencedElements = creationInforList.Select( x => x.ReferenceElement ).ToList() ;
+      var conduitMarkers = creationInforList.Select( x => ( x.StartPoint, x.EndPoint, x.Width ) ) ;
+      // simplify : join co-direction short markers into a long marker
+      var simplifiedMarkerMap = GetSimplifiedMarkers( conduitMarkers ) ;
+
+      var rackType = GetGenericRackSymbol( doc ) ;
+      var elbowType = GetElbowSymbol( doc ) ;
+
+      for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
+        if ( i == simplifiedMarkerMap.Count - 1 ) {
+          break ;
+        }
+
+        var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
+        var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
+        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, viewScale, ElbowMinimumRadius, ElbowPadding ) ;
+
+        // modify marker to have enough space for elbow
+        simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, thisMarker.Item3 ), i ) ;
+        simplifiedMarkerMap[ i + 1 ] = ( ( fourPoints.Item3, fourPoints.Item4, nextMarker.Item3 ), i + 1 ) ;
+      }
+
+      // create racks and elbows by markers
+      FamilyInstance? newestInstance = null ;
+      for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
+        var rackMarker = simplifiedMarkerMap[ i ].RackMarker ;
+        if ( rackMarker.Item1.IsAlmostEqualTo( rackMarker.Item2 ) )
+          continue ;
+        var referencedElement = referencedElements[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
+
+        // create rack
+        var rackWidth = rackMarker.Item3 ;
+        var scaleFactor = RackWidthOnPlanView( viewScale ) / rackWidth ;
+        var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, referencedElement, rackClassification ) ;
+
+        if ( CreateRack( doc, creationParam ) is not { } rack )
+          continue ;
+        rack.SetProperty( "起点の表示", true ) ;
+        rack.SetProperty( "終点の表示", true ) ;
+        racksAndElbows.Add( rack ) ;
+
+        // Connect to current elbow:
+        if ( newestInstance is not null && TryConnectRackItems( rack, newestInstance ) ) {
+          rack.SetProperty( "起点の表示", false ) ;
+          if ( newestInstance.IsRack() )
+            newestInstance.SetProperty( "終点の表示", false ) ;
+        }
+
+        // Create rack elbow
+        if ( i == simplifiedMarkerMap.Count - 1 )
+          continue ;
+
+        var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
+
+        var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, ElbowMinimumRadius, ElbowPadding, elbowType, referencedElement, rackClassification, viewScale ) ;
+        if ( elbow is null ) {
+          newestInstance = rack ;
+          continue ;
+        }
+
+        // Connect rack to new elbow
+        var isEndPointConnected = TryConnectRackItems( rack, elbow ) ;
+        rack.SetProperty( "終点の表示", ! isEndPointConnected ) ;
+        racksAndElbows.Add( elbow ) ;
+        newestInstance = elbow ;
+      }
+
+      return racksAndElbows ;
+    }
+
+    public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this UIApplication uiApp, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", bool isAutoSizing = false, IEnumerable<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null, RoutingExecutor? executor = null )
+    {
+      var doc = uiApp.ActiveUIDocument.Document ;
+      // auto sizing
+      var listConduitWidth = ! isAutoSizing ? conduitWidthMap : conduitWidthMap.Select( pair => ( pair.Item1, CalculateRackWidth( doc, pair.Item1 ) ) ) ;
+
+      // read conduit markers
+      var creationInfors = new List<(XYZ, XYZ, double, Element)>() ;
+      foreach ( var item in listConduitWidth ) {
+        if ( item.Item1 is not Conduit conduit )
+          continue ;
+        var (startParam, endParam) = ( 0.0, 1.0 ) ;
+        if ( specialLengthList?.FirstOrDefault( x => x.Conduit.Id.Equals( conduit.Id ) ) is { Conduit: Conduit } specialLengthItem )
+          ( startParam, endParam ) = ( specialLengthItem.StartParam, specialLengthItem.EndParam ) ;
+
+        var (startPoint, endPoint) = GetEndPoints( conduit, startParam, endParam ) ;
+        creationInfors.Add( ( startPoint, endPoint, item.Item2, conduit ) ) ;
+      }
+
+      var racksAndFittings = doc.CreateRacksAndElbowsFromRawMarkers( creationInfors, doc.ActiveView.Scale, rackClassification ).ToList() ;
+
+      // detect and delete pull box that clash with rack
+      doc.Regenerate() ;
+      if ( executor is { } )
+        uiApp.DeletePullBoxesAndReroute( racksAndFittings, executor ) ;
+
+      // update route names after delete pull boxes
+      racksAndFittings.OfType<FamilyInstance>().ForEach( fi => UpdateRouteName( fi ) ) ;
+      return racksAndFittings ;
     }
   }
 }
