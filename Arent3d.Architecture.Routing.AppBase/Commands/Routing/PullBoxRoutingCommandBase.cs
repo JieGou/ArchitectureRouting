@@ -10,9 +10,11 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Utility ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.Exceptions ;
 
 
@@ -55,18 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var level = ( document.GetElement( pickInfo.Element.GetLevelId() ) as Level ) ! ;
       var heightConnector = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightConnector.MillimetersToRevitUnits() ;
       var heightWire = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightWire.MillimetersToRevitUnits() ;
-
-      XYZ? positionLabel ;
-      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
-      var baseLengthOfLine = scale / 100d ;
-      if ( pickInfo.Element is FamilyInstance { FacingOrientation: { } } )
-        positionLabel = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 )
-        positionLabel = new XYZ( originX, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 )
-        positionLabel = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else
-        positionLabel = new XYZ( originX, originY, heightConnector ) ;
+      var positionLabel = new XYZ( originX, originY, heightConnector ) ;
 
       return new OperationResult<PickState>( new PickState( pickInfo, null, new XYZ( originX, originY, originZ ), heightConnector, heightWire, pickInfo.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight, pullBoxViewModel.IsAutoCalculatePullBoxSize, positionLabel, pullBoxViewModel.SelectedPullBox, fromDirection, toDirection, new Dictionary<string, List<string>>() ) ) ;
     }
@@ -88,7 +79,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var route in routeInTheSamePosition ) {
         result.AddRange( PullBoxRouteManager.GetRouteSegments( document, route, pickState.PickInfo.Element, pickState.PullBox, pickState.HeightConnector,
           pickState.HeightWire, pickState.RouteDirection, pickState.IsCreatePullBoxWithoutSettingHeight, nameBase, ref parentIndex,
-          ref parentAndChildRoute, pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) );
+          ref parentAndChildRoute, pickState.FromDirection, pickState.ToDirection, null, false, allowedTiltedPiping ) ) ;
       }
 
       pickState.ParentAndChildRoute = parentAndChildRoute ;
@@ -133,15 +124,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       var level = document.ActiveView.GenLevel ;
+      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
+      var baseLengthOfLine = scale / 100d ;
+      var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
+      var routeCache = RouteCache.Get( DocumentKey.Get( document ) ) ;
       StorageService<Level, DetailSymbolModel>? storageDetailSymbolService = null ;
       StorageService<Level, PullBoxInfoModel>? storagePullBoxInfoServiceByLevel = null ;
       if ( level != null ) {
         storageDetailSymbolService = new StorageService<Level, DetailSymbolModel>( level ) ;
         storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
       }
-
-      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
-
+      
+      PullBoxRouteManager.ChangeDimensionOfPullBoxAndSetLabel( document, routeCache, allConduits, baseLengthOfLine, result.PullBox!, csvStorable, storageDetailSymbolService, storagePullBoxInfoServiceByLevel, conduitsModelData, hiroiMasterModels, PullBoxRouteManager.DefaultPullBoxLabel, result.PositionLabel, result.IsAutoCalculatePullBoxSize, result.SelectedPullBox ) ;
       #endregion
       
       #region Change Representative Route Name
