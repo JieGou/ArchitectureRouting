@@ -50,18 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var level = ( document.GetElement( pickInfo.Element.GetLevelId() ) as Level ) ! ;
       var heightConnector = originZ - level.Elevation ;
       var heightWire = originZ - level.Elevation ;
-
-      XYZ? positionLabel ;
-      var scale = Model.ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
-      var baseLengthOfLine = scale / 100d ;
-      if ( pickInfo.Element is FamilyInstance { FacingOrientation: { } } )
-        positionLabel = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else if ( pickInfo.RouteDirection.X is 1.0 or -1.0 )
-        positionLabel = new XYZ( originX, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else if ( pickInfo.RouteDirection.Y is 1.0 or -1.0 )
-        positionLabel = new XYZ( originX + 0.4 * baseLengthOfLine, originY + 0.7 * baseLengthOfLine, heightConnector ) ;
-      else
-        positionLabel = new XYZ( originX, originY, heightConnector ) ;
+      var positionLabel = new XYZ( originX, originY, heightConnector ) ;
 
       HandholeModel? handholeModel = null ;
       if ( GetHandholeModels( document ) is { Count: > 0 } handholeModels ) {
