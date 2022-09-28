@@ -332,6 +332,16 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
 
+    public static IEnumerable<Curve> GetVisibleLinesInView( this FamilyInstance threeDObject, View viewPlan )
+    {
+      var geometryElement = threeDObject.get_Geometry( new Options { ComputeReferences = true, IncludeNonVisibleObjects = false, View = viewPlan } ) ;
+
+      var curveToIdDictionary = new Dictionary<Curve, string>() ;
+      if ( geometryElement is { } )
+        RecursiveCurves( geometryElement, "", ref curveToIdDictionary ) ;
+      return curveToIdDictionary.Select( item => item.Key ) ;
+    }
+
     public static IEnumerable<GeometryObject> GetGeometryObjectsFromElementInstance( Element element, Options options, bool isInstance = true )
     {
       var geometryObjects = new List<GeometryObject>() ;

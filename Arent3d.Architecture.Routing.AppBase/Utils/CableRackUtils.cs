@@ -656,6 +656,50 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       return simplifiedMarkers ;
     }
+    
+    private static (XYZ ChangedPoint, XYZ FixedPoint) ShortenMarkerByBoard( View view,  XYZ flexiblePoint, XYZ fixedPoint )
+    {
+      var levelElevation = view.GenLevel.ProjectElevation ;
+
+      if ( flexiblePoint.Z <= levelElevation )
+        return ( flexiblePoint, fixedPoint ) ;
+
+      var halfSize = 150d.MillimetersToRevitUnits() ;
+      var pMin = flexiblePoint - XYZ.BasisX * halfSize - XYZ.BasisY * halfSize - XYZ.BasisZ * ( flexiblePoint.Z - levelElevation ) ;
+      var pMax = flexiblePoint + XYZ.BasisX * halfSize + XYZ.BasisY * halfSize ;
+      var boxFilter = new BoundingBoxIntersectsFilter( new Outline( pMin, pMax ) ) ;
+
+      var boardFamilyName = ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() ;
+      var boards = new FilteredElementCollector( view.Document, view.Id ).WhereElementIsNotElementType().OfCategory( BuiltInCategory.OST_ElectricalEquipment ).WherePasses( boxFilter ).OfType<FamilyInstance>().Where( fi => fi.Symbol.FamilyName == boardFamilyName ).ToList() ;
+      
+      if ( boards.Count == 0 )
+        return ( flexiblePoint, fixedPoint ) ;
+
+      var curves = boards.SelectMany( board => board.GetVisibleLinesInView( view ) ).ToList() ;
+      if ( curves.Count == 0 )
+        return ( flexiblePoint, fixedPoint ) ;
+
+      var intersectPoints = new List<XYZ>() ;
+      var lineRack = Line.CreateBound( flexiblePoint, new XYZ(fixedPoint.X, fixedPoint.Y, flexiblePoint.Z) ) ;
+      
+      foreach ( var curve in curves ) {
+        var p1 = curve.GetEndPoint( 0 ) ;
+        var p2 = curve.GetEndPoint( 1 ) ;
+        if(Math.Abs(p1.Z - p2.Z) > 1d.MillimetersToRevitUnits())
+          continue;
+        
+        var lineBoard = Line.CreateBound( new XYZ(p1.X, p1.Y, flexiblePoint.Z), new XYZ(p2.X, p2.Y, flexiblePoint.Z) ) ;
+        lineRack.Intersect( lineBoard, out var resultArray ) ;
+        if (resultArray is null) continue;
+        for ( var i = 0 ; i < resultArray.Size ; i++ ) {
+          var intersection = resultArray.get_Item( i ) ;
+          intersectPoints.Add(intersection.XYZPoint) ;
+        }
+      }
+      var nearestIntersectPoint = intersectPoints.Any() ? intersectPoints.MinBy(point => point.DistanceTo(fixedPoint)) : flexiblePoint ;
+      
+      return ( nearestIntersectPoint!, fixedPoint ) ;
+    }
 
     private static bool TryConnectRackItems( FamilyInstance? firstInstance, FamilyInstance? secondInstance )
     {
@@ -776,7 +820,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var fullMakers = ConvertRacksToFullMarkers( horizontalRacks ) ;
 
       // create racks and fittings with new scale
-      var newHorizontalRacksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, view.Scale, "" ).ToList() ;
+      var newHorizontalRacksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, view.Scale, "", true ).ToList() ;
       newElements.AddRange( newHorizontalRacksAndFittings ) ;
 
       // delete existing notations and rack items
@@ -967,22 +1011,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       transaction.SetFailureHandlingOptions( failureHandlingOptions ) ;
     }
 
-    private static IEnumerable<Element> CreateRacksAndElbowsFromRawMarkers( this Document doc, IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width, Element ReferenceElement)> creationInforList, int viewScale, string rackClassification )
+    private static IEnumerable<Element> CreateRacksAndElbowsFromRawMarkers( this Document doc, IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width, Element ReferenceElement)> fullMarkerList, int viewScale, string rackClassification, bool isRedrawing )
     {
       var racksAndElbows = new List<Element>() ;
-      var referencedElements = creationInforList.Select( x => x.ReferenceElement ).ToList() ;
-      var conduitMarkers = creationInforList.Select( x => ( x.StartPoint, x.EndPoint, x.Width ) ) ;
+      var referencedElements = fullMarkerList.Select( x => x.ReferenceElement ).ToList() ;
+      var conduitMarkers = fullMarkerList.Select( x => ( x.StartPoint, x.EndPoint, x.Width ) ) ;
+      
       // simplify : join co-direction short markers into a long marker
       var simplifiedMarkerMap = GetSimplifiedMarkers( conduitMarkers ) ;
+
+      if ( ! isRedrawing ) {
+        var shortenResultBegin = ShortenMarkerByBoard( doc.ActiveView, simplifiedMarkerMap[ 0 ].RackMarker.P11, simplifiedMarkerMap[ 0 ].RackMarker.P12 ) ;
+        var shortenResultEnd = ShortenMarkerByBoard( doc.ActiveView, simplifiedMarkerMap.Last().RackMarker.P12, simplifiedMarkerMap.Last().RackMarker.P11 ) ;
+        simplifiedMarkerMap[ 0 ] = ( ( shortenResultBegin.ChangedPoint, shortenResultBegin.FixedPoint, simplifiedMarkerMap[ 0 ].RackMarker.Width ), simplifiedMarkerMap[ 0 ].OriginalIndex ) ;
+        simplifiedMarkerMap[ simplifiedMarkerMap.Count - 1 ] = ( ( shortenResultEnd.FixedPoint, shortenResultEnd.ChangedPoint, simplifiedMarkerMap.Last().RackMarker.Width ), simplifiedMarkerMap.Last().OriginalIndex ) ;
+      }
 
       var rackType = GetGenericRackSymbol( doc ) ;
       var elbowType = GetElbowSymbol( doc ) ;
 
-      for ( var i = 0 ; i < simplifiedMarkerMap.Count ; i++ ) {
-        if ( i == simplifiedMarkerMap.Count - 1 ) {
-          break ;
-        }
-
+      for ( var i = 0 ; i < simplifiedMarkerMap.Count - 1 ; i++ ) {
         var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
         var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, viewScale, ElbowMinimumRadius, ElbowPadding ) ;
@@ -1000,7 +1048,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
           continue ;
         var referencedElement = referencedElements[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
 
-        // create rack
+        // create new rack
         var rackWidth = rackMarker.Item3 ;
         var scaleFactor = RackWidthOnPlanView( viewScale ) / rackWidth ;
         var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, referencedElement, rackClassification ) ;
@@ -1011,14 +1059,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         rack.SetProperty( "終点の表示", true ) ;
         racksAndElbows.Add( rack ) ;
 
-        // Connect to current elbow:
+        // Connect new rack to the latest item
         if ( newestInstance is not null && TryConnectRackItems( rack, newestInstance ) ) {
           rack.SetProperty( "起点の表示", false ) ;
           if ( newestInstance.IsRack() )
             newestInstance.SetProperty( "終点の表示", false ) ;
         }
 
-        // Create rack elbow
+        // Create new elbow
         if ( i == simplifiedMarkerMap.Count - 1 )
           continue ;
 
@@ -1030,10 +1078,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
           continue ;
         }
 
-        // Connect rack to new elbow
+        // Connect new rack to new elbow
         var isEndPointConnected = TryConnectRackItems( rack, elbow ) ;
         rack.SetProperty( "終点の表示", ! isEndPointConnected ) ;
         racksAndElbows.Add( elbow ) ;
+        
+        // new elbow became the latest item
         newestInstance = elbow ;
       }
 
@@ -1059,14 +1109,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         creationInfors.Add( ( startPoint, endPoint, item.Item2, conduit ) ) ;
       }
 
-      var racksAndFittings = doc.CreateRacksAndElbowsFromRawMarkers( creationInfors, doc.ActiveView.Scale, rackClassification ).ToList() ;
+      var racksAndFittings = doc.CreateRacksAndElbowsFromRawMarkers( creationInfors, doc.ActiveView.Scale, rackClassification, false ).ToList() ;
 
-      // detect and delete pull box that clash with rack
+      // detect and delete pull boxes clashing with racks
       doc.Regenerate() ;
       if ( executor is { } )
         uiApp.DeletePullBoxesAndReroute( racksAndFittings, executor ) ;
 
-      // update route names after delete pull boxes
+      // update route name parameter of racks after delete pull boxes
       racksAndFittings.OfType<FamilyInstance>().ForEach( fi => UpdateRouteName( fi ) ) ;
       return racksAndFittings ;
     }
