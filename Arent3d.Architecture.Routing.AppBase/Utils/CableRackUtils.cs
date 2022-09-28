@@ -668,14 +668,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var pMin = flexiblePoint - XYZ.BasisX * halfSize - XYZ.BasisY * halfSize - XYZ.BasisZ * ( flexiblePoint.Z - levelElevation ) ;
       var pMax = flexiblePoint + XYZ.BasisX * halfSize + XYZ.BasisY * halfSize ;
       var boxFilter = new BoundingBoxIntersectsFilter( new Outline( pMin, pMax ) ) ;
-
-      var boardFamilyName = ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() ;
-      var boards = new FilteredElementCollector( view.Document, view.Id ).WhereElementIsNotElementType().OfCategory( BuiltInCategory.OST_ElectricalEquipment ).WherePasses( boxFilter ).OfType<FamilyInstance>().Where( fi => fi.Symbol.FamilyName == boardFamilyName ).ToList() ;
       
+      var boards = new FilteredElementCollector( view.Document, view.Id ).WhereElementIsNotElementType().WherePasses( boxFilter ).OfType<FamilyInstance>().Where(fi => fi.GetBuiltInCategory() is BuiltInCategory.OST_ElectricalEquipment or BuiltInCategory.OST_ElectricalFixtures).ToList() ;
+
       if ( boards.Count == 0 )
         return ( flexiblePoint, fixedPoint ) ;
 
-      var curves = boards.SelectMany( board => board.GetVisibleLinesInView( view ) ).ToList() ;
+      var curves = boards.SelectMany( board => board.GetVisibleLinesInView( view, true ) ).ToList() ;
       if ( curves.Count == 0 )
         return ( flexiblePoint, fixedPoint ) ;
 

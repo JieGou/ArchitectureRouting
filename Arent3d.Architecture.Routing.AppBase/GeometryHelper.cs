@@ -315,30 +315,45 @@ namespace Arent3d.Architecture.Routing.AppBase
       return curves ;
     }
 
-    private static void RecursiveCurves( GeometryElement geometryElement, string elementId, ref Dictionary<Curve, string> curves )
+    private static void RecursiveCurves( GeometryElement geometryElement, string elementId, ref Dictionary<Curve, string> curves, bool includingSolidEdges = false )
     {
       foreach ( var geometry in geometryElement ) {
         switch ( geometry ) {
           case GeometryInstance geometryInstance :
           {
             if ( geometryInstance.GetInstanceGeometry() is { } subGeometryElement )
-              RecursiveCurves( subGeometryElement, elementId, ref curves ) ;
+              RecursiveCurves( subGeometryElement, elementId, ref curves, includingSolidEdges ) ;
             break ;
           }
           case Curve curve :
             curves.Add( curve, elementId ) ;
             break ;
+          case Solid solid :
+            if ( ! includingSolidEdges )
+              break ;
+            var edges = GetSolidEdgesAsCurves( solid ) ;
+            curves.AddRange( edges.Select( edge => new KeyValuePair<Curve, string>( edge, elementId ) ) ) ;
+            break ;
         }
       }
     }
 
-    public static IEnumerable<Curve> GetVisibleLinesInView( this FamilyInstance threeDObject, View viewPlan )
+    private static IEnumerable<Curve> GetSolidEdgesAsCurves( Solid solid )
+    {
+      foreach ( var ed in solid.Edges ) {
+        if ( ed is not Edge edge )
+          continue ;
+        yield return edge.AsCurve() ;
+      }
+    }
+
+    public static IEnumerable<Curve> GetVisibleLinesInView( this FamilyInstance threeDObject, View viewPlan, bool includingSolidEdge )
     {
       var geometryElement = threeDObject.get_Geometry( new Options { ComputeReferences = true, IncludeNonVisibleObjects = false, View = viewPlan } ) ;
 
       var curveToIdDictionary = new Dictionary<Curve, string>() ;
       if ( geometryElement is { } )
-        RecursiveCurves( geometryElement, "", ref curveToIdDictionary ) ;
+        RecursiveCurves( geometryElement, "", ref curveToIdDictionary , includingSolidEdge ) ;
       return curveToIdDictionary.Select( item => item.Key ) ;
     }
 
