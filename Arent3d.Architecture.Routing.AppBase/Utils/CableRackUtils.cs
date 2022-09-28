@@ -3,6 +3,8 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -434,14 +436,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return rackSymbol ;
     }
 
-    private static void CopyRouteName( this FamilyInstance instance, Element conduit )
+    private static void CopyProperties( this FamilyInstance rack, Element referenceElement )
     {
-      var routeName = conduit.GetRouteName() ;
+      var routeName = referenceElement.GetRouteName() ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
 
       var routeNameArray = routeName!.Split( '_' ) ;
-      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAt( 1 ) ) ;
-      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
+      routeName = string.Join( "_", routeNameArray.First(), routeNameArray.ElementAtOrDefault( 1 ) ) ;
+      rack.SetProperty( RoutingParameter.RouteName, routeName ) ;
+
+      if ( ! referenceElement.IsRack() )
+        return ;
+
+      if ( referenceElement.TryGetProperty( ElectricalRoutingElementParameter.Separator, out bool separator ) )
+        rack.TrySetProperty( ElectricalRoutingElementParameter.Separator, separator ) ;
+      if ( referenceElement.TryGetProperty( ElectricalRoutingElementParameter.Material, out string? material ) && material is { } )
+        rack.TrySetProperty( ElectricalRoutingElementParameter.Material, material ) ;
+      if ( referenceElement.TryGetProperty( ElectricalRoutingElementParameter.Cover, out string? cover ) && cover is { } )
+        rack.TrySetProperty( ElectricalRoutingElementParameter.Cover, cover ) ;
+    }
+
+    public static ( string, string ) GetFromAndToConnectorUniqueIdOfRack( Element rack )
+    {
+      if ( rack.TryGetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, out string? toConnectorId ) && rack.TryGetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, out string? fromConnectorId ) )
+        return ( fromConnectorId!, toConnectorId! ) ;
+      throw new NullReferenceException() ;
     }
 
     private static FamilyInstance? CreateRack( Document doc, RackCreationParam creationParam )
@@ -458,18 +477,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       instance.SetProperty( "ラックの倍率", creationParam.ScaleFactor ) ;
 
       // rack classification
-      instance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ), creationParam.RackClassification ) ;
+      var rackClassification = "" ;
+      if ( ! string.IsNullOrEmpty( creationParam.RackClassification ) )
+        rackClassification = creationParam.RackClassification ;
+      else if ( creationParam.ReferenceElement is FamilyInstance fi && fi.TryGetProperty( ElectricalRoutingElementParameter.RackType, out string? oldRackType ) && oldRackType is { } )
+        rackClassification = oldRackType ;
+      if ( ! string.IsNullOrEmpty( rackClassification ) )
+        instance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ), rackClassification ) ;
 
       if ( creationParam.ReferenceElement is { } refElement ) {
         // set To-Side Connector Id
-        var (fromConnectorId, toConnectorId) = RackCommandBase.GetFromAndToConnectorUniqueId( refElement ) ;
+        var (fromConnectorId, toConnectorId) = refElement is Conduit ? RackCommandBase.GetFromAndToConnectorUniqueId( refElement ) : GetFromAndToConnectorUniqueIdOfRack( refElement ) ;
         if ( ! string.IsNullOrEmpty( toConnectorId ) )
           instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
         if ( ! string.IsNullOrEmpty( fromConnectorId ) )
           instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
 
-        // set route name
-        instance.CopyRouteName( refElement ) ;
+        // set route name + rack specified parameters
+        instance.CopyProperties( refElement ) ;
       }
 
       if ( instance.GetTransform() is not { } tf )
@@ -498,18 +523,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       instance.SetProperty( "ラックの倍率", creationParam.ScaleFactor ) ;
 
       // rack classification
-      instance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ), creationParam.RackClassification ) ;
+      var rackClassification = "" ;
+      if ( ! string.IsNullOrEmpty( creationParam.RackClassification ) )
+        rackClassification = creationParam.RackClassification ;
+      else if ( creationParam.ReferenceElement is FamilyInstance fi && fi.TryGetProperty( ElectricalRoutingElementParameter.RackType, out string? oldRackType ) && oldRackType is { } )
+        rackClassification = oldRackType ;
+      instance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( doc, "Rack Type" ), rackClassification ) ;
 
       if ( creationParam.ReferenceElement is { } refElement ) {
         // set To-Side Connector Id
-        var (fromConnectorId, toConnectorId) = RackCommandBase.GetFromAndToConnectorUniqueId( refElement ) ;
+        var (fromConnectorId, toConnectorId) = refElement is Conduit ? RackCommandBase.GetFromAndToConnectorUniqueId( refElement ) : GetFromAndToConnectorUniqueIdOfRack( refElement ) ;
         if ( ! string.IsNullOrEmpty( toConnectorId ) )
           instance.TrySetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, toConnectorId ) ;
         if ( ! string.IsNullOrEmpty( fromConnectorId ) )
           instance.TrySetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, fromConnectorId ) ;
 
-        // set route name
-        instance.CopyRouteName( refElement ) ;
+        // set route name + rack specified parameters
+        instance.CopyProperties( refElement ) ;
       }
 
       doc.Regenerate() ;
@@ -614,11 +644,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         }
 
         var fourPoints = ReArrange( ( markerList[ i ].StartPoint, markerList[ i ].EndPoint ), ( markerList[ i + 1 ].StartPoint, markerList[ i + 1 ].EndPoint ) ) ;
-        var isSameWidth = Math.Abs( markerList[ i ].Width.RevitUnitsToMillimeters() - markerList[ i + 1 ].Width.RevitUnitsToMillimeters() ) < 1.0 ;
         var isSameDirection = ( fourPoints.P11 - fourPoints.P12 ).Normalize().IsAlmostEqualTo( ( fourPoints.P21 - fourPoints.P22 ).Normalize() ) ;
-        if ( isSameWidth && fourPoints.P12.IsAlmostEqualTo( fourPoints.P21 ) && isSameDirection ) {
+        if ( isSameDirection && fourPoints.P12.IsAlmostEqualTo( fourPoints.P21 ) && isSameDirection ) {
           // extend next marker and ignore this marker
-          markerList[ i + 1 ] = ( fourPoints.P11, fourPoints.P22, markerList[ i + 1 ].Width ) ;
+          markerList[ i + 1 ] = ( fourPoints.P11, fourPoints.P22, Math.Max(markerList[ i ].Width, markerList[ i + 1 ].Width) ) ;
         }
         else {
           // add this marker to list
@@ -645,7 +674,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return false ;
     }
 
-    private static FamilyInstance? CreateElbowBetweenRackMarkers( Document document, (XYZ, XYZ, double) thisMarker, (XYZ, XYZ, double) nextMarker, double elbowMinRadius, double paddingLength, FamilySymbol? elbowType, Element? referenceElement, string rackClassification )
+    private static FamilyInstance? CreateElbowBetweenRackMarkers( Document document, (XYZ, XYZ, double) thisMarker, (XYZ, XYZ, double) nextMarker, double elbowMinRadius, double paddingLength, FamilySymbol? elbowType, Element? referenceElement, string rackClassification, int scale )
     {
       if ( thisMarker.Item1.IsAlmostEqualTo( thisMarker.Item2 ) || nextMarker.Item1.IsAlmostEqualTo( nextMarker.Item2 ) )
         return null ;
@@ -657,18 +686,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var elbowRotateAngle = XYZ.BasisX.AngleOnPlaneTo( elbowDirection, XYZ.BasisZ ) ;
 
       var rackWidth = Math.Max( thisMarker.Item3, nextMarker.Item3 ) ;
-      var scaleFactor = RackWidthOnPlanView( document.ActiveView.Scale ) / rackWidth ;
+      var scaleFactor = RackWidthOnPlanView( scale ) / rackWidth ;
       var elbowRadius = RealElbowRadius( rackWidth, elbowMinRadius, scaleFactor ) ;
       var elbowCreationParam = new ElbowCreationParam( elbowInsertPoint, elbowRotateAngle, rackWidth, elbowRadius, paddingLength, scaleFactor, null, elbowType, referenceElement, rackClassification ) ;
       return CreateElbow( document, elbowCreationParam ) ;
     }
 
-    private static double RackWidthOnPlanView( int nScale )
+    /// <summary>
+    /// calculate 2d width in Revit unit
+    /// </summary>
+    public static double RackWidthOnPlanView( int nScale )
     {
       var symbolRatio = Model.ImportDwgMappingModel.GetDefaultSymbolRatio( nScale ) ;
       return ( 4 * nScale * symbolRatio ).MillimetersToRevitUnits() ;
     }
-    
+
     public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this Document doc, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", 
       bool IsAutoSizing = false, IEnumerable<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null )
     {
@@ -679,6 +711,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var racksAndElbows = new List<Element>() ;
       var conduits = new List<Element>() ;
       var conduitMarkers = new List<(XYZ StartPoint, XYZ EndPoint, double Width)>() ;
+      var creationInfors = new List<(XYZ , XYZ , double , Element)>() ;
       foreach ( var item in listConduitWidth ) {
         if ( item.Item1 is not Conduit conduit )
           continue ;
@@ -689,8 +722,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var (startPoint, endPoint) = GetEndPoints( conduit, startParam, endParam ) ;
         conduitMarkers.Add( ( startPoint, endPoint, item.Item2 ) ) ;
         conduits.Add( conduit ) ;
+        creationInfors.Add( ( startPoint, endPoint, item.Item2, conduit ) ) ;
       }
 
+      return doc.CreateRacksAndElbowsFromRawMarkers( creationInfors, doc.ActiveView.Scale, rackClassification ) ;
+    }
+    
+    private static IEnumerable<Element> CreateRacksAndElbowsFromRawMarkers( this Document doc, IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width, Element ReferenceElement)> creationInforList, int viewScale, string rackClassification )
+    {
+      var racksAndElbows = new List<Element>() ;
+      var referencedElements = creationInforList.Select( x => x.ReferenceElement ).ToList() ;
+      var conduitMarkers = creationInforList.Select( x => ( x.StartPoint, x.EndPoint, x.Width ) ) ;
       // simplify : join co-direction short markers into a long marker
       var simplifiedMarkerMap = GetSimplifiedMarkers( conduitMarkers ) ;
 
@@ -704,7 +746,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
         var thisMarker = simplifiedMarkerMap[ i ].RackMarker ;
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
-        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, doc.ActiveView.Scale, ElbowMinimumRadius, ElbowPadding ) ;
+        var fourPoints = ReArrangeToConnect( thisMarker, nextMarker, viewScale, ElbowMinimumRadius, ElbowPadding ) ;
 
         // modify marker to have enough space for elbow
         simplifiedMarkerMap[ i ] = ( ( fourPoints.Item1, fourPoints.Item2, thisMarker.Item3 ), i ) ;
@@ -717,12 +759,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         var rackMarker = simplifiedMarkerMap[ i ].RackMarker ;
         if ( rackMarker.Item1.IsAlmostEqualTo( rackMarker.Item2 ) )
           continue ;
-        var conduit = conduits[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
+        var referencedElement = referencedElements[ simplifiedMarkerMap[ i ].OriginalIndex ] ;
 
         // create rack
         var rackWidth = rackMarker.Item3 ;
-        var scaleFactor = RackWidthOnPlanView( doc.ActiveView.Scale ) / rackWidth ;
-        var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, conduit, rackClassification ) ;
+        var scaleFactor = RackWidthOnPlanView( viewScale ) / rackWidth ;
+        var creationParam = new RackCreationParam( rackMarker.Item1, rackMarker.Item2, rackWidth, scaleFactor, null, rackType, referencedElement, rackClassification ) ;
 
         if ( CreateRack( doc, creationParam ) is not { } rack )
           continue ;
@@ -743,7 +785,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
         var nextMarker = simplifiedMarkerMap[ i + 1 ].RackMarker ;
 
-        var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, ElbowMinimumRadius, ElbowPadding, elbowType, conduit, rackClassification ) ;
+        var elbow = CreateElbowBetweenRackMarkers( doc, rackMarker, nextMarker, ElbowMinimumRadius, ElbowPadding, elbowType, referencedElement, rackClassification, viewScale ) ;
         if ( elbow is null ) {
           newestInstance = rack ;
           continue ;
@@ -757,6 +799,110 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       }
 
       return racksAndElbows ;
+    }
+
+    public static bool TryGetRackWidth( this FamilyInstance rack, out double width ) => rack.TryGetProperty( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( rack.Document, "トレイ幅" ), out width ) ;
+
+    public static bool TryGetRackLength( this FamilyInstance rack, out double length ) => rack.TryGetProperty( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( rack.Document, "トレイ長さ" ), out length ) ;
+
+    private static (XYZ? StartPoint, XYZ? EndPoint) GetRackStartAndEndPoints( FamilyInstance rackInstance )
+    {
+      if ( ! rackInstance.IsRack() )
+        return ( null, null ) ;
+      
+      if ( ! rackInstance.TryGetRackLength( out var length ) )
+        return ( null, null ) ;
+      
+      var transform = rackInstance.GetTransform() ;
+      return ( transform.Origin, transform.Origin + transform.BasisX * length ) ;
+    }
+
+    private static IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width, Element ReferenceElement)> ConvertRacksToFullMarkers( IEnumerable<Element> existingRacks )
+    {
+      foreach ( var rack in existingRacks ) {
+        if ( rack is not FamilyInstance rackInstance || GetRackStartAndEndPoints( rackInstance ) is not { StartPoint: { } startPoint, EndPoint: { } endPoint } )
+          continue ;
+        if ( ! rackInstance.TryGetRackWidth( out var width ) )
+          continue ;
+        yield return ( startPoint, endPoint, width, rack ) ;
+      }
+    }
+
+    private static List<Element> ReDrawArrayOfRacksAndElbows( this Document document, IEnumerable<Element> oldElements, View view )
+    {
+      var newElements = new List<Element>() ;
+      // modify scale factor of vertical rack 
+      var verticalRacks = oldElements.Where( x => x.IsValidObject ).OfType<FamilyInstance>().Where( element => element.IsVerticalRack() ).ToList() ;
+      var planViewRackWidth = RackWidthOnPlanView( view.Scale ) ;
+      foreach ( var verticalRack in verticalRacks ) {
+        if ( verticalRack.TryGetRackWidth( out var width ) )
+          verticalRack.SetProperty( "ラックの倍率", planViewRackWidth / width ) ;
+        newElements.Add( verticalRack ) ;
+      }
+
+      // read positions of existing racks and fittings
+      var horizontalRacks = oldElements.Where( element => ! element.IsVerticalRack() ).ToList() ;
+      var fullMakers = ConvertRacksToFullMarkers( horizontalRacks ) ;
+
+      // create racks and fittings with new scale
+      var newHorizontalRacksAndFittings = document.CreateRacksAndElbowsFromRawMarkers( fullMakers, view.Scale, "" ).ToList() ;
+      newElements.AddRange( newHorizontalRacksAndFittings ) ;
+
+      // delete existing notations and rack items
+      var oldUniqueIds = horizontalRacks.Select( e => e.UniqueId ).ToArray() ;
+      EraseRackCommandBase.RemoveRackNotation( document, oldUniqueIds ) ;
+      document.Delete( oldUniqueIds ) ;
+
+      // create notation for new rack
+      RackCommandBase.CreateNotationForRack( document, newHorizontalRacksAndFittings.OfType<FamilyInstance>().Where( fi => fi.IsRack() ), view ) ;
+
+      return newElements ;
+    }
+
+    public static void ReDrawAllRacksAndElbows( this Document document, View view, int? scale = null )
+    {
+      var newScale = scale ?? view.Scale ;
+
+      // redraw manual racks
+      var storageRackFromTo = new StorageService<Level, RackFromToModel>( view.GenLevel ) ;
+      {
+        var rackFromToList = storageRackFromTo.Data.RackFromToItems.Where( x => x.UniqueIds.All( uniqueId => document.GetElement( uniqueId ) is { } ) ).ToList() ;
+        storageRackFromTo.Data.RackFromToItems.Clear() ;
+        foreach ( var rackFromTo in rackFromToList ) {
+          // redraw racks and fittings with new scale
+          var newRacksAndFittings = document.ReDrawArrayOfRacksAndElbows( rackFromTo.UniqueIds.ConvertAll( document.GetElement ), view ) ;
+
+          // add to storage
+          storageRackFromTo.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = newRacksAndFittings.Select( element => element.UniqueId ).ToList() } ) ;
+        }
+
+        storageRackFromTo.SaveChange() ;
+      }
+
+      // redraw auto racks
+      var storageRackForRoute = new StorageService<Level, RackForRouteModel>( view.GenLevel ) ;
+      {
+        var rackForRouteItems = storageRackForRoute.Data.RackForRoutes.Where( item => item.RackIds.All( id => id.IsValid() ) ).ToList() ;
+        storageRackForRoute.Data.RackForRoutes.Clear() ;
+        foreach ( var rackForRouteItem in rackForRouteItems ) {
+          // redraw racks and fittings with new scale
+          var newRacksAndFittings = document.ReDrawArrayOfRacksAndElbows( rackForRouteItem.RackIds.ConvertAll( document.GetElement ), view ) ;
+
+          // add to storage
+          storageRackForRoute.Data.RackForRoutes.Add( new RackForRouteItem() { RouteName = rackForRouteItem.RouteName, RackIds = newRacksAndFittings.Select( element => element.Id ).ToList() } ) ;
+        }
+
+        storageRackForRoute.SaveChange() ;
+      }
+    }
+
+    public static bool IsVerticalRack( this Element element )
+    {
+      if ( element is not FamilyInstance rack || ! rack.IsRack() )
+        return false ;
+      var tf = rack.GetTransform() ;
+      var rackDirection = tf.BasisX ;
+      return rackDirection.IsAlmostEqualTo( XYZ.BasisZ ) || rackDirection.IsAlmostEqualTo( -XYZ.BasisZ ) ;
     }
     
     public static bool IsVertical( this Conduit conduit )
@@ -779,7 +925,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return string.Join( $"{SignJoinRouteName}", array[ 0 ], array[ 1 ] ) ;
     }
 
-    public static IEnumerable<FamilyInstance> CreateVerticalCableTray( this Document document, IList<(Conduit Conduit, double Width)> conduitMaps, string rackClassification = "Normal Rack" )
+    public static IEnumerable<FamilyInstance> CreateVerticalCableTray( this Document document, IList<(Conduit Conduit, double Width)> conduitMaps, int scale , string rackClassification = "Normal Rack")
     {
       var cableTrays = new List<FamilyInstance>() ;
       if ( ! conduitMaps.Any() )
@@ -807,9 +953,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         
         cableTrayInstance.SetProperty( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), line.Length ) ;
         cableTrayInstance.SetProperty( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), conduitMap.Width ) ;
-        cableTrayInstance.SetProperty( "ラックの倍率", RackWidthOnPlanView( document.ActiveView.Scale ) / conduitMap.Width ) ;
+        cableTrayInstance.SetProperty( "ラックの倍率", RackWidthOnPlanView( scale ) / conduitMap.Width ) ;
         cableTrayInstance.SetProperty( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), rackClassification ) ;
-        cableTrayInstance.CopyRouteName( conduitMap.Conduit ) ;
+        cableTrayInstance.CopyProperties( conduitMap.Conduit ) ;
 
         var (fromConnectorId, toConnectorId) = RackCommandBase.GetFromAndToConnectorUniqueId( conduitMap.Conduit ) ;
         if ( ! string.IsNullOrEmpty( toConnectorId ) )

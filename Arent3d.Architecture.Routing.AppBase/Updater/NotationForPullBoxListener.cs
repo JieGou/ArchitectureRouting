@@ -1,11 +1,15 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Updater
@@ -41,13 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
         var document = data.GetDocument() ;
         var uiDocument = new UIDocument( document ) ;
 
-        if ( document.ActiveView is not ViewPlan ) return ;
         if ( data.GetModifiedElementIds().Count < 1 ) return ;
-
-        var scale = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
-        var baseLengthOfLine = scale / 100d ;
-        var level = document.ActiveView.GenLevel ;
-        var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
 
         var selectionElementIds = new List<ElementId>() ;
         foreach ( var modifiedElementId in data.GetModifiedElementIds() ) {
@@ -55,20 +53,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           if ( pullBoxElement is not FamilyInstance pullBox ) continue ;
           var positionOfPullBox = ( pullBox.Location as LocationPoint )?.Point ;
 
-          var positionOfTextNoteForPullBox = positionOfPullBox != null ? new XYZ( positionOfPullBox.X + 0.4 * baseLengthOfLine, positionOfPullBox.Y + 0.7 * baseLengthOfLine, positionOfPullBox.Z ) : null ;
-          if ( positionOfTextNoteForPullBox == null ) continue ;
+          if ( positionOfPullBox == null ) continue ;
 
+          var level = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).SingleOrDefault( l => l.Id == pullBoxElement.LevelId ) ;
+          if ( level == null ) continue ;
+
+          var storagePullBoxInfoServiceByLevel = new StorageService<Level, PullBoxInfoModel>( level ) ;
           var textNoteOfPullBoxUniqueId = storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.SingleOrDefault( t => t.PullBoxUniqueId == pullBox.UniqueId )?.TextNoteUniqueId ;
           if ( string.IsNullOrEmpty( textNoteOfPullBoxUniqueId ) ) continue ;
 
-          var textNoteOfPullBox = document.GetAllElements<TextNote>().FirstOrDefault( t => textNoteOfPullBoxUniqueId == t.UniqueId ) ;
-          if ( textNoteOfPullBox != null )
+          var viewPlans = new FilteredElementCollector( document ).OfClass( typeof( ViewPlan ) ).Where( v => v is ViewPlan { GenLevel: { } } viewPlan && viewPlan.GenLevel.Id == level.Id ).Cast<ViewPlan>().EnumerateAll() ;
+          if ( ! viewPlans.Any() ) continue ;
+
+          var textNoteOfPullBox = document.GetAllElements<TextNote>().SingleOrDefault( t => textNoteOfPullBoxUniqueId == t.UniqueId && viewPlans.Any( v => v.Id == t.OwnerViewId ) ) ;
+          if ( textNoteOfPullBox != null ) {
+            var viewPlan = viewPlans.SingleOrDefault( v => v.Id == textNoteOfPullBox.OwnerViewId ) ;
+            if ( viewPlan == null ) continue ;
+
+            var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+            var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
+            var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( routes, allConduits, pullBox ) ;
+            var pullBoxLocation = ( pullBox.Location as LocationPoint )?.Point! ;
+            var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( allConduits, routesRelatedPullBox, pullBoxLocation ) ;
+            var conduitDirections = PullBoxRouteManager.GetConduitDirectionsRelatedPullBox( conduitsRelatedPullBox ) ;
+
+            var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
+            var baseLengthOfLine = scale / 100d ;
+            var positionOfTextNoteForPullBox = PullBoxRouteManager.GetPositionOfPullBox( textNoteOfPullBox, positionOfPullBox, conduitDirections, viewPlan.Scale, baseLengthOfLine ) ;
             textNoteOfPullBox.Coord = positionOfTextNoteForPullBox ;
+          }
           selectionElementIds.Add( modifiedElementId ) ;
           selectionElementIds.Add( textNoteOfPullBox!.Id ) ;
         }
 
-        uiDocument.Selection.SetElementIds( selectionElementIds ) ;
+        if ( selectionElementIds.Any() )
+          uiDocument.Selection.SetElementIds( selectionElementIds ) ;
       }
       catch ( Exception exception ) {
         TaskDialog.Show( "Arent Inc", exception.Message ) ;

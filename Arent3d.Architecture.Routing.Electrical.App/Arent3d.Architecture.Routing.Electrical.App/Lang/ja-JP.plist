@@ -127,14 +127,17 @@
         <key>Electrical.App.Commands.Initialization.ChangeFamilyGradeCommand</key>
         <string>グレード設定</string>
 
-        <key>Electrical.App.Commands.Routing.NewLimitRackCommand</key>
+        <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラック作成（全体）</string>
 
-        <key>Electrical.App.Commands.Routing.NewLimitRackSelectionRangeCommand</key>
+        <key>Electrical.App.Commands.Routing.NewRackSelectionRangeCommand</key>
         <string>ラック作成（選択範囲）</string>
 
-        <key>Electrical.App.Commands.Routing.NewRackCommand</key>
-        <string>ラックを作成する&#xA;すべてのコンジット用</string>
+        <key>Electrical.App.Commands.Routing.EraseAllRackCommand</key>
+        <string>ラック削除（全体）</string>
+
+        <key>Electrical.App.Commands.Routing.EraseSelectedRackCommand</key>
+        <string>ラック削除（選択範囲）</string>
 
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
@@ -353,6 +356,9 @@
 
         <key>TransactionName.Commands.Initialization.PickUpNumberSetting</key>
         <string>拾い番号設定</string>
+
+        <key>TransactionName.Commands.Routing.ChangePullBoxDimension</key>
+        <string>プルボックス 自動計算</string>
 
         <key>TransactionName.Commands.Initialization.DisplaySetting</key>
         <string>表示項目設定</string>

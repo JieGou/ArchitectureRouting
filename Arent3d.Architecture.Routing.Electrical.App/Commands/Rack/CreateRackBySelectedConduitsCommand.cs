@@ -4,8 +4,11 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -17,7 +20,7 @@ using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledEx
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Rack.CreateRackBySelectedConduitsCommand", DefaultString = "Manually\nCreate Rack" )]
+  [DisplayNameKey( "Electrical.App.Commands.Rack.CreateRackBySelectedConduitsCommand", DefaultString = "Create Rack From-To" )]
   [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateRackBySelectedConduitsCommand : IExternalCommand
@@ -31,7 +34,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
     /// <param name="StartPoint"></param>
     /// <param name="EndPoint"></param>
     /// <param name="RackWidth">Must be in Revit API unit</param>
-    private record SelectState( string RouteName, MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint, double RackWidth, int NumberOfRack, bool IsAutoSizing  ) ;
+    private record SelectState( string RouteName, MEPCurve? FirstSelectedConduit, MEPCurve? SecondSelectedConduit, XYZ StartPoint, XYZ EndPoint, double RackWidth, int NumberOfRack, bool IsAutoSizing, bool IsSeparator, string Material, string Cover  ) ;
 
     private OperationResult<SelectState> OperateUI( ExternalCommandData commandData )
     {
@@ -78,8 +81,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
         var rackWidth = dialog.WidthInMillimeter.MillimetersToRevitUnits() ;
         var numberOfRack = dialog.NumberOfRack ;
         var isAutoSizing = dialog.IsAutoSizing ;
+        var material = dialog.Material ;
+        var isSeparator = dialog.IsSeparator ;
+        var cover = dialog.Cover ;
 
-        return new OperationResult<SelectState>( new SelectState( routeName, firstSelectedConduit, secondSelectedConduit, firstSelectedPoint, secondSelectedPoint, rackWidth, numberOfRack, isAutoSizing ) ) ;
+        return new OperationResult<SelectState>( new SelectState( routeName, firstSelectedConduit, secondSelectedConduit, firstSelectedPoint, secondSelectedPoint, rackWidth, numberOfRack, isAutoSizing, isSeparator, material, cover ) ) ;
       }
       catch ( OperationCanceledException ) {
         return OperationResult<SelectState>.Cancelled ;
@@ -127,14 +133,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
       
       // create racks along with conduits
       var conduitWidthMap = linkedConduits.Where(element => element is Conduit cd && cd.Location as LocationCurve is {} lc && lc.Curve.Length > 20d.MillimetersToRevitUnits() ).Select( conduit => ( conduit, uiResult.Value.RackWidth ) ) ;
-      var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Limit Rack", uiResult.Value.IsAutoSizing, specialLengthList ) ;
+      var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", uiResult.Value.IsAutoSizing, specialLengthList ) ;
 
       // resolve overlapped cases
-      var modifiedRackLists = document.ResolveOverlapCases( racksAndFittings ) ;
+      var modifiedRacksAndElbows = document.ResolveOverlapCases( racksAndFittings ).EnumerateAll() ;
+      
+      // set pick up parameters
+      foreach ( var rackOrElbow in modifiedRacksAndElbows ) {
+        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Separator, uiResult.Value.IsSeparator);
+        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Material, uiResult.Value.Material);
+        rackOrElbow.SetProperty(ElectricalRoutingElementParameter.Cover, uiResult.Value.Cover);
+      }
 
       // create annotations for racks
-      RackCommandBase.CreateNotationForRack( document, modifiedRackLists.OfType<FamilyInstance>().Where(fi => fi.IsRack()) ) ;
-      
+      RackCommandBase.CreateNotationForRack( document, modifiedRacksAndElbows.OfType<FamilyInstance>() ) ;
+
+      // save arranged array of racks
+      var storage = new StorageService<Level, RackFromToModel>( document.ActiveView.GenLevel ) ;
+      storage.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = modifiedRacksAndElbows.Select( element => element.UniqueId ).ToList() } ) ;
+      storage.SaveChange() ;
+
       createRackTransaction.Commit() ;
       return Result.Succeeded ;
     }

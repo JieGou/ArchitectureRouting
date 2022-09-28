@@ -5,16 +5,22 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
@@ -33,72 +39,75 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var document = uiDocument.Document ;
+      _activeViewName = document.ActiveView.Name ;
       try {
-        var uiDocument = commandData.Application.ActiveUIDocument ;
-        var document = uiDocument.Document ;
-        _activeViewName = document.ActiveView.Name ;
-        // Get data of default setting from snoop DB
-        DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
-        SetupPrintStorable setupPrintStorable = document.GetSetupPrintStorable() ;
-        var scale = setupPrintStorable.Scale ;
-
-        var listFloorsDefault = new ObservableCollection<ImportDwgMappingModel>( GetFloorsDefault( document ) ) ;
-
-        if ( defaultSettingStorable.ImportDwgMappingData.Any() )
-          try {
-            Transaction transaction = new(document, "Remove") ;
-            transaction.Start() ;
-            foreach ( var floorPlan in defaultSettingStorable.ImportDwgMappingData.ToList() ) {
-              var existFloorPlan = listFloorsDefault.FirstOrDefault( x => x.FloorName == floorPlan.FloorName ) ;
-              if ( existFloorPlan == null ) {
-                defaultSettingStorable.ImportDwgMappingData.Remove( floorPlan ) ;
-              }
-            }
-
-            defaultSettingStorable.Save() ;
-            transaction.Commit() ;
-          }
-          catch ( Exception exception ) {
-            CommandUtils.DebugAlertException( exception ) ;
-          }
-        else
-          UpdateImportDwgMappingModels( defaultSettingStorable, listFloorsDefault, new List<string>() ) ;
-
-        var viewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, _activeViewName ) ;
-        var dialog = new DefaultSettingDialog( viewModel ) ;
-        dialog.ShowDialog() ;
+        var result = document.TransactionGroup( "Default Settings", _ =>
         {
-          if ( dialog.DialogResult == false )
-            return Result.Cancelled ;
+          // Get data of default setting from snoop DB
+          var defaultSettingStorable = document.GetDefaultSettingStorable() ;
+          var setupPrintStorable = document.GetSetupPrintStorable() ;
+          var scale = setupPrintStorable.Scale ;
 
-          viewModel = dialog.ViewModel ;
+          var listFloorsDefault = new ObservableCollection<ImportDwgMappingModel>( GetFloorsDefault( document ) ) ;
 
-          // Save default db
-          viewModel.SaveData() ;
+          if ( defaultSettingStorable.ImportDwgMappingData.Any() )
+            try {
+              using Transaction transaction = new(document, "Remove") ;
+              transaction.Start() ;
+              foreach ( var floorPlan in defaultSettingStorable.ImportDwgMappingData.ToList() ) {
+                var existFloorPlan = listFloorsDefault.FirstOrDefault( x => x.FloorName == floorPlan.FloorName ) ;
+                if ( existFloorPlan == null ) defaultSettingStorable.ImportDwgMappingData.Remove( floorPlan ) ;
+              }
 
-          var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
-          var gradeMode = viewModel.SelectedGradeMode ;
-          var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
-          var deletedFloorName = viewModel.DeletedFloorName ;
-          SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
+              defaultSettingStorable.Save() ;
+              transaction.Commit() ;
+            }
+            catch ( Exception exception ) {
+              CommandUtils.DebugAlertException( exception ) ;
+            }
+          else
+            UpdateImportDwgMappingModels( defaultSettingStorable, listFloorsDefault, new List<string>() ) ;
 
-          if ( deletedFloorName.Any() ) {
-            RemoveViews( document, deletedFloorName, uiDocument ) ;
+          var viewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, _activeViewName ) ;
+          var dialog = new DefaultSettingDialog( viewModel ) ;
+          dialog.ShowDialog() ;
+          {
+            if ( dialog.DialogResult == false )
+              return Result.Cancelled ;
+
+            viewModel = dialog.ViewModel ;
+
+            // Save default db
+            viewModel.SaveData() ;
+
+            var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
+            var gradeMode = viewModel.SelectedGradeMode ;
+            var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
+            var deletedFloorName = viewModel.DeletedFloorName ;
+            SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
+
+            if ( deletedFloorName.Any() ) RemoveViews( document, deletedFloorName, uiDocument ) ;
+
+            var transactionStatus = UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
+            if ( transactionStatus == TransactionStatus.RolledBack )
+              return Result.Failed ;
+            LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
+            UpdateCeedDockPaneDataContext( uiDocument ) ;
+
+            return Result.Succeeded ;
           }
+        } ) ;
 
-          UpdateScaleAndHeightPlanView( document, importDwgMappingModels ) ;
-          LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
-          UpdateCeedDockPaneDataContext( uiDocument ) ;
-          
-          return Result.Succeeded ;
-        }
+        return result ;
       }
       catch ( OperationCanceledException ) {
         return Result.Cancelled ;
       }
-      catch ( Exception exception ) {
-        CommandUtils.DebugAlertException( exception ) ;
-        return Result.Cancelled ;
+      catch ( Exception e ) {
+        CommandUtils.DebugAlertException( e ) ;
+        return Result.Failed ;
       }
     }
 
@@ -452,7 +461,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       uiDocument.ActiveView = viewPlan ;
     }
 
-    private void UpdateScaleAndHeightPlanView( Document document, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels )
+    private TransactionStatus UpdateScaleAndHeightPlanView( Document document, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels )
     {
       List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( document ).OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>().Where( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
 
@@ -460,16 +469,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var storageService = new StorageService<DataStorage, BorderTextNoteModel>( dataStorage ) ;
 
       var allCurrentLevels = new FilteredElementCollector( document ).OfClass( typeof( Level ) ).ToList() ;
-      var updateScaleTrans = new Transaction( document ) ;
+      using var updateScaleTrans = new Transaction( document ) ;
       updateScaleTrans.SetName( "Update Scale" ) ;
       updateScaleTrans.Start() ;
       foreach ( var importDwgMappingModel in importDwgMappingModels ) {
         var viewPlan = views.FirstOrDefault( x => x.Name == importDwgMappingModel.FloorName ) ;
         if ( viewPlan != null && viewPlan.Scale != importDwgMappingModel.Scale ) {
           viewPlan.Scale = importDwgMappingModel.Scale ;
-          if ( null != viewPlan.ViewTemplateId && document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale ) {
+          if ( null != viewPlan.ViewTemplateId && document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale )
             viewTemplate.Scale = importDwgMappingModel.Scale ;
-          }
 
           document.Regenerate() ;
           FilteredElementCollector allElementsInView = new FilteredElementCollector( document, viewPlan.Id ) ;
@@ -482,11 +490,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         importDwgLevel?.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
       }
 
-      updateScaleTrans.Commit() ;
+      return updateScaleTrans.Commit() ;
     }
 
     private void UpdateSizeElement( Document document, IList<Element> elementsInView, StorageService<DataStorage, BorderTextNoteModel> storageService, ViewPlan viewPlan )
     {
+      var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
+      
       // Update size text note border
       var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 0 ].Trim() == textNote.Name ) ;
       var textNoteDoubleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 1 ].Trim() == textNote.Name ) ;
@@ -494,22 +504,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var textNote = textNoteBorder as TextNote ;
         if ( textNote == null ) continue ;
 
-        var curves = GetSingleBorderTextNote( textNote ) ;
+        var curves = GetSingleBorderTextNote( textNote, viewPlan.Scale ) ;
         var borderIds = CreateDetailCurve( document, textNote, curves ) ;
         SetDataForTextNote( storageService, textNote, borderIds ) ;
       }
-
+      
       foreach ( var textNoteBorder in textNoteDoubleBorders ) {
         var textNote = textNoteBorder as TextNote ;
         if ( textNote == null ) continue ;
 
-        var curves = GetDoubleBorderTextNote( textNote ) ;
+        var curves = GetDoubleBorderTextNote( textNote, viewPlan ) ;
         var borderIds = CreateDetailCurve( document, textNote, curves ) ;
         SetDataForTextNote( storageService, textNote, borderIds ) ;
       }
 
       // Update Y of ceedcode
-      var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
       var independentTags = elementsInView.Where( e => e is IndependentTag ).ToList() ;
       foreach ( var element in independentTags ) {
         var independentTag = (IndependentTag) element ;
@@ -531,6 +540,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       //Update Shaft Opening
       var shaftOpeningStore = document.GetShaftOpeningStorable() ;
       UpdateShaftOpeningInViewPlan( shaftOpeningStore, elementsInView, viewPlan ) ;
+      
+      // Update rack
+      document.ReDrawAllRacksAndElbows( viewPlan ) ;
+      
+      // Change pull box dimension and related conduits if scale changes
+      var level = viewPlan.GenLevel ;
+      var baseLengthOfLine = scale / 100d ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
+      var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
+      var pullBoxElements = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id ).ToList() ;
+
+      foreach ( var pullBoxElement in pullBoxElements ) {
+        var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( routes, allConduits, pullBoxElement ) ;
+        var pullBoxLocation = ( pullBoxElement.Location as LocationPoint )?.Point! ;
+        var conduitsRelatedPullBox = PullBoxRouteManager.GetConduitsRelatedPullBox( allConduits, routesRelatedPullBox, pullBoxLocation ) ;
+        PullBoxRouteManager.ResizePullBoxAndRelatedConduits( conduitsRelatedPullBox, pullBoxElement, baseLengthOfLine ) ;
+      }
     }
 
     private static void UpdateShaftOpeningInViewPlan( ShaftOpeningStorable storable, IEnumerable<Element> elementsInView, ViewPlan viewPlan )
@@ -587,18 +613,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private IEnumerable<Curve> GetSingleBorderTextNote( TextNote textNote )
+    private IEnumerable<Curve> GetSingleBorderTextNote( TextNote textNote, double scale )
     {
-      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote, scale ) ;
       return curveLoop.OfType<Curve>().ToList() ;
     }
 
-    private IEnumerable<Curve> GetDoubleBorderTextNote(TextNote textNote)
+    private IEnumerable<Curve> GetDoubleBorderTextNote( TextNote textNote, ViewPlan viewPlan )
     {
-      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+      var curveLoop = GeometryHelper.GetOutlineTextNote( textNote, viewPlan.Scale ) ;
       var curves = curveLoop.OfType<Curve>().ToList() ;
-      var curveLoopOffset = CurveLoop.CreateViaOffset(curveLoop, -0.5.MillimetersToRevitUnits() * textNote.Document.ActiveView.Scale, textNote.Document.ActiveView.ViewDirection);
-      curves.AddRange(curveLoopOffset.OfType<Curve>());
+      var curveLoopOffset = CurveLoop.CreateViaOffset( curveLoop, -0.5.MillimetersToRevitUnits() * viewPlan.Scale, viewPlan.ViewDirection ) ;
+      curves.AddRange( curveLoopOffset.OfType<Curve>() ) ;
       return curves ;
     }
     

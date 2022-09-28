@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IEnumerable<Element> GetRacks( UIDocument uiDocument)
     {
       var selectedLimitRackRefElements = uiDocument.Selection
-        .PickElementsByRectangle( LimitRackReferenceSelectionFilter.Instance, "Please select any rack or rack detail curve by mouse drag." ).EnumerateAll() ;
+        .PickElementsByRectangle( RackReferenceSelectionFilter.Instance, "Please select any rack or rack detail curve by mouse drag." ).EnumerateAll() ;
       return selectedLimitRackRefElements.Any() ? selectedLimitRackRefElements : new List<Element>() ;
     }
   }

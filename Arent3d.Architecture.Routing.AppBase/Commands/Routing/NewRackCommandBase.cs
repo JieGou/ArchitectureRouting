@@ -103,12 +103,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             
             var rackForRouteItem = new RackForRouteItem { RouteName = groupRoutingElement.Key } ;
             
-            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, rackClassification: "Limit Rack" ) ;
+            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, uiDocument.Document.ActiveView.Scale, rackClassification: "Limit Rack" ) ;
             rackForRouteItem.RackIds.AddRange(verticalRacks.Select(x => x.Id));
             
             var horizontalRacks = uiDocument.Document.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack" ).EnumerateAll() ;
             rackForRouteItem.RackIds.AddRange(horizontalRacks.Select(x => x.Id));
             RackCommandBase.CreateNotationForRack( uiDocument.Document, horizontalRacks.OfType<FamilyInstance>() ) ;
+
+            foreach ( var rackId in rackForRouteItem.RackIds ) {
+              if(uiDocument.Document.GetElement(rackId) is not { } rack)
+                continue;
+              
+              rack.SetProperty(ElectricalRoutingElementParameter.Separator, true);
+              rack.SetProperty(ElectricalRoutingElementParameter.Cover, "無し");
+              rack.SetProperty(ElectricalRoutingElementParameter.Material, "アルミ");
+            }
 
             storage.Data.RackForRoutes.Add(rackForRouteItem);
             storage.SaveChange();

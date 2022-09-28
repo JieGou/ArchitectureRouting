@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
@@ -9,18 +10,32 @@ namespace Arent3d.Architecture.Routing.AppBase
 {
   public static class NotationHelper
   {
-    public  static (string, List<string>) UpdateNotation( Document document, RackNotationModel rackNotationModel,
-      TextNote textNote, DetailLine detailLine )
+    private static XYZ? CalculateTargetedPoint( Document document, FamilyInstance rack , TextNote textNote )
+    {
+      if ( ! rack.TryGetRackLength( out var length ) )
+        return null ;
+      var rack2dWidth = CableRackUtils.RackWidthOnPlanView( document.ActiveView.Scale ) ;
+      var textPoint = textNote.Coord ;
+      var tf = rack.GetTransform() ;
+      var isOnRightSide = ( textPoint - tf.Origin ).CrossProduct( tf.BasisX ).Z > 0 ;
+      return tf.Origin + tf.BasisX * length / 2 + tf.BasisY * rack2dWidth * 0.5 * ( isOnRightSide ? -1 : 1 ) ;
+    }
+
+    public static (string, List<string>) UpdateNotation( Document document, RackNotationModel rackNotationModel, TextNote textNote, DetailLine detailLine )
     {
       var endPoint = detailLine.GeometryCurve.GetEndPoint( rackNotationModel.EndPoint ) ;
-      var underLineText = RackCommandBase.CreateUnderLineText( textNote, endPoint.Z ) ;
+      var rack = document.GetElement( rackNotationModel.RackNotationId ) as FamilyInstance ;
+      if( rack is {} && rack.IsRack() )
+        endPoint = CalculateTargetedPoint( document, rack , textNote ) ;
+      var underLineText = RackCommandBase.CreateUnderLineText( textNote, endPoint!.Z ) ;
       var pointNearest =
         underLineText.GetEndPoint( 0 ).DistanceTo( endPoint ) < underLineText.GetEndPoint( 1 ).DistanceTo( endPoint )
           ? underLineText.GetEndPoint( 0 )
           : underLineText.GetEndPoint( 1 ) ;
 
+      var notUsedForIntersect = rack is { } ? new List<Element> { rack } : null ;
       if ( document.GetElement( detailLine.OwnerViewId ) is not ViewPlan viewPlan ) return ( string.Empty, new List<string>() ) ;
-      var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( pointNearest.X, pointNearest.Y, viewPlan.GenLevel.Elevation ), new XYZ( endPoint.X, endPoint.Y, viewPlan.GenLevel.Elevation ) ) } ) ;
+      var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( pointNearest.X, pointNearest.Y, viewPlan.GenLevel.Elevation ), new XYZ( endPoint.X, endPoint.Y, viewPlan.GenLevel.Elevation ) ) }, null, notUsedForIntersect ) ;
       curves.Add( underLineText ) ;
 
       var detailCurves = CreateDetailCurve( viewPlan, curves ) ;

@@ -5,7 +5,7 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.EraseAllLimitRackCommand", DefaultString = "Delete Rack" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.EraseAllRackCommand", DefaultString = "Delete Rack" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class EraseAllRackCommand : EraseAllRackCommandBase
   {

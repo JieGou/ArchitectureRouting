@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     protected override ExecutionResult Execute( Document document, TransactionWrapper transaction )
     {
       RouteCache.Release( DocumentKey.Get( document ) ) ;
+      TextNoteHelper.DeleteAllTextNotesRelatedStorages( document ) ; 
       UnSetup( document ) ;
       document.DeleteAllDerivedStorables( typeof( AppInfo ).Assembly ) ;
 

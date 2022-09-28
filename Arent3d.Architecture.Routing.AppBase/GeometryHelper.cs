@@ -12,8 +12,9 @@ namespace Arent3d.Architecture.Routing.AppBase
   {
     public const double Tolerance = 0.0001 ;
 
-    public static IList<Curve> GetCurvesAfterIntersection( ViewPlan viewPlan, IList<Curve> bodyDirections, List<Type>? excludingTypes = null)
+    public static IList<Curve> GetCurvesAfterIntersection( ViewPlan viewPlan, IList<Curve> bodyDirections, List<Type>? excludingTypes = null, List<Element>? excludingElements = null)
     {
+      excludingElements ??= new List<Element>() ; 
       var elevation = viewPlan.GenLevel.Elevation ;
       var type2Ds = new List<Type> { typeof( Wire ), typeof( TextNote ) } ;
       if(null != excludingTypes)
@@ -26,8 +27,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       var outlineCurve = GetOutlineFromCurve( viewPlan, bodyDirections.Select( x => x.Tessellate() ).SelectMany( x => x ).ToList() ) ;
       var boxFilter = new BoundingBoxIntersectsFilter( outlineCurve ) ;
 
-      var element2Ds = new FilteredElementCollector( viewPlan.Document, viewPlan.Id ).WherePasses( classFilter2Ds ).ToElements() ;
-      var element3Ds = new FilteredElementCollector( viewPlan.Document, viewPlan.Id ).WherePasses( new LogicalAndFilter( classFilter3Ds, boxFilter ) ).ToElements().Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ) ;
+      var element2Ds = new FilteredElementCollector( viewPlan.Document, viewPlan.Id ).WherePasses( classFilter2Ds ).ToElements().Where( x => ! excludingElements.Exists( excludedElement => excludedElement.Id == x.Id ) ) ;
+      var element3Ds = new FilteredElementCollector( viewPlan.Document, viewPlan.Id ).WherePasses( new LogicalAndFilter( classFilter3Ds, boxFilter ) ).ToElements().Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ).Where( x => ! excludingElements.Exists( excludedElement => excludedElement.Id == x.Id ) ) ;
       
       var viewDirection = viewPlan.ViewDirection ;
       var curveIntersects = new List<Curve>( bodyDirections ) ;
@@ -221,15 +222,16 @@ namespace Arent3d.Architecture.Routing.AppBase
       return Line.CreateBound( new XYZ( coord.X, coord.Y, basePoint.Z ), new XYZ( middle.X, middle.Y, basePoint.Z ) ) ;
     }
 
-    public static CurveLoop GetOutlineTextNote( TextNote textNote )
+    public static CurveLoop GetOutlineTextNote( TextNote textNote, double? viewScale = null )
     {
+      var scale = viewScale ?? textNote.Document.ActiveView.Scale ;
       var offset = textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() ;
-      var height = ( textNote.Height + 2 * offset ) * textNote.Document.ActiveView.Scale ;
-      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * textNote.Document.ActiveView.Scale ;
+      var height = ( textNote.Height + 2 * offset ) * scale ;
+      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * scale ;
 
       var transformHeight = Transform.CreateTranslation( textNote.UpDirection.Negate() * height ) ;
       var transformWidth = Transform.CreateTranslation( textNote.BaseDirection * width ) ;
-      var transformCoord = Transform.CreateTranslation( textNote.UpDirection.Add( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? textNote.BaseDirection : textNote.BaseDirection.Negate() ) * offset * textNote.Document.ActiveView.Scale ) ;
+      var transformCoord = Transform.CreateTranslation( textNote.UpDirection.Add( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? textNote.BaseDirection : textNote.BaseDirection.Negate() ) * offset * scale ) ;
 
       var curveLoop = new CurveLoop() ;
       var p1 = transformCoord.OfPoint( textNote.Coord ) ;
