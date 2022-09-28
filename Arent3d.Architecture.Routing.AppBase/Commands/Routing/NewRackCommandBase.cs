@@ -39,6 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {
+      var uiApplication = commandData.Application ;
       var uiDocument = commandData.Application.ActiveUIDocument ;
       try {
         if ( uiDocument.ActiveView is not ViewPlan viewPlan ) {
@@ -111,7 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             // executor for reroute after delete pull boxes
             var executor = CreateRoutingExecutor( uiDocument.Document ) ;
             executor.TurnOffWarning( transaction ) ;
-            var horizontalRacks = uiDocument.Document.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack", false, null, executor ).EnumerateAll() ;
+            var horizontalRacks = uiApplication.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack", false, null, executor ).EnumerateAll() ;
             rackForRouteItem.RackIds.AddRange(horizontalRacks.Select(x => x.Id));
             RackCommandBase.CreateNotationForRack( uiDocument.Document, horizontalRacks.OfType<FamilyInstance>() ) ;
 

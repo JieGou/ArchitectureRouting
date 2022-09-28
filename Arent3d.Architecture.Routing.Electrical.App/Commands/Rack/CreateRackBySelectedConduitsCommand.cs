@@ -136,7 +136,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Rack
 
       var executor = AppCommandSettings.CreateRoutingExecutor( document, document.ActiveView ) ;
       executor.TurnOffWarning( createRackTransaction ) ;
-      var racksAndFittings = document.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", uiResult.Value.IsAutoSizing, specialLengthList, executor ) ;
+      var racksAndFittings = uiApp.CreateRacksAndElbowsAlongConduits( conduitWidthMap, "Normal Rack", uiResult.Value.IsAutoSizing, specialLengthList, executor ) ;
 
       // resolve overlapped cases
       var modifiedRacksAndElbows = document.ResolveOverlapCases( racksAndFittings ).EnumerateAll() ;

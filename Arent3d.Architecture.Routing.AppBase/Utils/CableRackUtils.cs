@@ -7,10 +7,12 @@ using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI.Forms ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Utils
 {
@@ -698,10 +700,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return ( 4 * nScale * symbolRatio ).MillimetersToRevitUnits() ;
     }
 
-    public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this Document doc, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", bool IsAutoSizing = false, IEnumerable<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null, RoutingExecutor? executor = null )
+    public static IEnumerable<Element> CreateRacksAndElbowsAlongConduits( this UIApplication uiApp, IEnumerable<(Element, double)> conduitWidthMap, string rackClassification = "Normal Rack", bool isAutoSizing = false, IEnumerable<(Element Conduit, double StartParam, double EndParam)>? specialLengthList = null, RoutingExecutor? executor = null )
     {
+      var doc = uiApp.ActiveUIDocument.Document ;
       // auto sizing
-      var listConduitWidth = ! IsAutoSizing ? conduitWidthMap : conduitWidthMap.Select( pair => ( pair.Item1, CalculateRackWidth( doc, pair.Item1 ) ) ) ;
+      var listConduitWidth = ! isAutoSizing ? conduitWidthMap : conduitWidthMap.Select( pair => ( pair.Item1, CalculateRackWidth( doc, pair.Item1 ) ) ) ;
 
       // read conduit markers
       var creationInfors = new List<(XYZ, XYZ, double, Element)>() ;
@@ -721,7 +724,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       // detect and delete pull box that clash with rack
       doc.Regenerate() ;
       if ( executor is { } )
-        doc.DeletePullBoxesAndReroute( racksAndFittings, executor ) ;
+        uiApp.DeletePullBoxesAndReroute( racksAndFittings, executor ) ;
       
       // update route names after delete pull boxes
       racksAndFittings.OfType<FamilyInstance>().ForEach( fi => UpdateRouteName( fi ) ) ;
@@ -743,13 +746,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return pullBoxes.Distinct() ;
     }
 
-    private static void DeletePullBoxesAndReroute( this Document doc, IEnumerable<Element> racksAndFittings, RoutingExecutor executor )
+    private static void DeletePullBoxesAndReroute( this UIApplication uiApp, IEnumerable<Element> racksAndFittings, RoutingExecutor executor )
     {
-      var pullBoxes = DetectPullBoxes( racksAndFittings ) ;
-      foreach ( var pullBox in pullBoxes ) {
+      var pullBoxes = DetectPullBoxes( racksAndFittings ).ToList() ;
+      var count = pullBoxes.Count ;
+      for ( var i = 0 ; i < count; i ++) {
+        using var progressData = ProgressBar.ShowWithNewThread( uiApp , false);
+        progressData.Message = $"プルボックスを削除中...{i+1}/{count}";
+        
+        var pullBox = pullBoxes[ i ] ;
         var segments = EraseSelectedPullBoxCommandBase.DeletePullBoxAndGetNewSegmentsToReconnect( pullBox ) ;
-        executor.Run( segments ) ;
-        doc.Regenerate();
+        executor.Run( segments , progressData ) ;
+        uiApp.ActiveUIDocument.Document.Regenerate();
       }
     }
 
