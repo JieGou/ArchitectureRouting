@@ -422,7 +422,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         var subCategory = FindSelectedCategory( category.Categories, isCategoryWithCeedCode ) ;
         if ( subCategory == null ) continue ;
-        ShowCeedModelAndPreviewByCategory( subCategory, isCategoryWithCeedCode ) ;
+        ShowCeedModelAndPreviewByCategory( subCategory ) ;
         ResetSelectedCategory( isCategoryWithCeedCode ? CategoriesPreview : Categories ) ;
         ResetComboboxValue() ;
         return category ;
@@ -467,7 +467,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void ShowCeedModelAndPreviewByCategory( CategoryModel categoryModel, bool isCategoryWithCeedCode )
+    private void ShowCeedModelAndPreviewByCategory( CategoryModel categoryModel )
     {
       var data = IsExistUsingCode ? _usingCeedModel : _ceedModels ;
       if ( IsExistUsingCode && IsShowOnlyUsingCode ) data = _usingCeedModel.Where( c => c.IsUsingCode ).ToList() ;
@@ -475,21 +475,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       PreviewList.Clear() ;
       var ceedCodeNumbers = categoryModel.CeedCodeNumbers.Select( c => c.Name ) ;
       data = categoryModel.CeedCodeNumbers.Any() ? data.Where( c => ceedCodeNumbers.Contains( c.CeedModelNumber ) ).ToList() : data ;
-      if ( isCategoryWithCeedCode ) {
-        if ( _ceedModelNumberOfPreviewCategories.Any() ) {
-          data = data.Where( c => ! _ceedModelNumberOfPreviewCategories.Contains( c.CeedModelNumber ) ).ToList() ;
-        }
-
-        if ( ! IsShowCondition ) {
-          data = GroupCeedModel( data ) ;
-        }
-
-        var ceedModels = GroupCeedModelsByCeedModelNumber( data ) ;
-        CeedModels.AddRange( ceedModels ) ;
+      if ( ! IsShowCondition ) {
+        data = GroupCeedModel( data ) ;
       }
-      else {
-        CreatePreviewList( data ) ;
-      }
+
+      var ceedModels = GroupCeedModelsByCeedModelNumber( data ) ;
+      CeedModels.AddRange( ceedModels ) ;
     }
 
     private static List<CeedModel> GroupCeedModelsByCeedModelNumber( IEnumerable<CeedModel> originCeedModels )
