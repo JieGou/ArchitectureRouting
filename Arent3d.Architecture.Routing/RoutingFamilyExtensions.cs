@@ -119,10 +119,13 @@ namespace Arent3d.Architecture.Routing
     
     [Family( "Pull Box", BuiltInCategory.OST_ElectricalFixtures )]
     PullBox,
-    
+
+    [Family( "Handhole", BuiltInCategory.OST_ElectricalFixtures )]
+    Handhole,
+
     [Family( "Electrical Fixture Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
     ElectricalFixtureContentTag,
-    
+
     [Family( "Electrical Equipment Content Tag", BuiltInCategory.OST_ElectricalEquipmentTags )]
     ElectricalEquipmentContentTag,
     

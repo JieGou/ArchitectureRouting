@@ -524,7 +524,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var independentTag = (IndependentTag) element ;
         var independentTagPoint = independentTag.TagHeadPosition ;
         if ( independentTagPoint == null ) continue ;
+        #if REVIT2022
         var taggedElementId = independentTag.GetTaggedLocalElementIds().FirstOrDefault() ;
+        #else
+        var taggedElementId = independentTag.GetTaggedLocalElement()?.Id ;
+        #endif
         if ( taggedElementId == null ) continue ;
         var taggedElement = document.GetElement( taggedElementId ) ;
         var taggedElementLocation = ( taggedElement.Location as LocationPoint )!.Point ;
@@ -549,7 +553,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var baseLengthOfLine = scale / 100d ;
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).OfType<Conduit>().EnumerateAll() ;
-      var pullBoxElements = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox && e.LevelId == level.Id ).ToList() ;
+      var pullBoxElements = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => ( e.GetConnectorFamilyType() == ConnectorFamilyType.PullBox || e.GetConnectorFamilyType() == ConnectorFamilyType.Handhole ) && e.LevelId == level.Id ).ToList() ;
 
       foreach ( var pullBoxElement in pullBoxElements ) {
         var routesRelatedPullBox = PullBoxRouteManager.GetRoutesRelatedPullBoxByNearestEndPoints( routes, allConduits, pullBoxElement ) ;

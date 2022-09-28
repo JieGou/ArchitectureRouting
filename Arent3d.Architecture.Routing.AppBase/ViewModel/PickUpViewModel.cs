@@ -390,7 +390,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var direction = productType == ProductType.Conduit ? directionZ[ index ] : string.Empty ;
         var ceedCodeModel = GetCeedSetCodeOfElement( element ) ;
         var routeName = routeNames.Any() ? routeNames[ index ] ?? string.Empty : string.Empty;
-        if ( _ceedModels.Any() && ceedCodeModel.Any() && ! ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ) {
+        if ( _ceedModels.Any() && ceedCodeModel.Any() && ! ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole ) ) {
           ceedSetCode = ceedCodeModel.First() ;
           
           deviceSymbol = ceedCodeModel.Count > 1 ? ceedCodeModel.ElementAt( 1 ) : string.Empty ;
@@ -496,7 +496,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
         }
 
-        if ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) {
+        if ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() is ConnectorFamilyType.PullBox or ConnectorFamilyType.Handhole ) {
           var materialCodes = new List<MaterialCodeInfo>() ;
           var materialCodePullBox = element.ParametersMap.get_Item( PullBoxRouteManager.MaterialCodeParameter ).AsString() ;
           
@@ -680,7 +680,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string> routeNames = new() ;
 
       var conduits = _document.GetAllElements<Conduit>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
-      var pullBoxs = allConnectors.Where( c => c.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ).ToList() ;
+      var pullBoxs = allConnectors.Where( c => c.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ||  c.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ).ToList() ;
       
       foreach ( var conduit in conduits ) {
         conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
@@ -724,7 +724,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private double? GetLengthPullBox( ICollection<string> routes, string routeName )
     {
       var routeRelatedConduit = _document.CollectRoutes( AddInType.Electrical).FirstOrDefault( r=>r.RouteName == routeName ) ;
-      var connectorsOfPullBox = routeRelatedConduit?.GetAllConnectors().Where( x => x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) ;
+      var connectorsOfPullBox = routeRelatedConduit?.GetAllConnectors().Where( x => x.Owner.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ||  x.Owner.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ) ;
       double? length = 0 ;
       if ( connectorsOfPullBox != null ) {
         foreach ( var connectorOfPullBox in connectorsOfPullBox ) {
@@ -830,8 +830,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var isPickUpByFromConnector = toConnector != null && ( toConnector.Name == ElectricalRoutingFamilyType.PressureConnector.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ) ;
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
-      if ( toConnector == null || (_detailTableModels.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null
-           &&  toConnector.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName()  )) return false ;
+      if ( toConnector == null || (_detailTableModels.FirstOrDefault(x=>x.ToConnectorUniqueId == toConnector.UniqueId) == null &&
+                                   ( toConnector.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ) ) ) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
@@ -980,7 +980,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var toElementId = toEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( toElementId ) ) continue ;
         var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
-        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() || toConnector.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) continue ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() || toConnector.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ) continue ;
         return toConnector ;
       }
 

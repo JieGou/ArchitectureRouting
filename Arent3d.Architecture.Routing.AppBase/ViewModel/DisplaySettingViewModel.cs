@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         var result = _document.TransactionGroup( "TransactionName.Commands.Initialization.DisplaySetting".GetAppStringByKeyOrDefault( "Display Setting" ), _ =>
         {
-          using var progress = ProgressBar.ShowWithNewThread( new UIApplication(_document.Application) ) ;
+          using var progress = ProgressBar.ShowWithNewThread( new UIApplication( _document.Application ) ) ;
           progress.Message = "Processing..." ;
           var views = _document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
 
@@ -73,18 +73,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             SetupDisplayWiring( views, _dataDisplaySettingModel.IsWiringVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
+
           using ( var progressData = progress.Reserve( 0.1 ) ) {
             SetupDisplayDetailSymbol( views, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
+
           using ( var progressData = progress.Reserve( 0.1 ) ) {
             SetupDisplayPullBox( views, _dataDisplaySettingModel.IsPullBoxVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
+
           using ( var progressData = progress.Reserve( 0.1 ) ) {
             SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
+
           using ( var progressData = progress.Reserve( 0.2 ) ) {
             SetupDisplayLegend( views, _dataDisplaySettingModel ) ;
             progressData.ThrowIfCanceled() ;
@@ -94,20 +98,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
           using ( var progressData = progress.Reserve( 0.2 ) ) {
             _document.RefreshActiveView() ;
-          
+
             // Refresh viewports
             var viewportsOfActiveView = _document.GetAllElements<Viewport>().Where( vp => vp.OwnerViewId == _document.ActiveView.Id ).Select( vp => _document.GetElement( vp.ViewId ) as View ) ;
             _document.RefreshViews( viewportsOfActiveView ) ;
             progressData.ThrowIfCanceled() ;
           }
-          
+
           using ( var progressData = progress.Reserve( 0.1 ) ) {
             SaveDisplaySettingByGradeStorageService() ;
-            
+
             UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
-          
+
           progress.Finish() ;
 
           return Result.Succeeded ;
@@ -119,6 +123,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CommandUtils.DebugAlertException( e ) ;
         window.DialogResult = false ;
       }
+
       window.Close() ;
     }
 
@@ -180,7 +185,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var hiddenOrUnhiddenElements = new List<Element>() ;
 
       // Pull boxes
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() ) ) ;
+      hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => ( e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() || e.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ) ) ) ;
 
       // Text notes
       var labelOfPullBoxIds = _document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( p => p.Data.PullBoxInfoData ).Select( p => p.TextNoteUniqueId ) ;
@@ -209,6 +214,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if ( hiddenElementIds.Any() )
               legendView.UnhideElements( hiddenElementIds ) ;
           }
+
           displaySettingModel.HiddenLegendElementIds = new List<string>() ;
         }
       }
