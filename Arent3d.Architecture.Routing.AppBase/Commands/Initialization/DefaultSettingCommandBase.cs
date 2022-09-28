@@ -524,7 +524,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var independentTag = (IndependentTag) element ;
         var independentTagPoint = independentTag.TagHeadPosition ;
         if ( independentTagPoint == null ) continue ;
+        #if REVIT2022
         var taggedElementId = independentTag.GetTaggedLocalElementIds().FirstOrDefault() ;
+        #else
+        var taggedElementId = independentTag.GetTaggedLocalElement()?.Id ;
+        #endif
         if ( taggedElementId == null ) continue ;
         var taggedElement = document.GetElement( taggedElementId ) ;
         var taggedElementLocation = ( taggedElement.Location as LocationPoint )!.Point ;
