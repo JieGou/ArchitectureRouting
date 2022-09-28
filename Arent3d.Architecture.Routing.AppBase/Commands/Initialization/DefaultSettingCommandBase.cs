@@ -25,7 +25,6 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
-
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public class DefaultSettingCommandBase : IExternalCommand
@@ -33,7 +32,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultModeCommand" ;
     private const string Grade3FieldName = "グレード3" ;
     private const string ArentDummyViewName = "Arent Dummy" ;
-    public const string TextNoteTypeNames = "ARENT_2.5MM_SIMPLE-BORDER, ARENT_2.5MM_DOUBLE-BORDER" ;
+    public const string SingleTextNoteTypeName = "ARENT_2.7MM_SINGLE-BORDER" ;
+    public const string DoubleTextNoteTypeName = "ARENT_2.7MM_DOUBLE-BORDER" ;
 
     private string _activeViewName = string.Empty ;
 
@@ -498,8 +498,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var scale = ImportDwgMappingModel.GetMagnificationOfView( viewPlan.Scale ) ;
       
       // Update size text note border
-      var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 0 ].Trim() == textNote.Name ) ;
-      var textNoteDoubleBorders = elementsInView.Where( x => x is TextNote textNote && TextNoteTypeNames.Split( ',' )[ 1 ].Trim() == textNote.Name ) ;
+      var textNoteSingleBorders = elementsInView.Where( x => x is TextNote textNote && SingleTextNoteTypeName == textNote.Name ) ;
+      var textNoteDoubleBorders = elementsInView.Where( x => x is TextNote textNote && DoubleTextNoteTypeName == textNote.Name ) ;
       foreach ( var textNoteBorder in textNoteSingleBorders ) {
         var textNote = textNoteBorder as TextNote ;
         if ( textNote == null ) continue ;
