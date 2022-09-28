@@ -1088,6 +1088,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var isStraightDirection = conduitDirectionsRelatedPullBox.Count == 2 && IsStraightDirection( conduitDirectionsRelatedPullBox[ 0 ].Direction, conduitDirectionsRelatedPullBox[ 1 ].Direction ) ;
 
       //Case 1: Automatically calculate dimension of pull box
+      isAutoCalculatePullBoxSize = selectedPullBoxModel is HandholeModel || isAutoCalculatePullBoxSize ;
       if ( isAutoCalculatePullBoxSize ) {
         if ( csvStorable != null && conduitsModelData != null && hiroiMasterModels != null && storageDetailSymbolService != null ) {
           var pullBoxModel = GetPullBoxWithAutoCalculatedDimension( document, csvStorable, storageDetailSymbolService, conduitsModelData, hiroiMasterModels, conduitsRelatedPullBox, pullBox, isStraightDirection ) ;
