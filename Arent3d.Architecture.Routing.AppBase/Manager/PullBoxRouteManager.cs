@@ -1088,7 +1088,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var isStraightDirection = conduitDirectionsRelatedPullBox.Count == 2 && IsStraightDirection( conduitDirectionsRelatedPullBox[ 0 ].Direction, conduitDirectionsRelatedPullBox[ 1 ].Direction ) ;
 
       //Case 1: Automatically calculate dimension of pull box
-      isAutoCalculatePullBoxSize = selectedPullBoxModel is HandholeModel || isAutoCalculatePullBoxSize ;
       if ( isAutoCalculatePullBoxSize ) {
         if ( csvStorable != null && conduitsModelData != null && hiroiMasterModels != null && storageDetailSymbolService != null ) {
           var pullBoxModel = GetPullBoxWithAutoCalculatedDimension( document, csvStorable, storageDetailSymbolService, conduitsModelData, hiroiMasterModels, conduitsRelatedPullBox, pullBox, isStraightDirection ) ;
@@ -1126,8 +1125,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( storagePullBoxInfoServiceByLevel == null ) return ;
 
       notationContent = GetPullBoxTextBox( depth, height, defaultContent ) ;
-      if ( positionOfNotation != null )
-        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionOfNotation, pullBox, notationContent, isAutoCalculatePullBoxSize, conduitDirectionsRelatedPullBox, baseLengthOfLine ) ;
+      if ( positionOfNotation != null ) {
+        // Temporary fix for handhole to show in pick up table
+        var isAutoSize = selectedPullBoxModel is HandholeModel || isAutoCalculatePullBoxSize ;
+        CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionOfNotation, pullBox, notationContent, isAutoSize, conduitDirectionsRelatedPullBox, baseLengthOfLine ) ;
+      }
       else if ( storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.All( pullBoxInfoItemModel => pullBoxInfoItemModel.PullBoxUniqueId != pullBox.UniqueId ) )
         CreateTextNoteAndGroupWithPullBox( document, storagePullBoxInfoServiceByLevel, positionOfPullBox, pullBox, notationContent, isAutoCalculatePullBoxSize, conduitDirectionsRelatedPullBox, baseLengthOfLine ) ;
       else if ( isAutoCalculatePullBoxSize )
