@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       try {
         var document = commandData.Application.ActiveUIDocument.Document ;
-        var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3FieldName ) ).ToList() ;
+        var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( DefaultSettingCommandBase.Grade3FieldName ) ).ToList() ;
         // select mode
         var isInGrade3Mode = instances.Any( item => item.GetPropertyBool( DefaultSettingCommandBase.Grade3FieldName ) ) ;
         var dialog = new ChangeFamilyGradeDialog( commandData.Application, isInGrade3Mode ) ;
