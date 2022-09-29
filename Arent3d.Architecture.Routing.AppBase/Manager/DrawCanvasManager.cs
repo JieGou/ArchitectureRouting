@@ -101,7 +101,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       const double defaultOffsetY = 25 ;
       var rotateTransform = new RotateTransform( 90, 0, 0 ) ;
       Canvas canvasPanel = new() { Background = new SolidColorBrush( Colors.Black ), Width = 245, Height = 100 } ;
-      var offsetX= defaultOffset * 5 ;
+      var offsetX= defaultOffset * 3.5 ;
       var offsetY= defaultOffset * 2 ;
       var minX = defaultOffset ;
       var minY = defaultOffset ;
