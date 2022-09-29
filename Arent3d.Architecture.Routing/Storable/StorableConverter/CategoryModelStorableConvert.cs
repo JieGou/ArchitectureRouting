@@ -15,7 +15,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       IsExpanded,
       IsSelected,
       IsCeedCodeNumber,
-      IsExistModelNumber
+      IsExistModelNumber,
+      IsMainConstruction
     }
     
     protected override CategoryModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -28,8 +29,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var isSelected = deserializer.GetBool( SerializeField.IsSelected ) ;
       var isCeedCodeNumber = deserializer.GetBool( SerializeField.IsCeedCodeNumber ) ;
       var isExistModelNumber = deserializer.GetBool( SerializeField.IsExistModelNumber ) ;
+      var isMainConstruction = deserializer.GetBool( SerializeField.IsMainConstruction ) ;
 
-      return new CategoryModel( name, parentName, isExpanded, isSelected, isCeedCodeNumber, isExistModelNumber ) ;
+      return new CategoryModel( name, parentName, isExpanded, isSelected, isCeedCodeNumber, isExistModelNumber, isMainConstruction ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CategoryModel customTypeValue )
@@ -42,6 +44,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.Add( SerializeField.IsSelected, customTypeValue.IsSelected ) ;
       serializerObject.Add( SerializeField.IsCeedCodeNumber, customTypeValue.IsCeedCodeNumber ) ;
       serializerObject.Add( SerializeField.IsExistModelNumber, customTypeValue.IsExistModelNumber ) ;
+      serializerObject.Add( SerializeField.IsMainConstruction, customTypeValue.IsMainConstruction ) ;
 
       return serializerObject ;
     }
