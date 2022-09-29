@@ -5,7 +5,7 @@ using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  [Schema( "F4B42EC4-6BD5-4684-B928-ECE3251F5568", nameof( DisplaySettingModel ) )]
+  [Schema( "96234DA9-CFEE-40F8-B122-CD44585DC136", nameof( DisplaySettingModel ) )]
   public class DisplaySettingModel : NotifyPropertyChanged, IDataModel
   {
     public DisplaySettingModel()

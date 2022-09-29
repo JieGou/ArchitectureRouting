@@ -132,7 +132,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       
       var dataStorage = connector.Document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
       var displaySettingStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
-      connector.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingStorageService.Data.GradeOption == displaySettingStorageService.Data.GradeOptions[0] ) ;
+      connector.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingStorageService.Data.GradeOption != displaySettingStorageService.Data.GradeOptions[0] ) ;
     }
 
     private static void FocusToActiveView( UIDocument uiDocument )
