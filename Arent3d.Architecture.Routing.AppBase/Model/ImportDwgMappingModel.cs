@@ -2,7 +2,6 @@
 using System.ComponentModel ;
 using System.Globalization ;
 using System.IO ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
 
@@ -141,7 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _floorHeightDisplay = "0" ;
     }
 
-    public ImportDwgMappingModel( string fileName, string floorName, double floorHeight, int scale, double floorHeightDisplay = 0 )
+    public ImportDwgMappingModel( string fileName, string floorName, double floorHeight, int scale, double? floorHeightDisplay = 0 )
     {
       Id = Guid.NewGuid().ToString() ;
       _fullFilePath = fileName ;
@@ -151,10 +150,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _scale = scale ;
       _isEnabled = true ;
       _isDeleted = true ;
-      _floorHeightDisplay = floorHeightDisplay.ToString( CultureInfo.InvariantCulture );
+      _floorHeightDisplay = floorHeightDisplay?.ToString( CultureInfo.InvariantCulture ) ?? "-" ;
       _isEnabledFloorHeight = true ;
     }
-    
+
     public ImportDwgMappingModel( Storable.Model.ImportDwgMappingModel item, bool isNotDeleted )
     {
       Id = item.Id ;

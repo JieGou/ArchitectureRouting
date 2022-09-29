@@ -59,11 +59,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     private static void LoadDefaultElectricalDb( Document document )
     {
       var uiDocument = new UIDocument( document ) ;
-      var activeViewName = document.ActiveView.Name ;
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
       var setupPrintStorable = document.GetSetupPrintStorable() ;
       var scale = setupPrintStorable.Scale ;
-      var defaultSettingViewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, activeViewName ) ;
+      var defaultSettingViewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale ) ;
       defaultSettingViewModel.LoadDefaultDb() ;
       RoutingAppUI.CeedModelDockPanelProvider?.CustomInitiator( uiDocument ) ;
     }
