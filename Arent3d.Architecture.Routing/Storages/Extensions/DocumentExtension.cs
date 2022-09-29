@@ -1,19 +1,20 @@
-﻿using Autodesk.Revit.DB ;
-using System ;
+﻿using System ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Storages.Extensions
 {
-  public static class TransactionExtension
+  public static class DocumentExtension
   {
-    public static void OpenTransactionIfNeed( this Transaction transaction, Document document, string transactionName, Action action )
+    public static void OpenTransactionIfNeed( this Document document, string transactionName, Action action )
     {
       if ( ! document.IsModifiable ) {
         if ( string.IsNullOrEmpty( transactionName ) )
           throw new ArgumentNullException( nameof( transactionName ) ) ;
 
-        transaction.Start( transactionName ) ;
+        using var trans = new Transaction( document ) ;
+        trans.Start( transactionName ) ;
         action() ;
-        transaction.Commit() ;
+        trans.Commit() ;
       }
       else {
         action() ;

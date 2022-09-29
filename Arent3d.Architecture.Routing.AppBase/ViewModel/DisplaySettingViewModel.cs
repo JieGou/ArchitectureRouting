@@ -5,6 +5,7 @@ using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -201,18 +202,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
-    private void SetupDisplayPullBox( List<View> views, bool isVisible )
+    private static void SetupDisplayPullBox( List<View> views, bool isVisible )
     {
-      var hiddenOrUnhiddenElements = new List<Element>() ;
-
-      // Pull boxes
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => ( e.Name == ElectricalRoutingFamilyType.PullBox.GetFamilyName() || e.Name == ElectricalRoutingFamilyType.Handhole.GetFamilyName() ) ) ) ;
-
-      // Text notes
-      var labelOfPullBoxIds = _document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( p => p.Data.PullBoxInfoData ).Select( p => p.TextNoteUniqueId ) ;
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( t => labelOfPullBoxIds.Contains( t.UniqueId ) ) ) ;
-
-      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+      foreach ( var view in views ) {
+        PullBoxRouteManager.SetHiddenPullBoxByFilter(view, isVisible);
+      }
     }
 
     private void SetupDisplaySchedule( List<View> views, bool isVisible )
