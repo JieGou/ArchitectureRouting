@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -88,6 +89,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
+          
+          using ( var progressData = progress.Reserve( 0.1 ) ) {
+            UpdateSetCodeFollowGrade( _document, _dataDisplaySettingModel ) ;
+            progressData.ThrowIfCanceled() ;
+          }
 
           using ( var progressData = progress.Reserve( 0.2 ) ) {
             SetupDisplayLegend( views, _dataDisplaySettingModel ) ;
@@ -127,6 +133,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       window.Close() ;
     }
 
+    private static void UpdateSetCodeFollowGrade(Document document, DisplaySettingModel displaySettingModel)
+    {
+      var setCodes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).OfNotElementType() ;
+      if(!setCodes.Any())
+        return;
+      
+      foreach ( var setCode in setCodes ) {
+        
+        if ( ! setCode.HasParameter( DefaultSettingCommandBase.Grade3FieldName ) ) 
+          continue ;
+        
+        setCode.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingModel.GradeOption == displaySettingModel.GradeOptions[0] ) ;
+      }
+    }
+    
     private void SetupDisplayWiring( List<View> views, bool isVisible )
     {
       // Electrical routing elements (conduits and cable trays)

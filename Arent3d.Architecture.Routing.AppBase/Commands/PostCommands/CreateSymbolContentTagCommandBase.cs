@@ -10,11 +10,15 @@ using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
@@ -122,10 +126,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       const string symbolMagnification = "シンボル倍率" ;
       if ( connector.HasParameter( symbolMagnification ) )
         connector.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
-
-      const string grade3FieldName = "グレード3" ;
-      if ( connector.HasParameter( grade3FieldName ) )
-        connector.SetProperty( grade3FieldName, DefaultSettingCommandBase.GradeFrom3To7Collection.Contains( connector.Document.GetDefaultSettingStorable().GradeSettingData.GradeMode ) ) ;
+      
+      if ( ! connector.HasParameter( DefaultSettingCommandBase.Grade3FieldName ) ) 
+        return ;
+      
+      var dataStorage = connector.Document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+      var displaySettingStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+      connector.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingStorageService.Data.GradeOption == displaySettingStorageService.Data.GradeOptions[0] ) ;
     }
 
     private static void FocusToActiveView( UIDocument uiDocument )

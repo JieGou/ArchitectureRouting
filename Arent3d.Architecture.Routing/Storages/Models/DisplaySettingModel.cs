@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic ;
+using System.Linq ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
   [Schema( "F4B42EC4-6BD5-4684-B928-ECE3251F5568", nameof( DisplaySettingModel ) )]
-  public class DisplaySettingModel : IDataModel
+  public class DisplaySettingModel : NotifyPropertyChanged, IDataModel
   {
     public DisplaySettingModel()
     {
@@ -16,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       HiddenLegendElementIds = new List<string>() ;
     }
 
-    public DisplaySettingModel( bool? isWiringVisible, bool? isDetailSymbolVisible, bool? isPullBoxVisible, bool? isScheduleVisible, bool? isLegendVisible, List<string>? hiddenLegendElementIds )
+    public DisplaySettingModel( bool? isWiringVisible, bool? isDetailSymbolVisible, bool? isPullBoxVisible, bool? isScheduleVisible, bool? isLegendVisible, List<string>? hiddenLegendElementIds, string? gradeOption )
     {
       IsWiringVisible = isWiringVisible ?? true ;
       IsDetailSymbolVisible = isDetailSymbolVisible ?? true ;
@@ -24,6 +26,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       IsScheduleVisible = isScheduleVisible ?? true ;
       IsLegendVisible = isLegendVisible ?? true ;
       HiddenLegendElementIds = hiddenLegendElementIds ?? new List<string>() ;
+      GradeOption = gradeOption ?? GradeOptions[ 0 ] ;
     }
 
     [Field( Documentation = "Is Wiring Visible" )]
@@ -44,6 +47,24 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     [Field( Documentation = "Hidden Legend Element Ids" )]
     public List<string> HiddenLegendElementIds { get ; set ; }
 
-    public DisplaySettingModel Clone() => new(IsWiringVisible, IsDetailSymbolVisible, IsPullBoxVisible, IsScheduleVisible, IsLegendVisible, HiddenLegendElementIds) ;
+    private string? _gradeOption ;
+    [Field( Documentation = "Grade Option" )]
+    public string GradeOption
+    {
+      get => _gradeOption ??= GradeOptions.First() ;
+      set
+      {
+        _gradeOption = value ;
+        OnPropertyChanged();
+      }
+    }
+
+    public List<string> GradeOptions => new List<string>
+    {
+      "簡易",
+      "詳細"
+    } ;
+
+    public DisplaySettingModel Clone() => new(IsWiringVisible, IsDetailSymbolVisible, IsPullBoxVisible, IsScheduleVisible, IsLegendVisible, HiddenLegendElementIds, GradeOption) ;
   }
 }
