@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         XYZ? centerPoint ;
         if ( selection.GetElementIds().Count > 0 ) {
           var shaftOpening = selection.GetElementIds().Select( x => document.GetElement( x ) ).OfType<Opening>().FirstOrDefault() ;
-          var cableTrayInstance = selection.GetElementIds().Select( x => document.GetElement( x ) ).OfType<FamilyInstance>().FirstOrDefault( x => x.Symbol is { } fs && fs.FamilyName == ElectricalRoutingFamilyType.CableTray.GetFamilyName() ) ;
+          var cableTrayInstance = selection.GetElementIds().Select( x => document.GetElement( x ) ).OfType<FamilyInstance>().FirstOrDefault( x => x.Symbol is { } fs && fs.FamilyName == ElectricalRoutingFamilyType.ShaftHSymbol.GetFamilyName() ) ;
           var curveElement = document.GetAllInstances<CurveElement>( document.ActiveView )
             .FirstOrDefault( x => x.LineStyle.Name is SubCategoryForSymbolName or SubCategoryForDirectionCylindricalShaftName or SubCategoryForCylindricalShaftName 
                          && selection.GetElementIds().Contains( x.Id ) ) ;
