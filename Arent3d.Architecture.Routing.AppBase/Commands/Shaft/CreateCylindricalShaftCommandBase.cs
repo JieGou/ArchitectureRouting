@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           return Result.Succeeded ;
 
         var shaftModels = dialog.ShaftSettingViewModel.Shafts.Where( s => s.IsShafted ).ToList() ;
-        if ( ! shaftModels.Any() ) {
+        if ( ! shaftModels.Any() && ! shaftOpeningModels.Any() ) {
           message = "Please, select level in the dialog!" ;
           return Result.Cancelled ;
         }
@@ -72,42 +72,44 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         using var trans = new Transaction( document, "Create Arent Shaft" ) ;
         trans.Start() ;
 
-        var shaftProfile = new CurveArray() ;
-        double.TryParse( dialog.ShaftSettingViewModel.Size, out var widthCableTray ) ;
-        var radius = widthCableTray.MillimetersToRevitUnits() / 2 ;
-        var cylinderCurve = Arc.Create( centerPoint, radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
-        shaftProfile.Append( cylinderCurve ) ;
-        var shaftModelGroup = GroupShaftModels( shaftModels ) ;
-        var shaftIndex = shaftOpeningModels.Any() ? shaftOpeningModels.First().ShaftIndex : shaftOpeningStore.ShaftOpeningModels.Count ;
+        if ( shaftModels.Any() ) {
+          var shaftProfile = new CurveArray() ;
+          double.TryParse( dialog.ShaftSettingViewModel.Size, out var widthCableTray ) ;
+          var radius = widthCableTray.MillimetersToRevitUnits() / 2 ;
+          var cylinderCurve = Arc.Create( centerPoint, radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
+          shaftProfile.Append( cylinderCurve ) ;
+          var shaftModelGroup = GroupShaftModels( shaftModels ) ;
+          var shaftIndex = shaftOpeningModels.Any() ? shaftOpeningModels.First().ShaftIndex : shaftOpeningStore.ShaftOpeningModels.Count ;
 
-        foreach ( var shafts in shaftModelGroup ) {
-          var levels = shafts.Select( s => s.FromLevel ).ToList() ;
-          levels.Add( shafts.Last().ToLevel ) ;
-          var opening = document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
-          document.Regenerate() ;
+          foreach ( var shafts in shaftModelGroup ) {
+            var levels = shafts.Select( s => s.FromLevel ).ToList() ;
+            levels.Add( shafts.Last().ToLevel ) ;
+            var opening = document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
+            document.Regenerate() ;
 
-          List<Element> cableTraySymbols = new() ;
-          List<string> cableTraySymbolIds = new() ;
-          foreach ( var shaftModel in shafts ) {
-            if ( ! shaftModel.IsRacked ) continue ;
-            var cableTrayLength = shaftModel.ToLevel.Elevation - shaftModel.FromLevel.Elevation ;
-            var cableTraySymbol = CreateCableTraySymbol( document, centerPoint.X, centerPoint.Y, cableTrayLength, shaftModel.FromLevel ) ;
-            cableTraySymbols.Add( cableTraySymbol ) ;
-            cableTraySymbolIds.Add( cableTraySymbol.UniqueId ) ;
+            List<Element> cableTraySymbols = new() ;
+            List<string> cableTraySymbolIds = new() ;
+            foreach ( var shaftModel in shafts ) {
+              if ( ! shaftModel.IsRacked ) continue ;
+              var cableTrayLength = shaftModel.ToLevel.Elevation - shaftModel.FromLevel.Elevation ;
+              var cableTraySymbol = CreateCableTraySymbol( document, centerPoint.X, centerPoint.Y, cableTrayLength, shaftModel.FromLevel ) ;
+              cableTraySymbols.Add( cableTraySymbol ) ;
+              cableTraySymbolIds.Add( cableTraySymbol.UniqueId ) ;
+            }
+
+            var detailUniqueIds = new List<string>() ;
+            var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
+
+            var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
+            foreach ( var viewPlan in viewPlans ) {
+              var cableTraySymbolId = cableTraySymbols.FirstOrDefault( x => x.LevelId == viewPlan.GenLevel.Id )?.UniqueId ?? string.Empty ;
+              var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, widthCableTray, cableTraySymbolId ) ;
+              detailUniqueIds.AddRange( detailCurves ) ;
+              if ( ! string.IsNullOrEmpty( cableTraySymbolId ) ) cableTraySymbols.RemoveAll( e => e.UniqueId == cableTraySymbolId ) ;
+            }
+
+            shaftOpeningStore.ShaftOpeningModels.Add( new ShaftOpeningModel( shaftIndex, opening.UniqueId, cableTraySymbolIds, detailUniqueIds, widthCableTray ) ) ;
           }
-
-          var detailUniqueIds = new List<string>() ;
-          var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
-
-          var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
-          foreach ( var viewPlan in viewPlans ) {
-            var cableTraySymbolId = cableTraySymbols.FirstOrDefault( x => x.LevelId == viewPlan.GenLevel.Id )?.UniqueId ?? string.Empty ;
-            var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, widthCableTray, cableTraySymbolId ) ;
-            detailUniqueIds.AddRange( detailCurves ) ;
-            if ( ! string.IsNullOrEmpty( cableTraySymbolId ) ) cableTraySymbols.RemoveAll( e => e.UniqueId == cableTraySymbolId ) ;
-          }
-
-          shaftOpeningStore.ShaftOpeningModels.Add( new ShaftOpeningModel( shaftIndex, opening.UniqueId, cableTraySymbolIds, detailUniqueIds, widthCableTray ) ) ;
         }
 
         if ( shaftOpeningModels.Any() ) {
