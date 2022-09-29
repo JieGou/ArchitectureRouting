@@ -5,7 +5,7 @@ using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  [Schema( "96234DA9-CFEE-40F8-B122-CD44585DC136", nameof( DisplaySettingModel ) )]
+  [Schema( "842FBF11-C465-41C2-B8BC-790F81A774A0", nameof( DisplaySettingModel ) )]
   public class DisplaySettingModel : NotifyPropertyChanged, IDataModel
   {
     public DisplaySettingModel()
@@ -18,7 +18,8 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       HiddenLegendElementIds = new List<string>() ;
     }
 
-    public DisplaySettingModel( bool? isWiringVisible, bool? isDetailSymbolVisible, bool? isPullBoxVisible, bool? isScheduleVisible, bool? isLegendVisible, List<string>? hiddenLegendElementIds, string? gradeOption )
+    public DisplaySettingModel( bool? isWiringVisible, bool? isDetailSymbolVisible, bool? isPullBoxVisible, bool? isScheduleVisible, bool? isLegendVisible, 
+      List<string>? hiddenLegendElementIds, string? gradeOption, bool isSaved )
     {
       IsWiringVisible = isWiringVisible ?? true ;
       IsDetailSymbolVisible = isDetailSymbolVisible ?? true ;
@@ -27,6 +28,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       IsLegendVisible = isLegendVisible ?? true ;
       HiddenLegendElementIds = hiddenLegendElementIds ?? new List<string>() ;
       GradeOption = gradeOption ?? GradeOptions[ 0 ] ;
+      IsSaved = isSaved ;
     }
 
     [Field( Documentation = "Is Wiring Visible" )]
@@ -64,7 +66,10 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       "簡易",
       "詳細"
     } ;
+    
+    [Field( Documentation = "Mark Saved" )]
+    public bool IsSaved { get ; set ; }
 
-    public DisplaySettingModel Clone() => new(IsWiringVisible, IsDetailSymbolVisible, IsPullBoxVisible, IsScheduleVisible, IsLegendVisible, HiddenLegendElementIds, GradeOption) ;
+    public DisplaySettingModel Clone() => new(IsWiringVisible, IsDetailSymbolVisible, IsPullBoxVisible, IsScheduleVisible, IsLegendVisible, HiddenLegendElementIds, GradeOption, IsSaved) ;
   }
 }

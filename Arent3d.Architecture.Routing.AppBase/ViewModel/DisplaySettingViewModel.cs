@@ -144,7 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! setCode.HasParameter( DefaultSettingCommandBase.Grade3FieldName ) ) 
           continue ;
         
-        setCode.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingModel.GradeOption != displaySettingModel.GradeOptions[0] ) ;
+        setCode.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingModel.GradeOption == displaySettingModel.GradeOptions[0] ) ;
       }
     }
     
@@ -300,6 +300,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       using Transaction transaction = new(_document, "Save Display Setting By Grade") ;
       transaction.Start() ;
+      _dataDisplaySettingModel.IsSaved = true ;
       _displaySettingByGradeStorageService.Data = _dataDisplaySettingModel ;
       _displaySettingByGradeStorageService.SaveChange() ;
       transaction.Commit() ;
