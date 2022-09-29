@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   {
     private const string MallCondition = "モール" ;
     private const string MoSymbol = " (モ)" ;
-    private static readonly List<string> IsRotatedDwgNumbers = new() { "19", "28", "37", "43", "47", "50", "55", "59", "75" } ;
+    private static readonly List<string> IsRotatedDwgNumbers = new() { "19", "28", "37", "43", "47", "50", "55", "59", "75", "90", "105" } ;
     private const string IsRemovedPointsDwgNumber = "77" ;
 
     public static void SetBase64FloorPlanImages ( Document document, IEnumerable<CeedModel> ceedModels )
@@ -170,6 +170,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             Y2 = y2,
           } ;
 
+          if ( isRotated ) newLine.RenderTransform = rotateTransform ;
           Canvas.SetTop( newLine, offsetY ) ;
           Canvas.SetLeft( newLine, offsetX ) ;
           canvasPanel.Children.Add( newLine ) ;
@@ -237,6 +238,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         canvasPanel.Children.Add( txtFloorPlanSymbol ) ;
       }
 
+      if ( deviceSymbol == "-" ) return canvasPanel ;
       var text = condition == MallCondition ? deviceSymbol + MoSymbol : deviceSymbol ;
       TextBlock txt = new()
       {
