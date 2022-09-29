@@ -24,6 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const string MallCondition = "モール" ;
     private const string MoSymbol = " (モ)" ;
     private static readonly List<string> IsRotatedDwgNumbers = new() { "19", "28", "37", "43", "47", "50", "55", "59", "75" } ;
+    private const string IsRemovedPointsDwgNumber = "77" ;
 
     public static void SetBase64FloorPlanImages ( Document document, IEnumerable<CeedModel> ceedModels )
     {
@@ -48,7 +49,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         try {
           if ( string.IsNullOrEmpty( ceedModel.DwgNumber ) ) {
             if ( string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ) continue ;
-            var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.FloorPlanSymbol, ceedModel.Condition, false ) ;
+            var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.FloorPlanSymbol, ceedModel.Condition ) ;
             ceedModel.Base64FloorPlanImages = GetImageDataFromCanvas( canvas ) ;
           }
           else {
@@ -78,7 +79,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
               arcs = canvasChildInfo.Arcs ;
             }
             
-            var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty, ceedModel.Condition, IsRotatedDwgNumbers.Contains( dwgNumber ) ) ;
+            var canvas = CreateCanvas( lines, arcs, polyLines, ceedModel.GeneralDisplayDeviceSymbol, string.Empty, ceedModel.Condition, IsRotatedDwgNumbers.Contains( dwgNumber ), dwgNumber == IsRemovedPointsDwgNumber ) ;
             ceedModel.Base64FloorPlanImages = GetImageDataFromCanvas( canvas ) ;
           }
         }
@@ -93,7 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       tRemove.Commit() ;
     }
 
-    private static Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol, string condition, bool isRotated )
+    private static Canvas CreateCanvas( ICollection<Line> lines, ICollection<Arc> arcs, ICollection<PolyLine> polyLines, string deviceSymbol, string floorPlanSymbol, string condition, bool isRotated = false, bool isRemovedPointsDwgNumber = false )
     {
       const double scale = 15 ;
       const double defaultOffset = 20 ;
@@ -114,12 +115,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( polyLines.Any() ) {
           foreach ( var polyline in polyLines ) {
             var pointsOfPolyLine = new PointCollection() ;
-            var points = polyline.GetCoordinates() ;
+            var points = polyline.GetCoordinates().ToList() ;
             if ( polyline == polyLines.First() ) {
               scaleOfLine = GetScale( minX, minY, maxX, maxY, scale ) ;
               offsetX -= minX * scaleOfLine ; 
               offsetY = minY == 0 ? offsetY + scaleOfLine * 0.5 : offsetY - minY * scaleOfLine ;
               if ( isRotated ) offsetY += defaultOffsetY ;
+              if ( isRemovedPointsDwgNumber ) points.RemoveRange( 2, 4 ) ;
             }
 
             foreach ( var point in points ) {
