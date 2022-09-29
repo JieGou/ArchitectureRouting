@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -22,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
 
     public ElementFilter GetElementFilter( Document? document )
     {
-      return new ElementMulticlassFilter( new List<Type>() { typeof( TextElement ), typeof( CurveElement ) } ) ;
+      return new ElementMulticlassFilter( new List<Type>() { typeof( TextElement ), typeof( CurveElement ), typeof( IndependentTag ) } ) ;
     }
 
     public bool CanListen( Document document ) => true ;
@@ -54,6 +55,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, textNote, detailLine ) ;
           NotationHelper.SaveNotation( rackNotationStorable, textNote, endLineLeaderId, ortherLineId ) ;
         }
+        
+        if ( elementSelected is IndependentTag tag ) {
+          if ( rackNotationStorable.RackNotationModelData.FirstOrDefault( x => x.NotationId == tag.UniqueId ) is
+              not {} rackNotationModel )
+            return ;
+          
+          if (document.GetElement( rackNotationModel.EndLineLeaderId ) is not DetailLine detailLine )
+            return ;
+          
+          var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, tag, detailLine ) ;
+          NotationHelper.SaveNotation( rackNotationStorable, tag, endLineLeaderId, ortherLineId ) ;
+        }
+        
         else if ( elementSelected is DetailLine detailLine)
         {
           if ( rackNotationStorable.RackNotationModelData.FirstOrDefault( x => x.EndLineLeaderId == detailLine.UniqueId ) is
