@@ -4,6 +4,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class PullBoxModel
   {
+    public virtual string DefaultPullBoxLabel => "PB" ;
     private const string NumberPattern = @"\d+" ;
     private const string StringPattern = @"[^0-9 ]" ;
     public string Buzaicd { get ; }
@@ -25,6 +26,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     private void InitPullBoxSizeFromString( string kikaku )
     {
       if ( string.IsNullOrEmpty( kikaku ) ) return ;
+      Name = kikaku ;
       var kikakuStrings = kikaku.Split( 'x' ) ;
       if ( kikakuStrings.Length != 3 ) return ;
       Width = TryConvertStringToInt( kikakuStrings[ 0 ] ) ;
@@ -53,7 +55,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       return ! match.Success ? string.Empty : match.Value ;
     }
 
-    private static string GetPullBoxName( int width, int height ) =>
+    protected virtual string GetPullBoxName( int width, int height ) =>
       ( width, height ) switch
       {
         (150, 100) => PullBoxSizeNameConstance.PB1,

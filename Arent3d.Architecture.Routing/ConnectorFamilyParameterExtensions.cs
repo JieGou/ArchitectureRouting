@@ -9,7 +9,8 @@ namespace Arent3d.Architecture.Routing
     Power,
     Sensor,
     Pass,
-    PullBox
+    PullBox,
+    Handhole
   }
   
   public static class ConnectorFamilyParameterExtensions

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
-using Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
@@ -35,13 +35,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
         TextNote? textNote ;
 
         if ( data.GetAddedElementIds().Count == 1 ) {
-          textNote = GetTextNote( document, data.GetAddedElementIds().First(), DoubleBorderCommand.TextNoteTypeName ) ;
+          textNote = GetTextNote( document, data.GetAddedElementIds().First(), DefaultSettingCommandBase.DoubleTextNoteTypeName ) ;
           if ( null != textNote ) {
             var curves = GetDoubleBorderTextNote( textNote ) ;
             borderIds = CreateDetailCurve(document, textNote, curves) ;
           }
           else {
-            textNote = GetTextNote( document, data.GetAddedElementIds().First(), SingleBorderCommand.TextNoteTypeName ) ;
+            textNote = GetTextNote( document, data.GetAddedElementIds().First(), DefaultSettingCommandBase.SingleTextNoteTypeName ) ;
             if ( null != textNote ) {
               var curves = GetSingleBorderTextNote( textNote ) ;
               borderIds = CreateDetailCurve(document, textNote, curves) ;
@@ -54,13 +54,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
           SetDataForTextNote( storageService, textNote, borderIds ) ;
         }
         else if ( data.GetModifiedElementIds().Count == 1 && selection.GetElementIds().Count == 1 && data.GetModifiedElementIds().First() == selection.GetElementIds().First() ) {
-          textNote = GetTextNote( document, data.GetModifiedElementIds().First(), DoubleBorderCommand.TextNoteTypeName ) ;
+          textNote = GetTextNote( document, data.GetModifiedElementIds().First(), DefaultSettingCommandBase.DoubleTextNoteTypeName ) ;
           if ( null != textNote ) {
             var curves = GetDoubleBorderTextNote( textNote ) ;
             borderIds = CreateDetailCurve(document, textNote, curves) ;
           }
           else {
-            textNote = GetTextNote( document, data.GetModifiedElementIds().First(), SingleBorderCommand.TextNoteTypeName ) ;
+            textNote = GetTextNote( document, data.GetModifiedElementIds().First(), DefaultSettingCommandBase.SingleTextNoteTypeName ) ;
             if ( null != textNote ) {
               var curves = GetSingleBorderTextNote( textNote ) ;
               borderIds = CreateDetailCurve(document, textNote, curves) ;

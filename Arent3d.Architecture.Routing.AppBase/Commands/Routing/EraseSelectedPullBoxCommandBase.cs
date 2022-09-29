@@ -18,6 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     public record PickState(List<Route> RoutesRelatedPullBox, Element PullBox, Dictionary<string, string> RouteNameDictionary ) ;
     protected abstract AddInType GetAddInType() ;
+    protected virtual ISelectionFilter GetSelectionFilter() => new PullPoxPickFilter();
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
@@ -26,7 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       Reference pickedPullBox ;
 
       try {
-        pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, new PullPoxPickFilter() ) ;
+        pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, GetSelectionFilter() ) ;
       }
       catch ( OperationCanceledException ) {
         return OperationResult<PickState>.Cancelled ;
@@ -377,7 +378,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       public bool AllowElement( Element e )
       {
-        return ( (FamilyInstance)e ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ;
+        return e is FamilyInstance familyInstance && familyInstance.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ;
       }
 
       public bool AllowReference( Reference r, XYZ p )
