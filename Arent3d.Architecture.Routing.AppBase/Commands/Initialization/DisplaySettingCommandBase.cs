@@ -7,6 +7,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class DisplaySettingCommandBase : IExternalCommand
   {
+    public const string LegendSelectionFilter = "ARENT_LEGEND" ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;

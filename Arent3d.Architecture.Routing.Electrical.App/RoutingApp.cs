@@ -4,6 +4,7 @@ using System.Reflection ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -58,6 +59,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     protected override void OnDocumentChanged( DocumentKey documentKey, DocumentChangedEventArgs e )
     {
       FromToTreeManager.OnDocumentChanged( e, AddInType.Electrical ) ;
+      DisplaySettingCommand.AddLegendToselectionFilter(e.GetDocument(), e.GetAddedElementIds());
     }
 
     protected override void OnApplicationViewChanged( DocumentKey documentKey, ViewActivatedEventArgs e )

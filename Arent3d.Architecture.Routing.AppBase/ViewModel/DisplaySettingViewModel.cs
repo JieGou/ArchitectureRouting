@@ -6,6 +6,7 @@ using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -97,7 +98,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
 
           using ( var progressData = progress.Reserve( 0.2 ) ) {
-            SetupDisplayLegend( views, _dataDisplaySettingModel ) ;
+            SetupDisplayLegend( views, _dataDisplaySettingModel.IsLegendVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
 
@@ -220,34 +221,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void SetupDisplayLegend( List<View> views, DisplaySettingModel displaySettingModel )
+    private static void SetupDisplayLegend( List<View> views, bool isLegendVisible )
     {
-      // Legends
-      var legendViews = _document.GetAllElements<View>().Where( vp => vp.ViewType == ViewType.Legend ).ToList() ;
-      if ( ! legendViews.Any() ) return ;
-
-      if ( displaySettingModel.IsLegendVisible ) {
-        if ( displaySettingModel.HiddenLegendElementIds.Any() ) {
-          foreach ( var legendView in legendViews ) {
-            var hiddenElementIds = displaySettingModel.HiddenLegendElementIds.Where( e => _document.GetElement( e ) is { } element && element.IsHidden( legendView ) ).Select( e => _document.GetElement( e ).Id ).ToList() ;
-            if ( hiddenElementIds.Any() )
-              legendView.UnhideElements( hiddenElementIds ) ;
-          }
-
-          displaySettingModel.HiddenLegendElementIds = new List<string>() ;
-        }
+      foreach ( var view in views ) {
+        var legendFilter = FilterUtil.FindOrCreateSelectionFilter(view.Document, DisplaySettingCommandBase.LegendSelectionFilter) ;
+        if(!view.IsFilterApplied(legendFilter.Id))
+          view.AddFilter(legendFilter.Id);
+        view.SetFilterVisibility(legendFilter.Id, isLegendVisible);
       }
-      else {
-        foreach ( var legendView in legendViews ) {
-          var allElementsInLegendView = new FilteredElementCollector( _document, legendView.Id ) ;
-          displaySettingModel.HiddenLegendElementIds.AddRange( allElementsInLegendView.Select( e => e.UniqueId ) ) ;
-          if ( allElementsInLegendView.Any() )
-            legendView.HideElements( allElementsInLegendView.ToElementIds() ) ;
-        }
-      }
-
-      var hiddenOrUnhiddenElements = _document.GetAllElements<Viewport>().Where( vp => legendViews.Any( lv => lv.Id.IntegerValue == vp.ViewId.IntegerValue ) ).EnumerateAll() ;
-      HideOrUnHideElements( views, displaySettingModel.IsLegendVisible, hiddenOrUnhiddenElements ) ;
     }
 
     private static void HideOrUnHideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )

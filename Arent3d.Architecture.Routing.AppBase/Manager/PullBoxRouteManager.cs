@@ -5,6 +5,7 @@ using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -12,7 +13,6 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
-using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -42,8 +42,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public const string IsAutoCalculatePullBoxSizeParameter = "IsAutoCalculatePullBoxSize" ;
     private const string TaniOfPullBox = "個" ;
     public const string PrefixPullBoxTextNote = "ARENT_PULLBOX" ;
-    public const string TextNoteSelectionName = "TEXTNOTE_PULLBOX" ;
-    public const string PullBoxFilterName = "PULL_BOX" ;
+    public const string TextNoteSelectionName = "ARENT_PULLBOX_TEXTNOTE" ;
+    public const string PullBoxFilterName = "ARENT_PULLBOX" ;
 
     public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, Route route, Element element, FamilyInstance pullBox, double heightConnector, 
       double heightWire, XYZ routeDirection, bool isCreatePullBoxWithoutSettingHeight, string nameBase, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool isWireEnteredShaft = false, bool allowedTiltedPiping = false )
@@ -1295,7 +1295,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       var txtPosition = new XYZ( positionOfNotation.X, positionOfNotation.Y, positionOfNotation.Z ) ;
       var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, notationContent, opts ) ;
-      AddTextNoteToSelectionFilter( textNote ) ;
+      FilterUtil.AddElementToSelectionFilter( TextNoteSelectionName, textNote ) ;
 
       if ( isAutoCalculatePullBoxSize ) {
         var color = new Color( 255, 0, 0 ) ;
@@ -1310,21 +1310,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Add( new PullBoxInfoItemModel( pullBox.UniqueId, textNote.UniqueId ) ) ;
       storagePullBoxInfoServiceByLevel.SaveChange() ;
       updateNotationTransaction.Commit() ;
-    }
-
-    private static void AddTextNoteToSelectionFilter( TextNote textNote )
-    {
-      var selectionFilter = FindOrCreateSelectionFilter(textNote.Document) ;
-      if ( selectionFilter.Contains( textNote.Id ) )
-        return ;
-
-      selectionFilter.AddSingle( textNote.Id ) ;
-    }
-
-    private static SelectionFilterElement FindOrCreateSelectionFilter( Document document )
-    {
-      return document.GetAllInstances<SelectionFilterElement>()
-        .SingleOrDefault( x => x.Name == TextNoteSelectionName ) ?? SelectionFilterElement.Create( document, TextNoteSelectionName ) ;
     }
 
     private static ParameterFilterElement FindOrCreateParameterFilter( Document document )
@@ -1342,7 +1327,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     public static void SetHiddenPullBoxByFilter( View view, bool isHidden )
     {
-      var textNoteFilter = FindOrCreateSelectionFilter(view.Document) ;
+      var textNoteFilter = FilterUtil.FindOrCreateSelectionFilter(view.Document, TextNoteSelectionName) ;
       if(!view.IsFilterApplied(textNoteFilter.Id))
         view.AddFilter(textNoteFilter.Id);
       view.SetFilterVisibility(textNoteFilter.Id, isHidden);
