@@ -55,19 +55,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, textNote, detailLine ) ;
           NotationHelper.SaveNotation( rackNotationStorable, textNote, endLineLeaderId, ortherLineId ) ;
         }
-        
-        if ( elementSelected is IndependentTag tag ) {
-          if ( rackNotationStorable.RackNotationModelData.FirstOrDefault( x => x.NotationId == tag.UniqueId ) is
-              not {} rackNotationModel )
+        else if ( elementSelected is IndependentTag tag ) {
+          if ( rackNotationStorable.RackNotationModelData.FirstOrDefault( x => x.NotationId == tag.UniqueId ) is not { } rackNotationModel )
             return ;
-          
-          if (document.GetElement( rackNotationModel.EndLineLeaderId ) is not DetailLine detailLine )
+
+          if ( document.GetElement( rackNotationModel.EndLineLeaderId ) is not DetailLine detailLine )
             return ;
-          
+
           var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, tag, detailLine ) ;
           NotationHelper.SaveNotation( rackNotationStorable, tag, endLineLeaderId, ortherLineId ) ;
         }
-        
         else if ( elementSelected is DetailLine detailLine)
         {
           if ( rackNotationStorable.RackNotationModelData.FirstOrDefault( x => x.EndLineLeaderId == detailLine.UniqueId ) is

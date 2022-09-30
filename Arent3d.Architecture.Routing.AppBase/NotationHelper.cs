@@ -20,7 +20,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       var isOnRightSide = ( textPoint - tf.Origin ).CrossProduct( tf.BasisX ).Z > 0 ;
       return tf.Origin + tf.BasisX * length / 2 + tf.BasisY * rack2dWidth * 0.5 * ( isOnRightSide ? -1 : 1 ) ;
     }
-    private static XYZ? CalculateTargetedPoint( Document document, FamilyInstance rack , IndependentTag tag )
+
+    private static XYZ? CalculateTargetedPoint( Document document, FamilyInstance rack, IndependentTag tag )
     {
       if ( ! rack.TryGetRackLength( out var length ) )
         return null ;
@@ -61,21 +62,18 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       return ( curveClosestPoint.DetailCurve?.UniqueId ?? string.Empty, ortherLineId ) ;
     }
-    
+
     public static (string, List<string>) UpdateNotation( Document document, RackNotationModel rackNotationModel, IndependentTag tag, DetailLine detailLine )
     {
       var endPoint = detailLine.GeometryCurve.GetEndPoint( rackNotationModel.EndPoint ) ;
       var rack = document.GetElement( rackNotationModel.RackNotationId ) as FamilyInstance ;
-      if( rack is {} && rack.IsRack() )
-        endPoint = CalculateTargetedPoint( document, rack , tag ) ;
+      if ( rack is { } && rack.IsRack() )
+        endPoint = CalculateTargetedPoint( document, rack, tag ) ;
       var textNote = RackCommandBase.CreateTagTextNote( tag ) ;
-      document.Regenerate();
-      if (textNote == null) return (string.Empty, new List<string>());
+      document.Regenerate() ;
+      if ( textNote == null ) return ( string.Empty, new List<string>() ) ;
       var underLineText = RackCommandBase.CreateUnderLineText( textNote, endPoint!.Z ) ;
-      var pointNearest =
-        underLineText.GetEndPoint( 0 ).DistanceTo( endPoint ) < underLineText.GetEndPoint( 1 ).DistanceTo( endPoint )
-          ? underLineText.GetEndPoint( 0 )
-          : underLineText.GetEndPoint( 1 ) ;
+      var pointNearest = underLineText.GetEndPoint( 0 ).DistanceTo( endPoint ) < underLineText.GetEndPoint( 1 ).DistanceTo( endPoint ) ? underLineText.GetEndPoint( 0 ) : underLineText.GetEndPoint( 1 ) ;
 
       var notUsedForIntersect = rack is { } ? new List<Element> { rack } : null ;
       if ( document.GetElement( detailLine.OwnerViewId ) is not ViewPlan viewPlan ) return ( string.Empty, new List<string>() ) ;
@@ -89,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       document.Delete( textNote.Id ) ;
       document.Delete( detailLine.Id ) ;
       foreach ( var lineId in rackNotationModel.OtherLineIds ) {
-        if ( document.GetElement( lineId ) is {} line ) {
+        if ( document.GetElement( lineId ) is { } line ) {
           document.Delete( line.Id ) ;
         }
       }
@@ -107,10 +105,10 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       rackNotationStorable.Save() ;
     }
-    public static void SaveNotation(RackNotationStorable rackNotationStorable, IndependentTag tag, string endLineLeaderId, IReadOnlyList<string> ortherLineId)
+
+    public static void SaveNotation( RackNotationStorable rackNotationStorable, IndependentTag tag, string endLineLeaderId, IReadOnlyList<string> ortherLineId )
     {
-      foreach ( var rackNotation in rackNotationStorable.RackNotationModelData.Where( x =>
-                 x.NotationId == tag.UniqueId ) ) {
+      foreach ( var rackNotation in rackNotationStorable.RackNotationModelData.Where( x => x.NotationId == tag.UniqueId ) ) {
         rackNotation.EndLineLeaderId = endLineLeaderId ;
         rackNotation.OtherLineIds = ortherLineId ;
       }
