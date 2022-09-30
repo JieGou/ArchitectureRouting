@@ -106,8 +106,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             
             var rackForRouteItem = new RackForRouteItem { RouteName = groupRoutingElement.Key } ;
             
-            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, uiDocument.Document.ActiveView.Scale, rackClassification: "Limit Rack" ) ;
-            rackForRouteItem.RackIds.AddRange(verticalRacks.Select(x => x.Id));
+            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, uiDocument.Document.ActiveView.Scale, true, rackClassification: "Limit Rack" ) ;
+            rackForRouteItem.RackIds.AddRange( verticalRacks.Select( x => x.Id ) ) ;
             
             // executor for reroute after delete pull boxes
             var executor = CreateRoutingExecutor( uiDocument.Document ) ;

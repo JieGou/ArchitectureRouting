@@ -139,5 +139,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       var ceedCodeNumbers = ceedStorable.CategoriesWithoutCeedCode.Where( c => ! string.IsNullOrEmpty( c.ParentName ) && c.IsCeedCodeNumber && c.IsMainConstruction ).Select( c => c.Name ).Distinct().ToList() ;
       return ceedCodeNumbers.Contains( ceedCodeNumber ) ;
     }
+    
+    public static bool IsMainConstructionModelNumber( Document document, string modelNumber )
+    {
+      var ceedStorable = document.GetCeedStorable() ;
+      var ceedCodeNumber = ceedStorable.CeedModelData.Where( c => c.ModelNumber == modelNumber ).Select( c => c.CeedModelNumber ).SingleOrDefault() ;
+      return ceedCodeNumber is {} && IsMainConstructionCeedModelNumber( document, ceedCodeNumber ) ; 
+    }
   }
 }
