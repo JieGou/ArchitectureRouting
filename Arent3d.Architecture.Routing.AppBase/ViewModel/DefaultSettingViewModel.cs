@@ -7,7 +7,6 @@ using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -113,21 +112,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
 
     public ICommand LoadDefaultDbCommand => new RelayCommand( LoadDefaultDb ) ;
-    
+
     public ICommand LoadAllDbCommand => new RelayCommand( LoadAllDb ) ;
-    
+
     public ICommand LoadCeedCodeDataCommand => new RelayCommand( LoadCeedCodeData ) ;
 
     public ICommand LoadWiresAndCablesDataCommand => new RelayCommand( LoadWiresAndCablesData ) ;
 
     public ICommand LoadConduitsDataCommand => new RelayCommand( LoadConduitsData ) ;
-    
+
     public ICommand LoadHiroiSetMasterNormalDataCommand => new RelayCommand( LoadHiroiSetMasterNormalData ) ;
-    
+
     public ICommand LoadHiroiSetMasterEcoDataCommand => new RelayCommand( LoadHiroiSetMasterEcoData ) ;
-    
+
     public ICommand LoadHiroiSetCdMasterNormalDataCommand => new RelayCommand( LoadHiroiSetCdMasterNormalData ) ;
-    
+
     public ICommand LoadHiroiSetCdMasterEcoDataCommand => new RelayCommand( LoadHiroiSetCdMasterEcoData ) ;
 
     public ICommand LoadHiroiMasterDataCommand => new RelayCommand( LoadHiroiMasterData ) ;
@@ -165,52 +164,78 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _categoriesWithoutCeedCode = new List<CategoryModel>() ;
       GetCsvFiles( defaultSettingStorable ) ;
       InitOldValueFloor( defaultSettingStorable ) ;
-      
-      if ( ImportDwgMappingModels.Any() ) 
-      {
-        ImportDwgMappingModels[ 0 ].FloorHeightDisplay = "-" ;
-        ImportDwgMappingModels[ 0 ].IsEnabledFloorHeight = false ;
-      }
+
+      if ( ! ImportDwgMappingModels.Any() ) return ;
+
+      ImportDwgMappingModels.Last().FloorHeightDisplay = "-" ;
+      ImportDwgMappingModels.Last().IsEnabledFloorHeight = false ;
     }
 
     private void AddModelBelowCurrentSelectedRow( DataGrid dtGrid )
     {
-      int index = dtGrid.SelectedIndex ;
+      var index = dtGrid.SelectedIndex ;
       if ( ! ImportDwgMappingModels.Any() ) return ;
       if ( index < 0 ) return ;
       var importDwgMappingModelExist = ImportDwgMappingModels[ index ] ;
       var importDwgMappingModel = new ImportDwgMappingModel( string.Empty, string.Empty, importDwgMappingModelExist.FloorHeight, Scale ) ;
-      
-      _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay );
+
+      _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay ) ;
       ImportDwgMappingModels.Insert( index + 1, importDwgMappingModel ) ;
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels ) ;
     }
 
 
     private void MoveUp( DataGrid dtGrid )
     {
       var index = dtGrid.SelectedIndex ;
-      if ( index <= 1 ) return ;
-      
-      Swap( ImportDwgMappingModels, index, index - 1 ) ;
+      if ( index < 1 ) return ;
+
       var selectedIndex = index - 1 ;
-      
-      MoveFloorHeight( selectedIndex ) ; 
+
+      if ( ImportDwgMappingModels[ selectedIndex ].FloorHeight == ImportDwgMappingModels[ selectedIndex + 1 ].FloorHeight )
+        Swap( ImportDwgMappingModels, selectedIndex, selectedIndex + 1 ) ;
+      else {
+        var endIndex = selectedIndex + 1 ;
+        while ( selectedIndex > 0 && ImportDwgMappingModels[ selectedIndex ].FloorHeight == ImportDwgMappingModels[ selectedIndex - 1 ].FloorHeight ) {
+          selectedIndex-- ;
+        }
+
+        for ( var i = endIndex ; i > selectedIndex ; i-- ) {
+          Swap( ImportDwgMappingModels, i, i - 1 ) ;
+        }
+
+        MoveFloorHeight( selectedIndex, endIndex, false ) ;
+      }
+
       dtGrid.SelectedIndex = selectedIndex ;
     }
 
     private void MoveDown( DataGrid dtGrid )
     {
       var index = dtGrid.SelectedIndex ;
-      if ( index == ImportDwgMappingModels.Count() - 1 ||  index <= 0) return ;
-      
-      Swap( ImportDwgMappingModels, index, index + 1 ) ;
-      var selectedIndex =  index + 1 ;
-      
-      MoveFloorHeight( selectedIndex - 1) ;
+      if ( index == ImportDwgMappingModels.Count - 2 ) return ;
+
+      var selectedIndex = index + 1 ;
+
+      if ( ImportDwgMappingModels[ selectedIndex ].FloorHeight == ImportDwgMappingModels[ selectedIndex - 1 ].FloorHeight )
+        Swap( ImportDwgMappingModels, selectedIndex, selectedIndex - 1 ) ;
+      else {
+        var startIndex = selectedIndex - 1 ;
+        while ( selectedIndex < ImportDwgMappingModels.Count - 2 && ImportDwgMappingModels[ selectedIndex ].FloorHeight == ImportDwgMappingModels[ selectedIndex + 1 ].FloorHeight ) {
+          selectedIndex++ ;
+        }
+
+        for ( var i = startIndex ; i < selectedIndex ; i++ ) {
+          Swap( ImportDwgMappingModels, i, i + 1 ) ;
+        }
+
+        MoveFloorHeight( startIndex, selectedIndex, true ) ;
+      }
+
       dtGrid.SelectedIndex = selectedIndex ;
     }
-    
-    private void Swap( ObservableCollection<ImportDwgMappingModel> list, int indexA, int indexB )
+
+    private static void Swap( ObservableCollection<ImportDwgMappingModel> list, int indexA, int indexB )
     {
       ( list[ indexA ], list[ indexB ] ) = ( list[ indexB ], list[ indexA ] ) ;
     }
@@ -225,8 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void GetImportDwgMappingModelsAndFileItems( DefaultSettingStorable defaultSettingStorable )
     {
       foreach ( var item in defaultSettingStorable.ImportDwgMappingData ) {
-        var isDeleted = true ;
-        var importDwgMappingModel = new ImportDwgMappingModel( item, isDeleted ) ;
+        var importDwgMappingModel = new ImportDwgMappingModel( item, true ) ;
         _oldImportDwgMappingModels.Add( importDwgMappingModel ) ;
         ImportDwgMappingModels.Add( importDwgMappingModel ) ;
 
@@ -234,7 +258,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var fileItem = new FileComboboxItemType( item.FullFilePath ) ;
         _oldFileItems.Add( fileItem ) ;
         FileItems.Add( fileItem ) ;
-
       }
     }
 
@@ -253,25 +276,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public void DeleteImportDwgMappingItem( ImportDwgMappingModel selectedItem )
     {
-      DeleteFloorHeight( selectedItem );
+      DeleteFloorHeight( selectedItem ) ;
       ImportDwgMappingModels.Remove( selectedItem ) ;
-      if ( ImportDwgMappingModels.Any() ) 
-      {
-        ImportDwgMappingModels[ 0 ].FloorHeightDisplay = "-" ;
-        ImportDwgMappingModels[ 0 ].IsEnabledFloorHeight = false ;
+      if ( ImportDwgMappingModels.Any() ) {
+        ImportDwgMappingModels.Last().FloorHeightDisplay = "-" ;
+        ImportDwgMappingModels.Last().IsEnabledFloorHeight = false ;
       }
-     
-      var itemToRemove = _oldImportDwgMappingModels.SingleOrDefault(r => r.Id == selectedItem.Id);
-      if (itemToRemove != null)
-        _oldImportDwgMappingModels.Remove(itemToRemove);
-      if ( ! DeletedFloorName.Contains( selectedItem.FloorName ) ) {
-        DeletedFloorName.Add( selectedItem.FloorName ) ;
-      }
+
+      var itemToRemove = _oldImportDwgMappingModels.SingleOrDefault( r => r.Id == selectedItem.Id ) ;
+      if ( itemToRemove != null )
+        _oldImportDwgMappingModels.Remove( itemToRemove ) ;
+      if ( ! DeletedFloorName.Contains( selectedItem.FloorName ) ) DeletedFloorName.Add( selectedItem.FloorName ) ;
     }
 
     public void LoadDwgFile( ImportDwgMappingModel selectedItem )
     {
-      OpenFileDialog openFileDialog = new() { Filter = "DWG files (*.dwg )|*.dwg", Multiselect = false } ;
+      OpenFileDialog openFileDialog = new() { Filter = @"DWG files (*.dwg )|*.dwg", Multiselect = false } ;
       if ( openFileDialog.ShowDialog() != DialogResult.OK ) return ;
       var fileName = openFileDialog.FileName ;
       FileItems.Add( new FileComboboxItemType( fileName ) ) ;
@@ -279,43 +299,42 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( importDwgMappingModel == null ) return ;
       importDwgMappingModel.FullFilePath = fileName ;
       importDwgMappingModel.FileName = Path.GetFileName( fileName ) ;
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels ) ;
     }
 
     private void LoadDwgFiles()
     {
-      OpenFileDialog openFileDialog = new() { Filter = "DWG files (*.dwg )|*.dwg", Multiselect = true } ;
+      OpenFileDialog openFileDialog = new() { Filter = @"DWG files (*.dwg )|*.dwg", Multiselect = true } ;
       if ( openFileDialog.ShowDialog() != DialogResult.OK ) return ;
       ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( _oldImportDwgMappingModels ) ;
       FileItems = _oldFileItems ;
+      const string basementRegEx = @"B\d+階" ;
+      const string floorRegEx = @"\d+階" ;
+      const string rooftopRegEx = @"PH\d+階" ;
       foreach ( var fileName in openFileDialog.FileNames ) {
         FileItems.Add( new FileComboboxItemType( fileName ) ) ;
         ImportDwgMappingModel? importDwgMappingModel = null ;
-        if ( fileName.Contains( "B1" ) ) {
-          importDwgMappingModel = new ImportDwgMappingModel( fileName, $"B1F", 0, Scale ) ;
+
+        var floorName = Regex.Match( fileName, basementRegEx ).Value.Replace( "階", "" ) ;
+        if ( string.IsNullOrEmpty( floorName ) )
+          floorName = Regex.Match( fileName, rooftopRegEx ).Value.Replace( "階", "" ) ;
+        if ( string.IsNullOrEmpty( floorName ) )
+          floorName = Regex.Match( fileName, floorRegEx ).Value.Replace( "階", "" ) ;
+
+        if ( ! string.IsNullOrEmpty( floorName ) && int.TryParse( floorName.Replace( "B", "" ).Replace( "PH", "" ), out _ ) ) {
+          importDwgMappingModel = new ImportDwgMappingModel( fileName, $"{floorName}F", 0, 100 ) ;
           ImportDwgMappingModels.Add( importDwgMappingModel ) ;
         }
-        else if ( fileName.Contains( "PH1" ) ) {
-          importDwgMappingModel = new ImportDwgMappingModel( fileName, $"PH1F", 0, Scale ) ;
-          ImportDwgMappingModels.Add( importDwgMappingModel ) ;
-        }
-        else {
-          var floorNumber = Regex.Match( fileName, @"\d+階" ).Value.Replace( "階", "" ) ;
-          if ( int.TryParse( floorNumber, out _ ) ) {
-            importDwgMappingModel = new ImportDwgMappingModel( fileName, $"{floorNumber}F", 0, Scale ) ;
-            ImportDwgMappingModels.Add( importDwgMappingModel ) ;
-          }
-        }
-        
-        if( importDwgMappingModel != null ) _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay  );
+
+        if ( importDwgMappingModel != null ) _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay ) ;
       }
 
       ChangeNameIfDuplicate() ;
       UpdateDefaultFloorHeight() ;
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( CalculateFloorHeight(ImportDwgMappingModels) ) ;
-      if ( ImportDwgMappingModels.Any() ) 
-      {
-        ImportDwgMappingModels[ 0 ].FloorHeightDisplay = "-" ;
-        ImportDwgMappingModels[ 0 ].IsEnabledFloorHeight = false ;
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels ) ;
+      if ( ImportDwgMappingModels.Any() ) {
+        ImportDwgMappingModels.Last().FloorHeightDisplay = "-" ;
+        ImportDwgMappingModels.Last().IsEnabledFloorHeight = false ;
       }
     }
 
@@ -323,9 +342,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var nameFloors = ImportDwgMappingModels.Select( x => x.FloorName ).ToList() ;
       var newNameFloors = new List<string>() ;
-      for ( int i = 0 ; i < nameFloors.Count() ; i++ ) {
-        string name = nameFloors[ i ] ;
-        int count = 0 ;
+      for ( var i = 0 ; i < nameFloors.Count() ; i++ ) {
+        var name = nameFloors[ i ] ;
+        var count = 0 ;
         while ( newNameFloors.Contains( name ) ) {
           name = $"{nameFloors[ i ]}({++count})" ;
         }
@@ -333,47 +352,85 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         newNameFloors.Add( name ) ;
       }
 
-      for ( int i = 0 ; i < ImportDwgMappingModels.Count() ; i++ ) {
+      for ( var i = 0 ; i < ImportDwgMappingModels.Count() ; i++ ) {
         ImportDwgMappingModels[ i ].FloorName = newNameFloors[ i ] ;
       }
     }
 
     private void UpdateDefaultFloorHeight()
     {
-      const int floorHeightDistance = 3000 ;
-      Dictionary<string, double> defaultHeights = new()
-      {
-        { "B1F", 0 },
-        { "1F", 4200 },
-        { "2F", 9200 },
-        { "3F", 13900 },
-        { "4F", 18300 },
-        { "5F", 22700 },
-        { "6F", 27100 },
-        { "7F", 31500 },
-        { "8F", 35900 },
-        { "9F", 40300 },
-        { "10F", 44700 }
-      } ;
-      foreach ( var importDwgMappingModel in ImportDwgMappingModels ) {
-        if ( _oldImportDwgMappingModels.FirstOrDefault( x => x.Id == importDwgMappingModel.Id ) == null ) {
-          var (key, value) = defaultHeights.FirstOrDefault( x => importDwgMappingModel.FloorName.Contains( x.Key ) ) ;
-          if ( key != null ) {
-            importDwgMappingModel.FloorHeight = value ;
-          }
-          else {
-            if ( importDwgMappingModel.IsEnabled )
-              importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
-          }
+      const int defaultFloorHeightDistance = 4000 ;
+      const int defaultBasementHeightDistance = 1000 ;
+      const int defaultRooftopHeightDistance = 6500 ;
+      const string basementRegEx = @"B\d+" ;
+      const string floorRegEx = @"\d+" ;
+      const string rooftopRegEx = @"PH\d+" ;
+      var newImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
+
+      // Basement
+      var newBasementImportDwgMappingModels = ImportDwgMappingModels.Where( x => Regex.IsMatch( x.FloorName, basementRegEx ) ).OrderByDescending( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
+      for ( var i = 0 ; i < newBasementImportDwgMappingModels.Count ; i++ ) {
+        if ( ( newBasementImportDwgMappingModels[ i ].FloorHeight == 0 && newBasementImportDwgMappingModels[ i ].IsEnabled ) || ! double.TryParse( newBasementImportDwgMappingModels[ i ].FloorHeightDisplay, out _ ) )
+          newBasementImportDwgMappingModels[ i ].FloorHeightDisplay = defaultBasementHeightDistance.ToString() ;
+
+        if ( i == 0 ) {
+          newBasementImportDwgMappingModels[ i ].FloorHeight = 0 ;
+        }
+        else {
+          double.TryParse( newBasementImportDwgMappingModels[ i - 1 ].FloorHeightDisplay, out var floorHeightDisplay ) ;
+          if ( floorHeightDisplay == 0 ) floorHeightDisplay = defaultBasementHeightDistance ;
+
+          newBasementImportDwgMappingModels[ i ].FloorHeight = newBasementImportDwgMappingModels[ i - 1 ].FloorHeight + floorHeightDisplay ;
+        }
+
+        newImportDwgMappingModels.Add( newBasementImportDwgMappingModels[ i ] ) ;
+      }
+
+      // Floor
+      var newFloorImportDwgMappingModels = ImportDwgMappingModels.Where( x => ! Regex.IsMatch( x.FloorName, basementRegEx ) && ! Regex.IsMatch( x.FloorName, rooftopRegEx ) && Regex.IsMatch( x.FloorName, floorRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
+      foreach ( var newFloorImportDwgMappingModel in newFloorImportDwgMappingModels ) {
+        if ( ( newFloorImportDwgMappingModel.FloorHeight == 0 && newFloorImportDwgMappingModel.IsEnabled ) || ! double.TryParse( newFloorImportDwgMappingModel.FloorHeightDisplay, out _ ) )
+          newFloorImportDwgMappingModel.FloorHeightDisplay = defaultFloorHeightDistance.ToString() ;
+
+        var previousImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
+        if ( previousImportDwgMappingModel == null ) {
+          newFloorImportDwgMappingModel.FloorHeight = 0 ;
+        }
+        else {
+          double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var floorHeightDisplay ) ;
+          if ( floorHeightDisplay == 0 ) floorHeightDisplay = defaultFloorHeightDistance ;
+
+          newFloorImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + floorHeightDisplay ;
+          newImportDwgMappingModels.Add( newFloorImportDwgMappingModel ) ;
         }
       }
 
+      // Rooftop
+      var newRooftopImportDwgMappingModels = ImportDwgMappingModels.Where( x => Regex.IsMatch( x.FloorName, rooftopRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
+      foreach ( var newRooftopImportDwgMappingModel in newRooftopImportDwgMappingModels ) {
+        if ( ( newRooftopImportDwgMappingModel.FloorHeight == 0 && newRooftopImportDwgMappingModel.IsEnabled ) || ! double.TryParse( newRooftopImportDwgMappingModel.FloorHeightDisplay, out _ ) )
+          newRooftopImportDwgMappingModel.FloorHeightDisplay = defaultRooftopHeightDistance.ToString() ;
 
-      var maxFloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) ;
-      var pH1FFloor = ImportDwgMappingModels.FirstOrDefault( x => x.FloorName.Contains( "PH1F" ) ) ;
-      if ( pH1FFloor is { IsEnabled: true } ) pH1FFloor.FloorHeight = maxFloorHeight + 6500 ;
+        var previousImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
+        if ( previousImportDwgMappingModel == null ) {
+          newRooftopImportDwgMappingModel.FloorHeight = 0 ;
+        }
+        else {
+          double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var floorHeightDisplay ) ;
+          if ( floorHeightDisplay == 0 ) floorHeightDisplay = defaultRooftopHeightDistance ;
 
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ) ;
+          newRooftopImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + floorHeightDisplay ;
+          newImportDwgMappingModels.Add( newRooftopImportDwgMappingModel ) ;
+        }
+      }
+
+      var lastNewImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
+      if ( lastNewImportDwgMappingModel != null ) {
+        lastNewImportDwgMappingModel.FloorHeightDisplay = "-" ;
+        lastNewImportDwgMappingModel.IsEnabledFloorHeight = false ;
+      }
+
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( newImportDwgMappingModels ) ;
     }
 
     // Button load default db
@@ -411,7 +468,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             csvStorable.HiroiMasterModelData = _allHiroiMasterModels ;
 
           try {
-            using Transaction t = new Transaction( document, "Save data" ) ;
+            using var t = new Transaction( document, "Save data" ) ;
             t.Start() ;
             csvStorable.Save() ;
             t.Commit() ;
@@ -426,17 +483,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       using ( var progressData = progress.Reserve( 0.6 ) ) {
         var ceedStorable = document.GetCeedStorable() ;
-        var level = document.ActiveView?.GenLevel ?? new FilteredElementCollector(document).OfClass(typeof(Level)).OfType<Level>().OrderBy(x => x.Elevation).First();
+        var level = document.ActiveView?.GenLevel ?? new FilteredElementCollector( document ).OfClass( typeof( Level ) ).OfType<Level>().OrderBy( x => x.Elevation ).First() ;
         var storageService = new StorageService<Level, CeedUserModel>( level ) ;
         if ( _ceedModelData.Any() ) {
-          DrawCanvasManager.SetBase64FloorPlanImages ( document, _ceedModelData ) ;
+          DrawCanvasManager.SetBase64FloorPlanImages( document, _ceedModelData ) ;
           var previousCeedModels = ceedStorable.CeedModelData ;
           CeedViewModel.CheckChangeColor( _ceedModelData, previousCeedModels ) ;
           ceedStorable.CeedModelData = _ceedModelData ;
           ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
           ceedStorable.CategoriesWithCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithCeedCode ) ;
           ceedStorable.CategoriesWithoutCeedCode = CategoryModel.ConvertCategoryModel( _categoriesWithoutCeedCode ) ;
-          
+
           storageService.Data.IsShowOnlyUsingCode = false ;
           storageService.Data.IsDiff = true ;
           storageService.Data.IsExistUsingCode = false ;
@@ -449,7 +506,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         if ( _ceedModelData.Any() || _registrationOfBoardDataModelData.Any() ) {
           try {
-            using Transaction t = new Transaction( document, "Save Ceed and Board data" ) ;
+            using var t = new Transaction( document, "Save Ceed and Board data" ) ;
             t.Start() ;
             if ( _ceedModelData.Any() ) {
               ceedStorable.Save() ;
@@ -476,7 +533,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if ( _csvFileModels.Any() ) {
             defaultSettingStorable.CsvFileData = new List<CsvFileModel>( _csvFileModels ) ;
             try {
-              using Transaction t = new Transaction( document, "Save Csv File data" ) ;
+              using var t = new Transaction( document, "Save Csv File data" ) ;
               t.Start() ;
               defaultSettingStorable.Save() ;
               t.Commit() ;
@@ -489,11 +546,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private string? GetFolderCsvPath() => AssetManager.GetFolderCompressionFilePath( AssetManager.AssetPath, CompressionFileName ) ;
-    
-    private string OpenFileDialog()
+    private static string? GetFolderCsvPath() => AssetManager.GetFolderCompressionFilePath( AssetManager.AssetPath, CompressionFileName ) ;
+
+    private static string OpenFileDialog()
     {
-      var openFileDialog = new OpenFileDialog { Filter = "Csv files (*.csv)|*.csv", Multiselect = false } ;
+      var openFileDialog = new OpenFileDialog { Filter = @"Csv files (*.csv)|*.csv", Multiselect = false } ;
       var filePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
@@ -505,24 +562,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void LoadCeedCodeData()
     {
       MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
-      OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
-      string filePath = string.Empty ;
-      string fileEquipmentSymbolsPath = string.Empty ;
+      OpenFileDialog openFileDialog = new() { Filter = @"Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+      var filePath = string.Empty ;
+      var fileEquipmentSymbolsPath = string.Empty ;
       if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
         MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
-        OpenFileDialog openFileEquipmentSymbolsDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+        OpenFileDialog openFileEquipmentSymbolsDialog = new() { Filter = @"Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
         if ( openFileEquipmentSymbolsDialog.ShowDialog() == DialogResult.OK ) {
           fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
         }
       }
 
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
-      var ( ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode) = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
+      var (ceedModelData, categoriesWithCeedCode, categoriesWithoutCeedCode) = ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
       if ( ! ceedModelData.Any() ) {
         MessageBox.Show( "Load file failed.", "Error Message" ) ;
         return ;
       }
+
       _ceedModelData = ceedModelData ;
       _categoriesWithCeedCode = categoriesWithCeedCode ;
       _categoriesWithoutCeedCode = categoriesWithoutCeedCode ;
@@ -530,16 +588,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       const string ceedCodeFileName = " 【CeeD】セットコード一覧表" ;
       const string equipmentSymbolsFileName = " 機器記号一覧表" ;
-      switch ( CsvFileModels.FirstOrDefault( c => c.CsvName == ceedCodeFileName ) ) {
-        case { } ceedCodeFileModel :
-          ceedCodeFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
-          CsvFileModels = new ObservableCollection<CsvFileModel>( CsvFileModels ) ;
-          break ;
-        default :
-          CsvFileModels.Add( new CsvFileModel( ceedCodeFileName, RenamePathToRelative( filePath ), Path.GetFileName( filePath ) ) ) ;
-          break ;
+      if ( CsvFileModels.FirstOrDefault( c => c.CsvName == ceedCodeFileName ) is { } ceedCodeFileModel ) {
+        ceedCodeFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
+        CsvFileModels = new ObservableCollection<CsvFileModel>( CsvFileModels ) ;
       }
-      
+      else {
+        CsvFileModels.Add( new CsvFileModel( ceedCodeFileName, RenamePathToRelative( filePath ), Path.GetFileName( filePath ) ) ) ;
+      }
+
       if ( CsvFileModels.FirstOrDefault( c => c.CsvName == equipmentSymbolsFileName ) is { } equipmentSymbolsFileNameModel ) {
         equipmentSymbolsFileNameModel.CsvFilePath = RenamePathToRelative( fileEquipmentSymbolsPath ) ;
         CsvFileModels = new ObservableCollection<CsvFileModel>( CsvFileModels ) ;
@@ -548,7 +604,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CsvFileModels.Add( new CsvFileModel( equipmentSymbolsFileName, RenamePathToRelative( fileEquipmentSymbolsPath ), Path.GetFileName( fileEquipmentSymbolsPath ) ) ) ;
       }
     }
-    
+
     private void LoadWiresAndCablesData()
     {
       _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
@@ -556,7 +612,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var isGetDataWithoutError = GetData( filePath, 2, ModelName.WiresAndCables, true ) ;
       if ( ! isGetDataWithoutError ) return ;
-      
+
       const string csvName = " 電線・ケーブル一覧" ;
       if ( CsvFileModels.FirstOrDefault( c => c.CsvName == csvName ) is { } csvFileModel ) {
         csvFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
@@ -566,7 +622,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CsvFileModels.Add( new CsvFileModel( csvName, RenamePathToRelative( filePath ), "電線・ケーブル一覧.csv" ) ) ;
       }
     }
-    
+
     private void LoadConduitsData()
     {
       _allConduitModels = new List<ConduitsModel>() ;
@@ -574,7 +630,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var isGetDataWithoutError = GetData( filePath, 2, ModelName.Conduits, true ) ;
       if ( ! isGetDataWithoutError ) return ;
-      
+
       const string csvName = " 電線管一覧" ;
       if ( CsvFileModels.FirstOrDefault( c => c.CsvName == csvName ) is { } csvFileModel ) {
         csvFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
@@ -584,7 +640,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CsvFileModels.Add( new CsvFileModel( csvName, RenamePathToRelative( filePath ), "電線管一覧.csv" ) ) ;
       }
     }
-    
+
     private void LoadHiroiSetMasterNormalData()
     {
       _allHiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
@@ -592,7 +648,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var isGetDataWithoutError = GetData( filePath, 0, ModelName.HiroiSetMasterNormal, true ) ;
       if ( ! isGetDataWithoutError ) return ;
-      
+
       const string csvName = " Hiroi Set Master Normal" ;
       if ( CsvFileModels.FirstOrDefault( c => c.CsvName == csvName ) is { } csvFileModel ) {
         csvFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
@@ -610,7 +666,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var isGetDataWithoutError = GetData( filePath, 0, ModelName.HiroiSetMasterEco, true ) ;
       if ( ! isGetDataWithoutError ) return ;
-      
+
       const string csvName = " Hiroi Set Master ECO" ;
       if ( CsvFileModels.FirstOrDefault( c => c.CsvName == csvName ) is { } csvFileModel ) {
         csvFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
@@ -628,7 +684,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var isGetDataWithoutError = GetData( filePath, 0, ModelName.HiroiSetCdMasterNormal, true ) ;
       if ( ! isGetDataWithoutError ) return ;
-      
+
       const string csvName = " Hiroi Set CD Master Normal" ;
       if ( CsvFileModels.FirstOrDefault( c => c.CsvName == csvName ) is { } csvFileModel ) {
         csvFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
@@ -646,7 +702,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var isGetDataWithoutError = GetData( filePath, 0, ModelName.HiroiSetCdMasterEco, true ) ;
       if ( ! isGetDataWithoutError ) return ;
-      
+
       const string csvName = " Hiroi Set CD Master ECO" ;
       if ( CsvFileModels.FirstOrDefault( c => c.CsvName == csvName ) is { } csvFileModel ) {
         csvFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
@@ -664,7 +720,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var isGetDataWithoutError = GetData( filePath, 0, ModelName.HiroiMaster, true ) ;
       if ( ! isGetDataWithoutError ) return ;
-      
+
       const string csvName = " Hiroi Master" ;
       if ( CsvFileModels.FirstOrDefault( c => c.CsvName == csvName ) is { } csvFileModel ) {
         csvFileModel.CsvFilePath = RenamePathToRelative( filePath ) ;
@@ -674,25 +730,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CsvFileModels.Add( new CsvFileModel( csvName, RenamePathToRelative( filePath ), "hiroimaster.csv" ) ) ;
       }
     }
-    
+
     private void LoadAllDb()
     {
       var dialog = new FolderBrowserDialog() ;
       dialog.ShowNewFolderButton = false ;
       dialog.ShowDialog() ;
-      if ( string.IsNullOrEmpty( dialog.SelectedPath ) ) 
-        return;
+      if ( string.IsNullOrEmpty( dialog.SelectedPath ) )
+        return ;
       LoadData( dialog.SelectedPath ) ;
     }
-    
+
     private void LoadData( string folderPath )
     {
       var listCsvFileModel = new ObservableCollection<CsvFileModel>() ;
-      string[] fileNames = new[] { "hiroimaster.csv", "hiroisetcdmaster_normal.csv", "hiroisetcdmaster_eco.csv", "hiroisetmaster_eco.csv", "hiroisetmaster_normal.csv", "電線管一覧.csv", "電線・ケーブル一覧.csv" } ;
-      bool isLoadedCeedFile = false ;
+      var fileNames = new[] { "hiroimaster.csv", "hiroisetcdmaster_normal.csv", "hiroisetcdmaster_eco.csv", "hiroisetmaster_eco.csv", "hiroisetmaster_normal.csv", "電線管一覧.csv", "電線・ケーブル一覧.csv" } ;
+      var isLoadedCeedFile = false ;
       var ceedCodeFile = "【CeeD】セットコード一覧表" ;
-      string equipmentSymbolsFile = "機器記号一覧表" ;
-      var boardFile = "盤間配線確認表" ;
+      const string equipmentSymbolsFile = "機器記号一覧表" ;
+      const string boardFile = "盤間配線確認表" ;
       foreach ( var fileName in fileNames ) {
         var path = Path.Combine( folderPath, fileName ) ;
         if ( File.Exists( path ) ) {
@@ -776,7 +832,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       if ( File.Exists( ceedCodeXlsFilePath ) && ! isLoadedCeedFile ) {
-        isLoadedCeedFile = LoadCeedCodeFile( equipmentSymbolsFile, ceedCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel ) ;
+        LoadCeedCodeFile( equipmentSymbolsFile, ceedCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel ) ;
         listCsvFileModel.Add( new CsvFileModel( ceedCodeFile, RenamePathToRelative( ceedCodeXlsFilePath ), ceedCodeFile + ".xls" ) ) ;
       }
 
@@ -825,7 +881,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       const int hsCdmColCount = 4 ;
       const int hmColCount = 12 ;
       try {
-        using StreamReader reader = new StreamReader( path, Encoding.GetEncoding( "shift-jis" ), true ) ;
+        using var reader = new StreamReader( path, Encoding.GetEncoding( "shift-jis" ), true ) ;
         var startRow = 0 ;
         while ( ! reader.EndOfStream ) {
           var line = reader.ReadLine() ;
@@ -1053,115 +1109,125 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       stringPath.Append( filePath[ length - 1 ] ) ;
       return stringPath.ToString() ;
     }
-    
-    private void InitOldValueFloor(DefaultSettingStorable defaultSettingStorable)
+
+    private void InitOldValueFloor( DefaultSettingStorable defaultSettingStorable )
     {
       var importDwgMappingModels = defaultSettingStorable.ImportDwgMappingData ;
       foreach ( var importDwgMappingModel in importDwgMappingModels ) {
-        _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay.ToString( CultureInfo.InvariantCulture ) );
+        _oldValueFloor.Add( importDwgMappingModel.Id, importDwgMappingModel.FloorHeightDisplay.ToString( CultureInfo.InvariantCulture ) ) ;
       }
     }
-    
-    private List<ImportDwgMappingModel> CalculateFloorHeight(IEnumerable<ImportDwgMappingModel> importDwgMappingModels)
+
+    private List<ImportDwgMappingModel> CalculateFloorHeight( IEnumerable<ImportDwgMappingModel> importDwgMappingModels )
     {
-      var importDwgMappingModelsGroups = importDwgMappingModels
-        .OrderBy( x => x.FloorHeight )
-        .GroupBy( x => x.FloorHeight )
-        .Select( x=>x.ToList() )
-        .ToList() ;
+      var importDwgMappingModelsGroups = importDwgMappingModels.OrderBy( x => x.FloorHeight ).GroupBy( x => x.FloorHeight ).Select( x => x.ToList() ).ToList() ;
       var result = new List<ImportDwgMappingModel>() ;
 
-      // Add first item
-      foreach ( var importDwgMappingModelGroup in importDwgMappingModelsGroups[0] ) {
-        result.Add( importDwgMappingModelGroup );
-      }
-
-      for ( int i = 1 ; i < importDwgMappingModelsGroups.Count ; i++ ) {
+      for ( var i = 0 ; i < importDwgMappingModelsGroups.Count - 1 ; i++ ) {
         var heightCurrentLevel = importDwgMappingModelsGroups[ i ].First().FloorHeight ;
-        var heightPreviousLevel = importDwgMappingModelsGroups[ i - 1 ].First().FloorHeight ;
-        var height = heightCurrentLevel - heightPreviousLevel ;
-        
-        foreach ( var importDwgMappingModelGroup in importDwgMappingModelsGroups[i] ) {
-          var importDwgModel = new ImportDwgMappingModel(
-            importDwgMappingModelGroup.Id ,
-            importDwgMappingModelGroup.FullFilePath, 
-            importDwgMappingModelGroup.FloorName, 
-            importDwgMappingModelGroup.FloorHeight,
-            importDwgMappingModelGroup.Scale, 
-            height ) 
-            { IsEnabled = importDwgMappingModelGroup.IsEnabled } ;
-          result.Add( importDwgModel );
+        var heightNextLevel = importDwgMappingModelsGroups[ i + 1 ].First().FloorHeight ;
+        var height = heightNextLevel - heightCurrentLevel ;
+
+        foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[ i ] ) {
+          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.Id, importDwgMappingModelsGroup.FullFilePath, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, height ) ;
+          result.Add( importDwgModel ) ;
         }
       }
-      
+
+      // Add last item
+      foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups.Last() ) {
+        var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.Id, importDwgMappingModelsGroup.FullFilePath, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, null ) ;
+        result.Add( importDwgModel ) ;
+      }
+
       foreach ( var importDwgMappingModel in result ) {
         _oldValueFloor[ importDwgMappingModel.Id ] = importDwgMappingModel.FloorHeightDisplay ;
       }
 
       return result ;
     }
-    
+
     public void UpdateFloorHeight( ImportDwgMappingModel selectedItem )
     {
-      if ( ! _oldValueFloor.ContainsKey(selectedItem.Id )) return ;
+      if ( ! _oldValueFloor.ContainsKey( selectedItem.Id ) ) return ;
       var importDwgMappingModelFloorHeightDisplay = _oldValueFloor[ selectedItem.Id ] ;
-      
-      var deviant  = double.Parse( selectedItem.FloorHeightDisplay )  - double.Parse(importDwgMappingModelFloorHeightDisplay)  ;
+
+      var deviant = double.Parse( selectedItem.FloorHeightDisplay ) - double.Parse( importDwgMappingModelFloorHeightDisplay ) ;
       if ( Math.Abs( deviant ) == 0 ) return ;
 
       var importDwgMappingModel = ImportDwgMappingModels.SingleOrDefault( x => x.Id == selectedItem.Id ) ;
-      if(importDwgMappingModel == null) return ;
+      if ( importDwgMappingModel == null ) return ;
       var lastId = importDwgMappingModel.Id ;
-      var newImportDwgMappingModels = ImportDwgMappingModels.Select( x=>x.Copy() ).ToList() ;
-      var currentIndex = ImportDwgMappingModels.FindIndex( x => x.Id == lastId) ;
+      var newImportDwgMappingModels = ImportDwgMappingModels.Select( x => x.Copy() ).ToList() ;
+      var currentIndex = ImportDwgMappingModels.FindIndex( x => x.Id == lastId ) ;
 
-      for ( int i = currentIndex ; i < ImportDwgMappingModels.Count  ; i++ ) {
-        newImportDwgMappingModels[ i ].FloorHeight += deviant  ;
+      for ( var i = currentIndex + 1 ; i < ImportDwgMappingModels.Count ; i++ ) {
+        newImportDwgMappingModels[ i ].FloorHeight += deviant ;
       }
-      
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( CalculateFloorHeight(newImportDwgMappingModels) ) ;
+
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( newImportDwgMappingModels ) ;
     }
-    
-    private void DeleteFloorHeight(ImportDwgMappingModel selectedItem)
+
+    private void DeleteFloorHeight( ImportDwgMappingModel selectedItem )
     {
       var newImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
-      var selectedIndex = ImportDwgMappingModels.FindIndex( x => x.Id == selectedItem.Id) ;
-      if( selectedIndex == 0 ) return ;
-      
+      var selectedIndex = ImportDwgMappingModels.FindIndex( x => x.Id == selectedItem.Id ) ;
+      if ( selectedIndex == ImportDwgMappingModels.Count - 1 ) return ;
+
       for ( var i = 0 ; i < ImportDwgMappingModels.Count ; i++ ) {
-        if ( i < selectedIndex ) 
-        {
+        if ( i < selectedIndex ) {
           newImportDwgMappingModels.Add( ImportDwgMappingModels[ i ] ) ;
           continue ;
         }
+
         if ( i == selectedIndex ) continue ;
         var newImportDwgMappingModel = ImportDwgMappingModels[ i ] ;
-        newImportDwgMappingModel.FloorHeight = double.Parse( newImportDwgMappingModel.FloorHeightDisplay ) + newImportDwgMappingModels.Last().FloorHeight ;
-        newImportDwgMappingModels.Add( newImportDwgMappingModel );
 
+        if ( newImportDwgMappingModel.FloorHeight != ImportDwgMappingModels[ selectedIndex ].FloorHeight )
+          newImportDwgMappingModel.FloorHeight -= double.Parse( ImportDwgMappingModels[ selectedIndex ].FloorHeightDisplay ) ;
+        newImportDwgMappingModels.Add( newImportDwgMappingModel ) ;
       }
-      
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( CalculateFloorHeight(newImportDwgMappingModels) ) ;
+
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( CalculateFloorHeight( newImportDwgMappingModels ) ) ;
     }
 
-    private void MoveFloorHeight( int selectedIndex )
+    private void MoveFloorHeight( int startIndex, int endIndex, bool isMovingDown )
     {
       var newImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
       for ( var i = 0 ; i < ImportDwgMappingModels.Count ; i++ ) {
-        if ( i < selectedIndex ) 
-        {
-          newImportDwgMappingModels.Add( ImportDwgMappingModels[ i ] ) ;
+        var newImportDwgMappingModel = ImportDwgMappingModels[ i ] ;
+        if ( i < startIndex || i > endIndex ) {
+          newImportDwgMappingModels.Add( newImportDwgMappingModel ) ;
           continue ;
         }
-        var newImportDwgMappingModel = ImportDwgMappingModels[ i ] ;
-        var lastNewImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
-        if ( ! double.TryParse( newImportDwgMappingModel.FloorHeightDisplay, out var value ) ) return ;
-        newImportDwgMappingModel.FloorHeight = value + (lastNewImportDwgMappingModel?.FloorHeight ?? 0);
-        newImportDwgMappingModels.Add( newImportDwgMappingModel );
 
+        if ( ! isMovingDown ) {
+          if ( i == startIndex ) {
+            newImportDwgMappingModel.FloorHeight = ImportDwgMappingModels[ endIndex ].FloorHeight ;
+            newImportDwgMappingModels.Add( newImportDwgMappingModel ) ;
+            continue ;
+          }
+
+          if ( startIndex >= i || endIndex < i ) continue ;
+
+          newImportDwgMappingModel.FloorHeight = double.Parse( ImportDwgMappingModels[ startIndex ].FloorHeightDisplay ) + ImportDwgMappingModels[ startIndex ].FloorHeight ;
+          newImportDwgMappingModels.Add( newImportDwgMappingModel ) ;
+        }
+        else {
+          if ( i >= startIndex && i < endIndex ) {
+            newImportDwgMappingModel.FloorHeight = ImportDwgMappingModels[ endIndex ].FloorHeight ;
+            newImportDwgMappingModels.Add( newImportDwgMappingModel ) ;
+            continue ;
+          }
+
+          if ( i != endIndex ) continue ;
+
+          newImportDwgMappingModel.FloorHeight = double.Parse( ImportDwgMappingModels[ startIndex ].FloorHeightDisplay ) + ImportDwgMappingModels[ startIndex ].FloorHeight ;
+          newImportDwgMappingModels.Add( newImportDwgMappingModel ) ;
+        }
       }
-      
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( CalculateFloorHeight(newImportDwgMappingModels) ) ;
+
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( newImportDwgMappingModels ) ;
     }
 
     private enum NewConstructionClassificationType

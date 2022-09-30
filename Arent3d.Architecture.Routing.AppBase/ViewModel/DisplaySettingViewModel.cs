@@ -139,18 +139,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       progress.Finish() ;
     }
 
-    private static void UpdateSetCodeFollowGrade(Document document, DisplaySettingModel displaySettingModel)
+    private static void UpdateSetCodeFollowGrade( Document document, DisplaySettingModel displaySettingModel )
     {
       var setCodes = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).OfNotElementType() ;
-      if(!setCodes.Any())
-        return;
-      
+      if ( ! setCodes.Any() )
+        return ;
+
       foreach ( var setCode in setCodes ) {
-        
-        if ( ! setCode.HasParameter( DefaultSettingCommandBase.Grade3FieldName ) ) 
+        if ( ! setCode.HasParameter( DefaultSettingCommandBase.Grade3FieldName ) )
           continue ;
-        
-        setCode.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingModel.GradeOption == displaySettingModel.GradeOptions[0] ) ;
+
+        setCode.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingModel.GradeOption == displaySettingModel.GradeOptions[ 0 ] ) ;
       }
     }
     

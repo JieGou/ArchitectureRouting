@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
+using System.IO ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
@@ -122,8 +123,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       foreach ( var view in views ) {
         var fileName = string.Empty ;
         var floorName = view.Name ;
-        HeightSettingStorable settingStorables = doc.GetHeightSettingStorable() ;
-        var height = settingStorables.HeightSettingsData.Values.FirstOrDefault( x => x.LevelId.ToString() == view.GenLevel.Id.ToString() )?.Elevation ?? 0 ;
+        var heightSettingStorable = doc.GetHeightSettingStorable() ;
+        var height = heightSettingStorable.HeightSettingsData.Values.FirstOrDefault( x => x.LevelId.ToString() == view.GenLevel.Id.ToString() )?.Elevation ?? 0 ;
 
         var scale = view.Scale ;
 
@@ -133,20 +134,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var importDwgMappingModelsGroups = importDwgMappingModels.OrderBy( x => x.FloorHeight ).GroupBy( x => x.FloorHeight ).Select( x => x.ToList() ).ToList() ;
       var result = new List<ImportDwgMappingModel>() ;
 
-      // Add first item
-      foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[ 0 ] ) {
-        result.Add( importDwgMappingModelsGroup ) ;
-      }
-
-      for ( int i = 1 ; i < importDwgMappingModelsGroups.Count ; i++ ) {
+      for ( var i = 0 ; i < importDwgMappingModelsGroups.Count - 1 ; i++ ) {
         var heightCurrentLevel = importDwgMappingModelsGroups[ i ].First().FloorHeight ;
-        var heightPreviousLevel = importDwgMappingModelsGroups[ i - 1 ].First().FloorHeight ;
-        var height = heightCurrentLevel - heightPreviousLevel ;
+        var heightNextLevel = importDwgMappingModelsGroups[ i + 1 ].First().FloorHeight ;
+        var height = heightNextLevel - heightCurrentLevel ;
 
         foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[ i ] ) {
           var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, height ) ;
           result.Add( importDwgModel ) ;
         }
+      }
+
+      // Add last item
+      foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups.Last() ) {
+        var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, null ) ;
+        result.Add( importDwgModel ) ;
       }
 
       return result ;
@@ -189,12 +191,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       foreach ( var item in importDwgMappingModels ) {
         var oldImportDwgMappingModel = defaultSettingStorable.ImportDwgMappingData.SingleOrDefault( i => i.FloorName == item.FloorName ) ;
-        double.TryParse( item.FloorHeightDisplay, out var value ) ;
+        double.TryParse( item.FloorHeightDisplay, out var floorHeightDisplay ) ;
         if ( oldImportDwgMappingModel == null ) {
-          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, value ) ) ;
+          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, floorHeightDisplay ) ) ;
         }
         else {
-          oldImportDwgMappingModel.FloorHeightDisplay = value ;
+          oldImportDwgMappingModel.FloorHeightDisplay = floorHeightDisplay ;
           oldImportDwgMappingModel.FloorHeight = item.FloorHeight ;
           oldImportDwgMappingModel.Scale = item.Scale ;
         }
@@ -415,7 +417,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           if ( ! deletedViewIds.Any() ) return ;
           if ( viewsTemp.Any() ) {
-            var activeView = document.GetAllInstances<View>( x => x.Name == _activeViewName ).SingleOrDefault() ;
+            var activeView = document.GetAllInstances<View>( x => x.Name == _activeViewName && viewsTemp.Any( v => v.Id == x.Id ) ).SingleOrDefault() ;
             uiDocument.ActiveView = activeView ?? viewsTemp[ 0 ] ;
           }
         }
@@ -665,5 +667,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     }
     
     protected virtual void UpdateCeedDockPaneDataContext( UIDocument uiDocument ) {}
+  }
+}
+
+public class FileComboboxItemType
+{
+  public string FullFilePath { get ; }
+  public string FileName { get ; }
+
+  public FileComboboxItemType( string fullFilePath )
+  {
+    FullFilePath = fullFilePath ;
+    FileName = Path.GetFileName( fullFilePath ) ;
   }
 }

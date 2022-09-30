@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -32,6 +33,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+
+      if ( ElectricalRoutingFamilyType == ElectricalRoutingFamilyType.PullBox && ! PullBoxRouteManager.IsPullBoxDisPlaySettingEnabled( document ) ) {
+        MessageBox.Show( @"Please set pull box visible in Display Setting to execute." ) ;
+        return OperationResult<PickState>.Cancelled ;
+      }
+      
       PointOnRoutePicker.PickInfo? pickInfo ;
 
       try {

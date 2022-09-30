@@ -533,6 +533,9 @@
 
         <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalFixtureTags</key>
         <string>電気器具タグ</string>
+
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.CableTrayFittingTags</key>
+        <string>ケーブル ラック継手タグ</string>
         
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>

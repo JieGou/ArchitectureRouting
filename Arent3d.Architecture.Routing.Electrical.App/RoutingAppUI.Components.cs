@@ -94,11 +94,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           {
           }
 
-          [Button( typeof( LoadDrawingCommand ), OnlyInitialized = true )]
-          private static class LoadDrawingCommandButton
-          {
-          }
-
           [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
           private static class ShowHeightSettingCommandButton
           {

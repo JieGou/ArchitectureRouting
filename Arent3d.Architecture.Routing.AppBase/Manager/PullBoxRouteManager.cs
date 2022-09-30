@@ -1921,6 +1921,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         return locationPoint != null && locationPoint.DistanceTo( new XYZ( originX, originY, originZ ) ) < minDistance ;
       } ) ;
     }
+
+    public static bool IsPullBoxDisPlaySettingEnabled( Document document )
+    {
+      var dataStorage = document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+      var displaySettingByGradeStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+      return displaySettingByGradeStorageService.Data.IsPullBoxVisible ;
+    }
     
     private class ConduitInfo
     {

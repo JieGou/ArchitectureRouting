@@ -537,6 +537,9 @@
         <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalFixtureTags</key>
         <string>Electrical Fixture Tags</string>
 
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.CableTrayFittingTags</key>
+        <string>Cable Tray Fittings Tags</string>
+
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>Grade </string>

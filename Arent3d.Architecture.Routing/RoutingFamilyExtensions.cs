@@ -125,6 +125,9 @@ namespace Arent3d.Architecture.Routing
 
     [Family( "Electrical Fixture Content Tag", BuiltInCategory.OST_ElectricalFixtureTags )]
     ElectricalFixtureContentTag,
+    
+    [Family( "Rack Fitting Content Tag", BuiltInCategory.OST_CableTrayFittingTags )]
+    RackFittingContentTag,
 
     [Family( "Electrical Equipment Content Tag", BuiltInCategory.OST_ElectricalEquipmentTags )]
     ElectricalEquipmentContentTag,

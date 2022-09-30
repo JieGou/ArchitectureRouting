@@ -28,6 +28,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const string Notation = "CR (W:{0})" ;
     private const char XChar = 'x' ;
     public const string NotationSelectionName = "ARENT_RACK_NOTATION" ;
+    private const string TagTypeLeft = "Left" ;
+    private const string TagTypeRight = "Right" ;
 
     public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string> { { 0, "Normal Rack" }, { 1, "Limit Rack" } } ;
 
@@ -462,21 +464,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             if ( longestRack.TryGetProperty( ElectricalRoutingElementParameter.Cover, out string? text ) && text is not null && ! text.Equals( "無し" ) )
               notation += " カバー付" ;
 
-            // create text note
+            // Apply notation value to cableTray parameter
+            foreach ( var rack in racks )
+              rack.SetProperty( ElectricalRoutingElementParameter.SymbolContent, notation ) ;
+
+            // create text note and tag
             var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;
             if ( null == textNoteType ) return ;
             TextNote textNote ;
+            IndependentTag tag ;
 
             const double multiple = 3 ;
             var heightText = TextNoteHelper.TotalHeight.MillimetersToRevitUnits() ;
             if ( isDirectionX ) {
               var vector = ( XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * magnification ;
               textNote = TextNote.Create( doc, view.Id, point + vector, notation, textNoteType.Id ) ;
+              var tagTypeId = GetTagTypeId( doc, TagTypeRight ) ;
+              tag = IndependentTag.Create( doc, tagTypeId, view.Id, new Reference( longestRack ), false, TagOrientation.Horizontal, point + vector ) ;
             }
             else {
               var vector = ( XYZ.BasisX.Negate() * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * magnification ;
               textNote = TextNote.Create( doc, view.Id, point + vector, notation, textNoteType.Id ) ;
               ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
+              var tagTypeId = GetTagTypeId( doc, TagTypeLeft ) ;
+              tag = IndependentTag.Create( doc, tagTypeId, view.Id, new Reference( longestRack ), false, TagOrientation.Horizontal, point + vector ) ;
             }
 
             doc.Regenerate() ;
@@ -494,13 +505,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             (string? endLineUniqueId, int? endPoint) endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;
             var otherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
             
-            FilterUtil.AddElementToSelectionFilter(NotationSelectionName, textNote);
+            FilterUtil.AddElementToSelectionFilter(NotationSelectionName, tag);
             FilterUtil.AddElementsToSelectionFilter(doc, NotationSelectionName, detailCurves);
 
             foreach ( var item in racks ) {
-              var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, longestRack.UniqueId, fromConnectorId, isDirectionX, Math.Round( widthCableTray, 4 ), endLineLeader.endLineUniqueId, endLineLeader.endPoint, otherLineId ) ;
+              var rackNotationModel = new RackNotationModel( item.UniqueId, tag.UniqueId, longestRack.UniqueId, fromConnectorId, isDirectionX, Math.Round( widthCableTray, 4 ), endLineLeader.endLineUniqueId, endLineLeader.endPoint, otherLineId ) ;
               rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
             }
+
+            doc.Delete( textNote.Id ) ;
           }
         }
         else {
@@ -510,6 +523,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
       }
+    }
+
+    public static TextNote? CreateTagTextNote( IndependentTag tag )
+    {
+      var doc = tag.Document ;
+      var view = doc.GetElement( tag.OwnerViewId ) as View ;
+      if ( view == null ) return null ;
+      var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;
+      if ( null == textNoteType ) return null ;
+      TextNote textNote = TextNote.Create( doc, view.Id, tag.TagHeadPosition, tag.TagText, textNoteType.Id ) ;
+      if ( tag.Name == TagTypeLeft ) ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
+      return textNote ;
+    }
+
+    private static ElementId GetTagTypeId( Document document, string typeName )
+    {
+      var typeSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.RackFittingContentTag ).Where( t => t.Name == typeName ).EnumerateAll() ;
+      return typeSymbols.Count == 1 ? typeSymbols.Single().Id : ElementId.InvalidElementId ;
     }
 
     public static Line CreateUnderLineText( TextNote textNote, double elevation )
