@@ -302,7 +302,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       foreach ( var element in elements ) {
         if ( element is FamilyInstance familyInstance ) {
-          var options = new Options { DetailLevel = ViewDetailLevel.Coarse } ;
+          var options = new Options { DetailLevel = ViewDetailLevel.Coarse, IncludeNonVisibleObjects = true } ;
           if ( familyInstance.get_Geometry( options ) is { } geometryElement )
             RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
         }

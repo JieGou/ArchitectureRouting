@@ -32,7 +32,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       using var transactionGroup = new TransactionGroup( document ) ;
       transactionGroup.Start( "Change Type" ) ;
 
+      using var ts = new Transaction( document ) ;
+      ts.Start( "Get Location" ) ;
+      
+      var conduitCategoryId = new ElementId( BuiltInCategory.OST_Conduit ) ;
+      var isConduitHidden = view.GetCategoryHidden( conduitCategoryId ) ;
+      if(view.CanCategoryBeHidden(conduitCategoryId) && isConduitHidden)
+        view.SetCategoryHidden(conduitCategoryId, false);
+        
+      var conduitFittingCategoryId = new ElementId( BuiltInCategory.OST_ConduitFitting ) ;
+      var isConduitFittingHidden = view.GetCategoryHidden( conduitFittingCategoryId ) ;
+      if(view.CanCategoryBeHidden(conduitFittingCategoryId) && isConduitFittingHidden)
+        view.SetCategoryHidden(conduitFittingCategoryId, false);
+      
+      document.Regenerate();
+      
       var (lines, curves) = GetLocationConduits( document, view, elements ) ;
+      
+      if(view.CanCategoryBeHidden(conduitCategoryId))
+        view.SetCategoryHidden(conduitCategoryId, isConduitHidden);
+      
+      if(view.CanCategoryBeHidden(conduitFittingCategoryId))
+        view.SetCategoryHidden(conduitFittingCategoryId, isConduitFittingHidden);
+
+      ts.Commit() ;
 
       var familySymbol = document.GetAllTypes<FamilySymbol>( x => x.Name == wireType ).FirstOrDefault() ;
       if ( null == familySymbol )
