@@ -535,9 +535,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static ElementId GetTagTypeId( Document document, string typeName )
     {
-      var typeSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.RackFittingContentTag ).Where( t => t.Name == typeName ) ;
-      if ( typeSymbols.Any() ) return typeSymbols.First().Id ;
-      return ElementId.InvalidElementId ;
+      var typeSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.RackFittingContentTag ).Where( t => t.Name == typeName ).EnumerateAll() ;
+      return typeSymbols.Count == 1 ? typeSymbols.Single().Id : ElementId.InvalidElementId ;
     }
 
     public static Line CreateUnderLineText( TextNote textNote, double elevation )
@@ -549,10 +548,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       coord = Transform.CreateTranslation( ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? 1 : -1 ) * offset * view.Scale * textNote.BaseDirection ).OfPoint( coord ) ;
       var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * view.Scale ;
       var middle = Transform.CreateTranslation( textNote.BaseDirection * width ).OfPoint( coord ) ;
-    
+
       return Line.CreateBound( new XYZ( coord.X, coord.Y, elevation ), new XYZ( middle.X, middle.Y, elevation ) ) ;
     }
-    
+
     private static void RemoveNotationUnused( Document doc, RackNotationStorable rackNotationStorable )
     {
       var notationUnused = new List<RackNotationModel>() ;

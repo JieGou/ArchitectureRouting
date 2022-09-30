@@ -82,7 +82,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       var detailCurves = CreateDetailCurve( viewPlan, curves ) ;
       var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
-      var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.DetailCurve?.UniqueId ).ToList() ;
+      var otherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.DetailCurve?.UniqueId ).ToList() ;
 
       document.Delete( textNote.Id ) ;
       document.Delete( detailLine.Id ) ;
@@ -92,7 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         }
       }
 
-      return ( curveClosestPoint.DetailCurve?.UniqueId ?? string.Empty, ortherLineId ) ;
+      return ( curveClosestPoint.DetailCurve?.UniqueId ?? string.Empty, otherLineId ) ;
     }
     
     public static void SaveNotation(RackNotationStorable rackNotationStorable, TextNote textNote, string endLineLeaderId, IReadOnlyList<string> ortherLineId)
