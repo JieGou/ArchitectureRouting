@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
@@ -11,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 {
   public static class TextNoteHelper
   {
-    public const string RextNoteTypeName = "ARENT_2.7MM_0.75" ;
+    public const string TextNoteTypeName = "ARENT_2.7MM_0.75" ;
     public static double TextSize => 2.7 ;
     public static double LeaderOffsetSheet => 0.6;
     public static double TotalHeight => TextSize + 2 * LeaderOffsetSheet ;
@@ -22,11 +23,11 @@ namespace Arent3d.Architecture.Routing.AppBase
       if ( ! textNoteTypes.Any() )
         return null ;
       
-      var textNoteType = textNoteTypes.SingleOrDefault( x => x.Name == RextNoteTypeName ) ;
+      var textNoteType = textNoteTypes.SingleOrDefault( x => x.Name == TextNoteTypeName ) ;
       if ( null != textNoteType ) 
         return textNoteType ;
       
-      textNoteType = textNoteTypes.First().Duplicate(RextNoteTypeName) as TextNoteType;
+      textNoteType = textNoteTypes.First().Duplicate(TextNoteTypeName) as TextNoteType;
       if ( null == textNoteType )
         return null ;
       
@@ -43,7 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     public static TextNoteType? FindOrCreateTextNoteType(Document document, double textSize, bool isVisible = true)
     {
-      var textNoteTypeName = $"ARENT3D_{Math.Round( textSize, 2 )}MM_0.75" ;
+      var textNoteTypeName = $"{PullBoxRouteManager.PrefixPullBoxTextNote}_{Math.Round( textSize, 2 )}MM_0.75" ;
       var textNoteTypes = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).OfType<TextNoteType>().EnumerateAll() ;
       if ( ! textNoteTypes.Any() )
         return null ;
@@ -70,11 +71,14 @@ namespace Arent3d.Architecture.Routing.AppBase
     public static void DeleteAllTextNotesRelatedStorages( Document document )
     {
       // Pull boxes
-      var textNotesOfPullBoxIds = document.GetAllDatas<Level, PullBoxInfoModel>().SelectMany( d => d.Data.PullBoxInfoData ).Select( d => document.GetElement( d.TextNoteUniqueId ) ).Where( e => e != null ).Select( t => t.Id ).ToList() ;
+      var textNotesOfPullBoxIds = document.GetAllDatas<Level, PullBoxInfoModel>()
+        .SelectMany( d => d.Data.PullBoxInfoData )
+        .Select( d => document.GetElement( d.TextNoteUniqueId ) ).Where( e => e != null ).Select( t => t.Id ).ToList() ;
       document.Delete( textNotesOfPullBoxIds ) ;
       
       // Wire length notation
-      var wireLengthNotationIds = document.GetWireLengthNotationStorable().WireLengthNotationData.Select( d => document.GetElement( d.TextNoteId ) ).Where( e => e != null ).Select( t => t.Id ).ToList() ;
+      var wireLengthNotationIds = document.GetWireLengthNotationStorable()
+        .WireLengthNotationData.Select( d => document.GetElement( d.TextNoteId ) ).Where( e => e != null ).Select( t => t.Id ).ToList() ;
       document.Delete( wireLengthNotationIds ) ;
     }
   }
