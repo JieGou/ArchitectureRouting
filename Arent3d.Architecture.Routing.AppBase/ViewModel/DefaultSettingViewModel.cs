@@ -107,6 +107,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<string> DeletedFloorName { get ; set ; }
     
     private readonly Dictionary<string, string> _oldValueFloor ;
+    
+    public bool IsSetupGrade { get ; set ; }
 
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
 

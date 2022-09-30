@@ -81,6 +81,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             // Save default db
             viewModel.SaveData() ;
 
+            if ( viewModel.IsSetupGrade ) {
+              var dataStorage = document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+              var storageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+              DisplaySettingViewModel.ApplyChanges(uiDocument.Document, storageService.Data);
+            }
+
             var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
             var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
             var deletedFloorName = viewModel.DeletedFloorName ;

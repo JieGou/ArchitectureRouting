@@ -40,10 +40,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void GradeOnClick( object sender, RoutedEventArgs e )
     {
-      var viewModel = new DisplaySettingViewModel( ViewModel.UIDocument.Document ) ;
+      var viewModel = new DisplaySettingViewModel( ViewModel.UIDocument.Document, true ) ;
       var dialog = new DisplaySettingDialog( viewModel ) ;
 
-      dialog.ShowDialog() ;
+      ViewModel.IsSetupGrade = dialog.ShowDialog() ?? false ;
     }
   }
 }
