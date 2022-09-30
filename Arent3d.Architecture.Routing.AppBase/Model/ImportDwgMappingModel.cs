@@ -70,29 +70,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
         OnPropertyChanged() ;
       }
     }
-    
+
     private bool _isEnabled ;
-    public bool IsEnabled 
-    { 
+
+    public bool IsEnabled
+    {
       get => _isEnabled ;
       set
       {
         _isEnabled = value ;
         OnPropertyChanged() ;
-      } 
+      }
     }
 
     private bool _isDeleted ;
+
     public bool IsDeleted
-    { 
+    {
       get => _isDeleted ;
       set
       {
         _isDeleted = value ;
         OnPropertyChanged() ;
-      } 
+      }
     }
-    
+
     private string _floorHeightDisplay ;
 
     public string FloorHeightDisplay
@@ -104,16 +106,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
         OnPropertyChanged() ;
       }
     }
-    
+
     private bool _isEnabledFloorHeight ;
+
     public bool IsEnabledFloorHeight
-    { 
+    {
       get => _isEnabledFloorHeight ;
       set
       {
         _isEnabledFloorHeight = value ;
         OnPropertyChanged() ;
-      } 
+      }
     }
 
     public string this[ string columnName ]
@@ -167,8 +170,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _floorHeightDisplay = item.FloorHeightDisplay.ToString( CultureInfo.InvariantCulture ) ;
       _isEnabledFloorHeight = true ;
     }
-    
-    public ImportDwgMappingModel(string id,string fileName, string floorName, double floorHeight, int scale, double floorHeightDisplay = 0 )
+
+    public ImportDwgMappingModel( string id, string fileName, string floorName, double floorHeight, int scale, double floorHeightDisplay = 0 )
     {
       Id = id ;
       _fullFilePath = fileName ;
@@ -178,7 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _scale = scale ;
       _isEnabled = true ;
       _isDeleted = true ;
-      _floorHeightDisplay = floorHeightDisplay.ToString( CultureInfo.InvariantCulture );
+      _floorHeightDisplay = floorHeightDisplay.ToString( CultureInfo.InvariantCulture ) ;
       _isEnabledFloorHeight = true ;
     }
 
@@ -188,13 +191,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       var defaultSymbolMagnification = activeViewScale * GetDefaultSymbolRatio( activeViewScale ) ;
       return defaultSymbolMagnification ;
     }
-    
+
     public static double GetMagnificationOfView( int viewScale )
     {
       var defaultSymbolMagnification = viewScale * GetDefaultSymbolRatio( viewScale ) ;
       return defaultSymbolMagnification ;
     }
-    
+
     public static double GetDefaultSymbolRatio( int scale )
     {
       return scale switch
