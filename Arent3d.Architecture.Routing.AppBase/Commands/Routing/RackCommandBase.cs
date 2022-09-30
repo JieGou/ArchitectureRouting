@@ -16,7 +16,6 @@ using Arent3d.Architecture.Routing.AppBase.Utils;
 using Arent3d.Utility ;
 using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using Transform = Autodesk.Revit.DB.Transform ;
-using Arent3d.Architecture.Routing;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -441,9 +440,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       // set text to rack parameter
       var content = textNote.Text ;
-      
+
       // create tag at position of textNote
-      
+
       return null ;
     }
     
@@ -474,29 +473,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             } ;
             if ( longestRack.TryGetProperty( ElectricalRoutingElementParameter.Cover, out string? text ) && text is not null && ! text.Equals( "無し" ) )
               notation += " カバー付" ;
-            
+
             // Apply notation value to cableTray parameter
-            foreach ( var rack in racks ) 
+            foreach ( var rack in racks )
               rack.SetProperty( ElectricalRoutingElementParameter.SymbolContent, notation ) ;
-            
+
             // create text note and tag
             var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;
             if ( null == textNoteType ) return ;
-            TextNote textNote ; IndependentTag tag ;
+            TextNote textNote ;
+            IndependentTag tag ;
 
             const double multiple = 3 ;
             var heightText = TextNoteHelper.TotalHeight.MillimetersToRevitUnits() ;
             if ( isDirectionX ) {
               var vector = ( XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * magnification ;
               textNote = TextNote.Create( doc, view.Id, point + vector, notation, textNoteType.Id ) ;
-              var tagTypeId = GetTagTypeId( doc, TagFamilyName, TagTypeRight, BuiltInCategory.OST_CableTrayFittingTags) ;
+              var tagTypeId = GetTagTypeId( doc, TagFamilyName, TagTypeRight, BuiltInCategory.OST_CableTrayFittingTags ) ;
               tag = IndependentTag.Create( doc, tagTypeId, view.Id, new Reference( longestRack ), false, TagOrientation.Horizontal, point + vector ) ;
             }
             else {
               var vector = ( XYZ.BasisX.Negate() * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * magnification ;
               textNote = TextNote.Create( doc, view.Id, point + vector, notation, textNoteType.Id ) ;
               ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
-              var tagTypeId = GetTagTypeId( doc, TagFamilyName, TagTypeLeft , BuiltInCategory.OST_CableTrayFittingTags) ;
+              var tagTypeId = GetTagTypeId( doc, TagFamilyName, TagTypeLeft, BuiltInCategory.OST_CableTrayFittingTags ) ;
               tag = IndependentTag.Create( doc, tagTypeId, view.Id, new Reference( longestRack ), false, TagOrientation.Horizontal, point + vector ) ;
             }
 
@@ -532,28 +532,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public static TextNote? CreateTagTextNote(IndependentTag tag)
+    public static TextNote? CreateTagTextNote( IndependentTag tag )
     {
       var doc = tag.Document ;
       var view = doc.GetElement( tag.OwnerViewId ) as View ;
-      if ( view == null ) return null;
+      if ( view == null ) return null ;
       var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc, TextNoteHelper.TextSize, false ) ;
-      if ( null == textNoteType ) return null;
+      if ( null == textNoteType ) return null ;
       TextNote textNote = TextNote.Create( doc, view.Id, tag.TagHeadPosition, tag.TagText, textNoteType.Id ) ;
-      if (tag.Name == TagTypeLeft) ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
+      if ( tag.Name == TagTypeLeft ) ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
       return textNote ;
     }
 
-    private static ElementId GetTagTypeId(Document document, string familyName, string typeName, BuiltInCategory builtInCategory = BuiltInCategory.INVALID)
+    private static ElementId GetTagTypeId( Document document, string familyName, string typeName, BuiltInCategory builtInCategory = BuiltInCategory.INVALID )
     {
-      var typeCollector = new FilteredElementCollector(document).WhereElementIsElementType();
-      if (builtInCategory != BuiltInCategory.INVALID) typeCollector.OfCategory(builtInCategory);
-      foreach (var element in typeCollector)
-      {
-        var type = element as ElementType;
-        if (type != null && type.FamilyName == familyName && type.Name == typeName) return type.Id;
+      var typeCollector = new FilteredElementCollector( document ).WhereElementIsElementType() ;
+      if ( builtInCategory != BuiltInCategory.INVALID ) typeCollector.OfCategory( builtInCategory ) ;
+      foreach ( var element in typeCollector ) {
+        var type = element as ElementType ;
+        if ( type != null && type.FamilyName == familyName && type.Name == typeName ) return type.Id ;
       }
-      return ElementId.InvalidElementId;
+
+      return ElementId.InvalidElementId ;
     }
 
     public static Line CreateUnderLineText( TextNote textNote, double elevation )
