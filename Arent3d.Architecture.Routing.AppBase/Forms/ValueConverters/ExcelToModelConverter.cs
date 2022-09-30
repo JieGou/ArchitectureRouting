@@ -256,6 +256,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       if ( numberOfSheets <= 2 ) return ( categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
       try {
         var categoriesWithoutCeedCodeName = ( (CategoriesName[]) Enum.GetValues( typeof( CategoriesName ) ) ).Select( c => c.GetFieldName() ).ToList() ;
+        var powerCategories = new List<string>() { CategoriesName.中央監視装置.GetFieldName(), CategoriesName.他社設備盤.GetFieldName() } ;
         for ( var s = startSheetIndex ; s < numberOfSheets ; s++ ) {
           var workSheet = wb.GetSheetAt( s ) ;
           if ( workSheet == null ) continue ;
@@ -293,7 +294,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
               var ceedModelNumber = GetCellValue( ceedModelNumberCell ) ;
               if ( string.IsNullOrEmpty( ceedModelNumber ) ) continue ;
               var categoryWithoutCeedCode = categoriesWithoutCeedCodeName.FirstOrDefault( c => parentCategoryName.Contains( c ) )  ;
-              CreateCategories( string.IsNullOrEmpty( categoryWithoutCeedCode ) ? categoriesWithCeedCode : categoriesWithoutCeedCode, parentCategoryName, childCategoryName, ceedModelNumber, ceedModelNumbers ) ;
+              var isPowerCategory = powerCategories.Exists( c => parentCategoryName.Contains( c ) )  ;
+              var constructionType = string.Empty ;
+              if ( isPowerCategory ) {
+                var constructionTypeCell = workSheet.GetRow( i ).GetCell( 7 ) ;
+                constructionType = GetCellValue( constructionTypeCell ) ;
+              }
+              CreateCategories( string.IsNullOrEmpty( categoryWithoutCeedCode ) ? categoriesWithCeedCode : categoriesWithoutCeedCode, parentCategoryName, childCategoryName, ceedModelNumber, ceedModelNumbers, constructionType, isPowerCategory ) ;
             }
           }
         }
@@ -305,8 +312,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       return ( categoriesWithCeedCode, categoriesWithoutCeedCode ) ;
     }
 
-    private static void CreateCategories( List<CategoryModel> categories, string parentCategoryName, string childCategoryName, string ceedModelNumber, List<string> ceedModelNumbers )
+    private static void CreateCategories( List<CategoryModel> categories, string parentCategoryName, string childCategoryName, string ceedModelNumber, List<string> ceedModelNumbers, string constructionType, bool isPowerCategory )
     {
+      const string mainConstruction = "本工事" ;
+      var isMainConstruction = ! string.IsNullOrEmpty( constructionType ) && constructionType == mainConstruction ;
       var isExistModelNumber = ceedModelNumbers.FirstOrDefault( n => ceedModelNumbers.Contains( ceedModelNumber ) ) != null ;
       if ( categories.Exists( c => c.Name == parentCategoryName ) ) {
         var categoryOfCeedCode = categories.SingleOrDefault( c => c.Name == parentCategoryName ) ;
@@ -314,20 +323,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         if ( categoryOfCeedCode!.Categories.Exists( c => c.Name == childCategoryName ) ) {
           var subCategory = categoryOfCeedCode!.Categories.SingleOrDefault( c => c.Name == childCategoryName ) ;
           if ( ! subCategory!.IsExistModelNumber && isExistModelNumber ) subCategory.IsExistModelNumber = isExistModelNumber ;
-          var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber } ;
+          var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber, IsMainConstruction = isMainConstruction, IsPower = isPowerCategory } ;
           subCategory!.CeedCodeNumbers.Add( ceedCodeNumbers ) ;
         }
         else {
-          var subCategory = new CategoryModel { Name = childCategoryName, ParentName = parentCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber } ;
-          var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber } ;
+          var subCategory = new CategoryModel { Name = childCategoryName, ParentName = parentCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber, IsMainConstruction = false, IsPower = isPowerCategory } ;
+          var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber, IsMainConstruction = isMainConstruction, IsPower = isPowerCategory } ;
           subCategory.CeedCodeNumbers.Add( ceedCodeNumbers ) ;
           categoryOfCeedCode.Categories.Add( subCategory ) ;
         }
       }
       else {
-        var categoryOfCeedCode = new CategoryModel { Name = parentCategoryName, ParentName = string.Empty, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber } ;
-        var subCategory = new CategoryModel { Name = childCategoryName, ParentName = parentCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber } ;
-        var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber } ;
+        var categoryOfCeedCode = new CategoryModel { Name = parentCategoryName, ParentName = string.Empty, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber, IsMainConstruction = false, IsPower = isPowerCategory } ;
+        var subCategory = new CategoryModel { Name = childCategoryName, ParentName = parentCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber, IsMainConstruction = false, IsPower = isPowerCategory } ;
+        var ceedCodeNumbers = new CategoryModel { Name = ceedModelNumber, ParentName = childCategoryName, IsExpanded = false, IsSelected = false, IsExistModelNumber = isExistModelNumber, IsMainConstruction = isMainConstruction, IsPower = isPowerCategory } ;
         subCategory.CeedCodeNumbers.Add( ceedCodeNumbers ) ;
         categoryOfCeedCode.Categories.Add( subCategory ) ;
         categories.Add( categoryOfCeedCode ) ;

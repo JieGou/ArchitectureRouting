@@ -78,7 +78,12 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_ElectricalEquipment,
       BuiltInCategory.OST_ElectricalFixtures,
     } ;
-
+    
+    public static readonly BuiltInCategory[] ElectricalRackAndDeviceElements = CombineArrays(
+      OtherElectricalElements,
+      CableTrays
+    ) ;
+    
     public static readonly BuiltInCategory[] ScheduleElements =
     {
       BuiltInCategory.OST_Schedules,

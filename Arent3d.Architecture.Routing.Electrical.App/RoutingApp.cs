@@ -7,6 +7,7 @@ using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
@@ -48,6 +49,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     {
       DocumentMapper.Register( documentKey ) ;
       FromToTreeManager.OnDocumentOpened( AddInType.Electrical ) ;
+      UpdateCeedDockPanelDataContext( documentKey.Document ) ;
     }
 
     protected override void OnDocumentListenFinished( DocumentKey documentKey )
@@ -63,6 +65,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     protected override void OnApplicationViewChanged( DocumentKey documentKey, ViewActivatedEventArgs e )
     {
       FromToTreeManager.OnViewActivated( e, AddInType.Electrical ) ;
+      if ( RoutingAppUI.CeedModelDockPanelProvider?.Document != null && RoutingAppUI.CeedModelDockPanelProvider.Document.Title != documentKey.Document.Title ) {
+        UpdateCeedDockPanelDataContext( documentKey.Document ) ;
+      }
+    }
+
+    private void UpdateCeedDockPanelDataContext( Document document )
+    {
+      var uiDocument = new UIDocument( document ) ;
+      RoutingAppUI.CeedModelDockPanelProvider?.CustomInitiator( uiDocument ) ;
     }
 
     protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()

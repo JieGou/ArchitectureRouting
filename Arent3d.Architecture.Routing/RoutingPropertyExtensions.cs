@@ -130,7 +130,7 @@ namespace Arent3d.Architecture.Routing
     RoomCondition,
     
     [Parameter( "fcacd40a-3bf7-495f-8d0c-6efeafa45775", "Symbol Content", DataType.Text, ParameterVisibility.ReadOnlyOnHasValue, DescriptionKey = "Symbol Content")]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.OtherElectricalElements ) )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ElectricalRackAndDeviceElements ) )]
     SymbolContent,
     
     [Parameter( "6a4206f1-156b-449e-b9b6-a124dc56dfd5", "数量", DataType.Integer, ParameterVisibility.Editable, DescriptionKey = "数量")]

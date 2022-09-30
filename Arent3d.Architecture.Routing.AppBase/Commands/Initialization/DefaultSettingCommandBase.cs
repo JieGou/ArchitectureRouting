@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public class DefaultSettingCommandBase : IExternalCommand
   {
     private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultModeCommand" ;
-    private const string Grade3FieldName = "グレード3" ;
+    public const string Grade3FieldName = "グレード3" ;
     private const string ArentDummyViewName = "Arent Dummy" ;
     public const string SingleTextNoteTypeName = "ARENT_2.7MM_SINGLE-BORDER" ;
     public const string DoubleTextNoteTypeName = "ARENT_2.7MM_DOUBLE-BORDER" ;

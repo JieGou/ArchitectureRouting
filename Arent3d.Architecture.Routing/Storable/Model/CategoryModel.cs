@@ -8,8 +8,10 @@
     public bool IsSelected { get ; }
     public bool IsCeedCodeNumber { get ; }
     public bool IsExistModelNumber { get ; }
+    public bool IsMainConstruction { get ; }
+    public bool IsPower { get ; }
 
-    public CategoryModel( string? name, string? parentName, bool? isExpanded, bool? isSelected, bool? isCeedCodeNumber, bool? isExistModelNumber )
+    public CategoryModel( string? name, string? parentName, bool? isExpanded, bool? isSelected, bool? isCeedCodeNumber, bool? isExistModelNumber, bool? isMainConstruction, bool? isPower )
     {
       Name = name ?? string.Empty ;
       ParentName = parentName ?? string.Empty ;
@@ -17,6 +19,8 @@
       IsSelected = isSelected ?? false ;
       IsCeedCodeNumber = isCeedCodeNumber ?? false ;
       IsExistModelNumber = isExistModelNumber ?? false ;
+      IsMainConstruction = isMainConstruction ?? false ;
+      IsPower = isPower ?? false ;
     }
   }
 }

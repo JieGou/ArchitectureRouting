@@ -35,8 +35,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected abstract bool IsSelectionRange { get ; }
     #endregion
 
+    protected abstract RoutingExecutor CreateRoutingExecutor( Document document ) ;
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {
+      var uiApplication = commandData.Application ;
       var uiDocument = commandData.Application.ActiveUIDocument ;
       try {
         if ( uiDocument.ActiveView is not ViewPlan viewPlan ) {
@@ -44,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           return Result.Cancelled ;
         }
         
-        var result = uiDocument.Document.Transaction( TransactionName, _ =>
+        var result = uiDocument.Document.Transaction( TransactionName, transaction  =>
         {
           Dictionary<string, List<MEPCurve>> routingElements ;
           var storage = new StorageService<Level, RackForRouteModel>( viewPlan.GenLevel ) ;
@@ -103,10 +106,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             
             var rackForRouteItem = new RackForRouteItem { RouteName = groupRoutingElement.Key } ;
             
-            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, uiDocument.Document.ActiveView.Scale, rackClassification: "Limit Rack" ) ;
-            rackForRouteItem.RackIds.AddRange(verticalRacks.Select(x => x.Id));
+            var verticalRacks = uiDocument.Document.CreateVerticalCableTray( verticalRackMaps, uiDocument.Document.ActiveView.Scale, true, rackClassification: "Limit Rack" ) ;
+            rackForRouteItem.RackIds.AddRange( verticalRacks.Select( x => x.Id ) ) ;
             
-            var horizontalRacks = uiDocument.Document.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack" ).EnumerateAll() ;
+            // executor for reroute after delete pull boxes
+            var executor = CreateRoutingExecutor( uiDocument.Document ) ;
+            executor.TurnOffWarning( transaction ) ;
+            var horizontalRacks = uiApplication.CreateRacksAndElbowsAlongConduits( horizontalRackMaps, rackClassification: "Limit Rack", false, null, executor ).EnumerateAll() ;
             rackForRouteItem.RackIds.AddRange(horizontalRacks.Select(x => x.Id));
             RackCommandBase.CreateNotationForRack( uiDocument.Document, horizontalRacks.OfType<FamilyInstance>() ) ;
 

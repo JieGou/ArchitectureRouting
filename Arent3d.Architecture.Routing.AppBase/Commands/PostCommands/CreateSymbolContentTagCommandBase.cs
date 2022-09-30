@@ -10,11 +10,15 @@ using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
@@ -42,17 +46,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
     protected override ExecutionResult Execute( SymbolContentTagCommandParameter param, Document document, TransactionWrapper transaction )
     {
       try {
-        const string switch2DSymbol = "2Dシンボル切り替え" ;
-        const string symbolMagnification = "シンボル倍率" ;
-        const string grade3FieldName = "グレード3" ;
-
         if ( document.ActiveView is not ViewPlan ) {
           TaskDialog.Show( "Arent", "This view is not the view plan!" ) ;
           return ExecutionResult.Cancelled ;
         }
-
-        var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
-        var defaultConstructionItem = document.GetDefaultConstructionItem() ;
 
         if ( param.CeedViewModel.SelectedCeedCode == null )
           return ExecutionResult.Cancelled ;
@@ -60,61 +57,47 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
         var level = document.ActiveView.GenLevel ;
         var heightOfConnector = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         var connector = GenerateConnector( 0, 0, heightOfConnector, level, param.CeedViewModel.SelectedFloorPlanType ?? string.Empty ) ;
+        SetParameter( connector, param ) ;
         document.Regenerate() ;
 
         var uiDocument = new UIDocument( document ) ;
-
+        
         FocusToActiveView( uiDocument ) ;
         var (placePoint, direction, firstPoint) = PickPoint( uiDocument, connector ) ;
         if ( null == placePoint )
           return ExecutionResult.Cancelled ;
-
+        
         var condition = "屋外" ; // デフォルトの条件
         var isValidPoint = IsValidPoint( uiDocument, placePoint, param.CeedViewModel, ref condition ) ;
         if ( ! isValidPoint )
           return ExecutionResult.Cancelled ;
-
+        
         if ( ! param.CeedViewModel.OriginCeedModels.Any( cmd => cmd.Condition == condition && cmd.GeneralDisplayDeviceSymbol == param.CeedViewModel.SelectedDeviceSymbol ) ) {
           TaskDialog.Show( "Arent", $"We can not find any ceedmodel \"{param.CeedViewModel.SelectedDeviceSymbol}\" match with this room \"{condition}\"。" ) ;
           return ExecutionResult.Cancelled ;
         }
-
+        
         ElementTransformUtils.MoveElement( document, connector.Id, new XYZ( placePoint.X, placePoint.Y, heightOfConnector ) - new XYZ( 0, 0, heightOfConnector ) ) ;
         if ( null != direction && null != firstPoint ) {
           var line = Line.CreateBound( placePoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( placePoint ) ) ;
           ElementTransformUtils.RotateElement( document, connector.Id, line, TabPlaceExternal.GetAngle( direction, firstPoint, placePoint ) ) ;
         }
-
-        var ceedCode = string.Join( ":", param.CeedViewModel.SelectedCeedCode, param.CeedViewModel.SelectedDeviceSymbol, param.CeedViewModel.SelectedModelNum ) ;
-        connector.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
-        connector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
-        connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
-        connector.SetProperty(ElectricalRoutingElementParameter.Quantity, 1);
-
+        
         var deviceSymbol = param.CeedViewModel.SelectedDeviceSymbol ?? string.Empty ;
         if ( ! string.IsNullOrEmpty( deviceSymbol ) ) {
           var text = StringWidthUtils.IsHalfWidth( deviceSymbol ) ? StringWidthUtils.ToFullWidth( deviceSymbol ) : deviceSymbol ;
           connector.SetProperty( ElectricalRoutingElementParameter.SymbolContent, text ) ;
-
+        
           var symbolContentTag = connector.Category.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ? ElectricalRoutingFamilyType.ElectricalFixtureContentTag : ElectricalRoutingFamilyType.ElectricalEquipmentContentTag ;
           var deviceSymbolTagType = document.GetFamilySymbols( symbolContentTag ).FirstOrDefault( x => x.LookupParameter( "Is Hide Quantity" ).AsInteger() == 1 ) ?? throw new InvalidOperationException() ;
           IndependentTag.Create( document, deviceSymbolTagType.Id, document.ActiveView.Id, new Reference( connector ), false, TagOrientation.Horizontal,
             new XYZ( placePoint.X, placePoint.Y + 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * document.ActiveView.Scale, placePoint.Z ) ) ;
-
+        
           var connectorUpdater = new ConnectorUpdater( document.Application.ActiveAddInId ) ;
           UpdaterRegistry.RegisterUpdater( connectorUpdater, document ) ;
           var sharedParameter = SharedParameterElement.Lookup( document, ElectricalRoutingElementParameter.Quantity.GetParameterGuid() ) ;
-          UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), document, new List<ElementId> { connector.Id }, Element.GetChangeTypeParameter(sharedParameter.Id) ) ;
+          UpdaterRegistry.AddTrigger( connectorUpdater.GetUpdaterId(), document, new List<ElementId> { connector.Id }, Element.GetChangeTypeParameter( sharedParameter.Id ) ) ;
         }
-
-        if ( connector.HasParameter( switch2DSymbol ) )
-          connector.SetProperty( switch2DSymbol, true ) ;
-
-        if ( connector.HasParameter( symbolMagnification ) )
-          connector.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
-
-        if ( connector.HasParameter( grade3FieldName ) )
-          connector.SetProperty( grade3FieldName, DefaultSettingCommandBase.GradeFrom3To7Collection.Contains( document.GetDefaultSettingStorable().GradeSettingData.GradeMode ) ) ;
       }
       catch ( Exception exception ) {
         TaskDialog.Show( "Arent Inc", exception.Message ) ;
@@ -122,6 +105,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       }
 
       return ExecutionResult.Succeeded ;
+    }
+
+    private static void SetParameter( FamilyInstance connector, SymbolContentTagCommandParameter param )
+    {
+      var ceedCode = string.Join( ":", param.CeedViewModel.SelectedCeedCode, param.CeedViewModel.SelectedDeviceSymbol, param.CeedViewModel.SelectedModelNum ) ;
+      connector.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
+
+      connector.SetConnectorFamilyType( CategoryModel.IsPowerCeedModel( connector.Document, param.CeedViewModel.SelectedCeedCode!, param.CeedViewModel.SelectedDeviceSymbol!, param.CeedViewModel.SelectedModelNum! ) ? ConnectorFamilyType.Power : ConnectorFamilyType.Sensor ) ;
+
+      var defaultConstructionItem = connector.Document.GetDefaultConstructionItem() ;
+      connector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
+
+      connector.SetProperty( ElectricalRoutingElementParameter.Quantity, 1 ) ;
+
+      const string switch2DSymbol = "2Dシンボル切り替え" ;
+      if ( connector.HasParameter( switch2DSymbol ) )
+        connector.SetProperty( switch2DSymbol, true ) ;
+
+      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( connector.Document ) ;
+      const string symbolMagnification = "シンボル倍率" ;
+      if ( connector.HasParameter( symbolMagnification ) )
+        connector.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
+      
+      if ( ! connector.HasParameter( DefaultSettingCommandBase.Grade3FieldName ) ) 
+        return ;
+      
+      var dataStorage = connector.Document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+      var displaySettingStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+      var isGrade3 = displaySettingStorageService.Data.GradeOption == displaySettingStorageService.Data.GradeOptions[ 0 ] ;
+      if ( ! displaySettingStorageService.Data.IsSaved )
+        isGrade3 = DefaultSettingCommandBase.GradeFrom3To7Collection.Contains( connector.Document.GetDefaultSettingStorable().GradeSettingData.GradeMode) ;
+      connector.SetProperty( DefaultSettingCommandBase.Grade3FieldName, isGrade3 ) ;
     }
 
     private static void FocusToActiveView( UIDocument uiDocument )
@@ -301,7 +316,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
 
     private static List<Curve> GetCurvesAtTopFaceFromElement( Element connector )
     {
-      var options = new Options { DetailLevel = ViewDetailLevel.Fine } ;
+      var options = new Options { View = connector.Document.ActiveView} ;
       var geometries = GeometryHelper.GetGeometryObjectsFromElementInstance( connector, options ).EnumerateAll() ;
       var curves = geometries.OfType<Curve>().Select( x => x.Clone() ).ToList() ;
 

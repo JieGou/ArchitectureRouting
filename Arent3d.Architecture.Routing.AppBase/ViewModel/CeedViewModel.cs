@@ -1055,7 +1055,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void CreatePreviewList( List<CeedModel> ceedModels )
     {
-      foreach ( var ceedModel in ceedModels ) {
+      var ceedModelsGroupByDeviceSymbols = ceedModels.GroupBy( c => c.GeneralDisplayDeviceSymbol ).Select( g => g.ToList() ).ToList() ;
+      foreach ( var ceedModelsGroupByDeviceSymbol in ceedModelsGroupByDeviceSymbols ) {
+        var ceedModel = ceedModelsGroupByDeviceSymbol.First() ;
         if ( string.IsNullOrEmpty( ceedModel.Base64FloorPlanImages ) ) continue ;
         var floorPlanImage = CeedModel.BitmapToImageSource( CeedModel.Base64StringToBitmap( ceedModel.Base64FloorPlanImages ) ) ;
         if ( floorPlanImage == null ) continue ;

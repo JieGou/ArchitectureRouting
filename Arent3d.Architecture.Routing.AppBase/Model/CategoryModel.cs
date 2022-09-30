@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
 {
@@ -65,6 +67,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
         OnPropertyChanged();
       }
     }
+
+    private bool? _isMainConstruction ;
+    public bool IsMainConstruction
+    {
+      get { return _isMainConstruction ??= false ; }
+      set
+      {
+        _isMainConstruction = value ;
+        OnPropertyChanged();
+      }
+    }
+    
+    private bool? _isPower ;
+    public bool IsPower
+    {
+      get { return _isPower ??= false ; }
+      set
+      {
+        _isPower = value ;
+        OnPropertyChanged();
+      }
+    }
     
     public List<CategoryModel> Categories { get ; set ; } = new() ;
     
@@ -74,13 +98,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     {
       var convertCategoriesModel = new List<Storable.Model.CategoryModel>() ;
       foreach ( var category in categoryModels ) {
-        var convertCategory = new Storable.Model.CategoryModel( category.Name, category.ParentName, category.IsExpanded, category.IsSelected, false, category.IsExistModelNumber ) ;
+        var convertCategory = new Storable.Model.CategoryModel( category.Name, category.ParentName, category.IsExpanded, category.IsSelected, false, category.IsExistModelNumber, category.IsMainConstruction, category.IsPower ) ;
         convertCategoriesModel.Add( convertCategory ) ;
         foreach ( var subCategory in category.Categories ) {
-          var convertSubCategory = new Storable.Model.CategoryModel( subCategory.Name, subCategory.ParentName, subCategory.IsExpanded, subCategory.IsSelected, false, category.IsExistModelNumber ) ;
+          var convertSubCategory = new Storable.Model.CategoryModel( subCategory.Name, subCategory.ParentName, subCategory.IsExpanded, subCategory.IsSelected, false, subCategory.IsExistModelNumber, subCategory.IsMainConstruction, subCategory.IsPower ) ;
           convertCategoriesModel.Add( convertSubCategory ) ;
           foreach ( var ceedCodeNumberCategory in subCategory.CeedCodeNumbers ) {
-            var convertCeedCodeNumberCategory = new Storable.Model.CategoryModel( ceedCodeNumberCategory.Name, ceedCodeNumberCategory.ParentName, ceedCodeNumberCategory.IsExpanded, ceedCodeNumberCategory.IsSelected, true, category.IsExistModelNumber ) ;
+            var convertCeedCodeNumberCategory = new Storable.Model.CategoryModel( ceedCodeNumberCategory.Name, ceedCodeNumberCategory.ParentName, ceedCodeNumberCategory.IsExpanded, ceedCodeNumberCategory.IsSelected, true, ceedCodeNumberCategory.IsExistModelNumber, ceedCodeNumberCategory.IsMainConstruction, ceedCodeNumberCategory.IsPower ) ;
             convertCategoriesModel.Add( convertCeedCodeNumberCategory ) ;
           }
         }
@@ -95,17 +119,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       var parentCategories = categoryModels.Where( c => string.IsNullOrEmpty( c.ParentName ) ) ;
       var subCategories = categoryModels.Where( c => ! string.IsNullOrEmpty( c.ParentName ) && ! c.IsCeedCodeNumber ) ;
       foreach ( var category in parentCategories ) {
-        var convertCategory = new CategoryModel { Name = category.Name, ParentName = category.ParentName, IsExpanded = category.IsExpanded, IsSelected = category.IsSelected, IsExistModelNumber = category.IsExistModelNumber } ;
+        var convertCategory = new CategoryModel { Name = category.Name, ParentName = category.ParentName, IsExpanded = category.IsExpanded, IsSelected = category.IsSelected, IsExistModelNumber = category.IsExistModelNumber, IsMainConstruction = category.IsMainConstruction, IsPower = category.IsPower } ;
         convertCategoriesModel.Add( convertCategory ) ;
       }
         
       foreach ( var category in subCategories ) {
         var parentCategory = convertCategoriesModel.FirstOrDefault( c => c.Name == category.ParentName ) ;
         if ( parentCategory == null ) continue ;
-        var convertCategory = new CategoryModel { Name = category.Name, ParentName = category.ParentName, IsExpanded = category.IsExpanded, IsSelected = category.IsSelected, IsExistModelNumber = category.IsExistModelNumber } ;
+        var convertCategory = new CategoryModel { Name = category.Name, ParentName = category.ParentName, IsExpanded = category.IsExpanded, IsSelected = category.IsSelected, IsExistModelNumber = category.IsExistModelNumber, IsMainConstruction = category.IsMainConstruction, IsPower = category.IsPower } ;
         var ceedCodeNumbers = categoryModels.Where( c => c.ParentName == category.Name && c.IsCeedCodeNumber ) ;
         foreach ( var ceedCodeNumberModel in ceedCodeNumbers ) {
-          var convertCeedCodeNumberModel = new CategoryModel { Name = ceedCodeNumberModel.Name, ParentName = ceedCodeNumberModel.ParentName, IsExpanded = ceedCodeNumberModel.IsExpanded, IsSelected = ceedCodeNumberModel.IsSelected, IsExistModelNumber = category.IsExistModelNumber } ;
+          var convertCeedCodeNumberModel = new CategoryModel { Name = ceedCodeNumberModel.Name, ParentName = ceedCodeNumberModel.ParentName, IsExpanded = ceedCodeNumberModel.IsExpanded, IsSelected = ceedCodeNumberModel.IsSelected, IsExistModelNumber = ceedCodeNumberModel.IsExistModelNumber, IsMainConstruction = ceedCodeNumberModel.IsMainConstruction, IsPower = ceedCodeNumberModel.IsPower } ;
           convertCategory.CeedCodeNumbers.Add( convertCeedCodeNumberModel ) ;
         }
         parentCategory.Categories.Add( convertCategory ) ;
@@ -113,11 +137,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       
       return convertCategoriesModel ;
     }
-    
+
     public static List<string> GetCeedModelNumbers( IEnumerable<Storable.Model.CategoryModel> categoryModels )
     {
       var ceedCodeNumbers = categoryModels.Where( c => ! string.IsNullOrEmpty( c.ParentName ) && c.IsCeedCodeNumber ).Select( c => c.Name ).Distinct().ToList() ;
       return ceedCodeNumbers ;
+    }
+    
+    public static bool IsMainConstructionCeedModel( Document document, string ceedCode, string deviceSymbol, string modelNumber )
+    {
+      var ceedStorable = document.GetCeedStorable() ;
+      var ceedCodeNumbers = ceedStorable.CategoriesWithoutCeedCode.Where( c => ! string.IsNullOrEmpty( c.ParentName ) && c.IsCeedCodeNumber && c.IsMainConstruction ).Select( c => c.Name ).Distinct().ToList() ;
+      var ceedCodeNumber = ceedStorable.CeedModelData.FirstOrDefault( c => c.CeedSetCode == ceedCode && c.GeneralDisplayDeviceSymbol == deviceSymbol && c.ModelNumber == modelNumber )?.CeedModelNumber ;
+      return ! string.IsNullOrEmpty( ceedCodeNumber ) && ceedCodeNumbers.Contains( ceedCodeNumber! ) ; 
+    }
+    
+    public static bool IsPowerCeedModel( Document document, string ceedCode, string deviceSymbol, string modelNumber )
+    {
+      var ceedStorable = document.GetCeedStorable() ;
+      var ceedCodeNumbers = ceedStorable.CategoriesWithoutCeedCode.Where( c => ! string.IsNullOrEmpty( c.ParentName ) && c.IsCeedCodeNumber && c.IsPower ).Select( c => c.Name ).Distinct().ToList() ;
+      var ceedCodeNumber = ceedStorable.CeedModelData.FirstOrDefault( c => c.CeedSetCode == ceedCode && c.GeneralDisplayDeviceSymbol == deviceSymbol && c.ModelNumber == modelNumber )?.CeedModelNumber ;
+      return ! string.IsNullOrEmpty( ceedCodeNumber ) && ceedCodeNumbers.Contains( ceedCodeNumber! ) ; 
     }
   }
 }
