@@ -435,16 +435,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       rackNotationStorable.Save() ;
     }
 
-    private IndependentTag? CreateRackTag( FamilyInstance rack, TextNote textNote, ElementId tagTypeId )
-    {
-      // set text to rack parameter
-      var content = textNote.Text ;
-
-      // create tag at position of textNote
-
-      return null ;
-    }
-    
     private static void CreateNotation( Document doc, RackNotationStorable rackNotationStorable, IReadOnlyCollection<FamilyInstance> racks, string fromConnectorId, bool isDirectionX, View view )
     {
       var scale = view.Scale ;
