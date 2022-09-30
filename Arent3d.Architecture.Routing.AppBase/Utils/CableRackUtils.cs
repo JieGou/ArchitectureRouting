@@ -670,13 +670,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var pMax = flexiblePoint + XYZ.BasisX * halfSize + XYZ.BasisY * halfSize ;
       var boxFilter = new BoundingBoxIntersectsFilter( new Outline( pMin, pMax ) ) ;
       
-      var boards = new FilteredElementCollector( view.Document, view.Id ).WhereElementIsNotElementType().WherePasses( boxFilter ).OfType<FamilyInstance>().Where(fi => fi.GetBuiltInCategory() is BuiltInCategory.OST_ElectricalEquipment or BuiltInCategory.OST_ElectricalFixtures).ToList() ;
+      var boards = new FilteredElementCollector( view.Document, view.Id ).WhereElementIsNotElementType().WherePasses( boxFilter ).OfType<FamilyInstance>().Where( fi => fi.Symbol.FamilyName != ElectricalRoutingFamilyType.PullBox.GetFamilyName() && fi.GetBuiltInCategory() is BuiltInCategory.OST_ElectricalEquipment or BuiltInCategory.OST_ElectricalFixtures ).ToList() ;
 
-      if ( boards.Count == 0 )
+      if ( ! boards.Any() )
         return ( flexiblePoint, fixedPoint ) ;
 
-      var curves = boards.SelectMany( board => board.GetVisibleLinesInView( view, true ) ).ToList() ;
-      if ( curves.Count == 0 )
+      var curves = boards.SelectMany( board => board.GetVisibleLinesInView( view, false ) ).ToList() ;
+      if ( ! curves.Any() )
+        curves = boards.SelectMany( board => board.GetVisibleLinesInView( view, true ) ).ToList() ;
+      if ( ! curves.Any() )
         return ( flexiblePoint, fixedPoint ) ;
 
       var intersectPoints = new List<XYZ>() ;
