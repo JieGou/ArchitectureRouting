@@ -16,7 +16,6 @@ using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -70,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           else
             UpdateImportDwgMappingModels( defaultSettingStorable, listFloorsDefault, new List<string>() ) ;
 
-          var viewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, _activeViewName ) ;
+          var viewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale ) ;
           var dialog = new DefaultSettingDialog( viewModel ) ;
           dialog.ShowDialog() ;
           {
@@ -83,10 +82,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             viewModel.SaveData() ;
 
             var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
-            var gradeMode = viewModel.SelectedGradeMode ;
             var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
             var deletedFloorName = viewModel.DeletedFloorName ;
-            SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
+            SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, importDwgMappingModels, deletedFloorName ) ;
 
             if ( deletedFloorName.Any() ) RemoveViews( document, deletedFloorName, uiDocument ) ;
 
@@ -110,8 +108,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return Result.Failed ;
       }
     }
-
-    public static IEnumerable<int> GradeFrom3To7Collection => new[] { 3, 4, 5, 6, 7 } ;
 
     private static List<ImportDwgMappingModel> GetFloorsDefault( Document doc )
     {
@@ -150,18 +146,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return result ;
     }
 
-    private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, int gradeMode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
+    private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
     {
       try {
         Transaction transaction = new(document, SetDefaultEcoModeTransactionName) ;
         transaction.Start() ;
         var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3FieldName ) ).ToList() ;
+        var dataStorage = document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+        var displaySettingStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+        var isGrade3 = displaySettingStorageService.Data.IsGrade3 ;
         foreach ( var instance in instances ) {
-          instance.SetProperty( Grade3FieldName, GradeFrom3To7Collection.Contains( gradeMode ) ) ;
+          instance.SetProperty( Grade3FieldName, isGrade3 ) ;
         }
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
-        defaultSettingStorable.GradeSettingData.GradeMode = gradeMode ;
 
         if ( importDwgMappingModels.Any() )
           UpdateImportDwgMappingModels( defaultSettingStorable, importDwgMappingModels, deletedFloorName ) ;

@@ -5,7 +5,7 @@ using Arent3d.Architecture.Routing.Storages.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Storages.Models
 {
-  [Schema( "842FBF11-C465-41C2-B8BC-790F81A774A0", nameof( DisplaySettingModel ) )]
+  [Schema( "83ACCFFE-1312-43E8-9BE8-18781DF5AE16", nameof( DisplaySettingModel ) )]
   public class DisplaySettingModel : NotifyPropertyChanged, IDataModel
   {
     public DisplaySettingModel()
@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Storages.Models
     }
 
     public DisplaySettingModel( bool? isWiringVisible, bool? isDetailSymbolVisible, bool? isPullBoxVisible, bool? isScheduleVisible, bool? isLegendVisible, 
-      List<string>? hiddenLegendElementIds, string? gradeOption, bool isSaved )
+      List<string>? hiddenLegendElementIds, string? gradeOption)
     {
       IsWiringVisible = isWiringVisible ?? true ;
       IsDetailSymbolVisible = isDetailSymbolVisible ?? true ;
@@ -28,7 +28,6 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       IsLegendVisible = isLegendVisible ?? true ;
       HiddenLegendElementIds = hiddenLegendElementIds ?? new List<string>() ;
       GradeOption = gradeOption ?? GradeOptions[ 0 ] ;
-      IsSaved = isSaved ;
     }
 
     [Field( Documentation = "Is Wiring Visible" )]
@@ -66,10 +65,9 @@ namespace Arent3d.Architecture.Routing.Storages.Models
       "簡易",
       "詳細"
     } ;
-    
-    [Field( Documentation = "Mark Saved" )]
-    public bool IsSaved { get ; set ; }
 
-    public DisplaySettingModel Clone() => new(IsWiringVisible, IsDetailSymbolVisible, IsPullBoxVisible, IsScheduleVisible, IsLegendVisible, HiddenLegendElementIds, GradeOption, IsSaved) ;
+    public bool IsGrade3 => GradeOption == GradeOptions[ 0 ] ;
+
+    public DisplaySettingModel Clone() => new(IsWiringVisible, IsDetailSymbolVisible, IsPullBoxVisible, IsScheduleVisible, IsLegendVisible, HiddenLegendElementIds, GradeOption) ;
   }
 }

@@ -5,8 +5,12 @@ using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
+using Arent3d.Architecture.Routing.Storages.Models ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-
+using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -87,29 +91,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       GetPullBoxModels( document ) ;
 
-      var gradeMode = GetGradeMode( document ) ;
       PullBoxModels = GetPullBoxModels( document ) ;
       HeightConnector = 3000 ;
       HeightWire = 1000 ;
       IsAutoCalculatePullBoxSize = true ;
-      if ( gradeMode > 3 ) {
+      
+      var dataStorage = document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+      var displaySettingStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+      var isGrade3 = displaySettingStorageService.Data.IsGrade3 ;
+      if ( isGrade3 ) {
         SelectedPullBox = PullBoxModels.FirstOrDefault( x => x.Buzaicd == DefaultBuzaicdForGradeModeThanThree ) ;
         IsGradeSmallerThanFour = false ;
       }
-    }
-
-    private int? GetGradeMode( Document document )
-    {
-      var defaultSettingInfo = document.GetDefaultSettingStorable() ;
-      return defaultSettingInfo.GradeSettingData.GradeMode ;
     }
 
     private List<PullBoxModel> GetPullBoxModels( Document document )
     {
       var csvStorable = document.GetCsvStorable() ;
       var allPullBoxHiroiMasterModel = csvStorable.HiroiMasterModelData.Where( hr => hr.Hinmei.Contains(PullBoxName)  ) ;
-      var pullBoxModels = from hiroiMasterModel in allPullBoxHiroiMasterModel
-        select new PullBoxModel( hiroiMasterModel ) ;
+      var pullBoxModels = (from hiroiMasterModel in allPullBoxHiroiMasterModel
+        select new PullBoxModel( hiroiMasterModel )).EnumerateAll() ;
 
       var resultPullBoxModels = new List<PullBoxModel>() ;
       var defaultPullBoxModel = pullBoxModels.FirstOrDefault( x => x.Buzaicd == DefaultBuzaicdForGradeModeThanThree ) ;

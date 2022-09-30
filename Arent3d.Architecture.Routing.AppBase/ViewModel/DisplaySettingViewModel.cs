@@ -17,7 +17,6 @@ using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
@@ -279,7 +278,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       using Transaction transaction = new(_document, "Save Display Setting By Grade") ;
       transaction.Start() ;
-      _dataDisplaySettingModel.IsSaved = true ;
       _displaySettingByGradeStorageService.Data = _dataDisplaySettingModel ;
       _displaySettingByGradeStorageService.SaveChange() ;
       transaction.Commit() ;

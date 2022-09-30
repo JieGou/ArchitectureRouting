@@ -13,12 +13,14 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.DB.Structure ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
@@ -902,9 +904,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     public static bool IsGradeUnderThree( Document document )
     {
-      var defaultSettingStorable = document.GetDefaultSettingStorable() ;
-      var grade = defaultSettingStorable.GradeSettingData.GradeMode ;
-      return grade is 1 or 2 or 3 ;
+      var dataStorage = document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+      var displaySettingStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+      return ! displaySettingStorageService.Data.IsGrade3 ;
     }
 
     private static XYZ? GetShaftLocation( Route route, Document document )

@@ -1,6 +1,7 @@
 using System.Linq ;
 using Arent3d.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -37,6 +38,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       LoadDefaultElectricalDb( document ) ;
       LoadDefaultRegisterSymbols( document ) ;
+      RegisterLegendUpdater( document ) ;
     }
 
     protected override bool Setup( Document document )
@@ -63,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
       var setupPrintStorable = document.GetSetupPrintStorable() ;
       var scale = setupPrintStorable.Scale ;
-      var defaultSettingViewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale, activeViewName ) ;
+      var defaultSettingViewModel = new DefaultSettingViewModel( uiDocument, defaultSettingStorable, scale ) ;
       defaultSettingViewModel.LoadDefaultDb() ;
       RoutingAppUI.CeedModelDockPanelProvider?.CustomInitiator( uiDocument ) ;
     }
@@ -84,6 +86,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       } ;
 
       registerSymbolStorable.SaveChange() ;
+    }
+
+    private static void RegisterLegendUpdater(Document document)
+    {
+      var legendUpdater = new LegendUpdater( document.Application.ActiveAddInId ) ;
+      if ( UpdaterRegistry.IsUpdaterRegistered( legendUpdater.GetUpdaterId() ) ) 
+        return ;
+      
+      UpdaterRegistry.RegisterUpdater( legendUpdater, document ) ;
+      var filter = new ElementClassFilter( typeof( Viewport ) ) ;
+      var changeType = Element.GetChangeTypeElementAddition() ;
+      UpdaterRegistry.AddTrigger( legendUpdater.GetUpdaterId(), document, filter, changeType ) ;
     }
   }
 }

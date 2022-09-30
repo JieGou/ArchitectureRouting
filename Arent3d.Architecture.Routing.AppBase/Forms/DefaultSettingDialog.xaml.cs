@@ -37,5 +37,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       
       ViewModel.UpdateFloorHeight( selectedItem );
     }
+
+    private void GradeOnClick( object sender, RoutedEventArgs e )
+    {
+      var viewModel = new DisplaySettingViewModel( ViewModel.UIDocument.Document ) ;
+      var dialog = new DisplaySettingDialog( viewModel ) ;
+
+      dialog.ShowDialog() ;
+    }
   }
 }
