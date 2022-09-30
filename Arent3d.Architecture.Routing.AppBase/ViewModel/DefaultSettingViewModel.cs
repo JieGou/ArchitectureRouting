@@ -350,7 +350,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           floorName = Regex.Match( fileName, floorRegEx ).Value.Replace( "階", "" ) ;
 
         if ( ! string.IsNullOrEmpty( floorName ) && int.TryParse( floorName.Replace( "B", "" ).Replace( "PH", "" ), out _ ) ) {
-          importDwgMappingModel = new ImportDwgMappingModel( fileName, $"{floorName}F", 0 ) ;
+          importDwgMappingModel = new ImportDwgMappingModel( fileName, $"{floorName}F", 0, 100 ) ;
           ImportDwgMappingModels.Add( importDwgMappingModel ) ;
         }
 
@@ -359,7 +359,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       ChangeNameIfDuplicate() ;
       UpdateDefaultFloorHeight() ;
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( CalculateFloorHeight( ImportDwgMappingModels ) ) ;
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>(  ImportDwgMappingModels ) ;
       if ( ImportDwgMappingModels.Any() ) {
         ImportDwgMappingModels.Last().FloorHeightDisplay = "-" ;
         ImportDwgMappingModels.Last().IsEnabledFloorHeight = false ;
@@ -395,38 +395,72 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       const string basementRegEx = @"B\d+" ;
       const string floorRegEx = @"\d+" ;
       const string rooftopRegEx = @"PH\d+" ;
+      var newImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
 
       // Basement
-      var newBasementImportDwgMappingModels = ImportDwgMappingModels.Where( x => x.FloorHeight == 0 && x.IsEnabled && Regex.IsMatch( x.FloorName, basementRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
-      var oldMinFloorHeightImportDwgMappingModel = _oldImportDwgMappingModels.MinBy( x => x.FloorHeight ) ;
-      var oldMinHeight = oldMinFloorHeightImportDwgMappingModel?.FloorHeight ;
+      var newBasementImportDwgMappingModels = ImportDwgMappingModels.Where( x => Regex.IsMatch( x.FloorName, basementRegEx ) ).OrderByDescending( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
       for ( var i = 0 ; i < newBasementImportDwgMappingModels.Count ; i++ ) {
-        newBasementImportDwgMappingModels[ i ].FloorHeight = oldMinHeight != null ? oldMinHeight.Value - basementHeightDistance * ( i + 1 ) : -basementHeightDistance * i ;
+        if ( ( newBasementImportDwgMappingModels[ i ].FloorHeight == 0 && newBasementImportDwgMappingModels[ i ].IsEnabled ) || ! double.TryParse( newBasementImportDwgMappingModels[ i ].FloorHeightDisplay, out _ ) )
+          newBasementImportDwgMappingModels[ i ].FloorHeightDisplay = basementHeightDistance.ToString() ;
+
+        if ( i == 0 ) {
+          newBasementImportDwgMappingModels[ i ].FloorHeight = 0 ;
+        }
+        else {
+          double.TryParse( newBasementImportDwgMappingModels[ i - 1 ].FloorHeightDisplay, out var value ) ;
+          if ( value == 0 ) value = basementHeightDistance ;
+
+          newBasementImportDwgMappingModels[ i ].FloorHeight = newBasementImportDwgMappingModels[ i - 1 ].FloorHeight + value ;
+        }
+
+        newImportDwgMappingModels.Add( newBasementImportDwgMappingModels[ i ] ) ;
       }
 
       // Floor
-      var newFloorImportDwgMappingModels = ImportDwgMappingModels.Where( x => x.FloorHeight == 0 && x.IsEnabled && ! Regex.IsMatch( x.FloorName, basementRegEx ) && ! Regex.IsMatch( x.FloorName, rooftopRegEx ) && Regex.IsMatch( x.FloorName, floorRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
-      var maxFloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) ;
-      for ( var i = 0 ; i < newFloorImportDwgMappingModels.Count ; i++ ) {
-        newFloorImportDwgMappingModels[ i ].FloorHeight = maxFloorHeight + floorHeightDistance * ( i + 1 ) ;
-      }
+      var newFloorImportDwgMappingModels = ImportDwgMappingModels.Where( x => ! Regex.IsMatch( x.FloorName, basementRegEx ) && ! Regex.IsMatch( x.FloorName, rooftopRegEx ) && Regex.IsMatch( x.FloorName, floorRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
+      foreach ( var newFloorImportDwgMappingModel in newFloorImportDwgMappingModels ) {
+        if ( ( newFloorImportDwgMappingModel.FloorHeight == 0 && newFloorImportDwgMappingModel.IsEnabled ) || ! double.TryParse( newFloorImportDwgMappingModel.FloorHeightDisplay, out _ ) )
+          newFloorImportDwgMappingModel.FloorHeightDisplay = floorHeightDistance.ToString() ;
 
-      // Rooftop
-      var newRooftopImportDwgMappingModels = ImportDwgMappingModels.Where( x => x.FloorHeight == 0 && x.IsEnabled && Regex.IsMatch( x.FloorName, rooftopRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
-      maxFloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) ;
-      for ( var i = 0 ; i < newRooftopImportDwgMappingModels.Count ; i++ ) {
-        newRooftopImportDwgMappingModels[ i ].FloorHeight = maxFloorHeight + rooftopHeightDistance * ( i + 1 ) ;
-      }
+        var previousImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
+        if ( previousImportDwgMappingModel == null ) {
+          newFloorImportDwgMappingModel.FloorHeight = 0 ;
+        }
+        else {
+          double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var value ) ;
+          if ( value == 0 ) value = floorHeightDistance ;
 
-      var minFloorHeightImportDwgMappingModel = ImportDwgMappingModels.MinBy( x => x.FloorHeight ) ;
-      var minHeight = minFloorHeightImportDwgMappingModel?.FloorHeight ?? 0 ;
-      if ( minHeight < 0 ) {
-        foreach ( var importDwgMappingModel in ImportDwgMappingModels ) {
-          importDwgMappingModel.FloorHeight -= minHeight ;
+          newFloorImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + value ;
+          newImportDwgMappingModels.Add( newFloorImportDwgMappingModel ) ;
         }
       }
 
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ) ;
+      // Rooftop
+      var newRooftopImportDwgMappingModels = ImportDwgMappingModels.Where( x => Regex.IsMatch( x.FloorName, rooftopRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
+      foreach ( var newRooftopImportDwgMappingModel in newRooftopImportDwgMappingModels ) {
+        if ( ( newRooftopImportDwgMappingModel.FloorHeight == 0 && newRooftopImportDwgMappingModel.IsEnabled ) || ! double.TryParse( newRooftopImportDwgMappingModel.FloorHeightDisplay, out _ ) )
+          newRooftopImportDwgMappingModel.FloorHeightDisplay = rooftopHeightDistance.ToString() ;
+
+        var previousImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
+        if ( previousImportDwgMappingModel == null ) {
+          newRooftopImportDwgMappingModel.FloorHeight = 0 ;
+        }
+        else {
+          double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var value ) ;
+          if ( value == 0 ) value = rooftopHeightDistance ;
+
+          newRooftopImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + value ;
+          newImportDwgMappingModels.Add( newRooftopImportDwgMappingModel ) ;
+        }
+      }
+
+      var lastNewImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
+      if ( lastNewImportDwgMappingModel != null ) {
+        lastNewImportDwgMappingModel.FloorHeightDisplay = "-" ;
+        lastNewImportDwgMappingModel.IsEnabledFloorHeight = false ;
+      }
+
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( newImportDwgMappingModels ) ;
     }
 
     // Button load default db
