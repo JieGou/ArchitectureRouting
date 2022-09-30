@@ -405,10 +405,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           newBasementImportDwgMappingModels[ i ].FloorHeight = 0 ;
         }
         else {
-          double.TryParse( newBasementImportDwgMappingModels[ i - 1 ].FloorHeightDisplay, out var value ) ;
-          if ( value == 0 ) value = defaultBasementHeightDistance ;
+          double.TryParse( newBasementImportDwgMappingModels[ i - 1 ].FloorHeightDisplay, out var floorHeightDisplay ) ;
+          if ( floorHeightDisplay == 0 ) floorHeightDisplay = defaultBasementHeightDistance ;
 
-          newBasementImportDwgMappingModels[ i ].FloorHeight = newBasementImportDwgMappingModels[ i - 1 ].FloorHeight + value ;
+          newBasementImportDwgMappingModels[ i ].FloorHeight = newBasementImportDwgMappingModels[ i - 1 ].FloorHeight + floorHeightDisplay ;
         }
 
         newImportDwgMappingModels.Add( newBasementImportDwgMappingModels[ i ] ) ;
@@ -425,10 +425,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           newFloorImportDwgMappingModel.FloorHeight = 0 ;
         }
         else {
-          double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var value ) ;
-          if ( value == 0 ) value = defaultFloorHeightDistance ;
+          double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var floorHeightDisplay ) ;
+          if ( floorHeightDisplay == 0 ) floorHeightDisplay = defaultFloorHeightDistance ;
 
-          newFloorImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + value ;
+          newFloorImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + floorHeightDisplay ;
           newImportDwgMappingModels.Add( newFloorImportDwgMappingModel ) ;
         }
       }
@@ -444,10 +444,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           newRooftopImportDwgMappingModel.FloorHeight = 0 ;
         }
         else {
-          double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var value ) ;
-          if ( value == 0 ) value = defaultRooftopHeightDistance ;
+          double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var floorHeightDisplay ) ;
+          if ( floorHeightDisplay == 0 ) floorHeightDisplay = defaultRooftopHeightDistance ;
 
-          newRooftopImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + value ;
+          newRooftopImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + floorHeightDisplay ;
           newImportDwgMappingModels.Add( newRooftopImportDwgMappingModel ) ;
         }
       }

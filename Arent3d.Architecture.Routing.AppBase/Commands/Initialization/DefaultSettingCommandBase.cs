@@ -186,12 +186,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       foreach ( var item in importDwgMappingModels ) {
         var oldImportDwgMappingModel = defaultSettingStorable.ImportDwgMappingData.SingleOrDefault( i => i.FloorName == item.FloorName ) ;
-        double.TryParse( item.FloorHeightDisplay, out var value ) ;
+        double.TryParse( item.FloorHeightDisplay, out var floorHeightDisplay ) ;
         if ( oldImportDwgMappingModel == null ) {
-          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, value ) ) ;
+          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale, floorHeightDisplay ) ) ;
         }
         else {
-          oldImportDwgMappingModel.FloorHeightDisplay = value ;
+          oldImportDwgMappingModel.FloorHeightDisplay = floorHeightDisplay ;
           oldImportDwgMappingModel.FloorHeight = item.FloorHeight ;
           oldImportDwgMappingModel.Scale = item.Scale ;
         }
