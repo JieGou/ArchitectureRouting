@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
@@ -18,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     public record PickState(List<Route> RoutesRelatedPullBox, Element PullBox, Dictionary<string, string> RouteNameDictionary ) ;
     protected abstract AddInType GetAddInType() ;
+    protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
     protected virtual ISelectionFilter GetSelectionFilter() => new PullPoxPickFilter();
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
@@ -25,6 +28,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       Reference pickedPullBox ;
+      
+      if ( ElectricalRoutingFamilyType == ElectricalRoutingFamilyType.PullBox && ! PullBoxRouteManager.IsPullBoxDisPlaySettingEnabled( document ) ) {
+        MessageBox.Show( @"Please set pull box visible in Display Setting to execute." ) ;
+        return OperationResult<PickState>.Cancelled ;
+      }
 
       try {
         pickedPullBox = uiDocument.Selection.PickObject( ObjectType.Element, GetSelectionFilter() ) ;

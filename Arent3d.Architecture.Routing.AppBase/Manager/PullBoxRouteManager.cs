@@ -19,6 +19,7 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.DB.Structure ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
@@ -898,13 +899,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
 
       return result ;
-    }
-
-    public static bool IsGradeUnderThree( Document document )
-    {
-      var defaultSettingStorable = document.GetDefaultSettingStorable() ;
-      var grade = defaultSettingStorable.GradeSettingData.GradeMode ;
-      return grade is 1 or 2 or 3 ;
     }
 
     private static XYZ? GetShaftLocation( Route route, Document document )
@@ -1933,6 +1927,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         var locationPoint = ( p.Location as LocationPoint )?.Point ;
         return locationPoint != null && locationPoint.DistanceTo( new XYZ( originX, originY, originZ ) ) < minDistance ;
       } ) ;
+    }
+
+    public static bool IsPullBoxDisPlaySettingEnabled( Document document )
+    {
+      var dataStorage = document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
+      var displaySettingByGradeStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
+      return displaySettingByGradeStorageService.Data.IsPullBoxVisible ;
     }
     
     private class ConduitInfo
