@@ -171,7 +171,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _isEnabledFloorHeight = true ;
     }
 
-    public ImportDwgMappingModel( string id, string fileName, string floorName, double floorHeight, int scale, double floorHeightDisplay = 0 )
+    public ImportDwgMappingModel( string id, string fileName, string floorName, double floorHeight, int scale, double? floorHeightDisplay = 0 )
     {
       Id = id ;
       _fullFilePath = fileName ;
@@ -181,7 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _scale = scale ;
       _isEnabled = true ;
       _isDeleted = true ;
-      _floorHeightDisplay = floorHeightDisplay.ToString( CultureInfo.InvariantCulture ) ;
+      _floorHeightDisplay = floorHeightDisplay?.ToString( CultureInfo.InvariantCulture ) ?? "-" ;
       _isEnabledFloorHeight = true ;
     }
 

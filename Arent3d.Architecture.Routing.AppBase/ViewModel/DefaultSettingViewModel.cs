@@ -1136,14 +1136,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var height = heightNextLevel - heightCurrentLevel ;
 
         foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[ i ] ) {
-          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, height ) ;
+          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.Id, importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, height ) ;
           result.Add( importDwgModel ) ;
         }
       }
 
       // Add last item
       foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups.Last() ) {
-        var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, null ) ;
+        var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.Id, importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, null ) ;
         result.Add( importDwgModel ) ;
       }
 
@@ -1168,7 +1168,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newImportDwgMappingModels = ImportDwgMappingModels.Select( x => x.Copy() ).ToList() ;
       var currentIndex = ImportDwgMappingModels.FindIndex( x => x.Id == lastId ) ;
 
-      for ( var i = currentIndex ; i < ImportDwgMappingModels.Count ; i++ ) {
+      for ( var i = currentIndex + 1 ; i < ImportDwgMappingModels.Count ; i++ ) {
         newImportDwgMappingModels[ i ].FloorHeight += deviant ;
       }
 
