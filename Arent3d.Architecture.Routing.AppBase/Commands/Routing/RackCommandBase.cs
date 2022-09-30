@@ -9,7 +9,6 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
 using System.Globalization ;
-using System.Windows ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -28,7 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const double RatioBendRadius = 3.45 ;
     private const string Notation = "CR (W:{0})" ;
     private const char XChar = 'x' ;
-    private const string TagFamilyName = "CableTrayFittingTag" ;
+    private const string TagFamilyName = "Rack Fitting Content Tag" ;
     private const string TagTypeLeft = "Left" ;
     private const string TagTypeRight = "Right" ;
 
@@ -435,6 +434,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       rackNotationStorable.Save() ;
+    }
+
+    private IndependentTag? CreateRackTag( FamilyInstance rack, TextNote textNote, ElementId tagTypeId )
+    {
+      // set text to rack parameter
+      var content = textNote.Text ;
+      
+      // create tag at position of textNote
+      
+      return null ;
     }
     
     private static void CreateNotation( Document doc, RackNotationStorable rackNotationStorable, IReadOnlyCollection<FamilyInstance> racks, string fromConnectorId, bool isDirectionX, View view )
