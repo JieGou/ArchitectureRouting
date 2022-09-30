@@ -12,6 +12,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Architecture.Routing.Storages ;
+using Arent3d.Architecture.Routing.Storages.Extensions ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -40,6 +41,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private static readonly double HeightDistanceBetweenPullAndNotation = 50d.MillimetersToRevitUnits() ;
     public const string IsAutoCalculatePullBoxSizeParameter = "IsAutoCalculatePullBoxSize" ;
     private const string TaniOfPullBox = "個" ;
+    public const string PrefixPullBoxTextNote = "ARENT_PULLBOX" ;
+    public const string TextNoteSelectionName = "TEXTNOTE_PULLBOX" ;
+    public const string PullBoxFilterName = "PULL_BOX" ;
 
     public static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, Route route, Element element, FamilyInstance pullBox, double heightConnector, 
       double heightWire, XYZ routeDirection, bool isCreatePullBoxWithoutSettingHeight, string nameBase, ref int parentIndex, ref Dictionary<string, List<string>> parentAndChildRoute, XYZ? fromDirection = null, XYZ? toDirection = null, FixedHeight? firstHeight = null, bool isWireEnteredShaft = false, bool allowedTiltedPiping = false )
@@ -1291,6 +1295,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
       var txtPosition = new XYZ( positionOfNotation.X, positionOfNotation.Y, positionOfNotation.Z ) ;
       var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, notationContent, opts ) ;
+      AddTextNoteToSelectionFilter( textNote ) ;
 
       if ( isAutoCalculatePullBoxSize ) {
         var color = new Color( 255, 0, 0 ) ;
@@ -1305,6 +1310,47 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       storagePullBoxInfoServiceByLevel.Data.PullBoxInfoData.Add( new PullBoxInfoItemModel( pullBox.UniqueId, textNote.UniqueId ) ) ;
       storagePullBoxInfoServiceByLevel.SaveChange() ;
       updateNotationTransaction.Commit() ;
+    }
+
+    private static void AddTextNoteToSelectionFilter( TextNote textNote )
+    {
+      var selectionFilter = FindOrCreateSelectionFilter(textNote.Document) ;
+      if ( selectionFilter.Contains( textNote.Id ) )
+        return ;
+
+      selectionFilter.AddSingle( textNote.Id ) ;
+    }
+
+    private static SelectionFilterElement FindOrCreateSelectionFilter( Document document )
+    {
+      return document.GetAllInstances<SelectionFilterElement>()
+        .SingleOrDefault( x => x.Name == TextNoteSelectionName ) ?? SelectionFilterElement.Create( document, TextNoteSelectionName ) ;
+    }
+
+    private static ParameterFilterElement FindOrCreateParameterFilter( Document document )
+    {
+      var parameterFilterElement = document.GetAllInstances<ParameterFilterElement>().SingleOrDefault( x => x.Name == PullBoxFilterName ) ;
+      if ( null != parameterFilterElement )
+        return parameterFilterElement ;
+
+      var familyNameId = new ElementId( BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM ) ;
+      var parameterFilter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateEqualsRule( familyNameId, ElectricalRoutingFamilyType.PullBox.GetFamilyName() ?? string.Empty, false ) ) ;
+      var categories = new List<ElementId> { new ( BuiltInCategory.OST_ElectricalFixtures ) } ;
+
+      return ParameterFilterElement.Create( document, PullBoxFilterName, categories, new LogicalAndFilter( new List<ElementFilter> { parameterFilter } ) ) ;
+    }
+
+    public static void SetHiddenPullBoxByFilter( View view, bool isHidden )
+    {
+      var textNoteFilter = FindOrCreateSelectionFilter(view.Document) ;
+      if(!view.IsFilterApplied(textNoteFilter.Id))
+        view.AddFilter(textNoteFilter.Id);
+      view.SetFilterVisibility(textNoteFilter.Id, isHidden);
+
+      var pullBoxFilter = FindOrCreateParameterFilter( view.Document ) ;
+      if(!view.IsFilterApplied(pullBoxFilter.Id))
+        view.AddFilter(pullBoxFilter.Id);
+      view.SetFilterVisibility(pullBoxFilter.Id, isHidden);
     }
 
     private static string GetPullBoxTextBox( int depth, int height, string defaultContent )

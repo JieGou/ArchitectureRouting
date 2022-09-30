@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         Name="DisplaySettingByGrade"
         mc:Ignorable="d"
-        Title="表示項目設定" Height="280" Width="390"
+        Title="表示項目設定" Height="325" Width="390"
         WindowStartupLocation="CenterScreen"
         VerticalAlignment="Center"
         d:DataContext="{d:DesignInstance {x:Type local:DesignDisplaySettingViewModel}, IsDesignTimeCreatable=True}">
@@ -26,9 +26,19 @@
                 Width="320"
                 HorizontalAlignment="Left">
                 <StackPanel>
+                    <Grid Margin="30 15 0 0" >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="75" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="シンボル" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="1" Margin="0 0 5 0" FontSize="13"
+                                  ItemsSource="{Binding Path=DataDisplaySettingModel.GradeOptions}"
+                                  SelectedItem="{Binding Path=DataDisplaySettingModel.GradeOption, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Grid>
                     <CheckBox HorizontalAlignment="Left"
                               IsChecked="{Binding DataDisplaySettingModel.IsWiringVisible }"
-                              Content="配線（配線、配管、ラック、漏水帯など）" Margin="30 15 0 0" FontSize="13" />
+                              Content="配線（配線、配管、ラック、漏水帯など）" Margin="30 10 0 0" FontSize="13" />
                     <CheckBox HorizontalAlignment="Left"
                               IsChecked="{Binding DataDisplaySettingModel.IsDetailSymbolVisible}" Content="明細記号"
                               Margin="30 10 0 0" FontSize="13" />
