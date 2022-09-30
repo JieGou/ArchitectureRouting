@@ -194,11 +194,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
-    private void SetupDisplaySchedule( List<View> views, bool isVisible )
+    private static void SetupDisplaySchedule( List<View> views, bool isVisible )
     {
-      // Schedules
-      var hiddenOrUnhiddenElements = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ScheduleGraphics ).Where( sg => views.Any( lv => lv.Id == sg.OwnerViewId ) ).EnumerateAll() ;
-      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+      foreach ( var view in views ) {
+        var category = Category.GetCategory( view.Document, BuiltInCategory.OST_ScheduleGraphics ) ;
+        if ( ! view.CanCategoryBeHidden( category.Id ) )
+          continue ;
+
+        view.SetCategoryHidden( category.Id, !isVisible ) ;
+      }
     }
 
     private void SetupDisplayLegend( List<View> views, DisplaySettingModel displaySettingModel )
