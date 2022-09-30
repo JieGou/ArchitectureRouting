@@ -908,8 +908,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         return true ;
       
       // to be changed: get ceed code from storage
-      var ceedCode = "CeedCode" ;
-      return CategoryModel.IsMainConstructionCeedModelNumber( familyInstance.Document, ceedCode ) ;
+      familyInstance.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
+      if ( string.IsNullOrEmpty( ceedSetCode ) )
+        return false ;
+      
+      var ceedCodeInfo = ceedSetCode!.Split( ':' ).ToList() ;
+      if ( ceedCodeInfo.Count < 3 )
+        return false ;
+      var ceedModelNumber = ceedCodeInfo[2] ;
+      return CategoryModel.IsMainConstructionModelNumber( familyInstance.Document, ceedModelNumber ) ;
     }
 
     private static bool IsAboveMainConstructionBoard( this MEPCurve curve, Level level )
