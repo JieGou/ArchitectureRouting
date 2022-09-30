@@ -198,7 +198,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void AddModelBelowCurrentSelectedRow( DataGrid dtGrid )
     {
-      int index = dtGrid.SelectedIndex ;
+      var index = dtGrid.SelectedIndex ;
       if ( ! ImportDwgMappingModels.Any() ) return ;
       if ( index < 0 ) return ;
       var importDwgMappingModelExist = ImportDwgMappingModels[ index ] ;
@@ -220,16 +220,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ImportDwgMappingModels[ selectedIndex ].FloorHeight == ImportDwgMappingModels[ selectedIndex + 1 ].FloorHeight )
         Swap( ImportDwgMappingModels, selectedIndex, selectedIndex + 1 ) ;
       else {
-        var indexB = selectedIndex + 1 ;
+        var endIndex = selectedIndex + 1 ;
         while ( selectedIndex > 0 && ImportDwgMappingModels[ selectedIndex ].FloorHeight == ImportDwgMappingModels[ selectedIndex - 1 ].FloorHeight ) {
           selectedIndex-- ;
         }
 
-        for ( var i = indexB ; i > selectedIndex ; i-- ) {
+        for ( var i = endIndex ; i > selectedIndex ; i-- ) {
           Swap( ImportDwgMappingModels, i, i - 1 ) ;
         }
 
-        MoveFloorHeight( selectedIndex, indexB, false ) ;
+        MoveFloorHeight( selectedIndex, endIndex, false ) ;
       }
 
       dtGrid.SelectedIndex = selectedIndex ;
@@ -245,16 +245,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( ImportDwgMappingModels[ selectedIndex ].FloorHeight == ImportDwgMappingModels[ selectedIndex - 1 ].FloorHeight )
         Swap( ImportDwgMappingModels, selectedIndex, selectedIndex - 1 ) ;
       else {
-        var indexA = selectedIndex - 1 ;
+        var startIndex = selectedIndex - 1 ;
         while ( selectedIndex < ImportDwgMappingModels.Count - 2 && ImportDwgMappingModels[ selectedIndex ].FloorHeight == ImportDwgMappingModels[ selectedIndex + 1 ].FloorHeight ) {
           selectedIndex++ ;
         }
 
-        for ( var i = indexA ; i < selectedIndex ; i++ ) {
+        for ( var i = startIndex ; i < selectedIndex ; i++ ) {
           Swap( ImportDwgMappingModels, i, i + 1 ) ;
         }
 
-        MoveFloorHeight( indexA, selectedIndex, true ) ;
+        MoveFloorHeight( startIndex, selectedIndex, true ) ;
       }
 
       dtGrid.SelectedIndex = selectedIndex ;
@@ -312,9 +312,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var itemToRemove = _oldImportDwgMappingModels.SingleOrDefault( r => r.Id == selectedItem.Id ) ;
       if ( itemToRemove != null )
         _oldImportDwgMappingModels.Remove( itemToRemove ) ;
-      if ( ! DeletedFloorName.Contains( selectedItem.FloorName ) ) {
-        DeletedFloorName.Add( selectedItem.FloorName ) ;
-      }
+      if ( ! DeletedFloorName.Contains( selectedItem.FloorName ) ) DeletedFloorName.Add( selectedItem.FloorName ) ;
     }
 
     public void LoadDwgFile( ImportDwgMappingModel selectedItem )
@@ -359,7 +357,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       ChangeNameIfDuplicate() ;
       UpdateDefaultFloorHeight() ;
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>(  ImportDwgMappingModels ) ;
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels ) ;
       if ( ImportDwgMappingModels.Any() ) {
         ImportDwgMappingModels.Last().FloorHeightDisplay = "-" ;
         ImportDwgMappingModels.Last().IsEnabledFloorHeight = false ;
@@ -389,9 +387,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void UpdateDefaultFloorHeight()
     {
-      const int floorHeightDistance = 4000 ;
-      const int basementHeightDistance = 1000 ;
-      const int rooftopHeightDistance = 6500 ;
+      const int defaultFloorHeightDistance = 4000 ;
+      const int defaultBasementHeightDistance = 1000 ;
+      const int defaultRooftopHeightDistance = 6500 ;
       const string basementRegEx = @"B\d+" ;
       const string floorRegEx = @"\d+" ;
       const string rooftopRegEx = @"PH\d+" ;
@@ -401,14 +399,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newBasementImportDwgMappingModels = ImportDwgMappingModels.Where( x => Regex.IsMatch( x.FloorName, basementRegEx ) ).OrderByDescending( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
       for ( var i = 0 ; i < newBasementImportDwgMappingModels.Count ; i++ ) {
         if ( ( newBasementImportDwgMappingModels[ i ].FloorHeight == 0 && newBasementImportDwgMappingModels[ i ].IsEnabled ) || ! double.TryParse( newBasementImportDwgMappingModels[ i ].FloorHeightDisplay, out _ ) )
-          newBasementImportDwgMappingModels[ i ].FloorHeightDisplay = basementHeightDistance.ToString() ;
+          newBasementImportDwgMappingModels[ i ].FloorHeightDisplay = defaultBasementHeightDistance.ToString() ;
 
         if ( i == 0 ) {
           newBasementImportDwgMappingModels[ i ].FloorHeight = 0 ;
         }
         else {
           double.TryParse( newBasementImportDwgMappingModels[ i - 1 ].FloorHeightDisplay, out var value ) ;
-          if ( value == 0 ) value = basementHeightDistance ;
+          if ( value == 0 ) value = defaultBasementHeightDistance ;
 
           newBasementImportDwgMappingModels[ i ].FloorHeight = newBasementImportDwgMappingModels[ i - 1 ].FloorHeight + value ;
         }
@@ -420,7 +418,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newFloorImportDwgMappingModels = ImportDwgMappingModels.Where( x => ! Regex.IsMatch( x.FloorName, basementRegEx ) && ! Regex.IsMatch( x.FloorName, rooftopRegEx ) && Regex.IsMatch( x.FloorName, floorRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
       foreach ( var newFloorImportDwgMappingModel in newFloorImportDwgMappingModels ) {
         if ( ( newFloorImportDwgMappingModel.FloorHeight == 0 && newFloorImportDwgMappingModel.IsEnabled ) || ! double.TryParse( newFloorImportDwgMappingModel.FloorHeightDisplay, out _ ) )
-          newFloorImportDwgMappingModel.FloorHeightDisplay = floorHeightDistance.ToString() ;
+          newFloorImportDwgMappingModel.FloorHeightDisplay = defaultFloorHeightDistance.ToString() ;
 
         var previousImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
         if ( previousImportDwgMappingModel == null ) {
@@ -428,7 +426,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
         else {
           double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var value ) ;
-          if ( value == 0 ) value = floorHeightDistance ;
+          if ( value == 0 ) value = defaultFloorHeightDistance ;
 
           newFloorImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + value ;
           newImportDwgMappingModels.Add( newFloorImportDwgMappingModel ) ;
@@ -439,7 +437,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var newRooftopImportDwgMappingModels = ImportDwgMappingModels.Where( x => Regex.IsMatch( x.FloorName, rooftopRegEx ) ).OrderBy( x => Convert.ToInt32( Regex.Match( x.FloorName, @"\d+" ).Value ) ).ToList() ;
       foreach ( var newRooftopImportDwgMappingModel in newRooftopImportDwgMappingModels ) {
         if ( ( newRooftopImportDwgMappingModel.FloorHeight == 0 && newRooftopImportDwgMappingModel.IsEnabled ) || ! double.TryParse( newRooftopImportDwgMappingModel.FloorHeightDisplay, out _ ) )
-          newRooftopImportDwgMappingModel.FloorHeightDisplay = rooftopHeightDistance.ToString() ;
+          newRooftopImportDwgMappingModel.FloorHeightDisplay = defaultRooftopHeightDistance.ToString() ;
 
         var previousImportDwgMappingModel = newImportDwgMappingModels.LastOrDefault() ;
         if ( previousImportDwgMappingModel == null ) {
@@ -447,7 +445,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
         else {
           double.TryParse( previousImportDwgMappingModel.FloorHeightDisplay, out var value ) ;
-          if ( value == 0 ) value = rooftopHeightDistance ;
+          if ( value == 0 ) value = defaultRooftopHeightDistance ;
 
           newRooftopImportDwgMappingModel.FloorHeight = previousImportDwgMappingModel.FloorHeight + value ;
           newImportDwgMappingModels.Add( newRooftopImportDwgMappingModel ) ;
@@ -1136,14 +1134,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var height = heightNextLevel - heightCurrentLevel ;
 
         foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups[ i ] ) {
-          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.Id, importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, height ) ;
+          var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.Id, importDwgMappingModelsGroup.FullFilePath, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, height ) ;
           result.Add( importDwgModel ) ;
         }
       }
 
       // Add last item
       foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups.Last() ) {
-        var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.Id, importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, null ) ;
+        var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.Id, importDwgMappingModelsGroup.FullFilePath, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, null ) ;
         result.Add( importDwgModel ) ;
       }
 

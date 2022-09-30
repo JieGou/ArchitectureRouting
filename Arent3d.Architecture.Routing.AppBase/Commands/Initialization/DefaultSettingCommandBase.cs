@@ -120,8 +120,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       foreach ( var view in views ) {
         var fileName = string.Empty ;
         var floorName = view.Name ;
-        HeightSettingStorable settingStorables = doc.GetHeightSettingStorable() ;
-        var height = settingStorables.HeightSettingsData.Values.FirstOrDefault( x => x.LevelId.ToString() == view.GenLevel.Id.ToString() )?.Elevation ?? 0 ;
+        var heightSettingStorable = doc.GetHeightSettingStorable() ;
+        var height = heightSettingStorable.HeightSettingsData.Values.FirstOrDefault( x => x.LevelId.ToString() == view.GenLevel.Id.ToString() )?.Elevation ?? 0 ;
 
         var scale = view.Scale ;
 
@@ -130,7 +130,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var importDwgMappingModelsGroups = importDwgMappingModels.OrderBy( x => x.FloorHeight ).GroupBy( x => x.FloorHeight ).Select( x => x.ToList() ).ToList() ;
       var result = new List<ImportDwgMappingModel>() ;
-      
+
       for ( var i = 0 ; i < importDwgMappingModelsGroups.Count - 1 ; i++ ) {
         var heightCurrentLevel = importDwgMappingModelsGroups[ i ].First().FloorHeight ;
         var heightNextLevel = importDwgMappingModelsGroups[ i + 1 ].First().FloorHeight ;
@@ -141,7 +141,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           result.Add( importDwgModel ) ;
         }
       }
-      
+
       // Add last item
       foreach ( var importDwgMappingModelsGroup in importDwgMappingModelsGroups.Last() ) {
         var importDwgModel = new ImportDwgMappingModel( importDwgMappingModelsGroup.FileName, importDwgMappingModelsGroup.FloorName, importDwgMappingModelsGroup.FloorHeight, importDwgMappingModelsGroup.Scale, null ) ;
