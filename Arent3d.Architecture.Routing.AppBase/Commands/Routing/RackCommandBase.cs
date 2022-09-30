@@ -27,7 +27,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const double RatioBendRadius = 3.45 ;
     private const string Notation = "CR (W:{0})" ;
     private const char XChar = 'x' ;
-    private const string TagFamilyName = "Rack Fitting Content Tag" ;
     private const string TagTypeLeft = "Left" ;
     private const string TagTypeRight = "Right" ;
 
@@ -489,14 +488,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             if ( isDirectionX ) {
               var vector = ( XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * magnification ;
               textNote = TextNote.Create( doc, view.Id, point + vector, notation, textNoteType.Id ) ;
-              var tagTypeId = GetTagTypeId( doc, TagFamilyName, TagTypeRight, BuiltInCategory.OST_CableTrayFittingTags ) ;
+              var tagTypeId = GetTagTypeId( doc, TagTypeRight ) ;
               tag = IndependentTag.Create( doc, tagTypeId, view.Id, new Reference( longestRack ), false, TagOrientation.Horizontal, point + vector ) ;
             }
             else {
               var vector = ( XYZ.BasisX.Negate() * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * magnification ;
               textNote = TextNote.Create( doc, view.Id, point + vector, notation, textNoteType.Id ) ;
               ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
-              var tagTypeId = GetTagTypeId( doc, TagFamilyName, TagTypeLeft, BuiltInCategory.OST_CableTrayFittingTags ) ;
+              var tagTypeId = GetTagTypeId( doc, TagTypeLeft ) ;
               tag = IndependentTag.Create( doc, tagTypeId, view.Id, new Reference( longestRack ), false, TagOrientation.Horizontal, point + vector ) ;
             }
 
@@ -544,15 +543,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return textNote ;
     }
 
-    private static ElementId GetTagTypeId( Document document, string familyName, string typeName, BuiltInCategory builtInCategory = BuiltInCategory.INVALID )
+    private static ElementId GetTagTypeId( Document document, string typeName )
     {
-      var typeCollector = new FilteredElementCollector( document ).WhereElementIsElementType() ;
-      if ( builtInCategory != BuiltInCategory.INVALID ) typeCollector.OfCategory( builtInCategory ) ;
-      foreach ( var element in typeCollector ) {
-        var type = element as ElementType ;
-        if ( type != null && type.FamilyName == familyName && type.Name == typeName ) return type.Id ;
-      }
-
+      var typeSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.RackFittingContentTag ).Where( t => t.Name == typeName ) ;
+      if ( typeSymbols.Any() ) return typeSymbols.First().Id ;
       return ElementId.InvalidElementId ;
     }
 
