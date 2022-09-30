@@ -229,14 +229,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       foreach ( var view in views ) {
         if ( isVisible ) {
-          var scheduleSheetInstances = document.GetAllInstances<Viewport>().Where( x => x.ViewId == view.Id && x.IsHidden( view ) ).EnumerateAll() ;
+          var scheduleSheetInstances = document.GetAllInstances<Viewport>().Where( x => x.SheetId == view.Id && x.IsHidden( view ) ).EnumerateAll() ;
           if(!scheduleSheetInstances.Any())
             continue;
           
           view.UnhideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
         }
         else {
-          var scheduleSheetInstances = document.GetAllInstances<Viewport>().Where( x => x.ViewId == view.Id && !x.IsHidden( view ) ).EnumerateAll() ;
+          var scheduleSheetInstances = document.GetAllInstances<Viewport>().Where( x => x.SheetId == view.Id && !x.IsHidden( view ) ).EnumerateAll() ;
           if(!scheduleSheetInstances.Any())
             continue;
           
