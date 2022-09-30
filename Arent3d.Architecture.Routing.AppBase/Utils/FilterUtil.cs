@@ -1,4 +1,5 @@
-﻿using System.Linq ;
+﻿using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Autodesk.Revit.DB ;
 
@@ -18,6 +19,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
         return ;
 
       selectionFilter.AddSingle( element.Id ) ;
+    }
+
+    public static void AddElementsToSelectionFilter( Document document, string selectionFilterName, IEnumerable<Element> elements )
+    {
+      var selectionFilter = FindOrCreateSelectionFilter(document, selectionFilterName) ;
+      foreach ( var element in elements ) {
+        if ( selectionFilter.Contains( element.Id ) )
+          continue ;
+
+        selectionFilter.AddSingle( element.Id ) ;
+      }
     }
   }
 }

@@ -6,7 +6,6 @@ using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
-using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -17,6 +16,7 @@ using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
 
           using ( var progressData = progress.Reserve( 0.1 ) ) {
-            SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
+            SetupDisplaySchedule( _document, views, _dataDisplaySettingModel.IsScheduleVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
           
@@ -97,7 +97,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
 
           using ( var progressData = progress.Reserve( 0.2 ) ) {
-            SetupDisplayLegend( views, _dataDisplaySettingModel.IsLegendVisible ) ;
+            SetupDisplayLegend( _document, views, _dataDisplaySettingModel.IsLegendVisible ) ;
             progressData.ThrowIfCanceled() ;
           }
 
@@ -209,24 +209,43 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private static void SetupDisplaySchedule( List<View> views, bool isVisible )
+    private static void SetupDisplaySchedule( Document document, List<View> views, bool isVisible )
     {
       foreach ( var view in views ) {
-        var category = Category.GetCategory( view.Document, BuiltInCategory.OST_ScheduleGraphics ) ;
-        if ( ! view.CanCategoryBeHidden( category.Id ) )
-          continue ;
-
-        view.SetCategoryHidden( category.Id, !isVisible ) ;
+        if ( isVisible ) {
+          var scheduleSheetInstances = document.GetAllInstances<ScheduleSheetInstance>().Where( x => x.OwnerViewId == view.Id && x.IsHidden( view ) ).EnumerateAll() ;
+          if(!scheduleSheetInstances.Any())
+            continue;
+          
+          view.UnhideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
+        }
+        else {
+          var scheduleSheetInstances = document.GetAllInstances<ScheduleSheetInstance>().Where( x => x.OwnerViewId == view.Id && !x.IsHidden( view ) ).EnumerateAll() ;
+          if(!scheduleSheetInstances.Any())
+            continue;
+          
+          view.HideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
+        }
       }
     }
-
-    private static void SetupDisplayLegend( List<View> views, bool isLegendVisible )
+    
+    private static void SetupDisplayLegend( Document document, List<View> views, bool isVisible )
     {
       foreach ( var view in views ) {
-        var legendFilter = FilterUtil.FindOrCreateSelectionFilter(view.Document, DisplaySettingCommandBase.LegendSelectionFilter) ;
-        if(!view.IsFilterApplied(legendFilter.Id))
-          view.AddFilter(legendFilter.Id);
-        view.SetFilterVisibility(legendFilter.Id, isLegendVisible);
+        if ( isVisible ) {
+          var scheduleSheetInstances = document.GetAllInstances<Viewport>().Where( x => x.ViewId == view.Id && x.IsHidden( view ) ).EnumerateAll() ;
+          if(!scheduleSheetInstances.Any())
+            continue;
+          
+          view.UnhideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
+        }
+        else {
+          var scheduleSheetInstances = document.GetAllInstances<Viewport>().Where( x => x.ViewId == view.Id && !x.IsHidden( view ) ).EnumerateAll() ;
+          if(!scheduleSheetInstances.Any())
+            continue;
+          
+          view.HideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
+        }
       }
     }
 

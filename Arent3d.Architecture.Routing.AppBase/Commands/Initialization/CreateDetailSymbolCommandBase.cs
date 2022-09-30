@@ -5,6 +5,7 @@ using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
@@ -24,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public class CreateDetailSymbolCommandBase : IExternalCommand
   {
     public const string DefaultPlumbingType = "E" ;
+    public const string DetailSymbolSelectionName = "ARENT_DETAIL-SYMBOL" ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
@@ -52,6 +54,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var isParentSymbol = CheckDetailSymbolOfConduitDifferentCode( doc, conduit, storageService.Data.DetailSymbolData, detailSymbolSettingDialog.DetailSymbol ) ;
         var firstPoint = element.GlobalPoint ;
         var (textNote, lineIds) = CreateDetailSymbol( doc, detailSymbolSettingDialog, firstPoint, detailSymbolSettingDialog.Angle, isParentSymbol ) ;
+        FilterUtil.AddElementToSelectionFilter(DetailSymbolSelectionName, textNote);
+        FilterUtil.AddElementsToSelectionFilter(doc, DetailSymbolSelectionName, lineIds.Split(',').Select(x => doc.GetElement(x)));
 
         SaveDetailSymbol( doc, storageService, conduit, textNote, detailSymbolSettingDialog.DetailSymbol, lineIds, isParentSymbol ) ;
 

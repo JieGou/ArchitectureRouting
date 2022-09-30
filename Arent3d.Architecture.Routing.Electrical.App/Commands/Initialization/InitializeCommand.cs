@@ -1,3 +1,5 @@
+using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
@@ -61,7 +63,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     private static void LoadDefaultElectricalDb( Document document )
     {
       var uiDocument = new UIDocument( document ) ;
-      var activeViewName = document.ActiveView.Name ;
       var defaultSettingStorable = document.GetDefaultSettingStorable() ;
       var setupPrintStorable = document.GetSetupPrintStorable() ;
       var scale = setupPrintStorable.Scale ;
@@ -90,14 +91,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
     private static void RegisterLegendUpdater(Document document)
     {
-      var legendUpdater = new LegendUpdater( document.Application.ActiveAddInId ) ;
-      if ( UpdaterRegistry.IsUpdaterRegistered( legendUpdater.GetUpdaterId() ) ) 
+      var viewUpdater = new ViewUpdater( document.Application.ActiveAddInId ) ;
+      if ( UpdaterRegistry.IsUpdaterRegistered( viewUpdater.GetUpdaterId() ) ) 
         return ;
-      
-      UpdaterRegistry.RegisterUpdater( legendUpdater, document ) ;
-      var filter = new ElementClassFilter( typeof( Viewport ) ) ;
+
+      UpdaterRegistry.RegisterUpdater( viewUpdater, document ) ;
+      var filter = new ElementMulticlassFilter( new List<Type> { typeof( Viewport ), typeof( ScheduleSheetInstance ) } ) ;
       var changeType = Element.GetChangeTypeElementAddition() ;
-      UpdaterRegistry.AddTrigger( legendUpdater.GetUpdaterId(), document, filter, changeType ) ;
+      UpdaterRegistry.AddTrigger( viewUpdater.GetUpdaterId(), document, filter, changeType ) ;
     }
   }
 }
