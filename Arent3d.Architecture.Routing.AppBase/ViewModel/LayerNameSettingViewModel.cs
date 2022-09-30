@@ -157,10 +157,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var elementsOverrideGraphic = new List<Element>() ;
       var electricalEquipmentTagsFamilyName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalEquipmentTags".GetDocumentStringByKeyOrDefault( _document, "Electrical Equipment Tags" ) ;
       var electricalFixtureTagsFamilyName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ElectricalFixtureTags".GetDocumentStringByKeyOrDefault( _document, "Electrical Fixture Tags" ) ;
+      var cableTrayFittingTagsFamilyName = "Electrical.App.Commands.Initialization.ExportDWGCommand.CableTrayFittingTags".GetDocumentStringByKeyOrDefault( _document, "Cable Tray Fittings Tags" ) ;
       var electricalEquipmentTagsColorIndex = _newLayerNames.SingleOrDefault( l => l.FamilyName == electricalEquipmentTagsFamilyName )?.Index ?? AutoCadColorsManager.NoColor ;
       var electricalFixtureTagsColorIndex = _newLayerNames.SingleOrDefault( l => l.FamilyName == electricalFixtureTagsFamilyName )?.Index ?? AutoCadColorsManager.NoColor ;
+      var cableTrayFittingTagsColorIndex = _newLayerNames.SingleOrDefault( l => l.FamilyName == cableTrayFittingTagsFamilyName )?.Index ?? AutoCadColorsManager.NoColor ;
       var symbolContentTags = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtureTags ).ToList() ;
       var symbolContentEquipmentTags = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalEquipmentTags ).ToList() ;
+      var cableTrayFittingTags = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_CableTrayFittingTags ).ToList() ;
 
       var overrideGraphic = new OverrideGraphicSettings() ;
       var color = GetElementColor( electricalEquipmentTagsColorIndex ) ;
@@ -172,6 +175,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       overrideGraphic.SetProjectionLineColor( color ) ;
       symbolContentTags.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
       elementsOverrideGraphic.AddRange( symbolContentTags ) ;
+      
+      color = GetElementColor( cableTrayFittingTagsColorIndex ) ;
+      overrideGraphic.SetProjectionLineColor( color ) ;
+      cableTrayFittingTags.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( cableTrayFittingTags ) ;
 
       return elementsOverrideGraphic ;
     }
