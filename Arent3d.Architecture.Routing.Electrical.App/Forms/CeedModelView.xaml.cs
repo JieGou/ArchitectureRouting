@@ -1,10 +1,13 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
   public partial class CeedModelView : IDockablePaneProvider
   {
+    public Document? Document { get ; set ; }
+
     public void SetupDockablePane( DockablePaneProviderData data )
     {
       data.FrameworkElement = this ;
@@ -25,6 +28,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       var viewModel = new CeedViewModel( uiDocument, new CeedPostCommandExecutor() ) ;
       CeedModels = new CeedDockPaneContent( viewModel ) ;
       DataContext = viewModel ;
+      Document = uiDocument.Document ;
     }
     
     public void HideDockPane( UIApplication uiApplication )
