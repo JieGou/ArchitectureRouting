@@ -112,10 +112,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       var ceedCode = string.Join( ":", param.CeedViewModel.SelectedCeedCode, param.CeedViewModel.SelectedDeviceSymbol, param.CeedViewModel.SelectedModelNum ) ;
       connector.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
 
+      connector.SetConnectorFamilyType( CategoryModel.IsPowerCeedModel( connector.Document, param.CeedViewModel.SelectedCeedCode!, param.CeedViewModel.SelectedDeviceSymbol!, param.CeedViewModel.SelectedModelNum! ) ? ConnectorFamilyType.Power : ConnectorFamilyType.Sensor ) ;
+
       var defaultConstructionItem = connector.Document.GetDefaultConstructionItem() ;
       connector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
 
-      connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
       connector.SetProperty( ElectricalRoutingElementParameter.Quantity, 1 ) ;
 
       const string switch2DSymbol = "2Dシンボル切り替え" ;

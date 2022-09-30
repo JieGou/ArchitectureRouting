@@ -917,8 +917,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var ceedCodeInfo = ceedSetCode!.Split( ':' ).ToList() ;
       if ( ceedCodeInfo.Count < 3 )
         return false ;
-      var ceedModelNumber = ceedCodeInfo[2] ;
-      return CategoryModel.IsMainConstructionModelNumber( familyInstance.Document, ceedModelNumber ) ;
+      var ceedCode = ceedCodeInfo.First() ?? string.Empty ;
+      var deviceSymbol = ceedCodeInfo.ElementAt( 1 ) ?? string.Empty ;
+      var modelNumber = ceedCodeInfo.ElementAt( 2 ) ?? string.Empty ;
+      return CategoryModel.IsMainConstructionCeedModel( familyInstance.Document, ceedCode, deviceSymbol, modelNumber ) ;
     }
 
     private static bool IsAboveMainConstructionBoard( this MEPCurve curve, Level level )
