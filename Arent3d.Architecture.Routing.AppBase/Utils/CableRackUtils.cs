@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Models ;
 using Arent3d.Revit ;
@@ -899,11 +900,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return string.Join( $"{SignJoinRouteName}", array[ 0 ], array[ 1 ] ) ;
     }
 
-    public static IEnumerable<FamilyInstance> CreateVerticalCableTray( this Document document, IList<(Conduit Conduit, double Width)> conduitMaps, int scale , string rackClassification = "Normal Rack")
+    public static bool IsMainConstructionBoard( this FamilyInstance familyInstance )
+    {
+      if ( familyInstance.GetBuiltInCategory() is not (BuiltInCategory.OST_ElectricalEquipment or BuiltInCategory.OST_ElectricalFixtures) )
+        return false ;
+      if ( familyInstance.Symbol.FamilyName == ElectricalRoutingFamilyType.FromPowerEquipment.GetFamilyName() )
+        return true ;
+      
+      // to be changed: get ceed code from storage
+      var ceedCode = "CeedCode" ;
+      return CategoryModel.IsMainConstructionCeedModelNumber( familyInstance.Document, ceedCode ) ;
+    }
+
+    private static bool IsAboveMainConstructionBoard( this MEPCurve curve, Level level )
+    {
+      var box = curve.get_BoundingBox( null ) ;
+      if ( box is null || box.Max.Z < level.ProjectElevation )
+        return false ;
+      var minPoint = new XYZ( box.Min.X, box.Min.Y, level.ProjectElevation ) ;
+      var boundingFilter = new BoundingBoxIntersectsFilter( new Outline( minPoint, box.Max ) ) ;
+
+      var boards = new FilteredElementCollector( curve.Document ).WherePasses( boundingFilter ).OfType<FamilyInstance>().Where( fi => fi.GetBuiltInCategory() is BuiltInCategory.OST_ElectricalEquipment or BuiltInCategory.OST_ElectricalFixtures && fi.IsMainConstructionBoard() ) ;
+      return boards.Any() ;
+    }
+
+    public static IEnumerable<FamilyInstance> CreateVerticalCableTray( this Document document, IList<(Conduit Conduit, double Width)> conduitMaps, int scale, bool onlyForMainConstructionBoard , string rackClassification = "Normal Rack" )
     {
       var cableTrays = new List<FamilyInstance>() ;
       if ( ! conduitMaps.Any() )
         return cableTrays ;
+      
+      if ( onlyForMainConstructionBoard )
+        conduitMaps = conduitMaps.Where( item => item.Conduit.IsAboveMainConstructionBoard( document.ActiveView.GenLevel )).ToList() ;
 
       var cableTrayType = GetGenericRackSymbol( document, "シャフト用" ) ?? throw new InvalidOperationException() ;
       foreach ( var conduitMap in conduitMaps ) {
