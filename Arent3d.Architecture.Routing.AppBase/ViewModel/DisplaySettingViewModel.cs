@@ -227,20 +227,52 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     private static void SetupDisplayLegend( Document document, List<View> views, bool isVisible )
     {
+      var activeView = document.ActiveView ;
       foreach ( var view in views ) {
         if ( isVisible ) {
-          var scheduleSheetInstances = document.GetAllInstances<Viewport>().Where( x => x.SheetId == view.Id && x.IsHidden( view ) ).EnumerateAll() ;
-          if(!scheduleSheetInstances.Any())
+          var viewPorts = document.GetAllInstances<Viewport>().Where( x => x.SheetId == view.Id && x.IsHidden( view ) ).EnumerateAll() ;
+          if(!viewPorts.Any())
             continue;
+
+          foreach ( var viewPort in viewPorts ) {
+            var viewInViewport = (View) document.GetElement( viewPort.ViewId ) ;
+            
+            var data = viewPort.GetData<CategoryShowModel>() ;
+            if(null == data)
+              continue;
+
+            foreach ( var categoryId in data.CategoryIds ) {
+              viewInViewport.SetCategoryHidden(categoryId, false);
+            }
+          }
           
-          view.UnhideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
+          view.UnhideElements(viewPorts.Select(x => x.Id).ToList());
+          var uiDocument = new UIDocument( document ) ;
+          uiDocument.RequestViewChange(activeView);
         }
         else {
-          var scheduleSheetInstances = document.GetAllInstances<Viewport>().Where( x => x.SheetId == view.Id && !x.IsHidden( view ) ).EnumerateAll() ;
-          if(!scheduleSheetInstances.Any())
+          var viewPorts = document.GetAllInstances<Viewport>().Where( x => x.SheetId == view.Id && !x.IsHidden( view ) ).EnumerateAll() ;
+          if(!viewPorts.Any())
             continue;
           
-          view.HideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
+          foreach ( var viewPort in viewPorts ) {
+            var viewInViewport = (View) document.GetElement( viewPort.ViewId ) ;
+            var categoryShowModel = new CategoryShowModel() ;
+            
+            var enumerator = document.Settings.Categories.GetEnumerator();
+            while(enumerator.MoveNext())
+            {
+              if(enumerator.Current is not Category category || viewInViewport.GetCategoryHidden(category.Id) || ! viewInViewport.CanCategoryBeHidden( category.Id ))
+                continue;
+
+              categoryShowModel.CategoryIds.Add(category.Id);
+              viewInViewport.SetCategoryHidden(category.Id, true);
+            }
+            
+            viewPort.SetData(categoryShowModel);
+          }
+          
+          view.HideElements(viewPorts.Select(x => x.Id).ToList());
         }
       }
     }

@@ -23,8 +23,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       var storageService = new StorageService<DataStorage, DisplaySettingModel>( document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ) ;
 
       foreach ( var addedElementId in updaterData.GetAddedElementIds() ) {
-        //TODO: Can't hide legend
         if ( !storageService.Data.IsLegendVisible && document.GetElement( addedElementId ) is Viewport viewport && document.GetElement( viewport.SheetId ) is ViewSheet viewSheetForLegend ) {
+          var viewInViewport = (View) document.GetElement( viewport.ViewId ) ;
+          var categoryShowModel = new CategoryShowModel() ;
+            
+          var enumerator = document.Settings.Categories.GetEnumerator();
+          while(enumerator.MoveNext())
+          {
+            if(enumerator.Current is not Category category || viewInViewport.GetCategoryHidden(category.Id) || ! viewInViewport.CanCategoryBeHidden( category.Id ))
+              continue;
+
+            categoryShowModel.CategoryIds.Add(category.Id);
+            viewInViewport.SetCategoryHidden(category.Id, true);
+          }
+            
+          viewport.SetData(categoryShowModel);
           viewSheetForLegend.HideElements(new List<ElementId> { viewport.Id });
         }
       
