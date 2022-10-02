@@ -29,6 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const char XChar = 'x' ;
     private const string TagTypeLeft = "Left" ;
     private const string TagTypeRight = "Right" ;
+    public const string RackTagLeaderLineTypeName = "ラックタグ線" ;
 
     public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string> { { 0, "Normal Rack" }, { 1, "Limit Rack" } } ;
 
@@ -498,7 +499,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( nearestPoint, new XYZ( point.X, point.Y, viewPlan.GenLevel.Elevation ) ) }, new List<Type> { typeof( CableTray ) }, notUsedForIntersect ) ;
             curves.Add( underLineTextNote ) ;
 
-            var detailCurves = NotationHelper.CreateDetailCurve( view, curves ) ;
+            var lineGraphicStyle = NotationHelper.FindOrCreateLineType( doc, BuiltInCategory.OST_CurvesMediumLines, RackTagLeaderLineTypeName ) ;
+            var detailCurves = NotationHelper.CreateDetailCurve( view, curves, lineGraphicStyle ) ;
             var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, point ) ;
 
             (string? endLineUniqueId, int? endPoint) endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;

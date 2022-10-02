@@ -71,11 +71,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
               not {} rackNotationModel )
             return ;
 
-          if ( document.GetElement( rackNotationModel.NotationId ) is not TextNote notation )
+          if ( document.GetElement( rackNotationModel.NotationId ) is not IndependentTag tagItem )
             return ;
           
-          var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, notation, detailLine ) ;
-          NotationHelper.SaveNotation( rackNotationStorable, notation, endLineLeaderId, ortherLineId ) ;
+          var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, tagItem, detailLine ) ;
+          NotationHelper.SaveNotation( rackNotationStorable, tagItem, endLineLeaderId, ortherLineId ) ;
         }
         
         selection.SetElementIds(new List<ElementId>());
