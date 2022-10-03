@@ -100,10 +100,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             var detailUniqueIds = new List<string>() ;
             var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
 
+            var oldCableTrays = GetOldCableTrays( document, shaftOpeningModels ) ;
             var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
             foreach ( var viewPlan in viewPlans ) {
               var cableTraySymbolId = cableTraySymbols.FirstOrDefault( x => x.LevelId == viewPlan.GenLevel.Id )?.UniqueId ?? string.Empty ;
-              var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, widthCableTray, cableTraySymbolId ) ;
+              var detailCurves = CreateSymbolForShaftOpeningOnViewPlan( opening, viewPlan, styleForSymbol, styleForBodyDirection, styleForOuterShape, widthCableTray, cableTraySymbolId, oldCableTrays ) ;
               detailUniqueIds.AddRange( detailCurves ) ;
               if ( ! string.IsNullOrEmpty( cableTraySymbolId ) ) cableTraySymbols.RemoveAll( e => e.UniqueId == cableTraySymbolId ) ;
             }
@@ -179,6 +180,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       shaftOpeningStore.ShaftOpeningModels.RemoveAll( oldShaftOpeningModels.Contains ) ;
     }
 
+    private static List<Element> GetOldCableTrays( Document document, IEnumerable<ShaftOpeningModel> oldShaftOpeningModels )
+    {
+      List<Element> oldCableTrayIds = new() ;
+      foreach ( var oldShaftOpeningModel in oldShaftOpeningModels ) {
+        var cableTrayIds = oldShaftOpeningModel.CableTrayUniqueIds.Where( x => document.GetElement( x ) != null ).Select( document.GetElement ).ToList() ;
+        oldCableTrayIds.AddRange( cableTrayIds ) ;
+      }
+
+      return oldCableTrayIds ;
+    }
+    
     public static (Element StyleForBodyDirection, Element StyleForOuterShape, Element StyleForSymbol) GetLineStyles(Document document)
     {
       var styleForBodyDirection = GetLineStyle( document, SubCategoryForDirectionCylindricalShaftName, new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
@@ -187,7 +199,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       return ( styleForBodyDirection, styleForOuterShape, styleForSymbol ) ;
     }
 
-    public static IEnumerable<string> CreateSymbolForShaftOpeningOnViewPlan(Opening opening, ViewPlan viewPlan, Element styleForSymbol, Element styleForBodyDirection, Element styleForOuterShape, double size, string cableTrayUniqueId)
+    public static IEnumerable<string> CreateSymbolForShaftOpeningOnViewPlan(Opening opening, ViewPlan viewPlan, Element styleForSymbol, Element styleForBodyDirection, Element styleForOuterShape, double size, string cableTrayUniqueId, List<Element>? oldCableTrays = null )
     {
       var ratio = viewPlan.Scale / 100d ;
       var scaleRadius = DefaultRadius * ratio ;
@@ -220,19 +232,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       if ( viewPlans.FindIndex( x => x.Id == viewPlan.Id ) == 0 ) {
         CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, styleForSymbol )
           .ForEach(x => detailUniqueIds.Add(x.UniqueId));
-        curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 0 ].CreateTransformed( transformTranslation ) } ) ;
+        curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 0 ].CreateTransformed( transformTranslation ) }, null, oldCableTrays ) ;
       }
       else if ( viewPlans.FindIndex( x => x.Id == viewPlan.Id ) == viewPlans.Count - 1 ) {
         CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, styleForSymbol )
           .ForEach(x => detailUniqueIds.Add(x.UniqueId));
-        curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 1 ].CreateTransformed( transformTranslation ) } ) ;
+        curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 1 ].CreateTransformed( transformTranslation ) }, null, oldCableTrays ) ;
       }
       else {
         CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, styleForSymbol )
           .ForEach(x => detailUniqueIds.Add(x.UniqueId));
         CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, styleForSymbol )
           .ForEach(x => detailUniqueIds.Add(x.UniqueId));
-        curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, bodyDirections.Select( x => x.CreateTransformed( transformTranslation ) ).ToList() ) ;
+        curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, bodyDirections.Select( x => x.CreateTransformed( transformTranslation ) ).ToList(), null, oldCableTrays ) ;
       }
 
       SequenceExtensions.ForEach( curvesBody.Select( x => CreateDetailLine( viewPlan, styleForBodyDirection, x ) ), x => detailUniqueIds.Add(x.UniqueId)) ;
