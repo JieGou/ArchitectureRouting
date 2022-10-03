@@ -70,9 +70,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = level.Document ;
 
       // change storage of auto rack
+      var deletedIds = elements.Select( e => e.Id ) ;
       var routeNames = elements.Select( x => RouteUtil.GetMainRouteName( x.GetRouteName() ) ).Distinct() ;
       var storage = new StorageService<Level, RackForRouteModel>( level ) ;
+      var modifiedRecords = storage.Data.RackForRoutes.Where( x => routeNames.Any( y => y == x.RouteName ) ).ToList() ;
       storage.Data.RackForRoutes.RemoveAll( x => routeNames.Any( y => y == x.RouteName ) ) ;
+      foreach ( var record in modifiedRecords ) {
+        // remove deleted ids in this record
+        record.RackIds.RemoveAll( id => deletedIds.Any( deletedId => deletedId == id ) ) ;
+        
+        // add modified record back to storage
+        if ( record.RackIds.Any() )
+          storage.Data.RackForRoutes.Add( record ) ;
+      }
       storage.SaveChange() ;
 
       // change storage of manual rack
@@ -80,16 +90,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var rackFromToList = storageRackFromTo.Data.RackFromToItems.Where( x => x.UniqueIds.All( uniqueId => document.GetElement( uniqueId ) is { } ) ).ToList() ;
       storageRackFromTo.Data.RackFromToItems.Clear() ;
 
-      var deletedIds = elements.Select( e => e.UniqueId ) ;
+      var deletedUniqueIds = elements.Select( e => e.UniqueId ) ;
       foreach ( var rackFromTo in rackFromToList ) {
         // remove deleted uniqueId
-        rackFromTo.UniqueIds.RemoveAll( uniqueId => deletedIds.Contains( uniqueId ) ) ;
+        rackFromTo.UniqueIds.RemoveAll( uniqueId => deletedUniqueIds.Any( deletedUniqueId => deletedUniqueId == uniqueId ) ) ;
 
         // add modified array of unique Id back to storage
         if ( rackFromTo.UniqueIds.Any() )
           storageRackFromTo.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = rackFromTo.UniqueIds } ) ;
       }
-
       storageRackFromTo.SaveChange() ;
     }
 
