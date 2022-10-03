@@ -49,7 +49,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( pointNearest.X, pointNearest.Y, viewPlan.GenLevel.Elevation ), new XYZ( endPoint.X, endPoint.Y, viewPlan.GenLevel.Elevation ) ) }, null, notUsedForIntersect ) ;
       curves.Add( underLineText ) ;
 
-      var detailCurves = CreateDetailCurve( viewPlan, curves ) ;
+      var lineGraphicStyle = FindOrCreateLineType( document, BuiltInCategory.OST_CurvesMediumLines, RackCommandBase.RackTagLeaderLineTypeName ) ;
+      var detailCurves = CreateDetailCurve( viewPlan, curves, lineGraphicStyle ) ;
       FilterUtil.AddElementsToSelectionFilter(document, RackCommandBase.NotationSelectionName, detailCurves);
       var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
       var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.DetailCurve?.UniqueId ).ToList() ;
@@ -81,7 +82,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( pointNearest.X, pointNearest.Y, viewPlan.GenLevel.Elevation ), new XYZ( endPoint.X, endPoint.Y, viewPlan.GenLevel.Elevation ) ) }, null, notUsedForIntersect ) ;
       curves.Add( underLineText ) ;
 
-      var detailCurves = CreateDetailCurve( viewPlan, curves ) ;
+      var lineGraphicStyle = FindOrCreateLineType( document, BuiltInCategory.OST_CurvesMediumLines, RackCommandBase.RackTagLeaderLineTypeName ) ;
+      var detailCurves = CreateDetailCurve( viewPlan, curves, lineGraphicStyle ) ;
       FilterUtil.AddElementsToSelectionFilter(document, RackCommandBase.NotationSelectionName, detailCurves);
       var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
       var otherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.DetailCurve?.UniqueId ).ToList() ;
@@ -118,13 +120,13 @@ namespace Arent3d.Architecture.Routing.AppBase
       rackNotationStorable.Save() ;
     }
     
-    public static List<DetailCurve> CreateDetailCurve( View? view, IEnumerable<Curve> curves )
+    public static List<DetailCurve> CreateDetailCurve( View? view, IEnumerable<Curve> curves, GraphicsStyle? graphicsStyle = null )
     {
       var detailCurves = new List<DetailCurve>() ;
       if ( null == view )
         return detailCurves ;
 
-      var graphicsStyle = view.Document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      graphicsStyle ??= view.Document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
 
       foreach ( var curve in curves ) {
         var detailCurve = view.Document.Create.NewDetailCurve( view, curve ) ;
@@ -133,6 +135,31 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       return detailCurves ;
+    }
+
+    public static GraphicsStyle? FindOrCreateLineType( Document document, BuiltInCategory sampleLineCategory, string lineTypeName )
+    {
+      if ( document.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) is not { } parentCategory )
+        return null ;
+
+      const GraphicsStyleType graphicStyle = GraphicsStyleType.Projection ;
+
+      // find sub category by name
+      if ( parentCategory.SubCategories.Contains( lineTypeName ) && parentCategory.SubCategories.get_Item( lineTypeName ) is { } subCategory )
+        return subCategory.GetGraphicsStyle( graphicStyle ) ;
+
+      // add new subcategory if not existing
+      if ( ! parentCategory.CanAddSubcategory || document.Settings.Categories.NewSubcategory( parentCategory, lineTypeName ) is not { } newSubcategory ) return null ;
+
+      // copy setting from sample
+      if ( document.Settings.Categories.get_Item( sampleLineCategory ) is { } sampleCategory ) {
+        if ( sampleCategory.GetLineWeight( graphicStyle ) is { } lineWeight )
+          newSubcategory.SetLineWeight( lineWeight, graphicStyle ) ;
+        if ( sampleCategory.GetLinePatternId( graphicStyle ) is { } patternId )
+          newSubcategory.SetLinePatternId( patternId, graphicStyle ) ;
+      }
+
+      return newSubcategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
     }
   }
 }
