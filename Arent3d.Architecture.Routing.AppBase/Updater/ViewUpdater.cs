@@ -25,6 +25,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       foreach ( var addedElementId in updaterData.GetAddedElementIds() ) {
         if ( !storageService.Data.IsLegendVisible && document.GetElement( addedElementId ) is Viewport viewport && document.GetElement( viewport.SheetId ) is ViewSheet viewSheetForLegend ) {
           var viewInViewport = (View) document.GetElement( viewport.ViewId ) ;
+          if(viewInViewport.ViewType != ViewType.Legend)
+            continue;
+          
           var categoryShowModel = new CategoryShowModel() ;
             
           var enumerator = document.Settings.Categories.GetEnumerator();

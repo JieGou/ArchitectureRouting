@@ -236,6 +236,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
           foreach ( var viewPort in viewPorts ) {
             var viewInViewport = (View) document.GetElement( viewPort.ViewId ) ;
+            if(viewInViewport.ViewType != ViewType.Legend)
+              continue;
             
             var data = viewPort.GetData<CategoryShowModel>() ;
             if(null == data)
@@ -244,9 +246,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             foreach ( var categoryId in data.CategoryIds ) {
               viewInViewport.SetCategoryHidden(categoryId, false);
             }
+            
+            view.UnhideElements(new List<ElementId>{ viewPort.Id });
           }
           
-          view.UnhideElements(viewPorts.Select(x => x.Id).ToList());
           var uiDocument = new UIDocument( document ) ;
           uiDocument.RequestViewChange(activeView);
         }
@@ -257,6 +260,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           
           foreach ( var viewPort in viewPorts ) {
             var viewInViewport = (View) document.GetElement( viewPort.ViewId ) ;
+            if(viewInViewport.ViewType != ViewType.Legend)
+              continue;
+            
             var categoryShowModel = new CategoryShowModel() ;
             
             var enumerator = document.Settings.Categories.GetEnumerator();
@@ -270,9 +276,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
             
             viewPort.SetData(categoryShowModel);
+            view.HideElements(new List<ElementId>{ viewPort.Id });
           }
-          
-          view.HideElements(viewPorts.Select(x => x.Id).ToList());
         }
       }
     }
