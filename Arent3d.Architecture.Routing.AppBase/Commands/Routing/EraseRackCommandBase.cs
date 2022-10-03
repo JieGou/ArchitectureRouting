@@ -27,14 +27,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         TaskDialog.Show( "Arent Inc", "Only support in the view plan!" ) ;
         return Result.Cancelled ;
       }
-      
-      var racks = FilterRacks( uiDocument).EnumerateAll() ;
-      
+
+      var racks = FilterRacks( uiDocument ).EnumerateAll() ;
+      if ( ! racks.Any() )
+        return Result.Cancelled ;
+
       using var transaction = new Transaction( uiDocument.Document, EraseLimitRackTransactionName ) ;
       try {
         transaction.Start() ;
         RemoveRacksInStorage( viewPlan.GenLevel, racks ) ;
-        RemoveLimitRacks( uiDocument.Document, racks.Select(x => x.UniqueId) ) ;
+        RemoveLimitRacks( uiDocument.Document, racks.Select( x => x.UniqueId ) ) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -94,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData
                  .Where( d => rackUniqueIds.Contains( d.RackId ) ).ToList() ) {
         // delete notation
-        var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes )
+        var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_CableTrayFittingTags )
           .Where( e => e.UniqueId == rackNotationModel.NotationId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( notationId != null )
           document.Delete( notationId ) ;
