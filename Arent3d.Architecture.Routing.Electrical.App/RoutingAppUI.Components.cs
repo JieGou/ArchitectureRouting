@@ -281,11 +281,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class CreateCylindricalShaftCommandButton
           {
           }
-
-          [Button( typeof( AddHSymbolCommand ), OnlyInitialized = true )]
-          private static class AddHSymbolCommandButton
-          {
-          }
         }
 
         [SplitButton( "arent3d.architecture.routing.drawing.envelope", TitleKey = "Electrical.App.Panels.Routing.Drawing.Envelope" )]

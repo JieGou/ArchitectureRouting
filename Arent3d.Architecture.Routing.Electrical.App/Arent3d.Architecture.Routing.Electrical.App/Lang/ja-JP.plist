@@ -148,9 +148,6 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>円柱シャフト作成</string>
 
-        <key>Electrical.App.Commands.Shaft.AddHSymbolCommand</key>
-        <string>H記号追加</string>
-
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>選択範囲配線</string>
 
