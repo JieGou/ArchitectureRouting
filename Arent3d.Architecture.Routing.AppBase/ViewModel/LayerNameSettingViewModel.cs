@@ -124,6 +124,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
       elementsOverrideGraphic.AddRange( curveElements ) ;
       
+      curveElements = _document.GetAllInstances<CurveElement>( _document.ActiveView ).Where( x => x.LineStyle.Name == RackCommandBase.RackTagLeaderLineTypeName ).ToList() ;
+      curveElements.ForEach( x => _document.ActiveView.SetElementOverrides( x.Id, overrideGraphic ) ) ;
+      elementsOverrideGraphic.AddRange( curveElements ) ;
+      
       var subCategoryForCylindricalShaftColorIndex = _newLayerNames.FirstOrDefault( l => l.FamilyType == CreateCylindricalShaftCommandBase.SubCategoryForCylindricalShaftName )?.Index ?? AutoCadColorsManager.NoColor ;
       color = GetElementColor( subCategoryForCylindricalShaftColorIndex ) ;
       overrideGraphic.SetProjectionLineColor( color ) ;
