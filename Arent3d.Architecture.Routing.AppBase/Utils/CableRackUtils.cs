@@ -35,7 +35,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     public static bool HasPoint( this MEPCurve mepCurve, XYZ point )
     {
-      var (firstConnector, secondConnector) = Get2ConnectorsOfConduit( mepCurve ) ;
+      var (firstConnector, secondConnector) = Get2Connectors( mepCurve ) ;
       if ( firstConnector?.Origin is not { } p1 || secondConnector?.Origin is not { } p2 )
         return false ;
       return point.IsBetween( p1, p2 ) ;
@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return firstEndPoint + vCurve * ( point - firstEndPoint ).DotProduct( vCurve ) ;
     }
 
-    public static (Connector? Connector1, Connector? Connector2) Get2ConnectorsOfConduit( this Element curve )
+    public static (Connector? Connector1, Connector? Connector2) Get2Connectors( this Element curve )
     {
       var connectorsOfConduit = curve.GetConnectors().ToArray() ;
       return connectorsOfConduit.Length != 2 ? ( null, null ) : ( connectorsOfConduit.ElementAt( 0 ), connectorsOfConduit.ElementAt( 1 ) ) ;
@@ -58,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     private static Connector? GetOppositeConnector( Connector connector )
     {
-      var (firstConnector, secondConnector) = Get2ConnectorsOfConduit( connector.Owner ) ;
+      var (firstConnector, secondConnector) = Get2Connectors( connector.Owner ) ;
       if ( firstConnector?.Id == connector.Id )
         return secondConnector ;
       return secondConnector?.Id == connector.Id ? firstConnector : null ;
@@ -85,7 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     {
       if ( startCurve.Id == endCurve.Id )
         return new List<Element>() { startCurve } ;
-      var (startConnector1, startConnector2) = Get2ConnectorsOfConduit( startCurve ) ;
+      var (startConnector1, startConnector2) = Get2Connectors( startCurve ) ;
       // try to find endCurve from start1
       var linkedMEPCurves = new List<Element>() { startCurve } ;
       if ( startConnector1 is { } && TryFindMEPCurvesFromTo( startConnector1, endCurve, linkedMEPCurves ) )
@@ -101,8 +101,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     public static (double StartParam, double EndParam) CalculatePositionOfRackOnConduit( this MEPCurve thisCurve, XYZ startPointOfRack, Element nextCurve )
     {
-      var (thisConnector1, thisConnector2) = Get2ConnectorsOfConduit( thisCurve ) ;
-      var (nextConnector1, nextConnector2) = Get2ConnectorsOfConduit( nextCurve ) ;
+      var (thisConnector1, thisConnector2) = Get2Connectors( thisCurve ) ;
+      var (nextConnector1, nextConnector2) = Get2Connectors( nextCurve ) ;
       if ( thisConnector1 is null || thisConnector2 is null || nextConnector1 is null || nextConnector2 is null )
         return ( 0.0, 1.0 ) ;
 
@@ -127,7 +127,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     public static (double StartParam, double EndParam) CalculatePositionOfRackOnConduit( this MEPCurve mepCurve, XYZ startPointOfRack, XYZ endPointOfRack )
     {
-      var (startConnector, endConnector) = Get2ConnectorsOfConduit( mepCurve ) ;
+      var (startConnector, endConnector) = Get2Connectors( mepCurve ) ;
       if ( startConnector is null || endConnector is null )
         return ( 0.0, 1.0 ) ;
 
@@ -233,8 +233,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     private static bool IsSamePosition( Element firstCurve, Element secondCurve )
     {
-      var (connectorFirst1, connectorFirst2) = Get2ConnectorsOfConduit( firstCurve ) ;
-      var (connectorSecond1, connectorSecond2) = Get2ConnectorsOfConduit( secondCurve ) ;
+      var (connectorFirst1, connectorFirst2) = Get2Connectors( firstCurve ) ;
+      var (connectorSecond1, connectorSecond2) = Get2Connectors( secondCurve ) ;
       if ( connectorFirst1?.Origin is not { } pointFirst1 || connectorFirst2?.Origin is not { } pointFirst2 || connectorSecond1?.Origin is not { } pointSecond1 || connectorSecond2?.Origin is not { } pointSecond2 )
         return false ;
 
@@ -243,8 +243,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     private static (Connector? ConnectorShort, Connector? ConnectorLong) IsOverlappedEndPoint( Element shortCurve, Element longCurve )
     {
-      var (connectorShort1, connectorShort2) = Get2ConnectorsOfConduit( shortCurve ) ;
-      var (connectorLong1, connectorLong2) = Get2ConnectorsOfConduit( longCurve ) ;
+      var (connectorShort1, connectorShort2) = Get2Connectors( shortCurve ) ;
+      var (connectorLong1, connectorLong2) = Get2Connectors( longCurve ) ;
       if ( connectorShort1?.Origin is not { } pointShort1 || connectorShort2?.Origin is not { } pointShort2 || connectorLong1?.Origin is not { } pointLong1 || connectorLong2?.Origin is not { } pointLong2 )
         return ( null, null ) ;
 
@@ -262,8 +262,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     private static (Connector? ConnectorFirst, Connector? ConnectorSecond) IsOverlappedEachOther( Element firstCurve, Element secondCurve )
     {
-      var (connectorFirst1, connectorFirst2) = Get2ConnectorsOfConduit( firstCurve ) ;
-      var (connectorSecond1, connectorSecond2) = Get2ConnectorsOfConduit( secondCurve ) ;
+      var (connectorFirst1, connectorFirst2) = Get2Connectors( firstCurve ) ;
+      var (connectorSecond1, connectorSecond2) = Get2Connectors( secondCurve ) ;
       if ( connectorFirst1?.Origin is not { } pointFirst1 || connectorFirst2?.Origin is not { } pointFirst2 || connectorSecond1?.Origin is not { } pointSecond1 || connectorSecond2?.Origin is not { } pointSecond2 )
         return ( null, null ) ;
       if ( pointFirst1.IsBetween( pointSecond1, pointSecond2 ) && pointSecond1.IsBetween( pointFirst1, pointFirst2 ) )
@@ -286,8 +286,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
     /// <returns>1: first is inside second, -1: second is inside first, 0: neither</returns>
     private static int IsInside( Element firstCurve, Element secondCurve )
     {
-      var (connectorFirst1, connectorFirst2) = Get2ConnectorsOfConduit( firstCurve ) ;
-      var (connectorSecond1, connectorSecond2) = Get2ConnectorsOfConduit( secondCurve ) ;
+      var (connectorFirst1, connectorFirst2) = Get2Connectors( firstCurve ) ;
+      var (connectorSecond1, connectorSecond2) = Get2Connectors( secondCurve ) ;
       if ( connectorFirst1?.Origin is not { } pointFirst1 || connectorFirst2?.Origin is not { } pointFirst2 || connectorSecond1?.Origin is not { } pointSecond1 || connectorSecond2?.Origin is not { } pointSecond2 )
         return 0 ;
       if ( pointFirst1.IsBetween( pointSecond1, pointSecond2 ) && pointFirst2.IsBetween( pointSecond1, pointSecond2 ) )
@@ -334,7 +334,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       firstCurve.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).Set( ( endPoint - startPoint ).GetLength() ) ;
 
       // reconnect:
-      if ( Get2ConnectorsOfConduit( firstCurve ) is not { Connector1: { } connector1, Connector2: { } connector2 } )
+      if ( Get2Connectors( firstCurve ) is not { Connector1: { } connector1, Connector2: { } connector2 } )
         return false ;
       if ( connector2.Origin.IsAlmostEqualTo( startPoint ) )
         ( connector1, connector2 ) = ( connector2, connector1 ) ;
@@ -397,7 +397,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
     public static void HideConnectedEdgesOfRack( this Element rack )
     {
-      if ( rack is not FamilyInstance instance || ! rack.IsRack() || Get2ConnectorsOfConduit( instance ) is not { Connector1: { } startConnector, Connector2: { } endConnector } )
+      if ( rack is not FamilyInstance instance || ! rack.IsRack() || Get2Connectors( instance ) is not { Connector1: { } startConnector, Connector2: { } endConnector } )
         return ;
 
       var tf = instance.GetTransform() ;
@@ -544,7 +544,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
 
       doc.Regenerate() ;
 
-      if ( instance.Get2ConnectorsOfConduit() is not { Connector1: { } connector1, Connector2: { } connector2 } )
+      if ( instance.Get2Connectors() is not { Connector1: { } connector1, Connector2: { } connector2 } )
         return instance ;
 
       var origin = connector1.Origin.X < connector2.Origin.X ? connector1.Origin : connector2.Origin ;
@@ -836,6 +836,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       return newElements ;
     }
 
+    private static (FamilyInstance? previousRack, FamilyInstance? nextRack ) FindConnectedRacks( FamilyInstance elbow )
+    {
+      if ( elbow.IsRack() )
+        return ( null, null ) ;
+      if ( elbow.Get2Connectors() is not { Connector1: { } connector1, Connector2: { } connector2 } )
+        return ( null, null ) ;
+
+      var previousRack = connector1.GetConnectedConnectors().FirstOrDefault( connector => connector.Owner is FamilyInstance )?.Owner as FamilyInstance ;
+      var nextRack = connector2.GetConnectedConnectors().FirstOrDefault( connector => connector.Owner is FamilyInstance )?.Owner as FamilyInstance ;
+
+      if ( previousRack is { } && previousRack.GetTransform().Origin.IsAlmostEqualTo( connector1.Origin ) )
+        ( previousRack, nextRack ) = ( nextRack, previousRack ) ;
+
+      return ( previousRack, nextRack ) ;
+    }
+
+    public static void ChangeEndLinesVisibilityOfConnectedRacks( IEnumerable<Element> tobeDeletedRacks )
+    {
+      foreach ( var rack in tobeDeletedRacks ) {
+        if ( rack is not FamilyInstance rackInstance ) continue ;
+        var (previousRack, nextRack) = FindConnectedRacks( rackInstance ) ;
+
+        // show line at ending terminal of previous rack
+        if ( previousRack is { } && previousRack.IsRack() )
+          previousRack.SetProperty( "終点の表示", true ) ;
+
+        // show line at starting terminal of previous rack
+        if ( nextRack is { } && nextRack.IsRack() )
+          nextRack.SetProperty( "起点の表示", true ) ;
+      }
+    }
+
     public static void ReDrawAllRacksAndElbows( this Document document, View view, int? scale = null )
     {
       var newScale = scale ?? view.Scale ;
@@ -1047,6 +1079,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Utils
       var handlingOptions = transaction.GetFailureHandlingOptions() ;
       var failureHandlingOptions = handlingOptions.SetFailuresPreprocessor( failuresPreprocessor ) ;
       transaction.SetFailureHandlingOptions( failureHandlingOptions ) ;
+    }
+
+    public static void ShowEndingLinesWhenRemoveRacksFromRackSystem( Element deletedRack )
+    {
+      
     }
 
     private static IEnumerable<Element> CreateRacksAndElbowsFromRawMarkers( this Document doc, IEnumerable<(XYZ StartPoint, XYZ EndPoint, double Width, Element ReferenceElement)> fullMarkerList, int viewScale, string rackClassification, bool isRedrawing )
