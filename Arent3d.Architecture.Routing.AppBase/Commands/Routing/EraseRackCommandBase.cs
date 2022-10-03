@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -18,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class EraseRackCommandBase : IExternalCommand
   {
     public const string BoundaryCableTrayLineStyleName = "BoundaryCableTray" ;
-    private const string EraseLimitRackTransactionName = "Erase Limit Rack" ;
+    private const string EraseRackTransactionName = "ラック削除" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -27,14 +28,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         TaskDialog.Show( "Arent Inc", "Only support in the view plan!" ) ;
         return Result.Cancelled ;
       }
-      
-      var racks = FilterRacks( uiDocument).EnumerateAll() ;
-      
-      using var transaction = new Transaction( uiDocument.Document, EraseLimitRackTransactionName ) ;
+
+      var racks = FilterRacks( uiDocument ).EnumerateAll() ;
+      if ( ! racks.Any() )
+        return Result.Cancelled ;
+
+      using var transaction = new Transaction( uiDocument.Document, EraseRackTransactionName ) ;
       try {
         transaction.Start() ;
         RemoveRacksInStorage( viewPlan.GenLevel, racks ) ;
-        RemoveLimitRacks( uiDocument.Document, racks.Select(x => x.UniqueId) ) ;
+        CableRackUtils.ChangeEndLinesVisibilityOfConnectedRacks( racks ) ;
+        RemoveRacksAndNotations( uiDocument.Document, racks.Select( x => x.UniqueId ) ) ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -57,19 +61,48 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void RemoveRacksInStorage(Level level, IEnumerable<Element> racks )
+    private static void RemoveRacksInStorage( Level level, IEnumerable<Element> racks )
     {
       var elements = racks as Element[] ?? racks.ToArray() ;
-      if(!elements.Any())
-        return;
+      if ( ! elements.Any() )
+        return ;
 
+      var document = level.Document ;
+
+      // change storage of auto rack
+      var deletedIds = elements.Select( e => e.Id ) ;
       var routeNames = elements.Select( x => RouteUtil.GetMainRouteName( x.GetRouteName() ) ).Distinct() ;
       var storage = new StorageService<Level, RackForRouteModel>( level ) ;
+      var modifiedRecords = storage.Data.RackForRoutes.Where( x => routeNames.Any( y => y == x.RouteName ) ).ToList() ;
       storage.Data.RackForRoutes.RemoveAll( x => routeNames.Any( y => y == x.RouteName ) ) ;
-      storage.SaveChange();
+      foreach ( var record in modifiedRecords ) {
+        // remove deleted ids in this record
+        record.RackIds.RemoveAll( id => deletedIds.Any( deletedId => deletedId == id ) ) ;
+        
+        // add modified record back to storage
+        if ( record.RackIds.Any() )
+          storage.Data.RackForRoutes.Add( record ) ;
+      }
+      storage.SaveChange() ;
+
+      // change storage of manual rack
+      var storageRackFromTo = new StorageService<Level, RackFromToModel>( level ) ;
+      var rackFromToList = storageRackFromTo.Data.RackFromToItems.Where( x => x.UniqueIds.All( uniqueId => document.GetElement( uniqueId ) is { } ) ).ToList() ;
+      storageRackFromTo.Data.RackFromToItems.Clear() ;
+
+      var deletedUniqueIds = elements.Select( e => e.UniqueId ) ;
+      foreach ( var rackFromTo in rackFromToList ) {
+        // remove deleted uniqueId
+        rackFromTo.UniqueIds.RemoveAll( uniqueId => deletedUniqueIds.Any( deletedUniqueId => deletedUniqueId == uniqueId ) ) ;
+
+        // add modified array of unique Id back to storage
+        if ( rackFromTo.UniqueIds.Any() )
+          storageRackFromTo.Data.RackFromToItems.Add( new RackFromToItem() { UniqueIds = rackFromTo.UniqueIds } ) ;
+      }
+      storageRackFromTo.SaveChange() ;
     }
 
-    private static void RemoveLimitRacks( Document document, IEnumerable<string> allLimitRacks )
+    private static void RemoveRacksAndNotations( Document document, IEnumerable<string> allLimitRacks )
     {
       var rackUniqueIds = allLimitRacks as string[] ?? allLimitRacks.ToArray() ;
       if ( ! rackUniqueIds.Any() ) return ;
@@ -94,7 +127,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData
                  .Where( d => rackUniqueIds.Contains( d.RackId ) ).ToList() ) {
         // delete notation
-        var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes )
+        var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_CableTrayFittingTags )
           .Where( e => e.UniqueId == rackNotationModel.NotationId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( notationId != null )
           document.Delete( notationId ) ;
