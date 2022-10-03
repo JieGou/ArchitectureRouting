@@ -151,9 +151,6 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>Create&#xA;Cylindrical Shaft</string>
 
-        <key>Electrical.App.Commands.Shaft.AddHSymbolCommand</key>
-        <string>Add H Symbol</string>
-
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>Selection Range&#xA;Route</string>
 
