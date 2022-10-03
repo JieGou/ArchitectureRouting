@@ -27,6 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const double RatioBendRadius = 3.45 ;
     private const string Notation = "CR (W:{0})" ;
     private const char XChar = 'x' ;
+    public const string NotationSelectionName = "ARENT_RACK_NOTATION" ;
     private const string TagTypeLeft = "Left" ;
     private const string TagTypeRight = "Right" ;
     public const string RackTagLeaderLineTypeName = "ラックタグ線" ;
@@ -505,6 +506,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
             (string? endLineUniqueId, int? endPoint) endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;
             var otherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
+            
+            FilterUtil.AddElementToSelectionFilter(NotationSelectionName, tag);
+            FilterUtil.AddElementsToSelectionFilter(doc, NotationSelectionName, detailCurves);
 
             foreach ( var item in racks ) {
               var rackNotationModel = new RackNotationModel( item.UniqueId, tag.UniqueId, longestRack.UniqueId, fromConnectorId, isDirectionX, Math.Round( widthCableTray, 4 ), endLineLeader.endLineUniqueId, endLineLeader.endPoint, otherLineId ) ;

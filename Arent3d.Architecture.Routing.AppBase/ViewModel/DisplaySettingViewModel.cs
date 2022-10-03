@@ -6,8 +6,8 @@ using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
@@ -31,13 +31,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private readonly Document _document ;
     private DisplaySettingModel _dataDisplaySettingModel ;
+    private readonly bool _isCallFromDefaultSetting ;
 
-    public DisplaySettingViewModel( Document document )
+    public DisplaySettingViewModel( Document document, bool isCallFromDefaultSetting = false )
     {
       _document = document ;
       var dataStorage = document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
       _displaySettingByGradeStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
       _dataDisplaySettingModel = _displaySettingByGradeStorageService.Data.Clone() ;
+      _isCallFromDefaultSetting = isCallFromDefaultSetting ;
     }
 
     public DisplaySettingModel DataDisplaySettingModel
@@ -64,62 +66,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       try {
         var result = _document.TransactionGroup( "TransactionName.Commands.Initialization.DisplaySetting".GetAppStringByKeyOrDefault( "Display Setting" ), _ =>
         {
-          using var progress = ProgressBar.ShowWithNewThread( new UIApplication( _document.Application ) ) ;
-          progress.Message = "Processing..." ;
-          var views = _document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
-
-          using var setupTransaction = new Transaction( _document, "Setup Display Setting" ) ;
-          setupTransaction.Start() ;
-
-          using ( var progressData = progress.Reserve( 0.2 ) ) {
-            SetupDisplayWiring( views, _dataDisplaySettingModel.IsWiringVisible ) ;
-            progressData.ThrowIfCanceled() ;
+          if ( ! _isCallFromDefaultSetting ) {
+            ApplyChanges( _document, _dataDisplaySettingModel ) ;
           }
-
-          using ( var progressData = progress.Reserve( 0.1 ) ) {
-            SetupDisplayDetailSymbol( views, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          using ( var progressData = progress.Reserve( 0.1 ) ) {
-            SetupDisplayPullBox( views, _dataDisplaySettingModel.IsPullBoxVisible ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          using ( var progressData = progress.Reserve( 0.1 ) ) {
-            SetupDisplaySchedule( views, _dataDisplaySettingModel.IsScheduleVisible ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          using ( var progressData = progress.Reserve( 0.1 ) ) {
-            UpdateSetCodeFollowGrade( _document, _dataDisplaySettingModel ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          using ( var progressData = progress.Reserve( 0.2 ) ) {
-            SetupDisplayLegend( views, _dataDisplaySettingModel ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          setupTransaction.Commit() ;
-
-          using ( var progressData = progress.Reserve( 0.2 ) ) {
-            _document.RefreshActiveView() ;
-
-            // Refresh viewports
-            var viewportsOfActiveView = _document.GetAllElements<Viewport>().Where( vp => vp.OwnerViewId == _document.ActiveView.Id ).Select( vp => _document.GetElement( vp.ViewId ) as View ) ;
-            _document.RefreshViews( viewportsOfActiveView ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          using ( var progressData = progress.Reserve( 0.1 ) ) {
-            SaveDisplaySettingByGradeStorageService() ;
-
-            UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          progress.Finish() ;
+          
+          SaveDisplaySettingByGradeStorageService() ;
+          UpdateIsEnableButton( _document, _dataDisplaySettingModel.IsDetailSymbolVisible ) ;
 
           return Result.Succeeded ;
         } ) ;
@@ -132,6 +84,59 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       window.Close() ;
+    }
+
+    public static void ApplyChanges( Document document, DisplaySettingModel displaySettingModel )
+    {
+      using var progress = ProgressBar.ShowWithNewThread( new UIApplication( document.Application ) ) ;
+      progress.Message = "Processing..." ;
+      var views = document.GetAllElements<View>().Where( v => v is View3D or ViewSheet or ViewPlan { CanBePrinted: true, ViewType: ViewType.FloorPlan } ).ToList() ;
+
+      using var setupTransaction = new Transaction( document, "Setup Display Setting" ) ;
+      setupTransaction.Start() ;
+
+      using ( var progressData = progress.Reserve( 0.2 ) ) {
+        SetupDisplayWiring( document, views, displaySettingModel.IsWiringVisible ) ;
+        progressData.ThrowIfCanceled() ;
+      }
+
+      using ( var progressData = progress.Reserve( 0.1 ) ) {
+        SetupDisplayDetailSymbol( document, views, displaySettingModel.IsDetailSymbolVisible ) ;
+        progressData.ThrowIfCanceled() ;
+      }
+
+      using ( var progressData = progress.Reserve( 0.1 ) ) {
+        SetupDisplayPullBox( views, displaySettingModel.IsPullBoxVisible ) ;
+        progressData.ThrowIfCanceled() ;
+      }
+
+      using ( var progressData = progress.Reserve( 0.1 ) ) {
+        SetupDisplaySchedule( document, views, displaySettingModel.IsScheduleVisible ) ;
+        progressData.ThrowIfCanceled() ;
+      }
+
+      using ( var progressData = progress.Reserve( 0.1 ) ) {
+        UpdateSetCodeFollowGrade( document, displaySettingModel ) ;
+        progressData.ThrowIfCanceled() ;
+      }
+
+      using ( var progressData = progress.Reserve( 0.2 ) ) {
+        SetupDisplayLegend( document, views, displaySettingModel.IsLegendVisible ) ;
+        progressData.ThrowIfCanceled() ;
+      }
+
+      setupTransaction.Commit() ;
+
+      using ( var progressData = progress.Reserve( 0.2 ) ) {
+        document.RefreshActiveView() ;
+
+        // Refresh Viewports
+        var viewportsOfActiveView = document.GetAllElements<Viewport>().Where( vp => vp.OwnerViewId == document.ActiveView.Id ).Select( vp => document.GetElement( vp.ViewId ) as View ) ;
+        document.RefreshViews( viewportsOfActiveView ) ;
+        progressData.ThrowIfCanceled() ;
+      }
+
+      progress.Finish() ;
     }
 
     private static void UpdateSetCodeFollowGrade( Document document, DisplaySettingModel displaySettingModel )
@@ -147,58 +152,50 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         setCode.SetProperty( DefaultSettingCommandBase.Grade3FieldName, displaySettingModel.GradeOption == displaySettingModel.GradeOptions[ 0 ] ) ;
       }
     }
-
-    private void SetupDisplayWiring( List<View> views, bool isVisible )
+    
+    private static void SetupDisplayWiring( Document document, List<View> views, bool isVisible )
     {
-      // Electrical routing elements (conduits and cable trays)
-      var hiddenOrUnhiddenElements = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ElectricalRoutingElements ).ToList() ;
-
-      // Pass points
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PassPoints ) ) ;
-
-      // Notation and rack
-      var rackNotationStorable = _document.GetAllStorables<RackNotationStorable>().SingleOrDefault() ?? _document.GetRackNotationStorable() ;
-      foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData ) {
-        if ( _document.GetElement( rackNotationModel.RackId ) is { } rack )
-          hiddenOrUnhiddenElements.Add( rack ) ;
-
-        if ( _document.GetElement( rackNotationModel.NotationId ) is { } textNote )
-          hiddenOrUnhiddenElements.Add( textNote ) ;
-
-        if ( _document.GetElement( rackNotationModel.EndLineLeaderId ) is { } endLine )
-          hiddenOrUnhiddenElements.Add( endLine ) ;
-
-        foreach ( var otherLineId in rackNotationModel.OtherLineIds )
-          if ( _document.GetElement( otherLineId ) is { } otherLine )
-            hiddenOrUnhiddenElements.Add( otherLine ) ;
+      var notationFilter = FilterUtil.FindOrCreateSelectionFilter(document, RackCommandBase.NotationSelectionName) ;
+      var leakFilter = FilterUtil.FindOrCreateSelectionFilter(document, ChangeWireTypeCommand.LeakSelectionName) ;
+      foreach ( var view in views ) {
+        var conduitCategoryId = new ElementId( BuiltInCategory.OST_Conduit ) ;
+        if(view.CanCategoryBeHidden(conduitCategoryId))
+          view.SetCategoryHidden(conduitCategoryId, !isVisible);
+        
+        var conduitFittingCategoryId = new ElementId( BuiltInCategory.OST_ConduitFitting ) ;
+        if(view.CanCategoryBeHidden(conduitFittingCategoryId))
+          view.SetCategoryHidden(conduitFittingCategoryId, !isVisible);
+        
+        var cableTrayCategoryId = new ElementId( BuiltInCategory.OST_CableTray ) ;
+        if(view.CanCategoryBeHidden(cableTrayCategoryId))
+          view.SetCategoryHidden(cableTrayCategoryId, !isVisible);
+        
+        var cableTrayFittingCategoryId = new ElementId( BuiltInCategory.OST_CableTrayFitting ) ;
+        if(view.CanCategoryBeHidden(cableTrayFittingCategoryId))
+          view.SetCategoryHidden(cableTrayFittingCategoryId, !isVisible);
+        
+        var mechanicalEquipmentCategoryId = new ElementId( BuiltInCategory.OST_MechanicalEquipment ) ;
+        if(view.CanCategoryBeHidden(mechanicalEquipmentCategoryId))
+          view.SetCategoryHidden(mechanicalEquipmentCategoryId, !isVisible);
+        
+        if(!view.IsFilterApplied(notationFilter.Id))
+          view.AddFilter(notationFilter.Id);
+        view.SetFilterVisibility(notationFilter.Id, isVisible);
+        
+        if(!view.IsFilterApplied(leakFilter.Id))
+          view.AddFilter(leakFilter.Id);
+        view.SetFilterVisibility(leakFilter.Id, isVisible);
       }
-
-      // Boundary rack
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == EraseRackCommandBase.BoundaryCableTrayLineStyleName ) ) ;
-
-      // Leak
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<FamilyInstance>().Where( x => ChangeWireTypeCommand.WireSymbolOptions.Values.Contains( x.Symbol.Family.Name ) ) ) ;
-      hiddenOrUnhiddenElements.AddRange( _document.GetAllInstances<CurveElement>().Where( x => x.LineStyle.Name == ChangeWireTypeCommand.SubcategoryName ) ) ;
-
-      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
-    private void SetupDisplayDetailSymbol( List<View> views, bool isVisible )
+    private static void SetupDisplayDetailSymbol( Document document, List<View> views, bool isVisible )
     {
-      // Detail symbols
-      var hiddenOrUnhiddenElements = new List<Element>() ;
-
+      var detailSymbolFilter = FilterUtil.FindOrCreateSelectionFilter(document, CreateDetailSymbolCommandBase.DetailSymbolSelectionName) ;
       foreach ( var view in views ) {
-        if ( view is not ViewPlan ) continue ;
-
-        var storageService = new StorageService<Level, DetailSymbolModel>( view.GenLevel ) ;
-        foreach ( var detailSymbolItemModel in storageService.Data.DetailSymbolData.Where( detailSymbolItemModel => detailSymbolItemModel != null ) ) {
-          hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( t => detailSymbolItemModel.LineUniqueIds.Split( ',' ).Contains( t.UniqueId ) ) ) ;
-          hiddenOrUnhiddenElements.AddRange( _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( t => detailSymbolItemModel.DetailSymbolUniqueId == t.UniqueId ) ) ;
-        }
+        if(!view.IsFilterApplied(detailSymbolFilter.Id))
+          view.AddFilter(detailSymbolFilter.Id);
+        view.SetFilterVisibility(detailSymbolFilter.Id, isVisible);
       }
-
-      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
     }
 
     private static void SetupDisplayPullBox( List<View> views, bool isVisible )
@@ -208,59 +205,80 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void SetupDisplaySchedule( List<View> views, bool isVisible )
+    private static void SetupDisplaySchedule( Document document, List<View> views, bool isVisible )
     {
-      // Schedules
-      var hiddenOrUnhiddenElements = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ScheduleGraphics ).Where( sg => views.Any( lv => lv.Id == sg.OwnerViewId ) ).EnumerateAll() ;
-      HideOrUnHideElements( views, isVisible, hiddenOrUnhiddenElements ) ;
+      foreach ( var view in views ) {
+        if ( isVisible ) {
+          var scheduleSheetInstances = document.GetAllInstances<ScheduleSheetInstance>().Where( x => x.OwnerViewId == view.Id && x.IsHidden( view ) ).EnumerateAll() ;
+          if(!scheduleSheetInstances.Any())
+            continue;
+          
+          view.UnhideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
+        }
+        else {
+          var scheduleSheetInstances = document.GetAllInstances<ScheduleSheetInstance>().Where( x => x.OwnerViewId == view.Id && !x.IsHidden( view ) ).EnumerateAll() ;
+          if(!scheduleSheetInstances.Any())
+            continue;
+          
+          view.HideElements(scheduleSheetInstances.Select(x => x.Id).ToList());
+        }
+      }
     }
-
-    private void SetupDisplayLegend( List<View> views, DisplaySettingModel displaySettingModel )
+    
+    private static void SetupDisplayLegend( Document document, List<View> views, bool isVisible )
     {
-      // Legends
-      var legendViews = _document.GetAllElements<View>().Where( vp => vp.ViewType == ViewType.Legend ).ToList() ;
-      if ( ! legendViews.Any() ) return ;
+      var activeView = document.ActiveView ;
+      foreach ( var view in views ) {
+        if ( isVisible ) {
+          var viewPorts = document.GetAllInstances<Viewport>().Where( x => x.SheetId == view.Id && x.IsHidden( view ) ).EnumerateAll() ;
+          if(!viewPorts.Any())
+            continue;
 
-      if ( displaySettingModel.IsLegendVisible ) {
-        if ( displaySettingModel.HiddenLegendElementIds.Any() ) {
-          foreach ( var legendView in legendViews ) {
-            var hiddenElementIds = displaySettingModel.HiddenLegendElementIds.Where( e => _document.GetElement( e ) is { } element && element.IsHidden( legendView ) ).Select( e => _document.GetElement( e ).Id ).ToList() ;
-            if ( hiddenElementIds.Any() )
-              legendView.UnhideElements( hiddenElementIds ) ;
+          foreach ( var viewPort in viewPorts ) {
+            var viewInViewport = (View) document.GetElement( viewPort.ViewId ) ;
+            if(viewInViewport.ViewType != ViewType.Legend)
+              continue;
+            
+            var data = viewPort.GetData<CategoryShowModel>() ;
+            if(null == data)
+              continue;
+
+            foreach ( var categoryId in data.CategoryIds ) {
+              viewInViewport.SetCategoryHidden(categoryId, false);
+            }
+            
+            view.UnhideElements(new List<ElementId>{ viewPort.Id });
           }
-
-          displaySettingModel.HiddenLegendElementIds = new List<string>() ;
+          
+          var uiDocument = new UIDocument( document ) ;
+          uiDocument.RequestViewChange(activeView);
         }
-      }
-      else {
-        foreach ( var legendView in legendViews ) {
-          var allElementsInLegendView = new FilteredElementCollector( _document, legendView.Id ) ;
-          displaySettingModel.HiddenLegendElementIds.AddRange( allElementsInLegendView.Select( e => e.UniqueId ) ) ;
-          if ( allElementsInLegendView.Any() )
-            legendView.HideElements( allElementsInLegendView.ToElementIds() ) ;
+        else {
+          var viewPorts = document.GetAllInstances<Viewport>().Where( x => x.SheetId == view.Id && !x.IsHidden( view ) ).EnumerateAll() ;
+          if(!viewPorts.Any())
+            continue;
+          
+          foreach ( var viewPort in viewPorts ) {
+            var viewInViewport = (View) document.GetElement( viewPort.ViewId ) ;
+            if(viewInViewport.ViewType != ViewType.Legend)
+              continue;
+            
+            var categoryShowModel = new CategoryShowModel() ;
+            
+            var enumerator = document.Settings.Categories.GetEnumerator();
+            while(enumerator.MoveNext())
+            {
+              if(enumerator.Current is not Category category || viewInViewport.GetCategoryHidden(category.Id) || ! viewInViewport.CanCategoryBeHidden( category.Id ))
+                continue;
+
+              categoryShowModel.CategoryIds.Add(category.Id);
+              viewInViewport.SetCategoryHidden(category.Id, true);
+            }
+            
+            viewPort.SetData(categoryShowModel);
+            view.HideElements(new List<ElementId>{ viewPort.Id });
+          }
         }
-      }
-
-      var hiddenOrUnhiddenElements = _document.GetAllElements<Viewport>().Where( vp => legendViews.Any( lv => lv.Id.IntegerValue == vp.ViewId.IntegerValue ) ).EnumerateAll() ;
-      HideOrUnHideElements( views, displaySettingModel.IsLegendVisible, hiddenOrUnhiddenElements ) ;
-    }
-
-    private static void HideOrUnHideElements( List<View> views, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
-    {
-      views.ForEach( v => HideOrUnHideElements( v, isVisible, hiddenOrUnhiddenElements ) ) ;
-    }
-
-    private static void HideOrUnHideElements( View view, bool isVisible, IReadOnlyCollection<Element> hiddenOrUnhiddenElements )
-    {
-      if ( isVisible ) {
-        var hiddenElementIds = hiddenOrUnhiddenElements.Where( e => e.IsHidden( view ) ).Select( h => h.Id ).ToList() ;
-        if ( hiddenElementIds.Any() )
-          view.UnhideElements( hiddenElementIds ) ;
-      }
-      else {
-        var unhiddenElementIds = hiddenOrUnhiddenElements.Where( e => ! e.IsHidden( view ) ).Select( h => h.Id ).ToList() ;
-        if ( unhiddenElementIds.Any() )
-          view.HideElements( unhiddenElementIds ) ;
       }
     }
 
@@ -293,7 +311,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       using Transaction transaction = new(_document, "Save Display Setting By Grade") ;
       transaction.Start() ;
-      _dataDisplaySettingModel.IsSaved = true ;
       _displaySettingByGradeStorageService.Data = _dataDisplaySettingModel ;
       _displaySettingByGradeStorageService.SaveChange() ;
       transaction.Commit() ;

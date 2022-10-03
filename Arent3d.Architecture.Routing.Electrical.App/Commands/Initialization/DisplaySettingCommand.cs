@@ -1,6 +1,7 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
+using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
@@ -9,5 +10,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class DisplaySettingCommand : DisplaySettingCommandBase
   {
+    
   }
 }

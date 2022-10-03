@@ -133,9 +133,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
       
       var dataStorage = connector.Document.FindOrCreateDataStorage<DisplaySettingModel>( false ) ;
       var displaySettingStorageService = new StorageService<DataStorage, DisplaySettingModel>( dataStorage ) ;
-      var isGrade3 = displaySettingStorageService.Data.GradeOption == displaySettingStorageService.Data.GradeOptions[ 0 ] ;
-      if ( ! displaySettingStorageService.Data.IsSaved )
-        isGrade3 = DefaultSettingCommandBase.GradeFrom3To7Collection.Contains( connector.Document.GetDefaultSettingStorable().GradeSettingData.GradeMode) ;
+      var isGrade3 = displaySettingStorageService.Data.IsGrade3 ;
       connector.SetProperty( DefaultSettingCommandBase.Grade3FieldName, isGrade3 ) ;
     }
 

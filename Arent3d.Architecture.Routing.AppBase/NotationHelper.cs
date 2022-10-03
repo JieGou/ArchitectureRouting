@@ -51,6 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       var lineGraphicStyle = FindOrCreateLineType( document, BuiltInCategory.OST_CurvesMediumLines, RackCommandBase.RackTagLeaderLineTypeName ) ;
       var detailCurves = CreateDetailCurve( viewPlan, curves, lineGraphicStyle ) ;
+      FilterUtil.AddElementsToSelectionFilter(document, RackCommandBase.NotationSelectionName, detailCurves);
       var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
       var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.DetailCurve?.UniqueId ).ToList() ;
 
@@ -83,6 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       var lineGraphicStyle = FindOrCreateLineType( document, BuiltInCategory.OST_CurvesMediumLines, RackCommandBase.RackTagLeaderLineTypeName ) ;
       var detailCurves = CreateDetailCurve( viewPlan, curves, lineGraphicStyle ) ;
+      FilterUtil.AddElementsToSelectionFilter(document, RackCommandBase.NotationSelectionName, detailCurves);
       var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
       var otherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.DetailCurve?.UniqueId ).ToList() ;
 

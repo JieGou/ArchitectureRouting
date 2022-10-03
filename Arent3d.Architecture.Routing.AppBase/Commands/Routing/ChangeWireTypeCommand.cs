@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Utils ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storages ;
 using Arent3d.Architecture.Routing.Storages.Extensions ;
@@ -17,6 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public static class ChangeWireTypeCommand
   {
     public static string SubcategoryName => "LeakageZone" ;
+    public const string LeakSelectionName = "ARENT_LEAK" ;
     
     public static readonly Dictionary<string, string> WireSymbolOptions = new()
     {
@@ -30,7 +32,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       using var transactionGroup = new TransactionGroup( document ) ;
       transactionGroup.Start( "Change Type" ) ;
 
+      using var ts = new Transaction( document ) ;
+      ts.Start( "Get Location" ) ;
+      
+      var conduitCategoryId = new ElementId( BuiltInCategory.OST_Conduit ) ;
+      var isConduitHidden = view.GetCategoryHidden( conduitCategoryId ) ;
+      if(view.CanCategoryBeHidden(conduitCategoryId) && isConduitHidden)
+        view.SetCategoryHidden(conduitCategoryId, false);
+        
+      var conduitFittingCategoryId = new ElementId( BuiltInCategory.OST_ConduitFitting ) ;
+      var isConduitFittingHidden = view.GetCategoryHidden( conduitFittingCategoryId ) ;
+      if(view.CanCategoryBeHidden(conduitFittingCategoryId) && isConduitFittingHidden)
+        view.SetCategoryHidden(conduitFittingCategoryId, false);
+      
+      document.Regenerate();
+      
       var (lines, curves) = GetLocationConduits( document, view, elements ) ;
+      
+      if(view.CanCategoryBeHidden(conduitCategoryId))
+        view.SetCategoryHidden(conduitCategoryId, isConduitHidden);
+      
+      if(view.CanCategoryBeHidden(conduitFittingCategoryId))
+        view.SetCategoryHidden(conduitFittingCategoryId, isConduitFittingHidden);
+
+      ts.Commit() ;
 
       var familySymbol = document.GetAllTypes<FamilySymbol>( x => x.Name == wireType ).FirstOrDefault() ;
       if ( null == familySymbol )
@@ -50,6 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       ForEachExtension.ForEach( curves, x =>
       {
         var detailCurve = document.Create.NewDetailCurve( view, x.Key ) ;
+        FilterUtil.AddElementToSelectionFilter(LeakSelectionName, detailCurve);
         detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         if ( isLeakRoute ) view.SetElementOverrides( detailCurve.Id, ogs ) ;
         storageService.Data.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
@@ -62,12 +88,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       } ) ;
       ForEachExtension.ForEach( lines, x =>
       {
-        var line = document.Create.NewFamilyInstance( x.Key, familySymbol, view ) ;
-        if ( isLeakRoute ) view.SetElementOverrides( line.Id, ogs ) ;
+        var instance = document.Create.NewFamilyInstance( x.Key, familySymbol, view ) ;
+        FilterUtil.AddElementToSelectionFilter(LeakSelectionName, instance);
+        if ( isLeakRoute ) view.SetElementOverrides( instance.Id, ogs ) ;
         storageService.Data.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveItemModel
         {
           ConduitId = x.Value,
-          DetailCurveId = line.UniqueId,
+          DetailCurveId = instance.UniqueId,
           WireType = wireType,
           IsLeakRoute = isLeakRoute
         } ) ;

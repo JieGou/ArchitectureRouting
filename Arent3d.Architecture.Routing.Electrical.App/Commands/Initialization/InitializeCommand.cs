@@ -1,6 +1,9 @@
+using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -37,6 +40,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       LoadDefaultElectricalDb( document ) ;
       LoadDefaultRegisterSymbols( document ) ;
+      RegisterLegendUpdater( document ) ;
     }
 
     protected override bool Setup( Document document )
@@ -83,6 +87,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       } ;
 
       registerSymbolStorable.SaveChange() ;
+    }
+
+    private static void RegisterLegendUpdater(Document document)
+    {
+      var viewUpdater = new ViewUpdater( document.Application.ActiveAddInId ) ;
+      if ( UpdaterRegistry.IsUpdaterRegistered( viewUpdater.GetUpdaterId() ) ) 
+        return ;
+
+      UpdaterRegistry.RegisterUpdater( viewUpdater, document ) ;
+      var filter = new ElementMulticlassFilter( new List<Type> { typeof( Viewport ), typeof( ScheduleSheetInstance ) } ) ;
+      var changeType = Element.GetChangeTypeElementAddition() ;
+      UpdaterRegistry.AddTrigger( viewUpdater.GetUpdaterId(), document, filter, changeType ) ;
     }
   }
 }
