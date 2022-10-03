@@ -101,6 +101,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             var (styleForBodyDirection, styleForOuterShape, styleForSymbol) = GetLineStyles( document ) ;
 
             var oldCableTrays = GetOldCableTrays( document, shaftOpeningModels ) ;
+            oldCableTrays.AddRange( cableTraySymbols ) ;
             var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
             foreach ( var viewPlan in viewPlans ) {
               var cableTraySymbolId = cableTraySymbols.FirstOrDefault( x => x.LevelId == viewPlan.GenLevel.Id )?.UniqueId ?? string.Empty ;
@@ -180,7 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       shaftOpeningStore.ShaftOpeningModels.RemoveAll( oldShaftOpeningModels.Contains ) ;
     }
 
-    private static List<Element> GetOldCableTrays( Document document, IEnumerable<ShaftOpeningModel> oldShaftOpeningModels )
+    public static List<Element> GetOldCableTrays( Document document, IEnumerable<ShaftOpeningModel> oldShaftOpeningModels )
     {
       List<Element> oldCableTrayIds = new() ;
       foreach ( var oldShaftOpeningModel in oldShaftOpeningModels ) {
