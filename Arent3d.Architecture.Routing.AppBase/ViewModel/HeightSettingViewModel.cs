@@ -13,8 +13,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public HeightSettingViewModel( HeightSettingStorable settingStorables )
     {
+      var heightSettingModels = settingStorables.HeightSettingsData.Values.OrderBy( h => h.Elevation ).ToList() ;
+      for (int i = 0; i < heightSettingModels.Count ; i++)
+      {
+        if (i == heightSettingModels.Count - 1) heightSettingModels[i].FloorHeight = null;
+        else heightSettingModels[i].FloorHeight =  heightSettingModels[i+1].Elevation- heightSettingModels[i].Elevation;
+      }
+      HeightSettingModels = heightSettingModels;
       SettingStorable = settingStorables ;
-      HeightSettingModels = settingStorables.HeightSettingsData.Values.OrderByDescending( h => h.Elevation ).ToList() ;
     }
   }
 }

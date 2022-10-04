@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // get data of height setting from snoop DB
       HeightSettingStorable settingStorables = document.GetHeightSettingStorable() ;
 
-      var viewModel = new ViewModel.HeightSettingViewModel( settingStorables ) ;
+      var viewModel = new ViewModel.HeightSettingViewModel(settingStorables) ;
       var dialog = new HeightSettingDialog( viewModel ) ;
 
       dialog.ShowDialog() ;
@@ -54,9 +54,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       else {
         return Result.Cancelled ;
       }
-
     }
-
+    
     public void ApplySetting( Document document, HeightSettingStorable settingStorables, IProgressData? progressData = null )
     {
       if ( settingStorables == null ) return ;

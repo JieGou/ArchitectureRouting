@@ -18,7 +18,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public double Underfloor { get ; set ; }
     public double HeightOfLevel { get ; set ; }
     public double HeightOfConnectors { get ; set ; }
-
+    public double ?FloorHeight { get ; set ; }
+    
     public HeightSettingModel( Level levels )
     {
       if ( levels == null )

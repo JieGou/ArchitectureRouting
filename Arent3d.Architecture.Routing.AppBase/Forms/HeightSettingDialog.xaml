@@ -36,7 +36,7 @@
 
         <DataGridTextColumn Header="Floor height (mm)" CanUserSort="True" SortDirection="Ascending" MinWidth="80" EditingElementStyle="{StaticResource errorStyle}">
           <DataGridTextColumn.Binding>
-            <Binding Path="Elevation"  NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
+            <Binding Path="FloorHeight" TargetNullValue="-"  NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
               <Binding.ValidationRules>
                 <HeightSettingsRules:ElevationValidationRule/>
               </Binding.ValidationRules>

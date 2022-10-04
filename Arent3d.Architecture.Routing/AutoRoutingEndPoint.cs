@@ -104,7 +104,7 @@ namespace Arent3d.Architecture.Routing
 
     /// <summary>
     /// Returns this end point's floating type. Now it always returns <see cref="RoutingPointType.OtherNozzle"/> (i.e. non-floated).
-    /// </summary>
+    /// </summary>下書きがありません
     public RoutingPointType PointType => RoutingPointType.OtherNozzle ;
 
     /// <summary>
