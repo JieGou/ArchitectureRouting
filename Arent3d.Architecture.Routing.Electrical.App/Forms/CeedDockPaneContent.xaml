@@ -1,17 +1,23 @@
-﻿<UserControl x:Class="Arent3d.Architecture.Routing.Electrical.App.Forms.CeedDockPaneContent"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-             xmlns:cvt="clr-namespace:Arent3d.Architecture.Routing.AppBase.Converters;assembly=Arent3d.Architecture.Routing.AppBase"
-             xmlns:model="clr-namespace:Arent3d.Architecture.Routing.AppBase.Model;assembly=Arent3d.Architecture.Routing.AppBase"
-             xmlns:local="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
-             mc:Ignorable="d" x:Name="WdCeedCodeView"
-             Height="800" Width="1120" MinHeight="200" MinWidth="900"
-             d:DataContext="{d:DesignInstance {x:Type local:DesignCeedDockPaneContentViewModel}, IsDesignTimeCreatable=True}">
+﻿<UserControl
+    x:Class="Arent3d.Architecture.Routing.Electrical.App.Forms.CeedDockPaneContent"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:cvt="clr-namespace:Arent3d.Architecture.Routing.AppBase.Converters;assembly=Arent3d.Architecture.Routing.AppBase"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="clr-namespace:Arent3d.Architecture.Routing.AppBase.Model;assembly=Arent3d.Architecture.Routing.AppBase"
+    x:Name="WdCeedCodeView"
+    Width="1120"
+    Height="800"
+    MinWidth="900"
+    MinHeight="200"
+    d:DataContext="{d:DesignInstance {x:Type local:DesignCeedDockPaneContentViewModel},
+                                     IsDesignTimeCreatable=True}"
+    mc:Ignorable="d">
     <UserControl.Resources>
-        <cvt:BooleanVisibilityConverter x:Key="BooleanVisibilityConverter"/>
+        <cvt:BooleanVisibilityConverter x:Key="BooleanVisibilityConverter" />
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -26,85 +32,161 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Button Grid.Column="0" Grid.Row="0"
-                Content="使用シンボル登録"
-                Command="{Binding SymbolRegistrationCommand}"
-                Margin="10,10,10,10"
-                HorizontalAlignment="Left"
-                Width="100"
-                Height="27" />
-        
-        <CheckBox Grid.Column="0" Grid.Row="0" 
-                  IsChecked="{Binding IsShowOnlyUsingCode, Mode=TwoWay}" 
-                  Visibility="{Binding IsVisibleShowUsingCode, Mode=TwoWay }" 
-                  Content="使用するものだけ表示" 
-                  Width="130" 
-                  Margin="120, 20, 10, 10" 
-                  Checked="ShowOnlyUsingCode_Checked" 
-                  Unchecked="ShowOnlyUsingCode_UnChecked" />
+        <Button
+            Grid.Row="0"
+            Grid.Column="0"
+            Width="100"
+            Height="27"
+            Margin="10,10,10,10"
+            HorizontalAlignment="Left"
+            Command="{Binding SymbolRegistrationCommand}"
+            Content="使用シンボル登録" />
 
-        <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Left">
-            <Label Content="セットコード" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5" Visibility="Hidden" />
-            <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" Visibility="Hidden"
-                      KeyDown="CmbKeyDown"
-                      ItemsSource="{Binding CeedSetCodes}"
-                      SelectedValue="{Binding SelectedCeedSetCode, Mode=TwoWay}"
-                      Text="{Binding SelectedCeedSetCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                      IsTextSearchEnabled="False" />
-            <Label Content="表示機器記号" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-            <ComboBox IsEditable="True" Width="200" Height="27"
-                      KeyDown="CmbKeyDown"
-                      ItemsSource="{Binding DeviceSymbols}"
-                      SelectedValue="{Binding SelectedDeviceSymbolValue, Mode=TwoWay}"
-                      Text="{Binding SelectedDeviceSymbolValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                      IsTextSearchEnabled="False" />
-            <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-            <ComboBox IsEditable="True" Width="200" Height="27"
-                      KeyDown="CmbKeyDown"
-                      ItemsSource="{Binding ModelNumber}"
-                      SelectedValue="{Binding SelectedModelNumber, Mode=TwoWay}"
-                      Text="{Binding SelectedModelNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                      IsTextSearchEnabled="False" />
-            <Button Content="Search"
-                    Command="{Binding SearchCommand}"
-                    Margin="20,5,5,5"
-                    HorizontalAlignment="Right"
-                    Width="80" />
+        <CheckBox
+            Grid.Row="0"
+            Grid.Column="0"
+            Width="130"
+            Margin="120,20,10,10"
+            Checked="ShowOnlyUsingCode_Checked"
+            Content="使用するものだけ表示"
+            IsChecked="{Binding IsShowOnlyUsingCode, Mode=TwoWay}"
+            Unchecked="ShowOnlyUsingCode_UnChecked"
+            Visibility="{Binding IsVisibleShowUsingCode, Mode=TwoWay}" />
+
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="1"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <Label
+                Name="LbCeedModelNumbers"
+                Margin="10,5"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Content="セットコード"
+                Visibility="Hidden" />
+            <ComboBox
+                Name="CmbCeedModelNumbers"
+                Width="200"
+                Height="27"
+                IsEditable="True"
+                IsTextSearchEnabled="False"
+                ItemsSource="{Binding CeedSetCodes}"
+                KeyDown="CmbKeyDown"
+                SelectedValue="{Binding SelectedCeedSetCode, Mode=TwoWay}"
+                Text="{Binding SelectedCeedSetCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Visibility="Hidden" />
+            <Label
+                Margin="20,5,5,5"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Content="表示機器記号" />
+            <ComboBox
+                Width="200"
+                Height="27"
+                IsEditable="True"
+                IsTextSearchEnabled="False"
+                ItemsSource="{Binding DeviceSymbols}"
+                KeyDown="CmbKeyDown"
+                SelectedValue="{Binding SelectedDeviceSymbolValue, Mode=TwoWay}"
+                Text="{Binding SelectedDeviceSymbolValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Label
+                Margin="20,5,5,5"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Content="形番" />
+            <ComboBox
+                Width="200"
+                Height="27"
+                IsEditable="True"
+                IsTextSearchEnabled="False"
+                ItemsSource="{Binding ModelNumber}"
+                KeyDown="CmbKeyDown"
+                SelectedValue="{Binding SelectedModelNumber, Mode=TwoWay}"
+                Text="{Binding SelectedModelNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button
+                Width="80"
+                Margin="20,5,5,5"
+                HorizontalAlignment="Right"
+                Command="{Binding SearchCommand}"
+                Content="Search" />
         </StackPanel>
 
-        <DockPanel Grid.Column="1" Grid.Row="1" LastChildFill="False">
-            <CheckBox DockPanel.Dock="Left" IsChecked="{Binding Path=IsShowCondition, UpdateSourceTrigger=PropertyChanged}" Content="条件表示" Margin="660 10 10 0"/>
-            <CheckBox DockPanel.Dock="Left" Name="CbShowDiff" IsChecked="{Binding IsShowDiff}" IsEnabled="{ Binding IsEnableShowDiff }" Content="差分表示" Width="80" Margin="10, 10, 0, 0" />
-            <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsShowCeedModelNumber}" Content="CeeD型番の表示" Width="120" Margin="10, 10, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
+        <DockPanel
+            Grid.Row="1"
+            Grid.Column="1"
+            LastChildFill="False">
+            <CheckBox
+                Margin="660,10,10,0"
+                Content="条件表示"
+                DockPanel.Dock="Left"
+                IsChecked="{Binding Path=IsShowCondition, UpdateSourceTrigger=PropertyChanged}" />
+            <CheckBox
+                Name="CbShowDiff"
+                Width="80"
+                Margin="10,10,0,0"
+                Content="差分表示"
+                DockPanel.Dock="Left"
+                IsChecked="{Binding IsShowDiff}"
+                IsEnabled="{Binding IsEnableShowDiff}" />
+            <CheckBox
+                Width="120"
+                Margin="10,10,0,0"
+                Checked="ShowCeedModelNumberColumn_Checked"
+                Content="CeeD型番の表示"
+                DockPanel.Dock="Left"
+                IsChecked="{Binding IsShowCeedModelNumber}"
+                Unchecked="ShowCeedModelNumberColumn_UnChecked" />
         </DockPanel>
 
-        <Button Grid.Column="0" Grid.Row="1" x:Name="BtnReplaceSymbol"
-                Content="モデル置き換え"
-                Click="Button_ReplaceSymbol"
-                Margin="10,5,10,10"
-                HorizontalAlignment="Left"
-                Width="100"
-                Height="27"
-                IsEnabled="False" />
+        <Button
+            x:Name="BtnReplaceSymbol"
+            Grid.Row="1"
+            Grid.Column="0"
+            Width="100"
+            Height="27"
+            Margin="10,5,10,10"
+            HorizontalAlignment="Left"
+            Click="Button_ReplaceSymbol"
+            Content="モデル置き換え"
+            IsEnabled="False" />
 
-        <Button Grid.Column="0" Grid.Row="1"
-                Content="モデル一括置換"
-                Click="Button_ReplaceMultipleSymbols"
-                Margin="120,5,10,10"
-                HorizontalAlignment="Left"
-                Width="100"
-                Height="27" />
+        <Button
+            Grid.Row="1"
+            Grid.Column="0"
+            Width="100"
+            Height="27"
+            Margin="120,5,10,10"
+            HorizontalAlignment="Left"
+            Click="Button_ReplaceMultipleSymbols"
+            Content="モデル一括置換" />
 
-        <DockPanel Grid.Column="0" Grid.Row="2" LastChildFill="True" Margin="10, 0" Height="300" VerticalAlignment="Top">
-            <Label DockPanel.Dock="Top" Content="形番orセットコードの選択でプレビュー可能" FontWeight="Bold" Padding="0 0 0 5" />
-            <TreeView x:Name="CategoryTreeView" VerticalAlignment="Stretch" VerticalContentAlignment="Top" Padding="0 5 5 5"
-                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      BorderBrush="LightGray" BorderThickness="1" ItemsSource="{Binding Path=Categories}">
+        <DockPanel
+            Grid.Row="2"
+            Grid.Column="0"
+            Height="300"
+            Margin="10,0"
+            VerticalAlignment="Top"
+            LastChildFill="True">
+            <Label
+                Padding="0,0,0,5"
+                Content="形番orセットコードの選択でプレビュー可能"
+                DockPanel.Dock="Top"
+                FontWeight="Bold" />
+            <TreeView
+                x:Name="CategoryTreeView"
+                Padding="0,5,5,5"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Top"
+                BorderBrush="LightGray"
+                BorderThickness="1"
+                ItemsSource="{Binding Path=Categories}"
+                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="MouseLeftButtonUp">
-                        <i:InvokeCommandAction
-                            Command="{Binding SelectedItemCommand}"
-                            CommandParameter="{Binding ElementName = CategoryTreeView}" />
+                        <i:InvokeCommandAction Command="{Binding SelectedItemCommand}" CommandParameter="{Binding ElementName=CategoryTreeView}" />
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
                 <TreeView.ItemContainerStyle>
@@ -122,13 +204,17 @@
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.Resources>
-                    <SolidColorBrush Color="Transparent" x:Key="{x:Static SystemColors.HighlightBrushKey}" />
-                    <SolidColorBrush Color="Black" x:Key="{x:Static SystemColors.HighlightTextBrushKey}" />
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="Black" />
                     <HierarchicalDataTemplate DataType="{x:Type model:CategoryModel}" ItemsSource="{Binding Categories}">
                         <StackPanel Orientation="Horizontal">
-                            <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
-                                   Source="../resources/icon_folder_16x16.png" />
-                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" >
+                            <Image
+                                Width="16"
+                                Height="16"
+                                Margin="0,0,2.5,0"
+                                RenderOptions.BitmapScalingMode="HighQuality"
+                                Source="../resources/icon_folder_16x16.png" />
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}">
                                 <TextBlock.Style>
                                     <Style TargetType="{x:Type TextBlock}">
                                         <Style.Triggers>
@@ -150,16 +236,31 @@
             </TreeView>
         </DockPanel>
 
-        <DockPanel Grid.Column="0" Grid.Row="2" LastChildFill="True" Margin="10, 0" Height="300" VerticalAlignment="Bottom">
-            <Label DockPanel.Dock="Top" Content="機器記号のみでプレビュー可能" FontWeight="Bold" Padding="0 0 0 5" />
-            <TreeView x:Name="CategoryPreviewTreeView" VerticalAlignment="Stretch" VerticalContentAlignment="Top" Padding="0 5 5 5"
-                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      BorderBrush="LightGray" BorderThickness="1" ItemsSource="{Binding Path=CategoriesPreview}">
+        <DockPanel
+            Grid.Row="2"
+            Grid.Column="0"
+            Height="300"
+            Margin="10,0"
+            VerticalAlignment="Bottom"
+            LastChildFill="True">
+            <Label
+                Padding="0,0,0,5"
+                Content="機器記号のみでプレビュー可能"
+                DockPanel.Dock="Top"
+                FontWeight="Bold" />
+            <TreeView
+                x:Name="CategoryPreviewTreeView"
+                Padding="0,5,5,5"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Top"
+                BorderBrush="LightGray"
+                BorderThickness="1"
+                ItemsSource="{Binding Path=CategoriesPreview}"
+                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="MouseLeftButtonUp">
-                        <i:InvokeCommandAction
-                            Command="{Binding SelectedCategoryPreviewCommand}"
-                            CommandParameter="{Binding ElementName = CategoryPreviewTreeView}" />
+                        <i:InvokeCommandAction Command="{Binding SelectedCategoryPreviewCommand}" CommandParameter="{Binding ElementName=CategoryPreviewTreeView}" />
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
                 <TreeView.ItemContainerStyle>
@@ -177,13 +278,17 @@
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.Resources>
-                    <SolidColorBrush Color="Transparent" x:Key="{x:Static SystemColors.HighlightBrushKey}" />
-                    <SolidColorBrush Color="Black" x:Key="{x:Static SystemColors.HighlightTextBrushKey}" />
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="Black" />
                     <HierarchicalDataTemplate DataType="{x:Type model:CategoryModel}" ItemsSource="{Binding Categories}">
                         <StackPanel Orientation="Horizontal">
-                            <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
-                                   Source="../resources/icon_folder_16x16.png" />
-                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" >
+                            <Image
+                                Width="16"
+                                Height="16"
+                                Margin="0,0,2.5,0"
+                                RenderOptions.BitmapScalingMode="HighQuality"
+                                Source="../resources/icon_folder_16x16.png" />
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}">
                                 <TextBlock.Style>
                                     <Style TargetType="{x:Type TextBlock}">
                                         <Style.Triggers>
@@ -205,21 +310,28 @@
             </TreeView>
         </DockPanel>
 
-        <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal" Margin="10, 0">
-            <DataGrid x:Name="DtGrid" ItemsSource="{Binding CeedModels}" 
-                      CanUserAddRows="False" AutoGenerateColumns="False" Width="730"
-                      MouseLeftButtonUp="DtGrid_OnMouseLeftButtonUp">
+        <StackPanel
+            Grid.Row="2"
+            Grid.Column="1"
+            Margin="10,0"
+            Orientation="Horizontal">
+            <DataGrid
+                x:Name="DtGrid"
+                Width="730"
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                ItemsSource="{Binding CeedModels}"
+                MouseLeftButtonUp="DtGrid_OnMouseLeftButtonUp">
                 <DataGrid.Resources>
                     <Style TargetType="{x:Type TextBox}">
                         <Setter Property="Padding" Value="-2" />
                         <Style.Triggers>
                             <Trigger Property="Validation.HasError" Value="True">
-                                <Setter Property="ToolTip"
-                                        Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
+                                <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
                             </Trigger>
                         </Style.Triggers>
                     </Style>
-                    <cvt:BindingProxy x:Key="Proxy" Data="{Binding Path=IsShowCondition}"/>
+                    <cvt:BindingProxy x:Key="Proxy" Data="{Binding Path=IsShowCondition}" />
                 </DataGrid.Resources>
 
                 <DataGrid.CellStyle>
@@ -235,7 +347,7 @@
                                     <Setter Property="BorderBrush" Value="Goldenrod" />
                                 </MultiDataTrigger.Setters>
                             </MultiDataTrigger>
-                            
+
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
                                     <Condition Binding="{Binding ElementName=CbShowDiff, Path=IsEnabled}" Value="false" />
@@ -251,28 +363,50 @@
                                 <Setter Property="Background" Value="RoyalBlue" />
                                 <Setter Property="BorderBrush" Value="RoyalBlue" />
                             </Trigger>
-
                         </Style.Triggers>
                     </Style>
                 </DataGrid.CellStyle>
 
                 <DataGrid.Columns>
 
-                    <DataGridTextColumn Header="セットコード" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100"
-                                        Visibility="{Binding Path=Data, Converter={StaticResource  BooleanVisibilityConverter}, Source={StaticResource Proxy}}"/>
+                    <DataGridTextColumn
+                        MinWidth="100"
+                        Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}"
+                        CanUserSort="False"
+                        Header="セットコード"
+                        IsReadOnly="True"
+                        Visibility="{Binding Path=Data, Converter={StaticResource BooleanVisibilityConverter}, Source={StaticResource Proxy}}" />
 
-                    <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="130" Visibility="Hidden" />
+                    <DataGridTextColumn
+                        MinWidth="130"
+                        Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}"
+                        CanUserSort="True"
+                        Header="CeeD型番"
+                        IsReadOnly="True"
+                        Visibility="Hidden" />
 
-                    <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="200" MaxWidth="220" >
+                    <DataGridTextColumn
+                        MinWidth="200"
+                        MaxWidth="220"
+                        Binding="{Binding ModelNumber, ValidatesOnExceptions=True}"
+                        CanUserSort="False"
+                        Header="形番"
+                        IsReadOnly="True">
                         <DataGridTextColumn.ElementStyle>
                             <Style>
-                                <Setter Property="TextBlock.TextWrapping" Value="Wrap"></Setter>
+                                <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
 
-                    <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" Width="*"
-                                        Visibility="{Binding Path=Data, Converter={StaticResource  BooleanVisibilityConverter}, Source={StaticResource Proxy}}">
+                    <DataGridTextColumn
+                        Width="*"
+                        MinWidth="100"
+                        Binding="{Binding Condition, ValidatesOnExceptions=True}"
+                        CanUserSort="False"
+                        Header="条件"
+                        IsReadOnly="True"
+                        Visibility="{Binding Path=Data, Converter={StaticResource BooleanVisibilityConverter}, Source={StaticResource Proxy}}">
                         <DataGridTextColumn.ElementStyle>
                             <Style>
                                 <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
@@ -292,7 +426,7 @@
                                             <Setter Property="BorderBrush" Value="Goldenrod" />
                                         </MultiDataTrigger.Setters>
                                     </MultiDataTrigger>
-                                    
+
                                     <MultiDataTrigger>
                                         <MultiDataTrigger.Conditions>
                                             <Condition Binding="{Binding ElementName=CbShowDiff, Path=IsEnabled}" Value="false" />
@@ -314,7 +448,7 @@
                                             <Setter Property="BorderBrush" Value="Red" />
                                         </MultiDataTrigger.Setters>
                                     </MultiDataTrigger>
-                                    
+
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter Property="Background" Value="RoyalBlue" />
                                         <Setter Property="BorderBrush" Value="RoyalBlue" />
@@ -324,23 +458,32 @@
                         </DataGridTextColumn.CellStyle>
                     </DataGridTextColumn>
 
-                    <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="130" >
+                    <DataGridTextColumn
+                        MinWidth="130"
+                        Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}"
+                        CanUserSort="False"
+                        Header="一般表示用機器記号"
+                        IsReadOnly="True">
                         <DataGridTextColumn.ElementStyle>
                             <Style>
-                                <Setter Property="TextBlock.TextWrapping" Value="Wrap"></Setter>
+                                <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
- 
                 </DataGrid.Columns>
             </DataGrid>
-            <StackPanel DockPanel.Dock="Left" Margin="20, 0, 10, 0" Width="180" >
+            <StackPanel
+                Width="180"
+                Margin="20,0,10,0"
+                DockPanel.Dock="Left">
                 <Label Content="プレビュー" FontWeight="Bold" />
-                <ListView ItemsSource="{Binding PreviewList}" Height="648"
-                          ScrollViewer.HorizontalScrollBarVisibility="Hidden" 
-                          ScrollViewer.VerticalScrollBarVisibility="Auto"
-                          ScrollViewer.CanContentScroll="True" 
-                          MouseDoubleClick="PreviewListMouseDoubleClick" >
+                <ListView
+                    Height="648"
+                    ItemsSource="{Binding PreviewList}"
+                    MouseDoubleClick="PreviewListMouseDoubleClick"
+                    ScrollViewer.CanContentScroll="True"
+                    ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
@@ -352,19 +495,23 @@
             </StackPanel>
         </StackPanel>
 
-        <Button Grid.Row="3" Grid.Column="1"
-                Content="Reset"
-                Command="{Binding ResetCommand}"
-                Margin="770,5,0,5"
-                HorizontalAlignment="Left"
-                Width="80"
-                Height="27" />
-        <Button Grid.Row="3" Grid.Column="1"
-                Content="OK"
-                Click="ButtonOk_OnClick"
-                Margin="860,5,0,5"
-                HorizontalAlignment="Left"
-                Width="80"
-                Height="27" />
+        <Button
+            Grid.Row="3"
+            Grid.Column="1"
+            Width="80"
+            Height="27"
+            Margin="770,5,0,5"
+            HorizontalAlignment="Left"
+            Command="{Binding ResetCommand}"
+            Content="Reset" />
+        <Button
+            Grid.Row="3"
+            Grid.Column="1"
+            Width="80"
+            Height="27"
+            Margin="860,5,0,5"
+            HorizontalAlignment="Left"
+            Click="ButtonOk_OnClick"
+            Content="OK" />
     </Grid>
 </UserControl>

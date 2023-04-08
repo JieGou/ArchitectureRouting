@@ -1,72 +1,79 @@
-﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.AppBase.Forms.FromToWindow"
-                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                   xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
-                   xmlns:app="clr-namespace:Arent3d.Architecture.Routing.AppBase"
-                   xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
-                   mc:Ignorable="d"
-                   Title="FromToWindow" Height="450" Width="700">
+﻿<ui:RevitDialog
+    x:Class="Arent3d.Architecture.Routing.AppBase.Forms.FromToWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:app="clr-namespace:Arent3d.Architecture.Routing.AppBase"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
+    Title="FromToWindow"
+    Width="700"
+    Height="450"
+    mc:Ignorable="d">
     <Grid>
         <local:Dialog2Buttons
-            VerticalAlignment="Top"
+            Margin="0,5,0,5"
             HorizontalAlignment="Right"
-            LeftOnClick="Dialog2Buttons_OnLeftOnClick"
-            RightOnClick="Dialog2Buttons_OnRightOnClick"
+            VerticalAlignment="Top"
             LeftButton="Import"
+            LeftOnClick="Dialog2Buttons_OnLeftOnClick"
             RightButton="Export"
-            Margin="0,5,0,5" />
+            RightOnClick="Dialog2Buttons_OnRightOnClick" />
 
-        <DataGrid x:Name="FromToList"
-                  ItemsSource="{Binding FromToItemsList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  Margin="2,40,2,40">
+        <DataGrid
+            x:Name="FromToList"
+            Margin="2,40,2,40"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            ItemsSource="{Binding FromToItemsList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" />
-                <DataGridTextColumn Header="From Type" Binding="{Binding FromType}" />
-                <DataGridTextColumn Header="From Id" Binding="{Binding FromId}" />
-                <DataGridTextColumn Header="From SubId" Binding="{Binding FromSubId}" />
-                <DataGridTextColumn Header="To Type" Binding="{Binding ToType}" />
-                <DataGridTextColumn Header="To Id" Binding="{Binding ToId}" />
-                <DataGridTextColumn Header="To SubId" Binding="{Binding ToSubId}" />
-                <DataGridTextColumn Header="Domain" Binding="{Binding Domain}" />
+                <DataGridTextColumn Binding="{Binding Id}" Header="ID" />
+                <DataGridTextColumn Binding="{Binding FromType}" Header="From Type" />
+                <DataGridTextColumn Binding="{Binding FromId}" Header="From Id" />
+                <DataGridTextColumn Binding="{Binding FromSubId}" Header="From SubId" />
+                <DataGridTextColumn Binding="{Binding ToType}" Header="To Type" />
+                <DataGridTextColumn Binding="{Binding ToId}" Header="To Id" />
+                <DataGridTextColumn Binding="{Binding ToSubId}" Header="To SubId" />
+                <DataGridTextColumn Binding="{Binding Domain}" Header="Domain" />
                 <DataGridTemplateColumn Header="SystemType">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <ComboBox x:Name="SystemTypeComboBox" IsEditable="True"
-                                      ItemsSource="{Binding SystemTypes}"
-                                      DisplayMemberPath="Name"
-                                      SelectedIndex="{Binding SystemTypeIndex}" />
+                            <ComboBox
+                                x:Name="SystemTypeComboBox"
+                                DisplayMemberPath="Name"
+                                IsEditable="True"
+                                ItemsSource="{Binding SystemTypes}"
+                                SelectedIndex="{Binding SystemTypeIndex}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="CurveType">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <ComboBox x:Name="CurveTypeComboBox" IsEditable="True"
-                                      ItemsSource="{Binding CurveTypes}"
-                                      DisplayMemberPath="Name"
-                                      SelectedIndex="{Binding CurveTypeIndex}" />
+                            <ComboBox
+                                x:Name="CurveTypeComboBox"
+                                DisplayMemberPath="Name"
+                                IsEditable="True"
+                                ItemsSource="{Binding CurveTypes}"
+                                SelectedIndex="{Binding CurveTypeIndex}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridCheckBoxColumn Header="Via PS" Binding="{Binding Direct}" />
-                <DataGridTextColumn Header="Diameters" Binding="{Binding Diameters}" />
-                <DataGridTextColumn Header="PassPoints" Binding="{Binding PassPoints}" />
+                <DataGridCheckBoxColumn Binding="{Binding Direct}" Header="Via PS" />
+                <DataGridTextColumn Binding="{Binding Diameters}" Header="Diameters" />
+                <DataGridTextColumn Binding="{Binding PassPoints}" Header="PassPoints" />
             </DataGrid.Columns>
         </DataGrid>
         <local:Dialog3Buttons
-            VerticalAlignment="Bottom"
+            Margin="0,0,0,5"
             HorizontalAlignment="Right"
-            LeftButton="OK"
+            VerticalAlignment="Bottom"
             CenterButton="Apply"
-            RightButton="Cancel"
-            OnOKClick="Dialog3Buttons_OnOnOKClick"
+            LeftButton="OK"
             OnApplyClick="Dialog3Buttons_OnOnApplyClick"
             OnCancelClick="Dialog3Buttons_OnOnCancelClick"
-            Margin="0,0,0,5" />
-
+            OnOKClick="Dialog3Buttons_OnOnOKClick"
+            RightButton="Cancel" />
     </Grid>
 </ui:RevitDialog>

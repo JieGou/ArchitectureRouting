@@ -1,122 +1,213 @@
-﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.DetailTableDialog"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-        xmlns:view="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
-        mc:Ignorable="d"
-        x:Name="DetailTableWindow"
-        WindowStartupLocation="CenterScreen"
-        Title="明細表作成" Height="980" Width="1150" ResizeMode="NoResize"
-        d:DataContext="{d:DesignInstance {x:Type view:DesignDetailTableViewModel}, IsDesignTimeCreatable=True}">
+﻿<Window
+    x:Class="Arent3d.Architecture.Routing.AppBase.Forms.DetailTableDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:view="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+    x:Name="DetailTableWindow"
+    Title="明細表作成"
+    Width="1150"
+    Height="980"
+    d:DataContext="{d:DesignInstance {x:Type view:DesignDetailTableViewModel},
+                                     IsDesignTimeCreatable=True}"
+    ResizeMode="NoResize"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
     <Window.Resources>
         <Style x:Key="DefaultButtonStyle" TargetType="{x:Type Button}">
-            <Setter Property="Width" Value="100"/>
-            <Setter Property="Height" Value="25"/>
-            <Setter Property="Margin" Value="5,0,5,5"/>
+            <Setter Property="Width" Value="100" />
+            <Setter Property="Height" Value="25" />
+            <Setter Property="Margin" Value="5,0,5,5" />
         </Style>
-        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource DefaultButtonStyle}"/>
-        <Style x:Key="DualHeightButton" TargetType="{x:Type Button}" BasedOn="{StaticResource DefaultButtonStyle}">
-            <Setter Property="Height" Value="45"/>
+        <Style BasedOn="{StaticResource DefaultButtonStyle}" TargetType="{x:Type Button}" />
+        <Style
+            x:Key="DualHeightButton"
+            BasedOn="{StaticResource DefaultButtonStyle}"
+            TargetType="{x:Type Button}">
+            <Setter Property="Height" Value="45" />
         </Style>
         <Style TargetType="{x:Type DataGridTextColumn}">
-            <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="CanUserSort" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="CanUserSort" Value="False" />
         </Style>
     </Window.Resources>
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
-            <i:InvokeCommandAction
-                Command="{Binding Path=LoadedCommand}"/>
+            <i:InvokeCommandAction Command="{Binding Path=LoadedCommand}" />
         </i:EventTrigger>
     </i:Interaction.Triggers>
     <Grid>
-        <Grid VerticalAlignment="Top" HorizontalAlignment="Right">
+        <Grid HorizontalAlignment="Right" VerticalAlignment="Top">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="40"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="40" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Button Grid.Row="0" Content="行追加" Margin="5,25,5,5" Command="{Binding AddCommand}" />
-            <Button Grid.Row="1" Content="行削除" Command="{Binding DeleteLineCommand}" />
-            <Button Grid.Row="2" Content="コピー" Command="{Binding CopyLineCommand}" />
-            <Button Grid.Row="3" Content="挿入貼付" Command="{Binding PasteLineCommand}" />
-            <Button Grid.Row="4" Style="{StaticResource DualHeightButton}" Command="{Binding PlumbingSummaryCommand}">
+            <Button
+                Grid.Row="0"
+                Margin="5,25,5,5"
+                Command="{Binding AddCommand}"
+                Content="行追加" />
+            <Button
+                Grid.Row="1"
+                Command="{Binding DeleteLineCommand}"
+                Content="行削除" />
+            <Button
+                Grid.Row="2"
+                Command="{Binding CopyLineCommand}"
+                Content="コピー" />
+            <Button
+                Grid.Row="3"
+                Command="{Binding PasteLineCommand}"
+                Content="挿入貼付" />
+            <Button
+                Grid.Row="4"
+                Command="{Binding PlumbingSummaryCommand}"
+                Style="{StaticResource DualHeightButton}">
                 <Button.Content>
                     <StackPanel Orientation="Vertical">
-                        <TextBlock TextAlignment="Center" Text="配管まとめ" />
-                        <TextBlock TextAlignment="Center" Text="(工事項目毎)" />
+                        <TextBlock Text="配管まとめ" TextAlignment="Center" />
+                        <TextBlock Text="(工事項目毎)" TextAlignment="Center" />
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <Button Grid.Row="5" Style="{StaticResource DualHeightButton}" Command="{Binding PlumbingSummaryMixConstructionItemsCommand}">
+            <Button
+                Grid.Row="5"
+                Command="{Binding PlumbingSummaryMixConstructionItemsCommand}"
+                Style="{StaticResource DualHeightButton}">
                 <Button.Content>
                     <StackPanel Orientation="Vertical">
-                        <TextBlock TextAlignment="Center" Text="配管まとめ" />
-                        <TextBlock TextAlignment="Center" Text="(工事項目混在)" />
+                        <TextBlock Text="配管まとめ" TextAlignment="Center" />
+                        <TextBlock Text="(工事項目混在)" TextAlignment="Center" />
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <Button Grid.Row="6" Content="配管サイズ＊計算" Command="{Binding SplitPlumbingCommand}" />
-            <Button Grid.Row="7" Content="上へ" Command="{Binding MoveUpCommand}" />
-            <Button Grid.Row="8" Content="下へ" Command="{Binding MoveDownCommand}" />
-            <Button Grid.Row="9" Content="全選択" Command="{Binding SelectAllCommand}" />
-            <Label Grid.Row="10" Content="参照情報" Margin="0,15,5,0"/>
-            <Button Grid.Row="11"  Content="▼" Click="BtnHideReferenceDataGrid_Click"/>
-            <Button Grid.Row="12" x:Name="BtnReferenceSelectAll" Content="全選択" Command="{Binding ReferenceSelectAllCommand}"/>
-            <Button Grid.Row="13" x:Name="BtnDeleteReferenceLine" Content="行削除" Command="{Binding DeleteReferenceLineCommand}"/>
-            <Button Grid.Row="14" x:Name="BtnReadCtlFile" Content="明細データ取込" Command="{Binding ReadCtlFileCommand}"/>
-            <Button Grid.Row="15" x:Name="BtnSelectDetailTableRowWithSameDetailSymbolId" Content="同一明細行を選択" Command="{Binding SelectDetailTableRowWithSameDetailSymbolIdCommand}"/>
-            <Button Grid.Row="16" x:Name="BtnAddReference" Content="参照" Command="{Binding AddReferenceCommand}" CommandParameter="{Binding ElementName=DetailTableWindow}"/> 
-            <Button Grid.Row="17" x:Name="BtnAddReferenceRows" Content="明細追加" Command="{Binding AddReferenceRowsCommand}"/>
+            <Button
+                Grid.Row="6"
+                Command="{Binding SplitPlumbingCommand}"
+                Content="配管サイズ＊計算" />
+            <Button
+                Grid.Row="7"
+                Command="{Binding MoveUpCommand}"
+                Content="上へ" />
+            <Button
+                Grid.Row="8"
+                Command="{Binding MoveDownCommand}"
+                Content="下へ" />
+            <Button
+                Grid.Row="9"
+                Command="{Binding SelectAllCommand}"
+                Content="全選択" />
+            <Label
+                Grid.Row="10"
+                Margin="0,15,5,0"
+                Content="参照情報" />
+            <Button
+                Grid.Row="11"
+                Click="BtnHideReferenceDataGrid_Click"
+                Content="▼" />
+            <Button
+                x:Name="BtnReferenceSelectAll"
+                Grid.Row="12"
+                Command="{Binding ReferenceSelectAllCommand}"
+                Content="全選択" />
+            <Button
+                x:Name="BtnDeleteReferenceLine"
+                Grid.Row="13"
+                Command="{Binding DeleteReferenceLineCommand}"
+                Content="行削除" />
+            <Button
+                x:Name="BtnReadCtlFile"
+                Grid.Row="14"
+                Command="{Binding ReadCtlFileCommand}"
+                Content="明細データ取込" />
+            <Button
+                x:Name="BtnSelectDetailTableRowWithSameDetailSymbolId"
+                Grid.Row="15"
+                Command="{Binding SelectDetailTableRowWithSameDetailSymbolIdCommand}"
+                Content="同一明細行を選択" />
+            <Button
+                x:Name="BtnAddReference"
+                Grid.Row="16"
+                Command="{Binding AddReferenceCommand}"
+                CommandParameter="{Binding ElementName=DetailTableWindow}"
+                Content="参照" />
+            <Button
+                x:Name="BtnAddReferenceRows"
+                Grid.Row="17"
+                Command="{Binding AddReferenceRowsCommand}"
+                Content="明細追加" />
         </Grid>
-        <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Width="970" Height="30" Margin="20">
+        <Grid
+            Width="970"
+            Height="30"
+            Margin="20"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="70" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Label Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Center" Content="明細名称 :" />
-            <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
+            <Label
+                Grid.Row="0"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Content="明細名称 :" />
+            <TextBox
+                Grid.Row="0"
+                Grid.Column="1"
+                Width="300"
+                Height="25"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center" />
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1000" Height="410" RowHeight="25" Margin="20, 70" ItemsSource="{Binding DetailTableItemModels}" CanUserAddRows="False" AutoGenerateColumns="False"
-                  SelectionMode="Extended" SelectionUnit="FullRow">
+        <DataGrid
+            x:Name="DtGrid"
+            Width="1000"
+            Height="410"
+            Margin="20,70"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            ItemsSource="{Binding DetailTableItemModels}"
+            RowHeight="25"
+            SelectionMode="Extended"
+            SelectionUnit="FullRow">
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />
                     <Style.Triggers>
                         <Trigger Property="Validation.HasError" Value="True">
-                            <Setter Property="ToolTip"
-                                    Value="{Binding RelativeSource={RelativeSource Self},
-                    Path=(Validation.Errors)[0].ErrorContent}" />
+                            <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>
             </DataGrid.Resources>
-            
+
             <DataGrid.InputBindings>
-                <MouseBinding
-                    MouseAction="LeftDoubleClick"
-                    Command="{Binding DoubleClickCommand}"
-                    />
+                <MouseBinding Command="{Binding DoubleClickCommand}" MouseAction="LeftDoubleClick" />
             </DataGrid.InputBindings>
-            
+
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
                     <Style.Triggers>
@@ -129,14 +220,20 @@
             </DataGrid.CellStyle>
 
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="計算除外" Width="30" Binding="{Binding CalculationExclusion}" CanUserSort="False"/>
-                
-                <DataGridComboBoxColumn Header="フロア" Width="45"
-                                        SelectedValueBinding="{Binding Floor}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
-                    
+                <DataGridCheckBoxColumn
+                    Width="30"
+                    Binding="{Binding CalculationExclusion}"
+                    CanUserSort="False"
+                    Header="計算除外" />
+
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="フロア"
+                    SelectedValueBinding="{Binding Floor}"
+                    SelectedValuePath="Name">
+
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
@@ -148,7 +245,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding Floor, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding Floor, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -170,10 +267,16 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <DataGridTextColumn Header="明細記号" Width="45" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}"  />
-                
-                <DataGridTemplateColumn Header="電線種類" Width="45" CanUserSort="False">
+
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}"
+                    Header="明細記号" />
+
+                <DataGridTemplateColumn
+                    Width="45"
+                    CanUserSort="False"
+                    Header="電線種類">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding WireType, Mode=OneWay}" />
@@ -181,23 +284,26 @@
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
                         <DataTemplate>
-                            <ComboBox SelectedValue="{Binding WireType}"
-                                      Text="{Binding WireType, Mode=OneWay}"
-                                      DisplayMemberPath="Type"
-                                      SelectedValuePath="Name"
-                                      ItemsSource="{Binding Path=DataContext.WireTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                      SelectionChanged="WireTypeSelectionChanged"
-                                      IsEditable="True"
-                                      IsReadOnly="{Binding IsReadOnlyParameters}"/>
+                            <ComboBox
+                                DisplayMemberPath="Type"
+                                IsEditable="True"
+                                IsReadOnly="{Binding IsReadOnlyParameters}"
+                                ItemsSource="{Binding Path=DataContext.WireTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                SelectedValue="{Binding WireType}"
+                                SelectedValuePath="Name"
+                                SelectionChanged="WireTypeSelectionChanged"
+                                Text="{Binding WireType, Mode=OneWay}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridComboBoxColumn Header="電線サイズ" Width="45"
-                                        SelectedValueBinding="{Binding WireSize}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="電線サイズ"
+                    SelectedValueBinding="{Binding WireSize}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
@@ -209,7 +315,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding WireSize, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding WireSize, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -232,11 +338,13 @@
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
 
-                <DataGridComboBoxColumn Header="電線条数" Width="45"
-                                        SelectedValueBinding="{Binding WireStrip}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="電線条数"
+                    SelectedValueBinding="{Binding WireStrip}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
@@ -248,7 +356,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding WireStrip, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding WireStrip, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -271,7 +379,10 @@
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
 
-                <DataGridTemplateColumn Header="電線本数" Width="45" CanUserSort="False">
+                <DataGridTemplateColumn
+                    Width="45"
+                    CanUserSort="False"
+                    Header="電線本数">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding WireBook, Mode=TwoWay}" />
@@ -279,23 +390,26 @@
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
                         <DataTemplate>
-                            <ComboBox SelectedValue="{Binding WireBook}"
-                                      Text="{Binding WireBook, Mode=TwoWay}"
-                                      DisplayMemberPath="Type" 
-                                      SelectedValuePath="Name"
-                                      ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                      SelectionChanged="WireBookSelectionChanged" 
-                                      IsEditable="True"
-                                      IsReadOnly="{Binding IsReadOnlyParameters}"/>
+                            <ComboBox
+                                DisplayMemberPath="Type"
+                                IsEditable="True"
+                                IsReadOnly="{Binding IsReadOnlyParameters}"
+                                ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                SelectedValue="{Binding WireBook}"
+                                SelectedValuePath="Name"
+                                SelectionChanged="WireBookSelectionChanged"
+                                Text="{Binding WireBook, Mode=TwoWay}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-                
-                <DataGridComboBoxColumn Header="アース種類" Width="45"
-                                        SelectedValueBinding="{Binding EarthType}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="アース種類"
+                    SelectedValueBinding="{Binding EarthType}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
@@ -307,7 +421,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding EarthType, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding EarthType, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -330,11 +444,13 @@
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
 
-                <DataGridComboBoxColumn Header="アースサイズ" Width="45"
-                                        SelectedValueBinding="{Binding EarthSize}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="アースサイズ"
+                    SelectedValueBinding="{Binding EarthSize}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
@@ -346,7 +462,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding EarthSize, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding EarthSize, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -368,8 +484,11 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <DataGridTemplateColumn Header="アース本数" Width="45" CanUserSort="False">
+
+                <DataGridTemplateColumn
+                    Width="45"
+                    CanUserSort="False"
+                    Header="アース本数">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Path=NumberOfGround, Mode=TwoWay}" />
@@ -377,24 +496,27 @@
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
                         <DataTemplate>
-                            <ComboBox SelectedValue="{Binding Path=NumberOfGround}"
-                                      Text="{Binding Path=NumberOfGround, Mode=TwoWay}"
-                                      DisplayMemberPath="Type" 
-                                      SelectedValuePath="Name"
-                                      ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                      SelectionChanged="NumberOfGroundsSelectionChanged" 
-                                      LostFocus="NumberOfGroundsLostFocus"
-                                      IsEditable="True"
-                                      IsReadOnly="{Binding IsReadOnlyParameters}"/>
+                            <ComboBox
+                                DisplayMemberPath="Type"
+                                IsEditable="True"
+                                IsReadOnly="{Binding IsReadOnlyParameters}"
+                                ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                LostFocus="NumberOfGroundsLostFocus"
+                                SelectedValue="{Binding Path=NumberOfGround}"
+                                SelectedValuePath="Name"
+                                SelectionChanged="NumberOfGroundsSelectionChanged"
+                                Text="{Binding Path=NumberOfGround, Mode=TwoWay}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-                
-                <DataGridComboBoxColumn Header="配管種類" Width="45"
-                                        SelectedValueBinding="{Binding PlumbingType}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="配管種類"
+                    SelectedValueBinding="{Binding PlumbingType}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnly}" />
@@ -406,7 +528,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding PlumbingType, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding PlumbingType, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -427,13 +549,15 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
-                </DataGridComboBoxColumn>    
-                
-                <DataGridComboBoxColumn Header="配管サイズ" Width="45"
-                                        SelectedValueBinding="{Binding PlumbingSize}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+                </DataGridComboBoxColumn>
+
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="配管サイズ"
+                    SelectedValueBinding="{Binding PlumbingSize}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingSize}" />
@@ -445,7 +569,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding PlumbingSize, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding PlumbingSize, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -467,14 +591,19 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <DataGridTextColumn Header="配管本数" Width="45" Binding="{Binding NumberOfPlumbing, ValidatesOnExceptions=True}"  />
-                
-                <DataGridComboBoxColumn Header="施工区分" Width="45"
-                                        SelectedValueBinding="{Binding ConstructionClassification}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding NumberOfPlumbing, ValidatesOnExceptions=True}"
+                    Header="配管本数" />
+
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="施工区分"
+                    SelectedValueBinding="{Binding ConstructionClassification}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
@@ -486,7 +615,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding ConstructionClassification, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding ConstructionClassification, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -508,12 +637,14 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <DataGridComboBoxColumn Header="信号種別" Width="45"
-                                        SelectedValueBinding="{Binding SignalType}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+
+                <DataGridComboBoxColumn
+                    Width="45"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="信号種別"
+                    SelectedValueBinding="{Binding SignalType}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
@@ -525,7 +656,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding SignalType, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding SignalType, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -547,12 +678,14 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <DataGridComboBoxColumn Header="工事項目" Width="90"
-                                        SelectedValueBinding="{Binding ConstructionItems}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+
+                <DataGridComboBoxColumn
+                    Width="90"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="工事項目"
+                    SelectedValueBinding="{Binding ConstructionItems}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
@@ -565,12 +698,14 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <DataGridComboBoxColumn Header="配管工事項目" Width="90"
-                                        SelectedValueBinding="{Binding PlumbingItems}"
-                                        DisplayMemberPath="Type"
-                                        SelectedValuePath="Name"
-                                        CanUserSort="False">
+
+                <DataGridComboBoxColumn
+                    Width="90"
+                    CanUserSort="False"
+                    DisplayMemberPath="Type"
+                    Header="配管工事項目"
+                    SelectedValueBinding="{Binding PlumbingItems}"
+                    SelectedValuePath="Name">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingItems}" />
@@ -582,7 +717,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate>
-                                                <TextBlock Text="{Binding PlumbingItems, Mode=OneWay}"/>
+                                                <TextBlock Text="{Binding PlumbingItems, Mode=OneWay}" />
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -604,8 +739,12 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                
-                <DataGridTextColumn Header="備考" Width="70" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}"  IsReadOnly="False">
+
+                <DataGridTextColumn
+                    Width="70"
+                    Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}"
+                    Header="備考"
+                    IsReadOnly="False">
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="TextBox.IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
@@ -615,8 +754,8 @@
                                     <Setter Property="IsHitTestVisible" Value="False" />
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="RoyalBlue" />
-                                        <Setter Property="BorderBrush" Value="RoyalBlue" />
+                                    <Setter Property="Background" Value="RoyalBlue" />
+                                    <Setter Property="BorderBrush" Value="RoyalBlue" />
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
@@ -636,12 +775,21 @@
                 </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
-        
-        <DataGrid x:Name="DtReferenceGrid" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="1000" Height="370" RowHeight="25" Margin="20, 70" 
-                  ItemsSource="{Binding ReferenceDetailTableItemModels}" 
-                  CanUserAddRows="False" AutoGenerateColumns="False"
-                  SelectionMode="Extended" SelectionUnit="FullRow" >
-            
+
+        <DataGrid
+            x:Name="DtReferenceGrid"
+            Width="1000"
+            Height="370"
+            Margin="20,70"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            ItemsSource="{Binding ReferenceDetailTableItemModels}"
+            RowHeight="25"
+            SelectionMode="Extended"
+            SelectionUnit="FullRow">
+
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
                     <Style.Triggers>
@@ -652,71 +800,143 @@
                     </Style.Triggers>
                 </Style>
             </DataGrid.CellStyle>
-            
+
             <DataGrid.Columns>
-                <DataGridTextColumn Header="フロア" Width="45" Binding="{Binding Floor, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" />
-                <DataGridTextColumn Header="明細記号" Width="45" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="電線種類" Width="70" Binding="{Binding WireType, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="電線サイズ" Width="45" Binding="{Binding WireSize, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="電線条数" Width="45" Binding="{Binding WireStrip, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="電線本数" Width="45" Binding="{Binding WireBook, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="アース種類" Width="15" Binding="{Binding EarthType, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="アースサイズ" Width="15" Binding="{Binding EarthSize, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="アース本数" Width="15" Binding="{Binding NumberOfGrounds, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="配管種類" Width="15" Binding="{Binding PlumbingType, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="配管サイズ" Width="45" Binding="{Binding PlumbingSize, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="配管本数" Width="45" Binding="{Binding NumberOfPlumbing, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="施工区分" Width="45" Binding="{Binding ConstructionClassification, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="信号種別" Width="70" Binding="{Binding SignalType, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="工事項目" Width="70" Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="配管工事項目" Width="70" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}"  />
-                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}"  />
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding Floor, ValidatesOnExceptions=True}"
+                    CanUserSort="True"
+                    Header="フロア"
+                    IsReadOnly="True" />
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}"
+                    Header="明細記号" />
+                <DataGridTextColumn
+                    Width="70"
+                    Binding="{Binding WireType, ValidatesOnExceptions=True}"
+                    Header="電線種類" />
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding WireSize, ValidatesOnExceptions=True}"
+                    Header="電線サイズ" />
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding WireStrip, ValidatesOnExceptions=True}"
+                    Header="電線条数" />
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding WireBook, ValidatesOnExceptions=True}"
+                    Header="電線本数" />
+                <DataGridTextColumn
+                    Width="15"
+                    Binding="{Binding EarthType, ValidatesOnExceptions=True}"
+                    Header="アース種類" />
+                <DataGridTextColumn
+                    Width="15"
+                    Binding="{Binding EarthSize, ValidatesOnExceptions=True}"
+                    Header="アースサイズ" />
+                <DataGridTextColumn
+                    Width="15"
+                    Binding="{Binding NumberOfGrounds, ValidatesOnExceptions=True}"
+                    Header="アース本数" />
+                <DataGridTextColumn
+                    Width="15"
+                    Binding="{Binding PlumbingType, ValidatesOnExceptions=True}"
+                    Header="配管種類" />
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding PlumbingSize, ValidatesOnExceptions=True}"
+                    Header="配管サイズ" />
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding NumberOfPlumbing, ValidatesOnExceptions=True}"
+                    Header="配管本数" />
+                <DataGridTextColumn
+                    Width="45"
+                    Binding="{Binding ConstructionClassification, ValidatesOnExceptions=True}"
+                    Header="施工区分" />
+                <DataGridTextColumn
+                    Width="70"
+                    Binding="{Binding SignalType, ValidatesOnExceptions=True}"
+                    Header="信号種別" />
+                <DataGridTextColumn
+                    Width="70"
+                    Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}"
+                    Header="工事項目" />
+                <DataGridTextColumn
+                    Width="70"
+                    Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}"
+                    Header="配管工事項目" />
+                <DataGridTextColumn
+                    Width="110"
+                    Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}"
+                    Header="備考" />
             </DataGrid.Columns>
         </DataGrid>
-        
-        <Grid VerticalAlignment="Bottom" Width="1000" Height="70" HorizontalAlignment="Left">
+
+        <Grid
+            Width="1000"
+            Height="70"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" Grid.Column="0" Margin="20 10" DockPanel.Dock="Left" VerticalAlignment="Center">
+            <StackPanel
+                Grid.Column="0"
+                Margin="20,10"
+                VerticalAlignment="Center"
+                DockPanel.Dock="Left"
+                Orientation="Horizontal">
                 <Label FontWeight="Bold">明細記号表示状態</Label>
-                <CheckBox VerticalContentAlignment="Center" Content="表示" Margin="20 0 0 0"
-                          IsChecked="{Binding Path=IsShowSymbol, UpdateSourceTrigger=PropertyChanged}"/>
+                <CheckBox
+                    Margin="20,0,0,0"
+                    VerticalContentAlignment="Center"
+                    Content="表示"
+                    IsChecked="{Binding Path=IsShowSymbol, UpdateSourceTrigger=PropertyChanged}" />
             </StackPanel>
-            <Grid Grid.Column="1" DockPanel.Dock="Right" Width="400" HorizontalAlignment="Right">
+            <Grid
+                Grid.Column="1"
+                Width="400"
+                HorizontalAlignment="Right"
+                DockPanel.Dock="Right">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="130" />
                     <ColumnDefinition Width="130" />
                     <ColumnDefinition Width="130" />
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="0"
-                        Content="保存"
-                        Margin="5,5,5,5"
-                        HorizontalAlignment="Right"
-                        DockPanel.Dock="Right"
-                        Command="{Binding SaveDetailTableCommand}"
-                        CommandParameter="{Binding ElementName=DetailTableWindow}"
-                        Height="27"
-                        Width="110" />
-            <Button Grid.Column="1"
-                    Content="明細表作成"
+                <Button
+                    Grid.Column="0"
+                    Width="110"
+                    Height="27"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
-                    DockPanel.Dock="Right"
+                    Command="{Binding SaveDetailTableCommand}"
+                    CommandParameter="{Binding ElementName=DetailTableWindow}"
+                    Content="保存"
+                    DockPanel.Dock="Right" />
+                <Button
+                    Grid.Column="1"
+                    Width="110"
+                    Height="27"
+                    Margin="5,5,5,5"
+                    HorizontalAlignment="Right"
                     Command="{Binding CreateDetailTableCommand}"
                     CommandParameter="{Binding ElementName=DetailTableWindow}"
+                    Content="明細表作成"
+                    DockPanel.Dock="Right" />
+                <Button
+                    Grid.Column="2"
+                    Width="110"
                     Height="27"
-                    Width="110" />
-            <Button Grid.Column="2"
-                    Content="終了"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
-                    DockPanel.Dock="Right"
                     Command="{Binding CompletedCommand}"
                     CommandParameter="{Binding ElementName=DetailTableWindow}"
-                    Height="27"
-                    Width="110" />
+                    Content="終了"
+                    DockPanel.Dock="Right" />
             </Grid>
         </Grid>
     </Grid>

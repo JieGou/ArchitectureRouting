@@ -1,28 +1,34 @@
 ﻿<Window
+    x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
     xmlns:CnsSettingRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.CnsSettingRules"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     Title="工事項目設定"
-    mc:Ignorable="d"
-    WindowStartupLocation="CenterScreen"
+    Width="600"
+    Height="600"
     Closing="CnsSettingDialog_Closing"
-    Width="600" Height="600">
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
     <DockPanel Margin="5">
-        <StackPanel DockPanel.Dock="Left" Width="450">
+        <StackPanel Width="450" DockPanel.Dock="Left">
             <Label Margin="2,15,2,10">未付加の部品は1行目の工事項目名称で拾われます</Label>
-            <Grid Width="450" Height="570" Margin="0" DockPanel.Dock="Top">
-                <DataGrid x:Name="grdCategories"
-                          ItemsSource="{Binding CnsSettingModels}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          Margin="2,0,2,40"
-                          CellEditEnding="GrdCategories_OnCellEditEnding"
-                          PreparingCellForEdit="GrdCategories_OnCellBeforeEdit"
-                          SelectionMode="Single">
+            <Grid
+                Width="450"
+                Height="570"
+                Margin="0"
+                DockPanel.Dock="Top">
+                <DataGrid
+                    x:Name="grdCategories"
+                    Margin="2,0,2,40"
+                    AutoGenerateColumns="False"
+                    CanUserAddRows="False"
+                    CellEditEnding="GrdCategories_OnCellEditEnding"
+                    ItemsSource="{Binding CnsSettingModels}"
+                    PreparingCellForEdit="GrdCategories_OnCellBeforeEdit"
+                    SelectionMode="Single">
                     <DataGrid.Resources>
                         <Style x:Key="errorStyle" TargetType="{x:Type TextBox}">
                             <Setter Property="Padding" Value="-2" />
@@ -34,24 +40,39 @@
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="" IsReadOnly="True" CanUserSort="False">
+                        <DataGridTextColumn
+                            CanUserSort="False"
+                            Header=""
+                            IsReadOnly="True">
                             <DataGridTextColumn.Binding>
-                                <Binding Path="Sequence" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
+                                <Binding
+                                    Mode="TwoWay"
+                                    NotifyOnTargetUpdated="True"
+                                    Path="Sequence"
+                                    UpdateSourceTrigger="PropertyChanged" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="工事項目名称" Width="280" CanUserSort="False" EditingElementStyle="{StaticResource errorStyle}" >
-                            <DataGridTextColumn.Binding >
-                                <Binding Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay"  >
+                        <DataGridTextColumn
+                            Width="280"
+                            CanUserSort="False"
+                            EditingElementStyle="{StaticResource errorStyle}"
+                            Header="工事項目名称">
+                            <DataGridTextColumn.Binding>
+                                <Binding
+                                    Mode="TwoWay"
+                                    NotifyOnTargetUpdated="True"
+                                    Path="CategoryName"
+                                    UpdateSourceTrigger="PropertyChanged">
                                     <Binding.ValidationRules>
                                         <CnsSettingRules:CnsSettingValidationRule />
                                     </Binding.ValidationRules>
-                                </Binding> 
+                                </Binding>
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="デフォルト設定" Width="*">
+                        <DataGridTemplateColumn Width="*" Header="デフォルト設定">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox IsChecked="{Binding IsDefaultItemChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" />
+                                    <CheckBox HorizontalAlignment="Center" IsChecked="{Binding IsDefaultItemChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -59,57 +80,93 @@
                 </DataGrid>
             </Grid>
         </StackPanel>
-        <StackPanel DockPanel.Dock="Right" Width="100">
-            <Button Content="行追加" Height="32" Margin="0,10,0,0" Click="AddNewRow_Click" />
-            <Button Content="行削除" Height="32" Margin="0,10,0,0" Click="Delete_Click"
-                    CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}">
+        <StackPanel Width="100" DockPanel.Dock="Right">
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="AddNewRow_Click"
+                Content="行追加" />
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="Delete_Click"
+                CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}"
+                Content="行削除">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                            <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=grdCategories}" Value="0">
                                 <Setter Property="IsEnabled" Value="False" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="編集" Height="32" Click="Update_Click" Margin="0,10,0,0">
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="Update_Click"
+                Content="編集">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                            <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=grdCategories}" Value="0">
                                 <Setter Property="IsEnabled" Value="False" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="ハイライト" Height="32" Margin="0,10,0,0" Click="HighLightConstructionItems_Click" >
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="HighLightConstructionItems_Click"
+                Content="ハイライト">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                            <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=grdCategories}" Value="0">
                                 <Setter Property="IsEnabled" Value="False" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="読込み" Height="32" Margin="0,10,0,0" Click="Import_Click" />
-            <Button Content="書き出し" Height="32" Margin="0,10,0,0" Click="Export_Click" />
-            <Button Content="範囲適用" Click="AllElementsApply_Click" Height="32" Margin="0,10,0,0">
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="Import_Click"
+                Content="読込み" />
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="Export_Click"
+                Content="書き出し" />
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="AllElementsApply_Click"
+                Content="範囲適用">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                            <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=grdCategories}" Value="0">
                                 <Setter Property="IsEnabled" Value="False" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="変更" Click="ApplyRangSelection_Click" Height="32" Margin="0,10,0,0" />
-            <Button Content="保存" Click="Save_Click" Height="32" Margin="0,10,0,0" />
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="ApplyRangSelection_Click"
+                Content="変更" />
+            <Button
+                Height="32"
+                Margin="0,10,0,0"
+                Click="Save_Click"
+                Content="保存" />
         </StackPanel>
     </DockPanel>
 </Window>

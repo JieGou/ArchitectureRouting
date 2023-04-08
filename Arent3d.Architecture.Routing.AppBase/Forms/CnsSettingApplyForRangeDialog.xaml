@@ -1,38 +1,65 @@
-<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingApplyForRangeDialog"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
-        mc:Ignorable="d"
-        Title="工事項目名称変更" Height="500" Width="450"
-        d:DataContext="{d:DesignInstance {x:Type local:DesignCnsSettingApplyForRangeViewModel}, IsDesignTimeCreatable=True}">
+<Window
+    x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingApplyForRangeDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="工事項目名称変更"
+    Width="450"
+    Height="500"
+    d:DataContext="{d:DesignInstance {x:Type local:DesignCnsSettingApplyForRangeViewModel},
+                                     IsDesignTimeCreatable=True}"
+    mc:Ignorable="d">
     <Window.Resources>
         <CollectionViewSource x:Key="ConstructionItemList" Source="{Binding ConstructionItemList}" />
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
         </Grid.RowDefinitions>
-        <DataGrid ItemsSource="{Binding MappingConstructionItems}" AutoGenerateColumns="False" CanUserAddRows="False">
+        <DataGrid
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            ItemsSource="{Binding MappingConstructionItems}">
             <DataGrid.Columns>
-                <DataGridTextColumn Width="30" Binding="{Binding ItemIndex}"/>
-                <DataGridTextColumn Header="工事項目名称(変更前)" Width="180" Binding="{Binding OldConstructionItem}"/>
-                <DataGridTemplateColumn MinWidth="180" Width="Auto" Header="工事項目名称(変更後)">  
-                    <DataGridTemplateColumn.CellTemplate>  
-                        <DataTemplate>  
-                            <ComboBox IsEditable="True" ItemsSource="{Binding AvailiableConstructionItem}"    
-                                      Text="{Binding NewConstructionItem, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"   
-                                      StaysOpenOnEdit="False"  IsTextSearchCaseSensitive="False"   />  
-                        </DataTemplate>  
-                    </DataGridTemplateColumn.CellTemplate>  
-                </DataGridTemplateColumn>  
-            </DataGrid.Columns> 
+                <DataGridTextColumn Width="30" Binding="{Binding ItemIndex}" />
+                <DataGridTextColumn
+                    Width="180"
+                    Binding="{Binding OldConstructionItem}"
+                    Header="工事項目名称(変更前)" />
+                <DataGridTemplateColumn
+                    Width="Auto"
+                    MinWidth="180"
+                    Header="工事項目名称(変更後)">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox
+                                IsEditable="True"
+                                IsTextSearchCaseSensitive="False"
+                                ItemsSource="{Binding AvailiableConstructionItem}"
+                                StaysOpenOnEdit="False"
+                                Text="{Binding NewConstructionItem, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
         </DataGrid>
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
-            <Button Content="確定" Width="80" Click="BtnOK_OnClick" Margin="10 0"/>
-            <Button Content="キャンセル" Width="80" Click="BtnCancel_OnClick"/>
+        <StackPanel
+            Grid.Row="1"
+            Margin="10"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <Button
+                Width="80"
+                Margin="10,0"
+                Click="BtnOK_OnClick"
+                Content="確定" />
+            <Button
+                Width="80"
+                Click="BtnCancel_OnClick"
+                Content="キャンセル" />
         </StackPanel>
     </Grid>
 </Window>
