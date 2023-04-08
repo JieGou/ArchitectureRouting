@@ -107,7 +107,7 @@
         <!--
             <Exec Command="&quot;$(SolutionDir)lib\tools\ILMerge.exe&quot; /lib:&quot;$(RevitPath.TrimEnd('\'))&quot; /internalize:$(SolutionDir)nointernalize.txt /out:$(TargetPath) /wildcards &quot;$(TargetDir)*.dll&quot;" />
         -->
-        <Exec Command="&quot;$(SolutionDir)lib\$(RevitVersion)\$(TargetFramework)\make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\$(RevitVersion)\&quot;&#xD;&#xA;" />
+        <!-- <Exec Command="&quot;$(SolutionDir)lib\$(RevitVersion)\$(TargetFramework)\make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\$(RevitVersion)\&quot;&#xD;&#xA;" /> -->
     </Target>
 
 </Project>

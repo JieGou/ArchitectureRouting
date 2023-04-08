@@ -55,9 +55,6 @@
             <HintPath>$(RevitPath)AdWindows.dll</HintPath>
             <Private>false</Private>
         </Reference>
-        <Reference Include="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <HintPath>..\..\..\..\..\..\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Windows.Forms\v4.0_4.0.0.0__b77a5c561934e089\System.Windows.Forms.dll</HintPath>
-        </Reference>
         <Reference Include="System.Windows.Forms" />
     </ItemGroup>
 
@@ -663,6 +660,6 @@
         <!--
             <Exec Command="&quot;$(SolutionDir)lib\tools\ILMerge.exe&quot; /lib:&quot;$(RevitPath.TrimEnd('\'))&quot; /internalize:$(SolutionDir)nointernalize.txt /out:$(TargetPath) /wildcards &quot;$(TargetDir)*.dll&quot;"/>
         -->
-        <Exec Command="&quot;$(SolutionDir)lib\$(RevitVersion)\$(TargetFramework)\make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\$(RevitVersion)\&quot;&#xD;&#xA;" />
+        <!-- <Exec Command="&quot;$(SolutionDir)lib\$(RevitVersion)\$(TargetFramework)\make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\$(RevitVersion)\&quot;&#xD;&#xA;" /> -->
     </Target>
 </Project>
